@@ -43,6 +43,9 @@ export function CanvasView() {
                 type: node.type === 'prompt' ? 'prompt' : 'ai_output',
                 position: node.position,
                 data: node.data,
+                // Explicit dimensions prevent ReactFlow from setting visibility:hidden
+                width: 280,
+                height: 100,
             })),
         [nodes]
     );
@@ -113,7 +116,7 @@ export function CanvasView() {
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 nodeTypes={nodeTypes}
-                fitView
+                defaultViewport={{ x: 0, y: 0, zoom: 1 }}
                 snapToGrid
                 snapGrid={[16, 16]}
                 minZoom={0.1}

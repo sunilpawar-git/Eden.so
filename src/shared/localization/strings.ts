@@ -40,6 +40,7 @@ export const strings = {
         save: 'Save',
         retry: 'Retry',
         loading: 'Loading...',
+        comingSoon: 'Coming soon!',
     },
 } as const;
 

@@ -4,6 +4,7 @@
 import { strings } from '@/shared/localization/strings';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { signOut } from '@/features/auth/services/authService';
+import { toast } from '@/shared/stores/toastStore';
 import styles from './Sidebar.module.css';
 
 export function Sidebar() {
@@ -15,6 +16,11 @@ export function Sidebar() {
         } catch {
             // Error handled in service
         }
+    };
+
+    const handleNewWorkspace = () => {
+        // TODO: Implement workspace creation logic
+        toast.info(`${strings.workspace.newWorkspace} - ${strings.common.comingSoon}`);
     };
 
     return (
@@ -42,7 +48,7 @@ export function Sidebar() {
             </div>
 
             <div className={styles.workspaces}>
-                <button className={styles.newWorkspace}>
+                <button className={styles.newWorkspace} onClick={handleNewWorkspace}>
                     <span className={styles.plusIcon}>+</span>
                     <span>{strings.workspace.newWorkspace}</span>
                 </button>
