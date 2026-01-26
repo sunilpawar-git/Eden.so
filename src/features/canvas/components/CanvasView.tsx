@@ -22,6 +22,7 @@ import { useCanvasStore } from '../stores/canvasStore';
 import { PromptNode } from './nodes/PromptNode';
 import { AIOutputNode } from './nodes/AIOutputNode';
 import { AddNodeButton } from './AddNodeButton';
+import { SynthesisButton } from '@/features/ai/components/SynthesisButton';
 import styles from './CanvasView.module.css';
 
 // Memoized node types for performance
@@ -122,6 +123,7 @@ export function CanvasView() {
                 <Controls />
             </ReactFlow>
             <AddNodeButton />
+            <SynthesisButton />
         </div>
     );
 }

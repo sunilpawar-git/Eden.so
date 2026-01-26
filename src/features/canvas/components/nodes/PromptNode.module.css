@@ -61,3 +61,30 @@
     background: var(--color-primary) !important;
     border: 2px solid var(--color-surface) !important;
 }
+
+.generating {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.generatingText {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: var(--color-text-muted);
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

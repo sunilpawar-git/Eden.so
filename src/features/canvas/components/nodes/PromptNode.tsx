@@ -1,10 +1,12 @@
 /**
- * Prompt Node - User input node (memoized for performance)
+ * Prompt Node - User input node with AI generation trigger (memoized)
  */
 import React, { useCallback, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { strings } from '@/shared/localization/strings';
-import { useCanvasStore } from '../../stores/canvasStore';
+import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useAIStore } from '@/features/ai/stores/aiStore';
+import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import styles from './PromptNode.module.css';
 
 export const PromptNode = React.memo(function PromptNode({
@@ -15,6 +17,10 @@ export const PromptNode = React.memo(function PromptNode({
     const [isEditing, setIsEditing] = useState(!content);
     const [localContent, setLocalContent] = useState(content);
     const updateNodeContent = useCanvasStore((s) => s.updateNodeContent);
+    const { isGenerating, generatingNodeId } = useAIStore();
+    const { generateFromPrompt } = useNodeGeneration();
+
+    const isThisNodeGenerating = isGenerating && generatingNodeId === id;
 
     const handleBlur = useCallback(() => {
         setIsEditing(false);
@@ -22,18 +28,21 @@ export const PromptNode = React.memo(function PromptNode({
     }, [id, localContent, updateNodeContent]);
 
     const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent) => {
+        async (e: React.KeyboardEvent) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleBlur();
-                // TODO: Trigger AI generation in Phase 3
+                // Trigger AI generation
+                if (localContent.trim()) {
+                    await generateFromPrompt(id);
+                }
             }
             if (e.key === 'Escape') {
                 setIsEditing(false);
                 setLocalContent(content);
             }
         },
-        [handleBlur, content]
+        [handleBlur, content, localContent, generateFromPrompt, id]
     );
 
     return (
@@ -49,16 +58,24 @@ export const PromptNode = React.memo(function PromptNode({
                     onKeyDown={handleKeyDown}
                     placeholder={strings.canvas.promptPlaceholder}
                     autoFocus
+                    disabled={isThisNodeGenerating}
                 />
             ) : (
                 <div
-                    className={styles.content}
-                    onClick={() => setIsEditing(true)}
+                    className={`${styles.content} ${isThisNodeGenerating ? styles.generating : ''}`}
+                    onClick={() => !isThisNodeGenerating && setIsEditing(true)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && setIsEditing(true)}
+                    onKeyDown={(e) => e.key === 'Enter' && !isThisNodeGenerating && setIsEditing(true)}
                 >
-                    {content || strings.canvas.promptPlaceholder}
+                    {isThisNodeGenerating ? (
+                        <span className={styles.generatingText}>
+                            <span className={styles.spinner} />
+                            {strings.canvas.generating}
+                        </span>
+                    ) : (
+                        content || strings.canvas.promptPlaceholder
+                    )}
                 </div>
             )}
 
