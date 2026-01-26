@@ -1,0 +1,74 @@
+/**
+ * Toast Styles
+ */
+.container {
+    position: fixed;
+    bottom: var(--space-xl);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.3s ease;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.success {
+    background: hsl(145, 65%, 42%);
+    color: white;
+}
+
+.error {
+    background: hsl(0, 72%, 51%);
+    color: white;
+}
+
+.info {
+    background: var(--color-primary);
+    color: white;
+}
+
+.warning {
+    background: hsl(38, 92%, 50%);
+    color: hsl(38, 92%, 10%);
+}
+
+.message {
+    flex: 1;
+    font-size: var(--font-size-sm);
+}
+
+.close {
+    font-size: var(--font-size-lg);
+    opacity: 0.7;
+    padding: 0;
+    line-height: 1;
+    color: inherit;
+}
+
+.close:hover {
+    opacity: 1;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
