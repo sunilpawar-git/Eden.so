@@ -2,10 +2,12 @@
  * App Entry Point
  */
 import { useEffect } from 'react';
+import { ReactFlowProvider } from '@xyflow/react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { subscribeToAuthState } from '@/features/auth/services/authService';
 import { LoginPage } from '@/features/auth/components/LoginPage';
 import { Layout } from '@/shared/components/Layout';
+import { CanvasView } from '@/features/canvas/components/CanvasView';
 import { strings } from '@/shared/localization/strings';
 import '@/styles/global.css';
 
@@ -32,30 +34,13 @@ export function App() {
         return <LoginPage />;
     }
 
-    // Authenticated - show main app
+    // Authenticated - show main app with canvas
     return (
-        <Layout>
-            <CanvasPlaceholder />
-        </Layout>
-    );
-}
-
-/**
- * Temporary placeholder until canvas is implemented
- */
-function CanvasPlaceholder() {
-    return (
-        <div
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                color: 'var(--color-text-muted)',
-            }}
-        >
-            <p>{strings.canvas.promptPlaceholder}</p>
-        </div>
+        <ReactFlowProvider>
+            <Layout>
+                <CanvasView />
+            </Layout>
+        </ReactFlowProvider>
     );
 }
 

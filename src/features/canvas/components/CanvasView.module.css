@@ -1,0 +1,47 @@
+/**
+ * Canvas View Styles
+ */
+.canvasContainer {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* ReactFlow custom styling */
+.canvasContainer :global(.react-flow__node) {
+    cursor: grab;
+}
+
+.canvasContainer :global(.react-flow__node):active {
+    cursor: grabbing;
+}
+
+.canvasContainer :global(.react-flow__edge-path) {
+    stroke: var(--color-primary);
+    stroke-width: 2;
+}
+
+.canvasContainer :global(.react-flow__handle) {
+    width: 10px;
+    height: 10px;
+    background-color: var(--color-primary);
+    border: 2px solid var(--color-surface);
+}
+
+.canvasContainer :global(.react-flow__controls) {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+
+.canvasContainer :global(.react-flow__controls-button) {
+    background: transparent;
+    border: none;
+    color: var(--color-text-primary);
+}
+
+.canvasContainer :global(.react-flow__controls-button:hover) {
+    background: var(--color-primary-light);
+}
