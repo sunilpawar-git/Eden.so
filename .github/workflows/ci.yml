@@ -23,6 +23,8 @@ jobs:
         run: npm run lint
       - name: Run tests
         run: npm run test
+      - name: Run production build
+        run: npm run build
 
   secret-scan:
     name: Secret Scanning
