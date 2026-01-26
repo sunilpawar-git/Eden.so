@@ -5,6 +5,7 @@ import React, { useCallback, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { strings } from '@/shared/localization/strings';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { SynthesisIndicator } from '@/features/ai/components/SynthesisIndicator';
 import styles from './AIOutputNode.module.css';
 
 export const AIOutputNode = React.memo(function AIOutputNode({
@@ -76,6 +77,7 @@ export const AIOutputNode = React.memo(function AIOutputNode({
             )}
 
             <Handle type="source" position={Position.Bottom} className={styles.handle} />
+            <SynthesisIndicator nodeId={id} />
         </div>
     );
 });

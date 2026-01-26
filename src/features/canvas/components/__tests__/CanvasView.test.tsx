@@ -67,8 +67,8 @@ describe('CanvasView', () => {
     it('should use defaultViewport instead of fitView to prevent visibility issue', () => {
         render(<CanvasView />);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const reactFlowProps = (ReactFlow as any).mock.calls[0][0];
+        const mockCalls = vi.mocked(ReactFlow).mock.calls;
+        const reactFlowProps = mockCalls[0]?.[0] ?? {};
         expect(reactFlowProps.defaultViewport).toEqual({ x: 0, y: 0, zoom: 1 });
         expect(reactFlowProps.fitView).toBeUndefined();
     });

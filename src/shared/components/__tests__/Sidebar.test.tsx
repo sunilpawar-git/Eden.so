@@ -33,8 +33,7 @@ describe('Sidebar', () => {
             clearUser: vi.fn(),
             setLoading: vi.fn(),
             setError: vi.fn(),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as Partial<ReturnType<typeof useAuthStore>> as ReturnType<typeof useAuthStore>);
     });
 
     it('should trigger a placeholder toast when "+ New Workspace" is clicked', () => {

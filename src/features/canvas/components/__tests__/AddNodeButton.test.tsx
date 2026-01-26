@@ -16,7 +16,7 @@ describe('AddNodeButton', () => {
         vi.clearAllMocks();
         vi.mocked(useReactFlow).mockReturnValue({
             screenToFlowPosition: mockScreenToFlowPosition,
-        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+        } as Partial<ReturnType<typeof useReactFlow>> as ReturnType<typeof useReactFlow>);
         mockScreenToFlowPosition.mockReturnValue({ x: 500, y: 500 });
 
         // Reset store

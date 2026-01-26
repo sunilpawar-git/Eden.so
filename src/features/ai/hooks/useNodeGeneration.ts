@@ -13,7 +13,7 @@ const AI_NODE_OFFSET_Y = 150;
  * Hook for generating AI content from a prompt node
  */
 export function useNodeGeneration() {
-    const { nodes, addNode } = useCanvasStore();
+    const { addNode } = useCanvasStore();
     const { startGeneration, completeGeneration, setError } = useAIStore();
 
     /**
@@ -21,7 +21,9 @@ export function useNodeGeneration() {
      */
     const generateFromPrompt = useCallback(
         async (promptNodeId: string) => {
-            const promptNode = nodes.find((n) => n.id === promptNodeId);
+            // CRITICAL: Use getState() for fresh data, not closure
+            const freshNodes = useCanvasStore.getState().nodes;
+            const promptNode = freshNodes.find((n) => n.id === promptNodeId);
             if (!promptNode || !promptNode.data.content) return;
 
             startGeneration(promptNodeId);
@@ -56,7 +58,7 @@ export function useNodeGeneration() {
                 setError(message);
             }
         },
-        [nodes, addNode, startGeneration, completeGeneration, setError]
+        [addNode, startGeneration, completeGeneration, setError]
     );
 
     /**
@@ -66,7 +68,9 @@ export function useNodeGeneration() {
         async (nodeIds: string[]) => {
             if (nodeIds.length < 2) return;
 
-            const selectedNodes = nodes.filter((n) => nodeIds.includes(n.id));
+            // CRITICAL: Use getState() for fresh data, not closure
+            const freshNodes = useCanvasStore.getState().nodes;
+            const selectedNodes = freshNodes.filter((n) => nodeIds.includes(n.id));
             if (selectedNodes.length < 2) return;
 
             startGeneration(nodeIds[0] ?? '');
@@ -104,11 +108,61 @@ export function useNodeGeneration() {
                 setError(message);
             }
         },
-        [nodes, addNode, startGeneration, completeGeneration, setError]
+        [addNode, startGeneration, completeGeneration, setError]
+    );
+
+    /**
+     * Traverse upstream chain and synthesize into target node
+     * Collects all ancestor content recursively
+     */
+    const synthesizeUpstreamChain = useCallback(
+        async (targetNodeId: string) => {
+            const { nodes: freshNodes, edges: freshEdges } = useCanvasStore.getState();
+            const targetNode = freshNodes.find((n) => n.id === targetNodeId);
+            if (!targetNode) return;
+
+            // Collect all upstream nodes via BFS
+            const visited = new Set<string>();
+            const queue: string[] = [targetNodeId];
+            const upstreamContents: string[] = [];
+
+            while (queue.length > 0) {
+                const currentId = queue.shift()!;
+                if (visited.has(currentId)) continue;
+                visited.add(currentId);
+
+                // Find all incoming edges to current node
+                const incomingEdges = freshEdges.filter((e) => e.targetNodeId === currentId);
+                for (const edge of incomingEdges) {
+                    const sourceNode = freshNodes.find((n) => n.id === edge.sourceNodeId);
+                    if (sourceNode && sourceNode.data.content) {
+                        upstreamContents.push(sourceNode.data.content as string);
+                        queue.push(sourceNode.id);
+                    }
+                }
+            }
+
+            if (upstreamContents.length === 0) return;
+
+            startGeneration(targetNodeId);
+
+            try {
+                const synthesizedContent = await synthesizeNodes(upstreamContents);
+
+                // Update target node content with synthesized result
+                useCanvasStore.getState().updateNodeContent(targetNodeId, synthesizedContent);
+                completeGeneration();
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Synthesis failed';
+                setError(message);
+            }
+        },
+        [startGeneration, completeGeneration, setError]
     );
 
     return {
         generateFromPrompt,
         synthesizeConnectedNodes,
+        synthesizeUpstreamChain,
     };
 }

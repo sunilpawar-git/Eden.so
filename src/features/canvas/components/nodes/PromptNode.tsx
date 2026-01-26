@@ -7,6 +7,7 @@ import { strings } from '@/shared/localization/strings';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '@/features/ai/stores/aiStore';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
+import { SynthesisIndicator } from '@/features/ai/components/SynthesisIndicator';
 import styles from './PromptNode.module.css';
 
 export const PromptNode = React.memo(function PromptNode({
@@ -80,6 +81,7 @@ export const PromptNode = React.memo(function PromptNode({
             )}
 
             <Handle type="source" position={Position.Bottom} className={styles.handle} />
+            <SynthesisIndicator nodeId={id} />
         </div>
     );
 });
