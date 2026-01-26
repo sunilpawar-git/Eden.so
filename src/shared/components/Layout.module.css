@@ -1,0 +1,15 @@
+/**
+ * Layout Styles
+ */
+.layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.main {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--canvas-background);
+}
