@@ -1,0 +1,54 @@
+name: ActionStation CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run linting
+        run: npm run lint
+      - name: Run tests
+        run: npm run test
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false
+
+  env-guard:
+    name: Env Leakage Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for committed .env files
+        run: |
+          echo "Checking for accidental .env file leakage..."
+          LEGACY_FILES=$(find . -maxdepth 2 -name ".env*" ! -name ".env.example" -type f)
+          if [ ! -z "$LEGACY_FILES" ]; then
+            echo "CRITICAL SECURITY ERROR: Sensitive environment files detected in repository!"
+            echo "$LEGACY_FILES"
+            exit 1
+          fi
+          echo "No sensitive .env files found."

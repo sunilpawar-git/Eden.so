@@ -18,7 +18,11 @@ describe('GeminiService', () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
-                    content: 'Generated response',
+                    candidates: [{
+                        content: {
+                            parts: [{ text: 'Generated response' }]
+                        }
+                    }]
                 }),
             });
 
@@ -52,7 +56,11 @@ describe('GeminiService', () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
-                    content: 'Synthesized idea',
+                    candidates: [{
+                        content: {
+                            parts: [{ text: 'Synthesized idea' }]
+                        }
+                    }]
                 }),
             });
 

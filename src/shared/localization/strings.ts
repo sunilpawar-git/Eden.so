@@ -4,7 +4,7 @@
  */
 export const strings = {
     app: {
-        name: 'SecondBrain Canvas',
+        name: 'ActionStation',
         tagline: 'Think visually. Connect ideas.',
     },
     auth: {

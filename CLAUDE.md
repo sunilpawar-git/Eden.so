@@ -1,4 +1,4 @@
-# SecondBrain Canvas - Project Rules
+# ActionStation - Project Rules
 
 > **CRITICAL**: ZERO TECH DEBT policy. All rules are NON-NEGOTIABLE.
 
@@ -38,6 +38,10 @@ src/
 ### SOLID Principles Enforcement
 - **S**: One file = One responsibility
 - **O**: Extend via composition, not modification
+- **NO HARDCODED STRINGS**: Use `stringResource(R.string.key)` or `context.getString()`.
+- **NO HARDCODED COLORS**: Use `MaterialTheme.colorScheme.primary`.
+- **NO HARDCODED DIMENSIONS**: Use `dp` or `sp` resources/constants.
+- **SECURITY: NO SECRETS IN CODE**: NEVER hardcode API keys, passwords, or tokens. Use `.env.local` for local development. Use environment variables in CI/CD.
 - **L**: Interfaces define contracts
 - **I**: Small, focused interfaces
 - **D**: Depend on abstractions (services via interfaces)

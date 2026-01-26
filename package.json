@@ -1,5 +1,5 @@
 {
-  "name": "secondbrain-canvas",
+  "name": "actionstation",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -9,7 +9,8 @@
     "lint": "eslint . --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "security-check": "echo 'Scanning for .env files...' && (ls .env .env.local 2>/dev/null && echo 'WARNING: Local .env files found. Ensure they are in .gitignore.' || echo 'No .env files found in root.') && echo 'Ready for CI scan.'"
   },
   "dependencies": {
     "react": "^18.3.1",
