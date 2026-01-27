@@ -48,7 +48,13 @@ export const PromptNode = React.memo(function PromptNode({
 
     return (
         <div className={styles.promptNode}>
-            <Handle type="target" position={Position.Top} className={styles.handle} />
+            <Handle
+                type="target"
+                position={Position.Top}
+                id={`${id}-target`}
+                isConnectable={true}
+                className={styles.handle}
+            />
 
             {isEditing ? (
                 <textarea
@@ -80,7 +86,13 @@ export const PromptNode = React.memo(function PromptNode({
                 </div>
             )}
 
-            <Handle type="source" position={Position.Bottom} className={styles.handle} />
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                id={`${id}-source`}
+                isConnectable={true}
+                className={styles.handle}
+            />
             <SynthesisIndicator nodeId={id} />
         </div>
     );

@@ -4,7 +4,7 @@
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '../stores/aiStore';
-import { generateContent, synthesizeNodes } from '../services/geminiService';
+import { generateContentWithContext, synthesizeNodes } from '../services/geminiService';
 import { createAIOutputNode, createDerivedNode } from '@/features/canvas/types/node';
 
 const AI_NODE_OFFSET_Y = 150;
@@ -18,6 +18,7 @@ export function useNodeGeneration() {
 
     /**
      * Generate AI output from a prompt node
+     * Uses edge-aware context: collects all upstream connected nodes
      */
     const generateFromPrompt = useCallback(
         async (promptNodeId: string) => {
@@ -26,10 +27,20 @@ export function useNodeGeneration() {
             const promptNode = freshNodes.find((n) => n.id === promptNodeId);
             if (!promptNode || !promptNode.data.content) return;
 
+            // Collect upstream context via edges (Obsidian-style)
+            const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(promptNodeId);
+            const contextChain = upstreamNodes
+                .filter((n) => n.data.content)
+                .map((n) => n.data.content as string);
+
             startGeneration(promptNodeId);
 
             try {
-                const content = await generateContent(promptNode.data.content as string);
+                // Use context-aware generation with upstream edges
+                const content = await generateContentWithContext(
+                    promptNode.data.content as string,
+                    contextChain
+                );
 
                 // Position AI output below the prompt
                 const newNode = createAIOutputNode(

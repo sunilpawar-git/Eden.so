@@ -11,6 +11,7 @@ import * as geminiService from '../services/geminiService';
 vi.mock('../services/geminiService', () => ({
     generateContent: vi.fn(),
     synthesizeNodes: vi.fn(),
+    generateContentWithContext: vi.fn(),
 }));
 
 describe('useNodeGeneration', () => {
@@ -37,7 +38,7 @@ describe('useNodeGeneration', () => {
                 updatedAt: new Date(),
             });
 
-            vi.mocked(geminiService.generateContent).mockResolvedValue('AI Response');
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('AI Response');
 
             const { result } = renderHook(() => useNodeGeneration());
 
@@ -50,7 +51,10 @@ describe('useNodeGeneration', () => {
             });
 
             // Assert: Should use 'Updated prompt', NOT 'Initial prompt'
-            expect(geminiService.generateContent).toHaveBeenCalledWith('Updated prompt');
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'Updated prompt',
+                [] // No upstream context for single node
+            );
         });
 
         it('should create AI output node and edge after generation', async () => {
@@ -64,7 +68,7 @@ describe('useNodeGeneration', () => {
                 updatedAt: new Date(),
             });
 
-            vi.mocked(geminiService.generateContent).mockResolvedValue('Generated content');
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Generated content');
 
             const { result } = renderHook(() => useNodeGeneration());
 
@@ -77,6 +81,217 @@ describe('useNodeGeneration', () => {
             expect(state.edges).toHaveLength(1); // Connection
             expect(state.nodes[1]?.type).toBe('ai_output');
             expect(state.nodes[1]?.data.content).toBe('Generated content');
+        });
+    });
+
+    describe('generateFromPrompt with edge context', () => {
+        it('should call generateContentWithContext with no context when node has no incoming edges', async () => {
+            // Single node with no edges
+            useCanvasStore.getState().addNode({
+                id: 'node-1',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'Standalone prompt' },
+                position: { x: 0, y: 0 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Standalone response');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('node-1');
+            });
+
+            // Should be called with empty context array
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'Standalone prompt',
+                []
+            );
+        });
+
+        it('should include single upstream node content in context', async () => {
+            // NY -> Node2 (generate here)
+            useCanvasStore.getState().addNode({
+                id: 'node-NY',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'New York is a great city' },
+                position: { x: 0, y: 0 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            useCanvasStore.getState().addNode({
+                id: 'node-2',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'Tell me about cities' },
+                position: { x: 0, y: 150 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            useCanvasStore.getState().addEdge({
+                id: 'edge-1',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'node-NY',
+                targetNodeId: 'node-2',
+                relationshipType: 'related',
+            });
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Context-aware response');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('node-2');
+            });
+
+            // Should include NY content in context
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'Tell me about cities',
+                expect.arrayContaining(['New York is a great city'])
+            );
+        });
+
+        it('should include full upstream chain (NY -> Washington -> Node4)', async () => {
+            // NY -> Washington -> Node4
+            useCanvasStore.getState().addNode({
+                id: 'node-NY',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'New York info' },
+                position: { x: 0, y: 0 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            useCanvasStore.getState().addNode({
+                id: 'node-Washington',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'Washington info' },
+                position: { x: 0, y: 150 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            useCanvasStore.getState().addNode({
+                id: 'node-4',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'Generate about US cities' },
+                position: { x: 0, y: 300 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+
+            useCanvasStore.getState().addEdge({
+                id: 'edge-1',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'node-NY',
+                targetNodeId: 'node-Washington',
+                relationshipType: 'related',
+            });
+            useCanvasStore.getState().addEdge({
+                id: 'edge-2',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'node-Washington',
+                targetNodeId: 'node-4',
+                relationshipType: 'related',
+            });
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Full chain response');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('node-4');
+            });
+
+            // Should include both NY and Washington in context
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'Generate about US cities',
+                expect.arrayContaining(['New York info', 'Washington info'])
+            );
+        });
+
+        it('should exclude unconnected nodes (London not in context)', async () => {
+            // NY -> Washington -> Node4
+            // London (NO edges)
+            useCanvasStore.getState().addNode({
+                id: 'node-NY',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'New York info' },
+                position: { x: 0, y: 0 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            useCanvasStore.getState().addNode({
+                id: 'node-London',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'London info' },
+                position: { x: 200, y: 0 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            useCanvasStore.getState().addNode({
+                id: 'node-Washington',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'Washington info' },
+                position: { x: 0, y: 150 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            useCanvasStore.getState().addNode({
+                id: 'node-4',
+                workspaceId: 'ws-1',
+                type: 'prompt',
+                data: { content: 'Generate about US cities' },
+                position: { x: 0, y: 300 },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+
+            // Only connect NY -> Washington -> Node4, NOT London
+            useCanvasStore.getState().addEdge({
+                id: 'edge-1',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'node-NY',
+                targetNodeId: 'node-Washington',
+                relationshipType: 'related',
+            });
+            useCanvasStore.getState().addEdge({
+                id: 'edge-2',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'node-Washington',
+                targetNodeId: 'node-4',
+                relationshipType: 'related',
+            });
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('US cities only');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('node-4');
+            });
+
+            // Verify the call was made
+            expect(geminiService.generateContentWithContext).toHaveBeenCalled();
+
+            // Get the context array that was passed
+            const callArgs = vi.mocked(geminiService.generateContentWithContext).mock.calls[0];
+            const contextArray = callArgs?.[1] ?? [];
+
+            // Should include NY and Washington
+            expect(contextArray).toContain('New York info');
+            expect(contextArray).toContain('Washington info');
+
+            // Should NOT include London
+            expect(contextArray).not.toContain('London info');
         });
     });
 

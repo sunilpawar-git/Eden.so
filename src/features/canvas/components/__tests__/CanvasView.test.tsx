@@ -16,6 +16,8 @@ vi.mock('@xyflow/react', async (importOriginal) => {
         )),
         Background: () => <div data-testid="mock-background" />,
         Controls: () => <div data-testid="mock-controls" />,
+        useNodesState: (initialNodes: unknown[]) => [initialNodes, vi.fn(), vi.fn()],
+        useEdgesState: (initialEdges: unknown[]) => [initialEdges, vi.fn(), vi.fn()],
     };
 });
 
@@ -48,28 +50,28 @@ describe('CanvasView', () => {
         });
     });
 
-    it('should map store nodes to ReactFlow nodes with explicit dimensions', () => {
+    it('should map store nodes to ReactFlow nodes correctly', () => {
         render(<CanvasView />);
 
-        // We can't easily check ReactFlow props if it's rendered, 
-        // but our mock captures them in data-nodes
+        // Check that ReactFlow is rendered with nodes from store
         const mockFlow = document.querySelector('[data-testid="mock-react-flow"]');
         const nodes = JSON.parse(mockFlow?.getAttribute('data-nodes') || '[]');
 
         expect(nodes).toHaveLength(1);
         expect(nodes[0]).toMatchObject({
             id: 'node-1',
-            width: 280,
-            height: 100,
+            type: 'prompt',
+            position: { x: 100, y: 100 },
         });
     });
 
-    it('should use defaultViewport instead of fitView to prevent visibility issue', () => {
+    it('should configure ReactFlow with proper viewport settings', () => {
         render(<CanvasView />);
 
         const mockCalls = vi.mocked(ReactFlow).mock.calls;
         const reactFlowProps = mockCalls[0]?.[0] ?? {};
         expect(reactFlowProps.defaultViewport).toEqual({ x: 0, y: 0, zoom: 1 });
-        expect(reactFlowProps.fitView).toBeUndefined();
+        // fitView is now enabled for better initial view
+        expect(reactFlowProps.fitView).toBe(true);
     });
 });

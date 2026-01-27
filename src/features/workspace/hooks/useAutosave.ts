@@ -30,8 +30,16 @@ export function useAutosave(workspaceId: string) {
     }, [user, workspaceId, nodes, edges]);
 
     useEffect(() => {
-        // Skip if no changes
-        const nodesJson = JSON.stringify(nodes.map((n) => ({ ...n, updatedAt: null })));
+        // Skip if no changes - only compare meaningful fields (exclude timestamps)
+        const nodesJson = JSON.stringify(
+            nodes.map((n) => ({
+                id: n.id,
+                workspaceId: n.workspaceId,
+                type: n.type,
+                position: n.position,
+                data: n.data,
+            }))
+        );
         const edgesJson = JSON.stringify(edges);
 
         if (

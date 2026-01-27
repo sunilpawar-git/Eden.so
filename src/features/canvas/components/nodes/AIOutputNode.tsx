@@ -30,19 +30,35 @@ export const AIOutputNode = React.memo(function AIOutputNode({
     if (isGenerating) {
         return (
             <div className={styles.aiNode}>
-                <Handle type="target" position={Position.Top} />
+                <Handle
+                    type="target"
+                    position={Position.Top}
+                    id={`${id}-target`}
+                    isConnectable={true}
+                />
                 <div className={styles.generating}>
                     <div className={styles.spinner} />
                     <span>{strings.canvas.generating}</span>
                 </div>
-                <Handle type="source" position={Position.Bottom} />
+                <Handle
+                    type="source"
+                    position={Position.Bottom}
+                    id={`${id}-source`}
+                    isConnectable={true}
+                />
             </div>
         );
     }
 
     return (
         <div className={styles.aiNode}>
-            <Handle type="target" position={Position.Top} className={styles.handle} />
+            <Handle
+                type="target"
+                position={Position.Top}
+                id={`${id}-target`}
+                isConnectable={true}
+                className={styles.handle}
+            />
 
             <div className={styles.header}>
                 <span className={styles.tag}>{strings.canvas.generatedBy}</span>
@@ -76,7 +92,13 @@ export const AIOutputNode = React.memo(function AIOutputNode({
                 <div className={styles.content}>{content}</div>
             )}
 
-            <Handle type="source" position={Position.Bottom} className={styles.handle} />
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                id={`${id}-source`}
+                isConnectable={true}
+                className={styles.handle}
+            />
             <SynthesisIndicator nodeId={id} />
         </div>
     );

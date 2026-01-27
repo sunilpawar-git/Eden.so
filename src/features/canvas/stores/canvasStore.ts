@@ -30,6 +30,7 @@ interface CanvasActions {
 
     // Queries
     getConnectedNodes: (nodeId: string) => string[];
+    getUpstreamNodes: (nodeId: string) => CanvasNode[];
 
     // Bulk operations
     setNodes: (nodes: CanvasNode[]) => void;
@@ -129,6 +130,30 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
         });
 
         return connected;
+    },
+
+    getUpstreamNodes: (nodeId: string) => {
+        const { nodes, edges } = get();
+        const visited = new Set<string>();
+        const queue: string[] = [nodeId];
+        const upstream: CanvasNode[] = [];
+
+        while (queue.length > 0) {
+            const currentId = queue.shift()!;
+            if (visited.has(currentId)) continue;
+            visited.add(currentId);
+
+            // Find all incoming edges to current node
+            const incomingEdges = edges.filter((e) => e.targetNodeId === currentId);
+            for (const edge of incomingEdges) {
+                const sourceNode = nodes.find((n) => n.id === edge.sourceNodeId);
+                if (sourceNode && !visited.has(sourceNode.id)) {
+                    upstream.push(sourceNode);
+                    queue.push(sourceNode.id);
+                }
+            }
+        }
+        return upstream;
     },
 
     setNodes: (nodes: CanvasNode[]) => {

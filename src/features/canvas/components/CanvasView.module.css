@@ -10,10 +10,18 @@
 /* ReactFlow custom styling */
 .canvasContainer :global(.react-flow__node) {
     cursor: grab;
+    overflow: visible !important;
 }
 
 .canvasContainer :global(.react-flow__node):active {
     cursor: grabbing;
+}
+
+/* Ensure node wrappers don't clip handles */
+.canvasContainer :global(.react-flow__node-prompt),
+.canvasContainer :global(.react-flow__node-ai_output),
+.canvasContainer :global(.react-flow__node-derived) {
+    overflow: visible !important;
 }
 
 .canvasContainer :global(.react-flow__edge-path) {
@@ -22,10 +30,38 @@
 }
 
 .canvasContainer :global(.react-flow__handle) {
-    width: 10px;
-    height: 10px;
-    background-color: var(--color-primary);
-    border: 2px solid var(--color-surface);
+    width: 16px !important;
+    height: 16px !important;
+    background-color: var(--color-primary) !important;
+    border: 3px solid var(--color-surface) !important;
+    border-radius: 50% !important;
+    pointer-events: all !important;
+    z-index: 1000 !important;
+    cursor: crosshair !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.canvasContainer :global(.react-flow__handle:hover) {
+    transform: scale(1.3);
+    background-color: var(--color-primary-dark) !important;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+
+/* Ensure handles are visible even when node is not selected */
+.canvasContainer :global(.react-flow__handle-top) {
+    top: -8px !important;
+}
+
+.canvasContainer :global(.react-flow__handle-bottom) {
+    bottom: -8px !important;
+}
+
+/* Connection line styling */
+.canvasContainer :global(.react-flow__connection-line) {
+    stroke: var(--color-primary) !important;
+    stroke-width: 2px !important;
 }
 
 .canvasContainer :global(.react-flow__controls) {

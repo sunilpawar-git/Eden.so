@@ -20,6 +20,12 @@ Keep responses focused and actionable.`,
 Combine the following ideas into a new actionable output.
 Avoid repetition.
 Keep it concise and insightful.`,
+
+    chainGeneration: `You are an idea evolution engine.
+The user has connected previous ideas in a chain.
+Generate content that naturally builds upon and extends these connected ideas.
+Show clear progression and synthesis from the context provided.
+Keep it concise and actionable.`,
 };
 
 interface GeminiResponse {
@@ -112,6 +118,78 @@ export async function synthesizeNodes(nodeContents: string[]): Promise<string> {
                     }
                 ]
             }
+        ],
+        generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+        },
+    };
+
+    const response = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+        if (response.status === 429) {
+            throw new Error(strings.errors.quotaExceeded);
+        }
+        throw new Error(strings.errors.aiError);
+    }
+
+    const data: GeminiResponse = await response.json();
+
+    if (data.error) {
+        throw new Error(data.error.message || strings.errors.aiError);
+    }
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+        throw new Error(strings.errors.aiError);
+    }
+
+    return text;
+}
+
+/**
+ * Generate content with upstream context from connected nodes
+ * Uses edge-aware context for Obsidian-style idea chaining
+ */
+export async function generateContentWithContext(
+    prompt: string,
+    contextChain: string[]
+): Promise<string> {
+    // If no context, delegate to simple generation
+    if (contextChain.length === 0) {
+        return generateContent(prompt);
+    }
+
+    if (!GEMINI_API_KEY) {
+        throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local');
+    }
+
+    // Build context section from connected nodes
+    const contextSection = contextChain
+        .map((content, i) => `[Connected Idea ${i + 1}]: ${content}`)
+        .join('\n\n');
+
+    const fullPrompt = `${SYSTEM_PROMPTS.chainGeneration}
+
+Connected ideas (from edge relationships):
+${contextSection}
+
+User's prompt: ${prompt}
+
+Generate content that synthesizes and builds upon the connected ideas above.`;
+
+    const requestBody = {
+        contents: [
+            {
+                parts: [{ text: fullPrompt }],
+            },
         ],
         generationConfig: {
             temperature: 0.7,
