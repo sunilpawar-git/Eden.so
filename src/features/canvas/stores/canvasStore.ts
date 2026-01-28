@@ -109,7 +109,7 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
                           ...node,
                           data: {
                               ...node.data,
-                              output: (node.data.output as string | undefined ?? '') + chunk,
+                              output: (node.data.output ?? '') + chunk,
                           },
                           updatedAt: new Date(),
                       }

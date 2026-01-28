@@ -1,14 +1,11 @@
 /**
- * Node Model - Strict type definitions for canvas nodes
+ * Node Model - Type definitions for canvas nodes
  */
 
 /**
- * Node types:
- * - 'idea': Unified IdeaCard (prompt + output in one) - PRIMARY
- * - 'prompt', 'ai_output', 'derived': Legacy types for backward compatibility
- * - 'media': Future media nodes
+ * Node types - 'idea' is the primary type for IdeaCard nodes
  */
-export type NodeType = 'idea' | 'prompt' | 'ai_output' | 'derived' | 'media';
+export type NodeType = 'idea' | 'media';
 
 export interface NodePosition {
     x: number;
@@ -26,89 +23,14 @@ export interface IdeaNodeData {
     [key: string]: unknown; // Index signature for ReactFlow compatibility
 }
 
-/**
- * @deprecated Use IdeaNodeData for new nodes. Kept for backward compatibility.
- */
-export interface NodeData {
-    content: string;
-    isGenerating?: boolean;
-    [key: string]: unknown; // Index signature for ReactFlow compatibility
-}
-
 export interface CanvasNode {
     id: string;
     workspaceId: string;
     type: NodeType;
-    data: NodeData | IdeaNodeData;
+    data: IdeaNodeData;
     position: NodePosition;
     createdAt: Date;
     updatedAt: Date;
-}
-
-/**
- * @deprecated Use createIdeaNode for new nodes
- * Create a new prompt node (legacy)
- */
-export function createPromptNode(
-    id: string,
-    workspaceId: string,
-    position: NodePosition,
-    content: string = ''
-): CanvasNode {
-    const now = new Date();
-    return {
-        id,
-        workspaceId,
-        type: 'prompt',
-        data: { content },
-        position,
-        createdAt: now,
-        updatedAt: now,
-    };
-}
-
-/**
- * @deprecated Use createIdeaNode for new nodes
- * Create an AI output node (legacy)
- */
-export function createAIOutputNode(
-    id: string,
-    workspaceId: string,
-    position: NodePosition,
-    content: string
-): CanvasNode {
-    const now = new Date();
-    return {
-        id,
-        workspaceId,
-        type: 'ai_output',
-        data: { content },
-        position,
-        createdAt: now,
-        updatedAt: now,
-    };
-}
-
-/**
- * Create a derived (synthesis) node
- * @deprecated Use createIdeaNode for new nodes
- */
-export function createDerivedNode(
-    id: string,
-    workspaceId: string,
-    position: NodePosition,
-    content: string
-): CanvasNode {
-    const now = new Date();
-    return {
-        id,
-        workspaceId,
-        type: 'derived',
-        data: { content },
-        position,
-        createdAt: now,
-        updatedAt: now,
-    };
 }
 
 /**
@@ -130,7 +52,7 @@ export function createIdeaNode(
             output: undefined,
             isGenerating: false,
             isPromptCollapsed: false,
-        } as IdeaNodeData,
+        },
         position,
         createdAt: now,
         updatedAt: now,

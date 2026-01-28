@@ -25,7 +25,6 @@ import '@xyflow/react/dist/style.css';
 import { useCanvasStore } from '../stores/canvasStore';
 import { IdeaCard } from './nodes/IdeaCard';
 import { AddNodeButton } from './AddNodeButton';
-import { SynthesisButton } from '@/features/ai/components/SynthesisButton';
 import styles from './CanvasView.module.css';
 
 // Memoized node types for performance
@@ -49,7 +48,7 @@ export function CanvasView() {
         const internals = nodeInternalsRef.current.get(node.id);
         return {
             id: node.id,
-            type: node.type === 'prompt' ? 'prompt' : 'ai_output',
+            type: node.type, // 'idea' is the primary type now
             position: node.position,
             data: node.data,
             // Preserve measured dimensions if available
@@ -183,7 +182,6 @@ export function CanvasView() {
                 <Controls />
             </ReactFlow>
             <AddNodeButton />
-            <SynthesisButton />
         </div>
     );
 }

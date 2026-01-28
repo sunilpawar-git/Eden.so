@@ -10,8 +10,8 @@ import type { CanvasEdge } from '../types/edge';
 const mockNode: CanvasNode = {
     id: 'node-1',
     workspaceId: 'workspace-1',
-    type: 'prompt',
-    data: { content: 'Test content' },
+    type: 'idea',
+    data: { prompt: 'Test content', output: undefined, isGenerating: false, isPromptCollapsed: false },
     position: { x: 100, y: 200 },
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -20,8 +20,8 @@ const mockNode: CanvasNode = {
 const mockNode2: CanvasNode = {
     id: 'node-2',
     workspaceId: 'workspace-1',
-    type: 'ai_output',
-    data: { content: 'AI response' },
+    type: 'idea',
+    data: { prompt: 'AI response', output: undefined, isGenerating: false, isPromptCollapsed: false },
     position: { x: 300, y: 400 },
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -194,11 +194,11 @@ describe('CanvasStore', () => {
 
     describe('getUpstreamNodes', () => {
         // Helper to create test nodes
-        const createNode = (id: string, content: string): CanvasNode => ({
+        const createNode = (id: string, prompt: string): CanvasNode => ({
             id,
             workspaceId: 'workspace-1',
-            type: 'prompt',
-            data: { content },
+            type: 'idea',
+            data: { prompt, output: undefined, isGenerating: false, isPromptCollapsed: false },
             position: { x: 0, y: 0 },
             createdAt: new Date('2024-01-01'),
             updatedAt: new Date('2024-01-01'),
@@ -231,7 +231,7 @@ describe('CanvasStore', () => {
             const upstream = useCanvasStore.getState().getUpstreamNodes('node-B');
             expect(upstream).toHaveLength(1);
             expect(upstream[0]?.id).toBe('node-A');
-            expect(upstream[0]?.data.content).toBe('New York');
+            expect(upstream[0]?.data.prompt).toBe('New York');
         });
 
         it('should return full chain A->B->C when called on C', () => {

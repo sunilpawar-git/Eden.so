@@ -2,7 +2,7 @@
  * Gemini Service Tests - TDD: Write tests FIRST
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateContent, synthesizeNodes, generateContentWithContext } from '../services/geminiService';
+import { generateContent, generateContentWithContext } from '../services/geminiService';
 
 // Mock fetch for API calls
 const mockFetch = vi.fn();
@@ -48,33 +48,6 @@ describe('GeminiService', () => {
             });
 
             await expect(generateContent('Test')).rejects.toThrow('quota exceeded');
-        });
-    });
-
-    describe('synthesizeNodes', () => {
-        it('should combine multiple node contents', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Synthesized idea' }]
-                        }
-                    }]
-                }),
-            });
-
-            const nodeContents = ['Idea A', 'Idea B'];
-            const result = await synthesizeNodes(nodeContents);
-
-            expect(mockFetch).toHaveBeenCalledTimes(1);
-            expect(result).toBe('Synthesized idea');
-        });
-
-        it('should throw if less than 2 nodes', async () => {
-            await expect(synthesizeNodes(['Single'])).rejects.toThrow(
-                'At least 2 nodes required'
-            );
         });
     });
 

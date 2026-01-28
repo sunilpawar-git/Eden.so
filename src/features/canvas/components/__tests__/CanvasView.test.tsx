@@ -38,8 +38,8 @@ describe('CanvasView', () => {
                 {
                     id: 'node-1',
                     workspaceId: 'workspace-1',
-                    type: 'prompt',
-                    data: { content: 'Test Node' },
+                    type: 'idea',
+                    data: { prompt: 'Test Node', output: undefined, isGenerating: false, isPromptCollapsed: false },
                     position: { x: 100, y: 100 },
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -60,7 +60,7 @@ describe('CanvasView', () => {
         expect(nodes).toHaveLength(1);
         expect(nodes[0]).toMatchObject({
             id: 'node-1',
-            type: 'prompt',
+            type: 'idea',
             position: { x: 100, y: 100 },
         });
     });
@@ -83,8 +83,8 @@ describe('CanvasView', () => {
                     {
                         id: 'node-1',
                         workspaceId: 'workspace-1',
-                        type: 'prompt',
-                        data: { content: 'Source Node' },
+                        type: 'idea',
+                        data: { prompt: 'Source Node', output: undefined, isGenerating: false, isPromptCollapsed: false },
                         position: { x: 100, y: 100 },
                         createdAt: new Date(),
                         updatedAt: new Date(),
@@ -92,8 +92,8 @@ describe('CanvasView', () => {
                     {
                         id: 'node-2',
                         workspaceId: 'workspace-1',
-                        type: 'ai_output',
-                        data: { content: 'Target Node' },
+                        type: 'idea',
+                        data: { prompt: 'Target Node', output: undefined, isGenerating: false, isPromptCollapsed: false },
                         position: { x: 100, y: 300 },
                         createdAt: new Date(),
                         updatedAt: new Date(),

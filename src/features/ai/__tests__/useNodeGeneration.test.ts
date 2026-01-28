@@ -1,23 +1,38 @@
 /**
- * useNodeGeneration Hook Tests - TDD: Test stale data bug
+ * useNodeGeneration Hook Tests - Tests for IdeaCard generation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useNodeGeneration } from '../hooks/useNodeGeneration';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import * as geminiService from '../services/geminiService';
+import type { IdeaNodeData } from '@/features/canvas/types/node';
 
 // Mock gemini service
 vi.mock('../services/geminiService', () => ({
     generateContent: vi.fn(),
-    synthesizeNodes: vi.fn(),
     generateContentWithContext: vi.fn(),
 }));
+
+// Helper to create IdeaCard node
+const createTestIdeaNode = (id: string, prompt: string, output?: string) => ({
+    id,
+    workspaceId: 'ws-1',
+    type: 'idea' as const,
+    data: {
+        prompt,
+        output,
+        isGenerating: false,
+        isPromptCollapsed: false,
+    } as IdeaNodeData,
+    position: { x: 0, y: 0 },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+});
 
 describe('useNodeGeneration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Reset store
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -26,338 +41,179 @@ describe('useNodeGeneration', () => {
     });
 
     describe('generateFromPrompt', () => {
-        it('should use the LATEST node content, not stale closure data', async () => {
-            // Setup: Add a node with initial content
-            useCanvasStore.getState().addNode({
-                id: 'node-1',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Initial prompt' },
-                position: { x: 0, y: 0 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
+        it('should update IdeaCard output in-place (no new node)', async () => {
+            useCanvasStore.getState().addNode(createTestIdeaNode('idea-1', 'Test prompt'));
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Generated output');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('idea-1');
             });
+
+            const state = useCanvasStore.getState();
+            // Should still have only 1 node
+            expect(state.nodes).toHaveLength(1);
+            // Output should be updated in-place
+            expect((state.nodes[0]?.data as IdeaNodeData).output).toBe('Generated output');
+        });
+
+        it('should use the LATEST prompt content, not stale closure data', async () => {
+            useCanvasStore.getState().addNode(createTestIdeaNode('idea-1', 'Initial prompt'));
 
             vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('AI Response');
 
             const { result } = renderHook(() => useNodeGeneration());
 
-            // Simulate: User updates content AFTER hook is initialized
-            useCanvasStore.getState().updateNodeContent('node-1', 'Updated prompt');
+            // Update prompt AFTER hook is initialized
+            useCanvasStore.getState().updateNodePrompt('idea-1', 'Updated prompt');
 
-            // Act: Generate from the node
             await act(async () => {
-                await result.current.generateFromPrompt('node-1');
+                await result.current.generateFromPrompt('idea-1');
             });
 
-            // Assert: Should use 'Updated prompt', NOT 'Initial prompt'
+            // Should use 'Updated prompt', NOT 'Initial prompt'
             expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
                 'Updated prompt',
-                [] // No upstream context for single node
-            );
-        });
-
-        it('should create AI output node and edge after generation', async () => {
-            useCanvasStore.getState().addNode({
-                id: 'node-1',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Test prompt' },
-                position: { x: 100, y: 100 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-
-            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Generated content');
-
-            const { result } = renderHook(() => useNodeGeneration());
-
-            await act(async () => {
-                await result.current.generateFromPrompt('node-1');
-            });
-
-            const state = useCanvasStore.getState();
-            expect(state.nodes).toHaveLength(2); // Original + AI output
-            expect(state.edges).toHaveLength(1); // Connection
-            expect(state.nodes[1]?.type).toBe('ai_output');
-            expect(state.nodes[1]?.data.content).toBe('Generated content');
-        });
-    });
-
-    describe('generateFromPrompt with edge context', () => {
-        it('should call generateContentWithContext with no context when node has no incoming edges', async () => {
-            // Single node with no edges
-            useCanvasStore.getState().addNode({
-                id: 'node-1',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Standalone prompt' },
-                position: { x: 0, y: 0 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-
-            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Standalone response');
-
-            const { result } = renderHook(() => useNodeGeneration());
-
-            await act(async () => {
-                await result.current.generateFromPrompt('node-1');
-            });
-
-            // Should be called with empty context array
-            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
-                'Standalone prompt',
                 []
             );
         });
 
-        it('should include single upstream node content in context', async () => {
-            // NY -> Node2 (generate here)
-            useCanvasStore.getState().addNode({
-                id: 'node-NY',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'New York is a great city' },
-                position: { x: 0, y: 0 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addNode({
-                id: 'node-2',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Tell me about cities' },
-                position: { x: 0, y: 150 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addEdge({
-                id: 'edge-1',
-                workspaceId: 'ws-1',
-                sourceNodeId: 'node-NY',
-                targetNodeId: 'node-2',
-                relationshipType: 'related',
-            });
-
-            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Context-aware response');
+        it('should not create node if prompt is empty', async () => {
+            useCanvasStore.getState().addNode(createTestIdeaNode('idea-1', ''));
 
             const { result } = renderHook(() => useNodeGeneration());
 
             await act(async () => {
-                await result.current.generateFromPrompt('node-2');
+                await result.current.generateFromPrompt('idea-1');
             });
 
-            // Should include NY content in context
-            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
-                'Tell me about cities',
-                expect.arrayContaining(['New York is a great city'])
-            );
+            expect(geminiService.generateContentWithContext).not.toHaveBeenCalled();
         });
 
-        it('should include full upstream chain (NY -> Washington -> Node4)', async () => {
-            // NY -> Washington -> Node4
-            useCanvasStore.getState().addNode({
-                id: 'node-NY',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'New York info' },
-                position: { x: 0, y: 0 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addNode({
-                id: 'node-Washington',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Washington info' },
-                position: { x: 0, y: 150 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addNode({
-                id: 'node-4',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Generate about US cities' },
-                position: { x: 0, y: 300 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
+        it('should set generating state while processing', async () => {
+            useCanvasStore.getState().addNode(createTestIdeaNode('idea-1', 'Test'));
 
-            useCanvasStore.getState().addEdge({
-                id: 'edge-1',
-                workspaceId: 'ws-1',
-                sourceNodeId: 'node-NY',
-                targetNodeId: 'node-Washington',
-                relationshipType: 'related',
+            let generatingState: boolean | undefined;
+            vi.mocked(geminiService.generateContentWithContext).mockImplementation(async () => {
+                generatingState = (useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).isGenerating;
+                return 'Response';
             });
-            useCanvasStore.getState().addEdge({
-                id: 'edge-2',
-                workspaceId: 'ws-1',
-                sourceNodeId: 'node-Washington',
-                targetNodeId: 'node-4',
-                relationshipType: 'related',
-            });
-
-            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Full chain response');
 
             const { result } = renderHook(() => useNodeGeneration());
 
             await act(async () => {
-                await result.current.generateFromPrompt('node-4');
+                await result.current.generateFromPrompt('idea-1');
             });
 
-            // Should include both NY and Washington in context
-            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
-                'Generate about US cities',
-                expect.arrayContaining(['New York info', 'Washington info'])
-            );
-        });
-
-        it('should exclude unconnected nodes (London not in context)', async () => {
-            // NY -> Washington -> Node4
-            // London (NO edges)
-            useCanvasStore.getState().addNode({
-                id: 'node-NY',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'New York info' },
-                position: { x: 0, y: 0 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addNode({
-                id: 'node-London',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'London info' },
-                position: { x: 200, y: 0 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addNode({
-                id: 'node-Washington',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Washington info' },
-                position: { x: 0, y: 150 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addNode({
-                id: 'node-4',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Generate about US cities' },
-                position: { x: 0, y: 300 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-
-            // Only connect NY -> Washington -> Node4, NOT London
-            useCanvasStore.getState().addEdge({
-                id: 'edge-1',
-                workspaceId: 'ws-1',
-                sourceNodeId: 'node-NY',
-                targetNodeId: 'node-Washington',
-                relationshipType: 'related',
-            });
-            useCanvasStore.getState().addEdge({
-                id: 'edge-2',
-                workspaceId: 'ws-1',
-                sourceNodeId: 'node-Washington',
-                targetNodeId: 'node-4',
-                relationshipType: 'related',
-            });
-
-            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('US cities only');
-
-            const { result } = renderHook(() => useNodeGeneration());
-
-            await act(async () => {
-                await result.current.generateFromPrompt('node-4');
-            });
-
-            // Verify the call was made
-            expect(geminiService.generateContentWithContext).toHaveBeenCalled();
-
-            // Get the context array that was passed
-            const callArgs = vi.mocked(geminiService.generateContentWithContext).mock.calls[0];
-            const contextArray = callArgs?.[1] ?? [];
-
-            // Should include NY and Washington
-            expect(contextArray).toContain('New York info');
-            expect(contextArray).toContain('Washington info');
-
-            // Should NOT include London
-            expect(contextArray).not.toContain('London info');
+            // Should have been true during generation
+            expect(generatingState).toBe(true);
+            // Should be false after completion
+            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).isGenerating).toBe(false);
         });
     });
 
-    describe('synthesizeUpstreamChain', () => {
-        it('should collect entire upstream chain for synthesis (A→B→C uses A+B)', async () => {
-            // Setup chain: A → B → C
-            useCanvasStore.getState().addNode({
-                id: 'node-A',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Idea A' },
-                position: { x: 0, y: 0 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addNode({
-                id: 'node-B',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: 'Idea B' },
-                position: { x: 0, y: 150 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            useCanvasStore.getState().addNode({
-                id: 'node-C',
-                workspaceId: 'ws-1',
-                type: 'prompt',
-                data: { content: '' }, // Target node - will receive synthesized content
-                position: { x: 0, y: 300 },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
+    describe('generateFromPrompt with upstream context', () => {
+        it('should include upstream IdeaCard prompts in context', async () => {
+            // idea-parent -> idea-child
+            const parentNode = createTestIdeaNode('idea-parent', 'Parent prompt');
+            const childNode = createTestIdeaNode('idea-child', 'Child prompt');
 
-            // Create edges: A → B → C
+            useCanvasStore.getState().addNode(parentNode);
+            useCanvasStore.getState().addNode(childNode);
             useCanvasStore.getState().addEdge({
-                id: 'edge-AB',
+                id: 'edge-1',
                 workspaceId: 'ws-1',
-                sourceNodeId: 'node-A',
-                targetNodeId: 'node-B',
-                relationshipType: 'related',
-            });
-            useCanvasStore.getState().addEdge({
-                id: 'edge-BC',
-                workspaceId: 'ws-1',
-                sourceNodeId: 'node-B',
-                targetNodeId: 'node-C',
+                sourceNodeId: 'idea-parent',
+                targetNodeId: 'idea-child',
                 relationshipType: 'related',
             });
 
-            vi.mocked(geminiService.synthesizeNodes).mockResolvedValue('Synthesized from A+B');
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Context response');
 
             const { result } = renderHook(() => useNodeGeneration());
 
             await act(async () => {
-                await result.current.synthesizeUpstreamChain('node-C');
+                await result.current.generateFromPrompt('idea-child');
             });
 
-            // Verify synthesizeNodes was called with BOTH A and B content
-            expect(geminiService.synthesizeNodes).toHaveBeenCalledWith(
-                expect.arrayContaining(['Idea A', 'Idea B'])
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'Child prompt',
+                expect.arrayContaining(['Parent prompt'])
             );
+        });
 
-            // Verify node C was updated with synthesized content
-            const nodeC = useCanvasStore.getState().nodes.find(n => n.id === 'node-C');
-            expect(nodeC?.data.content).toBe('Synthesized from A+B');
+        it('should exclude unconnected nodes from context', async () => {
+            const connected = createTestIdeaNode('idea-connected', 'Connected prompt');
+            const unconnected = createTestIdeaNode('idea-unconnected', 'Unconnected prompt');
+            const target = createTestIdeaNode('idea-target', 'Target prompt');
+
+            useCanvasStore.getState().addNode(connected);
+            useCanvasStore.getState().addNode(unconnected);
+            useCanvasStore.getState().addNode(target);
+
+            // Only connect 'connected' to 'target'
+            useCanvasStore.getState().addEdge({
+                id: 'edge-1',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'idea-connected',
+                targetNodeId: 'idea-target',
+                relationshipType: 'related',
+            });
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Response');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('idea-target');
+            });
+
+            const callArgs = vi.mocked(geminiService.generateContentWithContext).mock.calls[0];
+            const contextArray = callArgs?.[1] ?? [];
+
+            expect(contextArray).toContain('Connected prompt');
+            expect(contextArray).not.toContain('Unconnected prompt');
+        });
+    });
+
+    describe('branchFromNode', () => {
+        it('should create new IdeaCard connected to source', () => {
+            useCanvasStore.getState().addNode(createTestIdeaNode('idea-source', 'Source prompt', 'Source output'));
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            act(() => {
+                result.current.branchFromNode('idea-source');
+            });
+
+            const state = useCanvasStore.getState();
+            // Should have 2 nodes now
+            expect(state.nodes).toHaveLength(2);
+            // New node should be idea type
+            expect(state.nodes[1]?.type).toBe('idea');
+            // New node should have empty prompt
+            expect((state.nodes[1]?.data as IdeaNodeData).prompt).toBe('');
+            // Should have edge connecting them
+            expect(state.edges).toHaveLength(1);
+            expect(state.edges[0]?.sourceNodeId).toBe('idea-source');
+        });
+
+        it('should position new node to the right of source', () => {
+            const sourceNode = createTestIdeaNode('idea-source', 'Source');
+            sourceNode.position = { x: 100, y: 200 };
+            useCanvasStore.getState().addNode(sourceNode);
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            act(() => {
+                result.current.branchFromNode('idea-source');
+            });
+
+            const newNode = useCanvasStore.getState().nodes[1];
+            expect(newNode?.position.x).toBeGreaterThan(100);
+            expect(newNode?.position.y).toBe(200);
         });
     });
 });
