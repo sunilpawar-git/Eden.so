@@ -47,7 +47,7 @@
   --tooltip-bg: hsl(220, 13%, 18%);
   --tooltip-text: hsl(0, 0%, 100%);
   --card-min-width: 280px;
-  --card-output-max-height: 200px;
+  --card-output-max-height: 300px;
   
   /* Spacing */
   --space-xs: 4px;

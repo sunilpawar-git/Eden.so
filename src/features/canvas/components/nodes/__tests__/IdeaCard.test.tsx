@@ -12,23 +12,45 @@ vi.mock('@xyflow/react', async () => {
     const actual = await vi.importActual('@xyflow/react');
     return {
         ...actual,
-        Handle: ({ type, position }: { type: string; position: string }) => (
-            <div data-testid={`handle-${type}-${position}`} />
+        Handle: ({ type, position, isConnectable, className }: { 
+            type: string; 
+            position: string; 
+            isConnectable?: boolean;
+            className?: string;
+        }) => (
+            <div 
+                data-testid={`handle-${type}-${position}`}
+                data-connectable={isConnectable}
+                className={className}
+            />
         ),
         Position: {
             Top: 'top',
             Bottom: 'bottom',
         },
-        NodeResizer: () => <div data-testid="node-resizer" />,
+        NodeResizer: ({ isVisible }: { isVisible?: boolean }) => (
+            <div data-testid="node-resizer" data-visible={isVisible} />
+        ),
     };
 });
 
 // Mock the generation hook
 const mockGenerateFromPrompt = vi.fn();
+const mockBranchFromNode = vi.fn();
 vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     useNodeGeneration: () => ({
         generateFromPrompt: mockGenerateFromPrompt,
+        branchFromNode: mockBranchFromNode,
     }),
+}));
+
+// Mock MarkdownRenderer for testing
+vi.mock('@/shared/components/MarkdownRenderer', () => ({
+    MarkdownRenderer: ({ content, className }: { content: string; className?: string }) => (
+        <div data-testid="markdown-renderer" className={className}>
+            {content}
+        </div>
+    ),
 }));
 
 describe('IdeaCard', () => {
@@ -64,11 +86,10 @@ describe('IdeaCard', () => {
     });
 
     describe('Structure', () => {
-        it('renders prompt section with content', () => {
+        it('renders prompt in header', () => {
             render(<IdeaCard {...defaultProps} />);
-            // Prompt text appears in header (getAllByText returns multiple matches)
-            const promptElements = screen.getAllByText('Test prompt content');
-            expect(promptElements.length).toBeGreaterThanOrEqual(1);
+            // Prompt text appears in header only (no duplicate)
+            expect(screen.getByText('Test prompt content')).toBeInTheDocument();
         });
 
         it('renders output section when output exists', () => {
@@ -119,64 +140,14 @@ describe('IdeaCard', () => {
         });
     });
 
-    describe('Collapsible prompt', () => {
-        it('prompt is expanded by default', () => {
+    // Connection handles tests are in IdeaCard.features.test.tsx
+
+    describe('Editable header', () => {
+        it('clicking header enters edit mode', () => {
             render(<IdeaCard {...defaultProps} />);
-            // Full prompt text visible (in header and content)
-            const promptElements = screen.getAllByText('Test prompt content');
-            expect(promptElements.length).toBeGreaterThanOrEqual(1);
-        });
-
-        it('shows collapse button when prompt is expanded', () => {
-            render(<IdeaCard {...defaultProps} />);
-            expect(screen.getByRole('button', { name: /collapse/i })).toBeInTheDocument();
-        });
-
-        it('shows expand button when prompt is collapsed', () => {
-            const collapsedProps = {
-                ...defaultProps,
-                data: { ...defaultData, isPromptCollapsed: true },
-            };
-            render(<IdeaCard {...collapsedProps} />);
-            expect(screen.getByRole('button', { name: /expand/i })).toBeInTheDocument();
-        });
-
-        it('clicking collapse button calls togglePromptCollapsed', () => {
-            const mockToggle = vi.fn();
-            useCanvasStore.setState({
-                nodes: [],
-                edges: [],
-                selectedNodeIds: new Set(),
-                togglePromptCollapsed: mockToggle,
-            });
-
-            render(<IdeaCard {...defaultProps} />);
-            fireEvent.click(screen.getByRole('button', { name: /collapse/i }));
-
-            expect(mockToggle).toHaveBeenCalledWith('idea-1');
-        });
-    });
-
-    describe('Scrollable output', () => {
-        it('output section has scrollable styling', () => {
-            const propsWithOutput = {
-                ...defaultProps,
-                data: { ...defaultData, output: 'Some output content' },
-            };
-            render(<IdeaCard {...propsWithOutput} />);
-            
-            const outputSection = screen.getByTestId('output-section');
-            // CSS modules mangle class names, check for partial match
-            expect(outputSection.className).toContain('outputSection');
-        });
-    });
-
-    describe('Interactions', () => {
-        it('clicking prompt content enters edit mode', () => {
-            render(<IdeaCard {...defaultProps} />);
-            // Click the prompt content (role="button") not the header
-            const promptContent = screen.getByRole('button', { name: 'Test prompt content' });
-            fireEvent.click(promptContent);
+            // Click the header text to edit
+            const headerText = screen.getByText('Test prompt content');
+            fireEvent.click(headerText);
 
             // Should now show a textarea
             expect(screen.getByRole('textbox')).toBeInTheDocument();
@@ -185,9 +156,9 @@ describe('IdeaCard', () => {
         it('Enter key triggers generation when prompt has content', async () => {
             render(<IdeaCard {...defaultProps} />);
             
-            // Enter edit mode via prompt content
-            const promptContent = screen.getByRole('button', { name: 'Test prompt content' });
-            fireEvent.click(promptContent);
+            // Enter edit mode via header click
+            const headerText = screen.getByText('Test prompt content');
+            fireEvent.click(headerText);
             const textarea = screen.getByRole('textbox');
             
             // Press Enter
@@ -199,15 +170,31 @@ describe('IdeaCard', () => {
         it('Shift+Enter does not trigger generation (allows newline)', () => {
             render(<IdeaCard {...defaultProps} />);
             
-            const promptContent = screen.getByRole('button', { name: 'Test prompt content' });
-            fireEvent.click(promptContent);
+            const headerText = screen.getByText('Test prompt content');
+            fireEvent.click(headerText);
             const textarea = screen.getByRole('textbox');
             
             fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
 
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
         });
+
+        it('does not enter edit mode when generating', () => {
+            const generatingProps = {
+                ...defaultProps,
+                data: { ...defaultData, isGenerating: true },
+            };
+            render(<IdeaCard {...generatingProps} />);
+            
+            const headerText = screen.getByText('Test prompt content');
+            fireEvent.click(headerText);
+            
+            // Should not enter edit mode (no textarea)
+            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+        });
     });
+
+    // Scrollable output tests are in IdeaCard.features.test.tsx
 
     describe('Loading state', () => {
         it('shows generating indicator when isGenerating is true', () => {
@@ -219,29 +206,9 @@ describe('IdeaCard', () => {
             
             expect(screen.getByText(/generating/i)).toBeInTheDocument();
         });
-
-        it('disables prompt editing when generating', () => {
-            const generatingProps = {
-                ...defaultProps,
-                data: { ...defaultData, isGenerating: true },
-            };
-            render(<IdeaCard {...generatingProps} />);
-            
-            // Prompt content should not be clickable for edit when generating
-            const promptContent = screen.getByRole('button', { name: 'Test prompt content' });
-            fireEvent.click(promptContent);
-            
-            // Should not enter edit mode (no textarea)
-            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
-        });
     });
 
-    describe('Resizable', () => {
-        it('renders NodeResizer component', () => {
-            render(<IdeaCard {...defaultProps} />);
-            expect(screen.getByTestId('node-resizer')).toBeInTheDocument();
-        });
-    });
+    // Resizable tests are in IdeaCard.features.test.tsx
 
     describe('Delete action', () => {
         it('clicking delete button calls deleteNode', () => {

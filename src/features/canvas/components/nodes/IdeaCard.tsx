@@ -1,27 +1,27 @@
 /**
  * IdeaCard - Unified prompt + output node component
- * Features: Collapsible prompt, scrollable output, resizable
+ * Features: Editable header, scrollable output, resizable
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { strings } from '@/shared/localization/strings';
+import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import type { IdeaNodeData } from '../../types/node';
 import styles from './IdeaCard.module.css';
 
-export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
-    const { prompt, output, isGenerating, isPromptCollapsed } = data as IdeaNodeData;
+export const IdeaCard = React.memo(function IdeaCard({ id, data, selected }: NodeProps) {
+    const { prompt, output, isGenerating } = data as IdeaNodeData;
     
     const [isEditingPrompt, setIsEditingPrompt] = useState(!prompt);
     const [localPrompt, setLocalPrompt] = useState(prompt);
     
-    const { togglePromptCollapsed, deleteNode, updateNodePrompt } = useCanvasStore();
+    const { deleteNode, updateNodePrompt } = useCanvasStore();
     const { generateFromPrompt, branchFromNode } = useNodeGeneration();
 
     const handlePromptBlur = useCallback(() => {
         setIsEditingPrompt(false);
-        // Update prompt field in IdeaNode data
         updateNodePrompt(id, localPrompt);
     }, [id, localPrompt, updateNodePrompt]);
 
@@ -42,10 +42,6 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
         [handlePromptBlur, localPrompt, generateFromPrompt, id, prompt]
     );
 
-    const handleCollapseToggle = useCallback(() => {
-        togglePromptCollapsed(id);
-    }, [id, togglePromptCollapsed]);
-
     const handleDelete = useCallback(() => {
         deleteNode(id);
     }, [id, deleteNode]);
@@ -54,81 +50,94 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
         branchFromNode(id);
     }, [id, branchFromNode]);
 
-    const handlePromptClick = useCallback(() => {
+    const handleHeaderClick = useCallback(() => {
         if (!isGenerating) {
             setIsEditingPrompt(true);
         }
     }, [isGenerating]);
 
-    // Display text for header (truncated prompt or placeholder)
+    // Ref for output section to attach native wheel listener
+    const outputRef = useRef<HTMLDivElement>(null);
+
+    // Use native event listener to intercept wheel events before ReactFlow
+    // Combined with 'nowheel' class for maximum compatibility
+    useEffect(() => {
+        const outputElement = outputRef.current;
+        if (!outputElement) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            // Stop event from bubbling to ReactFlow's zoom handler
+            e.stopPropagation();
+        };
+
+        // passive: false allows stopPropagation to work
+        outputElement.addEventListener('wheel', handleWheel, { passive: false });
+        
+        return () => {
+            outputElement.removeEventListener('wheel', handleWheel);
+        };
+    }, []);
+
+    // Display text for header
     const headerText = prompt || strings.canvas.promptPlaceholder;
 
     return (
-        <>
-            <NodeResizer minWidth={280} maxWidth={600} />
+        <div className={styles.cardWrapper}>
+            <NodeResizer 
+                minWidth={280} 
+                maxWidth={600} 
+                isVisible={selected}
+            />
+            <Handle
+                type="target"
+                position={Position.Top}
+                id={`${id}-target`}
+                isConnectable={true}
+                className={`${styles.handle} ${styles.handleTop}`}
+            />
             <div className={styles.ideaCard}>
-                <Handle
-                    type="target"
-                    position={Position.Top}
-                    id={`${id}-target`}
-                    isConnectable={true}
-                    className={styles.handle}
-                />
-
-                {/* Colored Header Bar */}
+                {/* Editable Header Bar */}
                 <div className={styles.promptHeader}>
-                    <button
-                        className={styles.collapseButton}
-                        onClick={handleCollapseToggle}
-                        aria-label={isPromptCollapsed ? strings.ideaCard.expandPrompt : strings.ideaCard.collapsePrompt}
-                    >
-                        {isPromptCollapsed ? '▶' : '▼'}
-                    </button>
-                    <span className={styles.headerTitle}>{headerText}</span>
+                    {isEditingPrompt ? (
+                        <textarea
+                            className={styles.headerInput}
+                            value={localPrompt}
+                            onChange={(e) => setLocalPrompt(e.target.value)}
+                            onBlur={handlePromptBlur}
+                            onKeyDown={handlePromptKeyDown}
+                            placeholder={strings.canvas.promptPlaceholder}
+                            autoFocus
+                            disabled={isGenerating}
+                        />
+                    ) : (
+                        <span 
+                            className={styles.headerTitle}
+                            onClick={handleHeaderClick}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}
+                        >
+                            {headerText}
+                        </span>
+                    )}
                 </div>
 
-                {/* Prompt Section - Collapsible */}
-                {!isPromptCollapsed && (
-                    <div className={styles.promptSection}>
-                        {isEditingPrompt ? (
-                            <textarea
-                                className={styles.promptInput}
-                                value={localPrompt}
-                                onChange={(e) => setLocalPrompt(e.target.value)}
-                                onBlur={handlePromptBlur}
-                                onKeyDown={handlePromptKeyDown}
-                                placeholder={strings.canvas.promptPlaceholder}
-                                autoFocus
-                                disabled={isGenerating}
-                            />
-                        ) : (
-                            <div
-                                className={styles.promptContent}
-                                onClick={handlePromptClick}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={(e) => e.key === 'Enter' && handlePromptClick()}
-                            >
-                                {prompt || strings.canvas.promptPlaceholder}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Divider */}
-                <div className={styles.divider} />
-
-                {/* Output Section */}
-                <div className={styles.outputSection} data-testid="output-section">
+                {/* Output Section - nowheel class prevents ReactFlow zoom on scroll */}
+                <div 
+                    className={`${styles.outputSection} nowheel`} 
+                    data-testid="output-section"
+                    ref={outputRef}
+                >
                     {isGenerating ? (
                         <div className={styles.generating}>
                             <div className={styles.spinner} />
                             <span>{strings.canvas.generating}</span>
                         </div>
                     ) : output ? (
-                        <div className={styles.outputContent}>
-                            {output}
-                        </div>
+                        <MarkdownRenderer 
+                            content={output} 
+                            className={styles.outputContent}
+                        />
                     ) : (
                         <div className={styles.outputPlaceholder}>
                             {strings.ideaCard.noOutput}
@@ -136,7 +145,7 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
                     )}
                 </div>
 
-                {/* Action Bar - Icon-only with tooltips */}
+                {/* Action Bar */}
                 <div className={styles.actionBar}>
                     {output && (
                         <>
@@ -168,15 +177,14 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
                         <span className={styles.icon}>🗑</span>
                     </button>
                 </div>
-
-                <Handle
-                    type="source"
-                    position={Position.Bottom}
-                    id={`${id}-source`}
-                    isConnectable={true}
-                    className={styles.handle}
-                />
             </div>
-        </>
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                id={`${id}-source`}
+                isConnectable={true}
+                className={`${styles.handle} ${styles.handleBottom}`}
+            />
+        </div>
     );
 });
