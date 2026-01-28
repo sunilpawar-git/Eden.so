@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { strings } from '@/shared/localization/strings';
 import { useCanvasStore } from '../stores/canvasStore';
-import { createPromptNode } from '../types/node';
+import { createIdeaNode } from '../types/node';
 import styles from './AddNodeButton.module.css';
 
 export function AddNodeButton() {
@@ -22,8 +22,8 @@ export function AddNodeButton() {
             y: centerY,
         });
 
-        const newNode = createPromptNode(
-            `node-${Date.now()}`,
+        const newNode = createIdeaNode(
+            `idea-${Date.now()}`,
             'workspace-1', // TODO: Get from workspace store
             position
         );

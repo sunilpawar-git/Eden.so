@@ -20,6 +20,7 @@ interface CanvasActions {
     deleteNode: (nodeId: string) => void;
 
     // IdeaNode-specific actions
+    updateNodePrompt: (nodeId: string, prompt: string) => void;
     updateNodeOutput: (nodeId: string, output: string) => void;
     appendToNodeOutput: (nodeId: string, chunk: string) => void;
     setNodeGenerating: (nodeId: string, isGenerating: boolean) => void;
@@ -75,6 +76,16 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
             nodes: state.nodes.map((node) =>
                 node.id === nodeId
                     ? { ...node, data: { ...node.data, content }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    updateNodePrompt: (nodeId: string, prompt: string) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, data: { ...node.data, prompt }, updatedAt: new Date() }
                     : node
             ),
         }));

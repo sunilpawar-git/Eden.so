@@ -27,7 +27,7 @@ describe('AddNodeButton', () => {
         });
     });
 
-    it('should add a new node to the store when clicked', () => {
+    it('should add a new IdeaCard node to the store when clicked', () => {
         render(<AddNodeButton />);
 
         const button = screen.getByRole('button');
@@ -35,7 +35,7 @@ describe('AddNodeButton', () => {
 
         const nodes = useCanvasStore.getState().nodes;
         expect(nodes).toHaveLength(1);
-        expect(nodes[0]!.type).toBe('prompt');
+        expect(nodes[0]!.type).toBe('idea');
         expect(nodes[0]!.position).toEqual({ x: 500, y: 500 });
     });
 

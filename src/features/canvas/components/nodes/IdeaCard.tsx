@@ -16,14 +16,14 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
     const [isEditingPrompt, setIsEditingPrompt] = useState(!prompt);
     const [localPrompt, setLocalPrompt] = useState(prompt);
     
-    const { togglePromptCollapsed, deleteNode, updateNodeContent } = useCanvasStore();
-    const { generateFromPrompt } = useNodeGeneration();
+    const { togglePromptCollapsed, deleteNode, updateNodePrompt } = useCanvasStore();
+    const { generateFromPrompt, branchFromNode } = useNodeGeneration();
 
     const handlePromptBlur = useCallback(() => {
         setIsEditingPrompt(false);
-        // Update prompt in store (using content field for compatibility)
-        updateNodeContent(id, localPrompt);
-    }, [id, localPrompt, updateNodeContent]);
+        // Update prompt field in IdeaNode data
+        updateNodePrompt(id, localPrompt);
+    }, [id, localPrompt, updateNodePrompt]);
 
     const handlePromptKeyDown = useCallback(
         async (e: React.KeyboardEvent) => {
@@ -49,6 +49,10 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
     const handleDelete = useCallback(() => {
         deleteNode(id);
     }, [id, deleteNode]);
+
+    const handleBranch = useCallback(() => {
+        branchFromNode(id);
+    }, [id, branchFromNode]);
 
     const handlePromptClick = useCallback(() => {
         if (!isGenerating) {
@@ -143,6 +147,7 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
                             </button>
                             <button
                                 className={styles.actionButton}
+                                onClick={handleBranch}
                                 aria-label={strings.ideaCard.branch}
                             >
                                 ⑂ {strings.ideaCard.branch}
