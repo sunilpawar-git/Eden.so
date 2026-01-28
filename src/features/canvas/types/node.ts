@@ -2,6 +2,12 @@
  * Node Model - Strict type definitions for canvas nodes
  */
 
+/**
+ * Node types:
+ * - 'idea': Unified IdeaCard (prompt + output in one) - PRIMARY
+ * - 'prompt', 'ai_output', 'derived': Legacy types for backward compatibility
+ * - 'media': Future media nodes
+ */
 export type NodeType = 'idea' | 'prompt' | 'ai_output' | 'derived' | 'media';
 
 export interface NodePosition {
@@ -40,7 +46,8 @@ export interface CanvasNode {
 }
 
 /**
- * Create a new prompt node
+ * @deprecated Use createIdeaNode for new nodes
+ * Create a new prompt node (legacy)
  */
 export function createPromptNode(
     id: string,
@@ -61,7 +68,8 @@ export function createPromptNode(
 }
 
 /**
- * Create an AI output node
+ * @deprecated Use createIdeaNode for new nodes
+ * Create an AI output node (legacy)
  */
 export function createAIOutputNode(
     id: string,

@@ -23,8 +23,6 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useCanvasStore } from '../stores/canvasStore';
-import { PromptNode } from './nodes/PromptNode';
-import { AIOutputNode } from './nodes/AIOutputNode';
 import { IdeaCard } from './nodes/IdeaCard';
 import { AddNodeButton } from './AddNodeButton';
 import { SynthesisButton } from '@/features/ai/components/SynthesisButton';
@@ -32,9 +30,6 @@ import styles from './CanvasView.module.css';
 
 // Memoized node types for performance
 const nodeTypes = {
-    prompt: PromptNode,
-    ai_output: AIOutputNode,
-    derived: AIOutputNode,
     idea: IdeaCard,
 };
 
