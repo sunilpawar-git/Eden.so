@@ -60,6 +60,9 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
         }
     }, [isGenerating]);
 
+    // Display text for header (truncated prompt or placeholder)
+    const headerText = prompt || strings.canvas.promptPlaceholder;
+
     return (
         <>
             <NodeResizer minWidth={280} maxWidth={600} />
@@ -72,45 +75,45 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
                     className={styles.handle}
                 />
 
-                {/* Prompt Section */}
-                <div className={styles.promptSection}>
-                    <div className={styles.promptHeader}>
-                        <button
-                            className={styles.collapseButton}
-                            onClick={handleCollapseToggle}
-                            aria-label={isPromptCollapsed ? strings.ideaCard.expandPrompt : strings.ideaCard.collapsePrompt}
-                        >
-                            {isPromptCollapsed ? '▶' : '▼'}
-                        </button>
-                    </div>
-                    
-                    {isPromptCollapsed ? (
-                        <div className={styles.promptCollapsed}>
-                            {prompt || strings.canvas.promptPlaceholder}
-                        </div>
-                    ) : isEditingPrompt ? (
-                        <textarea
-                            className={styles.promptInput}
-                            value={localPrompt}
-                            onChange={(e) => setLocalPrompt(e.target.value)}
-                            onBlur={handlePromptBlur}
-                            onKeyDown={handlePromptKeyDown}
-                            placeholder={strings.canvas.promptPlaceholder}
-                            autoFocus
-                            disabled={isGenerating}
-                        />
-                    ) : (
-                        <div
-                            className={styles.promptContent}
-                            onClick={handlePromptClick}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => e.key === 'Enter' && handlePromptClick()}
-                        >
-                            {prompt || strings.canvas.promptPlaceholder}
-                        </div>
-                    )}
+                {/* Colored Header Bar */}
+                <div className={styles.promptHeader}>
+                    <button
+                        className={styles.collapseButton}
+                        onClick={handleCollapseToggle}
+                        aria-label={isPromptCollapsed ? strings.ideaCard.expandPrompt : strings.ideaCard.collapsePrompt}
+                    >
+                        {isPromptCollapsed ? '▶' : '▼'}
+                    </button>
+                    <span className={styles.headerTitle}>{headerText}</span>
                 </div>
+
+                {/* Prompt Section - Collapsible */}
+                {!isPromptCollapsed && (
+                    <div className={styles.promptSection}>
+                        {isEditingPrompt ? (
+                            <textarea
+                                className={styles.promptInput}
+                                value={localPrompt}
+                                onChange={(e) => setLocalPrompt(e.target.value)}
+                                onBlur={handlePromptBlur}
+                                onKeyDown={handlePromptKeyDown}
+                                placeholder={strings.canvas.promptPlaceholder}
+                                autoFocus
+                                disabled={isGenerating}
+                            />
+                        ) : (
+                            <div
+                                className={styles.promptContent}
+                                onClick={handlePromptClick}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePromptClick()}
+                            >
+                                {prompt || strings.canvas.promptPlaceholder}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Divider */}
                 <div className={styles.divider} />
@@ -133,7 +136,7 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
                     )}
                 </div>
 
-                {/* Action Bar */}
+                {/* Action Bar - Icon-only with tooltips */}
                 <div className={styles.actionBar}>
                     {output && (
                         <>
@@ -142,15 +145,17 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
                                 onClick={() => generateFromPrompt(id)}
                                 disabled={isGenerating}
                                 aria-label={strings.ideaCard.regenerate}
+                                data-tooltip={strings.ideaCard.regenerate}
                             >
-                                ↻ {strings.ideaCard.regenerate}
+                                <span className={styles.icon}>↻</span>
                             </button>
                             <button
                                 className={styles.actionButton}
                                 onClick={handleBranch}
                                 aria-label={strings.ideaCard.branch}
+                                data-tooltip={strings.ideaCard.branch}
                             >
-                                ⑂ {strings.ideaCard.branch}
+                                <span className={styles.icon}>⑂</span>
                             </button>
                         </>
                     )}
@@ -158,8 +163,9 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data }: NodeProps) {
                         className={`${styles.actionButton} ${styles.deleteButton}`}
                         onClick={handleDelete}
                         aria-label={strings.ideaCard.delete}
+                        data-tooltip={strings.ideaCard.delete}
                     >
-                        🗑 {strings.ideaCard.delete}
+                        <span className={styles.icon}>🗑</span>
                     </button>
                 </div>
 

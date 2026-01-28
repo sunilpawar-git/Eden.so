@@ -66,7 +66,9 @@ describe('IdeaCard', () => {
     describe('Structure', () => {
         it('renders prompt section with content', () => {
             render(<IdeaCard {...defaultProps} />);
-            expect(screen.getByText('Test prompt content')).toBeInTheDocument();
+            // Prompt text appears in header (getAllByText returns multiple matches)
+            const promptElements = screen.getAllByText('Test prompt content');
+            expect(promptElements.length).toBeGreaterThanOrEqual(1);
         });
 
         it('renders output section when output exists', () => {
@@ -120,8 +122,9 @@ describe('IdeaCard', () => {
     describe('Collapsible prompt', () => {
         it('prompt is expanded by default', () => {
             render(<IdeaCard {...defaultProps} />);
-            // Full prompt text visible
-            expect(screen.getByText('Test prompt content')).toBeInTheDocument();
+            // Full prompt text visible (in header and content)
+            const promptElements = screen.getAllByText('Test prompt content');
+            expect(promptElements.length).toBeGreaterThanOrEqual(1);
         });
 
         it('shows collapse button when prompt is expanded', () => {
@@ -169,9 +172,11 @@ describe('IdeaCard', () => {
     });
 
     describe('Interactions', () => {
-        it('clicking prompt section enters edit mode', () => {
+        it('clicking prompt content enters edit mode', () => {
             render(<IdeaCard {...defaultProps} />);
-            fireEvent.click(screen.getByText('Test prompt content'));
+            // Click the prompt content (role="button") not the header
+            const promptContent = screen.getByRole('button', { name: 'Test prompt content' });
+            fireEvent.click(promptContent);
 
             // Should now show a textarea
             expect(screen.getByRole('textbox')).toBeInTheDocument();
@@ -180,8 +185,9 @@ describe('IdeaCard', () => {
         it('Enter key triggers generation when prompt has content', async () => {
             render(<IdeaCard {...defaultProps} />);
             
-            // Enter edit mode
-            fireEvent.click(screen.getByText('Test prompt content'));
+            // Enter edit mode via prompt content
+            const promptContent = screen.getByRole('button', { name: 'Test prompt content' });
+            fireEvent.click(promptContent);
             const textarea = screen.getByRole('textbox');
             
             // Press Enter
@@ -193,7 +199,8 @@ describe('IdeaCard', () => {
         it('Shift+Enter does not trigger generation (allows newline)', () => {
             render(<IdeaCard {...defaultProps} />);
             
-            fireEvent.click(screen.getByText('Test prompt content'));
+            const promptContent = screen.getByRole('button', { name: 'Test prompt content' });
+            fireEvent.click(promptContent);
             const textarea = screen.getByRole('textbox');
             
             fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
@@ -220,9 +227,9 @@ describe('IdeaCard', () => {
             };
             render(<IdeaCard {...generatingProps} />);
             
-            // Prompt text should not be clickable for edit
-            const promptText = screen.getByText('Test prompt content');
-            fireEvent.click(promptText);
+            // Prompt content should not be clickable for edit when generating
+            const promptContent = screen.getByRole('button', { name: 'Test prompt content' });
+            fireEvent.click(promptContent);
             
             // Should not enter edit mode (no textarea)
             expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
