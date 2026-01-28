@@ -68,7 +68,7 @@ export function CanvasView() {
         target: edge.targetNodeId,
         sourceHandle: `${edge.sourceNodeId}-source`,
         targetHandle: `${edge.targetNodeId}-target`,
-        type: 'smoothstep',
+        type: 'bezier',
         animated: edge.relationshipType === 'derived',
     }));
 
@@ -168,9 +168,9 @@ export function CanvasView() {
                 onConnect={onConnect}
                 onSelectionChange={onSelectionChange}
                 nodeTypes={nodeTypes}
-                connectionLineType={ConnectionLineType.SmoothStep}
+                connectionLineType={ConnectionLineType.Bezier}
                 defaultEdgeOptions={{
-                    type: 'smoothstep',
+                    type: 'bezier',
                     markerEnd: { type: MarkerType.ArrowClosed },
                 }}
                 defaultViewport={{ x: 0, y: 0, zoom: 1 }}

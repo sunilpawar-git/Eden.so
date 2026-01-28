@@ -24,6 +24,15 @@
     overflow: visible !important;
 }
 
+/* Ensure edges always render behind nodes */
+.canvasContainer :global(.react-flow__edges) {
+    z-index: 0 !important;
+}
+
+.canvasContainer :global(.react-flow__nodes) {
+    z-index: 1 !important;
+}
+
 .canvasContainer :global(.react-flow__edge-path) {
     stroke: var(--color-primary);
     stroke-width: 2;

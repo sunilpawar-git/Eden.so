@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { CanvasView } from '../CanvasView';
 import { useCanvasStore } from '../../stores/canvasStore';
-import { ReactFlow } from '@xyflow/react';
+import { ReactFlow, ConnectionLineType } from '@xyflow/react';
 
 // Mock ReactFlow component and sub-components
 vi.mock('@xyflow/react', async (importOriginal) => {
@@ -73,5 +73,89 @@ describe('CanvasView', () => {
         expect(reactFlowProps.defaultViewport).toEqual({ x: 0, y: 0, zoom: 1 });
         // fitView is now enabled for better initial view
         expect(reactFlowProps.fitView).toBe(true);
+    });
+
+    describe('Edge configuration', () => {
+        beforeEach(() => {
+            // Setup store with edges for edge tests
+            useCanvasStore.setState({
+                nodes: [
+                    {
+                        id: 'node-1',
+                        workspaceId: 'workspace-1',
+                        type: 'prompt',
+                        data: { content: 'Source Node' },
+                        position: { x: 100, y: 100 },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        id: 'node-2',
+                        workspaceId: 'workspace-1',
+                        type: 'ai_output',
+                        data: { content: 'Target Node' },
+                        position: { x: 100, y: 300 },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                ],
+                edges: [
+                    {
+                        id: 'edge-1',
+                        workspaceId: 'workspace-1',
+                        sourceNodeId: 'node-1',
+                        targetNodeId: 'node-2',
+                        relationshipType: 'derived',
+                    },
+                ],
+                selectedNodeIds: new Set(),
+            });
+        });
+
+        it('should use bezier edge type for smooth curves', () => {
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const reactFlowProps = mockCalls[0]?.[0] ?? {};
+            const edges = reactFlowProps.edges ?? [];
+
+            // Edges should have bezier type
+            expect(edges[0]).toMatchObject({
+                type: 'bezier',
+            });
+        });
+
+        it('should use Bezier connection line type', () => {
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const reactFlowProps = mockCalls[0]?.[0] ?? {};
+
+            expect(reactFlowProps.connectionLineType).toBe(ConnectionLineType.Bezier);
+        });
+
+        it('should configure default edge options with bezier type', () => {
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const reactFlowProps = mockCalls[0]?.[0] ?? {};
+
+            expect(reactFlowProps.defaultEdgeOptions).toMatchObject({
+                type: 'bezier',
+            });
+        });
+
+        it('should animate edges with derived relationship type', () => {
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const reactFlowProps = mockCalls[0]?.[0] ?? {};
+            const edges = reactFlowProps.edges ?? [];
+
+            // Edge with 'derived' relationship should be animated
+            expect(edges[0]).toMatchObject({
+                animated: true,
+            });
+        });
     });
 });
