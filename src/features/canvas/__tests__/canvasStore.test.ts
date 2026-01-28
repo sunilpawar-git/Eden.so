@@ -1,5 +1,6 @@
 /**
  * Canvas Store Tests - TDD: Write tests FIRST
+ * Note: IdeaNode-specific tests are in ideaNodeActions.test.ts
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCanvasStore } from '../stores/canvasStore';

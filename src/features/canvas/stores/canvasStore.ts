@@ -19,6 +19,12 @@ interface CanvasActions {
     updateNodeContent: (nodeId: string, content: string) => void;
     deleteNode: (nodeId: string) => void;
 
+    // IdeaNode-specific actions
+    updateNodeOutput: (nodeId: string, output: string) => void;
+    appendToNodeOutput: (nodeId: string, chunk: string) => void;
+    setNodeGenerating: (nodeId: string, isGenerating: boolean) => void;
+    togglePromptCollapsed: (nodeId: string) => void;
+
     // Edge actions
     addEdge: (edge: CanvasEdge) => void;
     deleteEdge: (edgeId: string) => void;
@@ -69,6 +75,60 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
             nodes: state.nodes.map((node) =>
                 node.id === nodeId
                     ? { ...node, data: { ...node.data, content }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    updateNodeOutput: (nodeId: string, output: string) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, data: { ...node.data, output }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    appendToNodeOutput: (nodeId: string, chunk: string) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? {
+                          ...node,
+                          data: {
+                              ...node.data,
+                              output: (node.data.output as string | undefined ?? '') + chunk,
+                          },
+                          updatedAt: new Date(),
+                      }
+                    : node
+            ),
+        }));
+    },
+
+    setNodeGenerating: (nodeId: string, isGenerating: boolean) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, data: { ...node.data, isGenerating }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    togglePromptCollapsed: (nodeId: string) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? {
+                          ...node,
+                          data: {
+                              ...node.data,
+                              isPromptCollapsed: !node.data.isPromptCollapsed,
+                          },
+                          updatedAt: new Date(),
+                      }
                     : node
             ),
         }));
