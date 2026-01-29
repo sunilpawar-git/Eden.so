@@ -129,19 +129,19 @@ describe('IdeaCard Features', () => {
         });
     });
 
-    describe('Scrollable output', () => {
-        it('output section has scrollable styling', () => {
+    describe('Scrollable content area', () => {
+        it('content area has scrollable styling', () => {
             const propsWithOutput = {
                 ...defaultProps,
                 data: { ...defaultData, output: 'Some output content' },
             };
             render(<IdeaCard {...propsWithOutput} />);
             
-            const outputSection = screen.getByTestId('output-section');
-            expect(outputSection.className).toContain('outputSection');
+            const contentArea = screen.getByTestId('content-area');
+            expect(contentArea.className).toContain('contentArea');
         });
 
-        it('output section should be scrollable for long content', () => {
+        it('content area should be scrollable for long content', () => {
             const longOutput = 'Line\n'.repeat(100);
             const propsWithOutput = {
                 ...defaultProps,
@@ -149,20 +149,20 @@ describe('IdeaCard Features', () => {
             };
             render(<IdeaCard {...propsWithOutput} />);
             
-            const outputSection = screen.getByTestId('output-section');
-            expect(outputSection.className).toContain('outputSection');
-            expect(outputSection.textContent).toContain('Line');
+            const contentArea = screen.getByTestId('content-area');
+            expect(contentArea.className).toContain('contentArea');
+            expect(contentArea.textContent).toContain('Line');
         });
 
-        it('output section should contain output content wrapper', () => {
+        it('content area should contain output content wrapper', () => {
             const propsWithOutput = {
                 ...defaultProps,
                 data: { ...defaultData, output: 'Test output' },
             };
             render(<IdeaCard {...propsWithOutput} />);
             
-            const outputSection = screen.getByTestId('output-section');
-            expect(outputSection.querySelector('div')).not.toBeNull();
+            const contentArea = screen.getByTestId('content-area');
+            expect(contentArea.querySelector('div')).not.toBeNull();
         });
 
         it('renders output using MarkdownRenderer component', () => {
@@ -179,33 +179,37 @@ describe('IdeaCard Features', () => {
     });
 
     describe('Wheel scroll behavior (ReactFlow zoom prevention)', () => {
-        it('output section has nowheel class to prevent ReactFlow zoom', () => {
+        it('content area has nowheel class to prevent ReactFlow zoom', () => {
             const propsWithOutput = {
                 ...defaultProps,
                 data: { ...defaultData, output: 'Some output content' },
             };
             render(<IdeaCard {...propsWithOutput} />);
             
-            const outputSection = screen.getByTestId('output-section');
-            expect(outputSection).toHaveClass('nowheel');
+            const contentArea = screen.getByTestId('content-area');
+            expect(contentArea).toHaveClass('nowheel');
         });
 
-        it('output section has nowheel class even without content', () => {
-            render(<IdeaCard {...defaultProps} />);
+        it('content area has nowheel class even without content (edit mode)', () => {
+            const emptyProps = {
+                ...defaultProps,
+                data: { ...defaultData, prompt: '', output: undefined },
+            };
+            render(<IdeaCard {...emptyProps} />);
             
-            const outputSection = screen.getByTestId('output-section');
-            expect(outputSection).toHaveClass('nowheel');
+            const contentArea = screen.getByTestId('content-area');
+            expect(contentArea).toHaveClass('nowheel');
         });
 
-        it('output section has nowheel class during generation', () => {
+        it('content area has nowheel class during generation', () => {
             const generatingProps = {
                 ...defaultProps,
                 data: { ...defaultData, isGenerating: true },
             };
             render(<IdeaCard {...generatingProps} />);
             
-            const outputSection = screen.getByTestId('output-section');
-            expect(outputSection).toHaveClass('nowheel');
+            const contentArea = screen.getByTestId('content-area');
+            expect(contentArea).toHaveClass('nowheel');
         });
 
         it('wheel events stop propagation to prevent canvas zoom', () => {
@@ -215,7 +219,7 @@ describe('IdeaCard Features', () => {
             };
             render(<IdeaCard {...propsWithOutput} />);
             
-            const outputSection = screen.getByTestId('output-section');
+            const contentArea = screen.getByTestId('content-area');
             
             // Create wheel event with bubbles: true
             const wheelEvent = new WheelEvent('wheel', { 
@@ -224,7 +228,7 @@ describe('IdeaCard Features', () => {
             });
             const stopPropagationSpy = vi.spyOn(wheelEvent, 'stopPropagation');
             
-            outputSection.dispatchEvent(wheelEvent);
+            contentArea.dispatchEvent(wheelEvent);
             
             // Verify stopPropagation was called (native listener should call it)
             expect(stopPropagationSpy).toHaveBeenCalled();
@@ -237,7 +241,7 @@ describe('IdeaCard Features', () => {
             };
             render(<IdeaCard {...propsWithOutput} />);
             
-            const outputSection = screen.getByTestId('output-section');
+            const contentArea = screen.getByTestId('content-area');
             
             const wheelEvent = new WheelEvent('wheel', { 
                 bubbles: true,
@@ -245,23 +249,23 @@ describe('IdeaCard Features', () => {
             });
             const stopPropagationSpy = vi.spyOn(wheelEvent, 'stopPropagation');
             
-            outputSection.dispatchEvent(wheelEvent);
+            contentArea.dispatchEvent(wheelEvent);
             
             expect(stopPropagationSpy).toHaveBeenCalled();
         });
 
-        it('output section retains both outputSection and nowheel classes', () => {
+        it('content area retains both contentArea and nowheel classes', () => {
             const propsWithOutput = {
                 ...defaultProps,
                 data: { ...defaultData, output: 'Test content' },
             };
             render(<IdeaCard {...propsWithOutput} />);
             
-            const outputSection = screen.getByTestId('output-section');
+            const contentArea = screen.getByTestId('content-area');
             
             // Should have both the module CSS class and the nowheel class
-            expect(outputSection.className).toContain('outputSection');
-            expect(outputSection.className).toContain('nowheel');
+            expect(contentArea.className).toContain('contentArea');
+            expect(contentArea.className).toContain('nowheel');
         });
     });
 });

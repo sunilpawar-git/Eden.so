@@ -29,6 +29,8 @@ export interface CanvasNode {
     type: NodeType;
     data: IdeaNodeData;
     position: NodePosition;
+    width?: number;
+    height?: number;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -1,6 +1,6 @@
 /**
- * IdeaCard - Unified prompt + output node component
- * Features: Editable header, scrollable output, resizable
+ * IdeaCard - Unified note/AI card component
+ * Features: Clean design, optional AI divider, unified actions
  */
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
@@ -14,33 +14,83 @@ import styles from './IdeaCard.module.css';
 export const IdeaCard = React.memo(function IdeaCard({ id, data, selected }: NodeProps) {
     const { prompt, output, isGenerating } = data as IdeaNodeData;
     
-    const [isEditingPrompt, setIsEditingPrompt] = useState(!prompt);
-    const [localPrompt, setLocalPrompt] = useState(prompt);
+    // AI card: has both prompt AND output that differ
+    const isAICard = Boolean(prompt && output && prompt !== output);
     
-    const { deleteNode, updateNodePrompt } = useCanvasStore();
+    // Edit mode: start in edit if no content
+    const [isEditing, setIsEditing] = useState(!prompt && !output);
+    const [localInput, setLocalInput] = useState('');
+    
+    const { deleteNode, updateNodePrompt, updateNodeOutput } = useCanvasStore();
     const { generateFromPrompt, branchFromNode } = useNodeGeneration();
 
-    const handlePromptBlur = useCallback(() => {
-        setIsEditingPrompt(false);
-        updateNodePrompt(id, localPrompt);
-    }, [id, localPrompt, updateNodePrompt]);
+    // Ref for content section to attach native wheel listener
+    const contentRef = useRef<HTMLDivElement>(null);
 
-    const handlePromptKeyDown = useCallback(
+    // Handle wheel events to prevent ReactFlow zoom
+    useEffect(() => {
+        const element = contentRef.current;
+        if (!element) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            e.stopPropagation();
+        };
+
+        element.addEventListener('wheel', handleWheel, { passive: false });
+        return () => element.removeEventListener('wheel', handleWheel);
+    }, []);
+
+    const handleInputBlur = useCallback(() => {
+        setIsEditing(false);
+        setLocalInput('');
+    }, []);
+
+    const handleInputKeyDown = useCallback(
         async (e: React.KeyboardEvent) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handlePromptBlur();
-                if (localPrompt.trim()) {
+                const trimmed = localInput.trim();
+                
+                if (!trimmed) {
+                    handleInputBlur();
+                    return;
+                }
+                
+                const AI_PREFIX = strings.ideaCard.aiPrefix;
+                
+                if (trimmed.startsWith(AI_PREFIX)) {
+                    // AI Mode: Extract prompt after /ai: prefix
+                    const actualPrompt = trimmed.slice(AI_PREFIX.length).trim();
+                    
+                    if (!actualPrompt) {
+                        handleInputBlur();
+                        return;
+                    }
+                    
+                    updateNodePrompt(id, actualPrompt);
+                    setLocalInput('');
+                    setIsEditing(false);
                     await generateFromPrompt(id);
+                } else {
+                    // Note Mode: Save to output only
+                    updateNodeOutput(id, trimmed);
+                    setLocalInput('');
+                    setIsEditing(false);
                 }
             }
             if (e.key === 'Escape') {
-                setIsEditingPrompt(false);
-                setLocalPrompt(prompt);
+                setIsEditing(false);
+                setLocalInput('');
             }
         },
-        [handlePromptBlur, localPrompt, generateFromPrompt, id, prompt]
+        [handleInputBlur, localInput, generateFromPrompt, id, updateNodePrompt, updateNodeOutput]
     );
+
+    const handleContentClick = useCallback(() => {
+        if (!isGenerating) {
+            setIsEditing(true);
+        }
+    }, [isGenerating]);
 
     const handleDelete = useCallback(() => {
         deleteNode(id);
@@ -50,36 +100,12 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data, selected }: Nod
         branchFromNode(id);
     }, [id, branchFromNode]);
 
-    const handleHeaderClick = useCallback(() => {
-        if (!isGenerating) {
-            setIsEditingPrompt(true);
-        }
-    }, [isGenerating]);
+    const handleRegenerate = useCallback(() => {
+        generateFromPrompt(id);
+    }, [id, generateFromPrompt]);
 
-    // Ref for output section to attach native wheel listener
-    const outputRef = useRef<HTMLDivElement>(null);
-
-    // Use native event listener to intercept wheel events before ReactFlow
-    // Combined with 'nowheel' class for maximum compatibility
-    useEffect(() => {
-        const outputElement = outputRef.current;
-        if (!outputElement) return;
-
-        const handleWheel = (e: WheelEvent) => {
-            // Stop event from bubbling to ReactFlow's zoom handler
-            e.stopPropagation();
-        };
-
-        // passive: false allows stopPropagation to work
-        outputElement.addEventListener('wheel', handleWheel, { passive: false });
-        
-        return () => {
-            outputElement.removeEventListener('wheel', handleWheel);
-        };
-    }, []);
-
-    // Display text for header
-    const headerText = prompt || strings.canvas.promptPlaceholder;
+    // Determine what content to show
+    const hasContent = Boolean(output);
 
     return (
         <div className={styles.cardWrapper}>
@@ -96,78 +122,95 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data, selected }: Nod
                 className={`${styles.handle} ${styles.handleTop}`}
             />
             <div className={styles.ideaCard}>
-                {/* Editable Header Bar */}
-                <div className={styles.promptHeader}>
-                    {isEditingPrompt ? (
+                {/* Content Area */}
+                <div 
+                    className={`${styles.contentArea} nowheel`} 
+                    data-testid="content-area"
+                    ref={contentRef}
+                >
+                    {isEditing ? (
                         <textarea
-                            className={styles.headerInput}
-                            value={localPrompt}
-                            onChange={(e) => setLocalPrompt(e.target.value)}
-                            onBlur={handlePromptBlur}
-                            onKeyDown={handlePromptKeyDown}
-                            placeholder={strings.canvas.promptPlaceholder}
+                            className={styles.inputArea}
+                            value={localInput}
+                            onChange={(e) => setLocalInput(e.target.value)}
+                            onBlur={handleInputBlur}
+                            onKeyDown={handleInputKeyDown}
+                            placeholder={strings.ideaCard.inputPlaceholder}
                             autoFocus
                             disabled={isGenerating}
                         />
-                    ) : (
-                        <span 
-                            className={styles.headerTitle}
-                            onClick={handleHeaderClick}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => e.key === 'Enter' && handleHeaderClick()}
-                        >
-                            {headerText}
-                        </span>
-                    )}
-                </div>
-
-                {/* Output Section - nowheel class prevents ReactFlow zoom on scroll */}
-                <div 
-                    className={`${styles.outputSection} nowheel`} 
-                    data-testid="output-section"
-                    ref={outputRef}
-                >
-                    {isGenerating ? (
+                    ) : isGenerating ? (
                         <div className={styles.generating}>
                             <div className={styles.spinner} />
                             <span>{strings.canvas.generating}</span>
                         </div>
-                    ) : output ? (
-                        <MarkdownRenderer 
-                            content={output} 
-                            className={styles.outputContent}
-                        />
+                    ) : hasContent ? (
+                        <>
+                            {/* AI Card: Show prompt + divider + output */}
+                            {isAICard && (
+                                <>
+                                    <div 
+                                        className={styles.promptText}
+                                        onClick={handleContentClick}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleContentClick()}
+                                    >
+                                        {prompt}
+                                    </div>
+                                    <div 
+                                        className={styles.divider} 
+                                        data-testid="ai-divider"
+                                        aria-label={strings.ideaCard.aiDividerLabel}
+                                    />
+                                </>
+                            )}
+                            {/* Output (both note and AI cards) */}
+                            <div
+                                onClick={!isAICard ? handleContentClick : undefined}
+                                role={!isAICard ? 'button' : undefined}
+                                tabIndex={!isAICard ? 0 : undefined}
+                                onKeyDown={!isAICard ? (e) => e.key === 'Enter' && handleContentClick() : undefined}
+                            >
+                                <MarkdownRenderer 
+                                    content={output!} 
+                                    className={styles.outputContent}
+                                />
+                            </div>
+                        </>
                     ) : (
-                        <div className={styles.outputPlaceholder}>
-                            {strings.ideaCard.noOutput}
+                        <div 
+                            className={styles.placeholder}
+                            onClick={handleContentClick}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && handleContentClick()}
+                        >
+                            {strings.ideaCard.inputPlaceholder}
                         </div>
                     )}
                 </div>
 
-                {/* Action Bar */}
+                {/* Unified Action Bar - ALL cards get same actions */}
                 <div className={styles.actionBar}>
-                    {output && (
-                        <>
-                            <button
-                                className={styles.actionButton}
-                                onClick={() => generateFromPrompt(id)}
-                                disabled={isGenerating}
-                                aria-label={strings.ideaCard.regenerate}
-                                data-tooltip={strings.ideaCard.regenerate}
-                            >
-                                <span className={styles.icon}>↻</span>
-                            </button>
-                            <button
-                                className={styles.actionButton}
-                                onClick={handleBranch}
-                                aria-label={strings.ideaCard.branch}
-                                data-tooltip={strings.ideaCard.branch}
-                            >
-                                <span className={styles.icon}>⑂</span>
-                            </button>
-                        </>
-                    )}
+                    <button
+                        className={styles.actionButton}
+                        onClick={handleRegenerate}
+                        disabled={isGenerating || !hasContent}
+                        aria-label={strings.ideaCard.regenerate}
+                        data-tooltip={strings.ideaCard.regenerate}
+                    >
+                        <span className={styles.icon}>↻</span>
+                    </button>
+                    <button
+                        className={styles.actionButton}
+                        onClick={handleBranch}
+                        disabled={!hasContent}
+                        aria-label={strings.ideaCard.branch}
+                        data-tooltip={strings.ideaCard.branch}
+                    >
+                        <span className={styles.icon}>⑂</span>
+                    </button>
                     <button
                         className={`${styles.actionButton} ${styles.deleteButton}`}
                         onClick={handleDelete}

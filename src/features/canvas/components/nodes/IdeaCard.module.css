@@ -1,5 +1,7 @@
 /**
- * IdeaCard Styles - Modern flat design with colored header
+ * IdeaCard Styles - Clean unified design (no header)
+ * Note cards and AI cards share same structure
+ * AI cards have a grey divider between prompt and output
  */
 
 /* Wrapper for card + handles positioning */
@@ -11,6 +13,7 @@
 
 .ideaCard {
     min-width: var(--card-min-width);
+    max-width: 600px; /* Match NodeResizer maxWidth */
     background: var(--color-surface-elevated);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
@@ -26,60 +29,10 @@
     transform: translateY(-1px);
 }
 
-/* Colored Header Bar - Editable */
-.promptHeader {
-    display: flex;
-    align-items: center;
-    padding: var(--space-sm) var(--space-md);
-    background: linear-gradient(135deg, var(--header-gradient-start), var(--header-gradient-end));
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    min-height: 44px;
-}
-
-.headerTitle {
+/* Content Area - Main scrollable content container */
+.contentArea {
     flex: 1;
-    color: var(--header-text);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    cursor: text;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--radius-sm);
-    transition: background-color var(--transition-fast);
-}
-
-.headerTitle:hover {
-    background: hsla(0, 0%, 100%, 0.15);
-}
-
-/* Header textarea for editing */
-.headerInput {
-    flex: 1;
-    min-height: 32px;
-    resize: none;
-    padding: var(--space-xs) var(--space-sm);
-    border: 1px solid hsla(0, 0%, 100%, 0.3);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-family);
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-normal);
-    color: var(--header-text);
-    background: hsla(0, 0%, 100%, 0.1);
-}
-
-.headerInput:focus {
-    outline: none;
-    border-color: hsla(0, 0%, 100%, 0.5);
-    background: hsla(0, 0%, 100%, 0.2);
-}
-
-.headerInput::placeholder {
-    color: hsla(0, 0%, 100%, 0.6);
-}
-
-/* Output Section - Scrollable content area */
-.outputSection {
-    flex: 1;
-    min-height: 60px;
+    min-height: 80px;
     max-height: var(--card-output-max-height);
     overflow-y: auto;
     overflow-x: hidden;
@@ -87,40 +40,94 @@
     scrollbar-color: var(--color-border) transparent;
     padding: var(--space-md);
     background: var(--output-bg);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.outputSection::-webkit-scrollbar {
+.contentArea::-webkit-scrollbar {
     width: 8px;
 }
 
-.outputSection::-webkit-scrollbar-track {
+.contentArea::-webkit-scrollbar-track {
     background: var(--color-surface);
     border-radius: 4px;
 }
 
-.outputSection::-webkit-scrollbar-thumb {
+.contentArea::-webkit-scrollbar-thumb {
     background: var(--color-border);
     border-radius: 3px;
 }
 
-.outputSection::-webkit-scrollbar-thumb:hover {
+.contentArea::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
 }
 
-/* outputContent class for positioning/layout only */
-/* Markdown styling is in MarkdownRenderer.module.css */
-.outputContent {
-    /* Layout styles only - markdown styles inherited from MarkdownRenderer */
+/* Input Area - Textarea for editing */
+.inputArea {
+    width: 100%;
+    min-height: 60px;
+    resize: none;
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+    color: var(--color-text);
+    background: var(--color-surface);
 }
 
-.outputPlaceholder {
+.inputArea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.inputArea::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* Prompt Text - For AI cards (lighter styling) */
+.promptText {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast);
+    margin-bottom: var(--space-sm);
+}
+
+.promptText:hover {
+    background: var(--color-surface-hover);
+}
+
+/* Grey Divider - AI cards only */
+.divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-sm) 0;
+}
+
+/* Placeholder for empty cards */
+.placeholder {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
     font-style: italic;
     text-align: center;
     padding: var(--space-md) 0;
+    cursor: pointer;
 }
 
+.placeholder:hover {
+    color: var(--color-text-secondary);
+}
+
+/* Output Content - Layout only (markdown styles from MarkdownRenderer) */
+.outputContent {
+    /* Layout styles only - markdown styles inherited from MarkdownRenderer */
+}
+
+/* Generating state */
 .generating {
     display: flex;
     align-items: center;
@@ -147,7 +154,7 @@
     }
 }
 
-/* Action Bar - Icon-only with tooltips */
+/* Action Bar - Unified for ALL cards */
 .actionBar {
     display: flex;
     justify-content: center;
@@ -174,7 +181,7 @@
     justify-content: center;
 }
 
-.actionButton:hover {
+.actionButton:hover:not(:disabled) {
     background: var(--color-primary-light);
     color: var(--color-primary);
     transform: scale(1.1);
@@ -186,7 +193,7 @@
     transform: none;
 }
 
-.deleteButton:hover {
+.deleteButton:hover:not(:disabled) {
     background: hsla(0, 72%, 51%, 0.1);
     color: var(--color-error);
 }
@@ -237,7 +244,7 @@
 
 .handle:hover {
     transform: scale(1.3) !important;
-    background-color: var(--header-gradient-end) !important;
+    background-color: var(--color-secondary) !important;
     box-shadow: 0 0 12px hsla(263, 70%, 50%, 0.6);
 }
 

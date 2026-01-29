@@ -77,6 +77,21 @@
     background-color: var(--color-primary-light);
 }
 
+.workspaceItem.active {
+    background-color: var(--color-primary-light);
+}
+
+.workspaceNameInput {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    padding: 2px var(--space-xs);
+    outline: none;
+}
+
 .workspaceName {
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);

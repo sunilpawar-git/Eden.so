@@ -2,7 +2,7 @@
  * Canvas View - ReactFlow wrapper component
  * Store is the single source of truth, ReactFlow syncs to it
  */
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import {
     ReactFlow,
     Background,
@@ -23,8 +23,10 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useCanvasStore } from '../stores/canvasStore';
+import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { IdeaCard } from './nodes/IdeaCard';
 import { AddNodeButton } from './AddNodeButton';
+import { CanvasControls } from './CanvasControls';
 import styles from './CanvasView.module.css';
 
 // Memoized node types for performance
@@ -37,25 +39,21 @@ export function CanvasView() {
     const edges = useCanvasStore((s) => s.edges);
     const setNodes = useCanvasStore((s) => s.setNodes);
     const setEdges = useCanvasStore((s) => s.setEdges);
+    const updateNodeDimensions = useCanvasStore((s) => s.updateNodeDimensions);
     const selectNode = useCanvasStore((s) => s.selectNode);
     const clearSelection = useCanvasStore((s) => s.clearSelection);
+    const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
 
-    // Track node internals (measured dimensions, etc.) separately
-    const nodeInternalsRef = useRef<Map<string, { width?: number; height?: number }>>(new Map());
-
-    // Convert store nodes to ReactFlow format with preserved internals
-    const rfNodes: Node[] = nodes.map((node) => {
-        const internals = nodeInternalsRef.current.get(node.id);
-        return {
-            id: node.id,
-            type: node.type, // 'idea' is the primary type now
-            position: node.position,
-            data: node.data,
-            // Preserve measured dimensions if available
-            ...(internals?.width && { width: internals.width }),
-            ...(internals?.height && { height: internals.height }),
-        };
-    });
+    // Convert store nodes to ReactFlow format (width/height from store)
+    const rfNodes: Node[] = nodes.map((node) => ({
+        id: node.id,
+        type: node.type, // 'idea' is the primary type now
+        position: node.position,
+        data: node.data,
+        // Use dimensions from store (persisted from Firestore)
+        ...(node.width && { width: node.width }),
+        ...(node.height && { height: node.height }),
+    }));
 
     // Convert store edges to ReactFlow format
     const rfEdges: Edge[] = edges.map((edge) => ({
@@ -82,19 +80,19 @@ export function CanvasView() {
                         needsUpdate = true;
                     }
                 }
-                // Store measured dimensions in ref (not in store)
-                if (change.type === 'dimensions' && change.dimensions) {
-                    nodeInternalsRef.current.set(change.id, {
-                        width: change.dimensions.width,
-                        height: change.dimensions.height,
-                    });
+                // Save dimensions to store for persistence (resizing)
+                if (change.type === 'dimensions' && change.dimensions && change.resizing) {
+                    updateNodeDimensions(
+                        change.id,
+                        change.dimensions.width,
+                        change.dimensions.height
+                    );
                 }
                 // Handle node removal
                 if (change.type === 'remove') {
                     const nodeIndex = updatedNodes.findIndex((n) => n.id === change.id);
                     if (nodeIndex !== -1) {
                         updatedNodes.splice(nodeIndex, 1);
-                        nodeInternalsRef.current.delete(change.id);
                         needsUpdate = true;
                     }
                 }
@@ -104,7 +102,7 @@ export function CanvasView() {
                 setNodes(updatedNodes);
             }
         },
-        [nodes, setNodes]
+        [nodes, setNodes, updateNodeDimensions]
     );
 
     // Handle edge changes (removal)
@@ -135,7 +133,7 @@ export function CanvasView() {
             if (connection.source && connection.target) {
                 const newEdge = {
                     id: `edge-${Date.now()}`,
-                    workspaceId: nodes[0]?.workspaceId ?? '',
+                    workspaceId: currentWorkspaceId ?? DEFAULT_WORKSPACE_ID,
                     sourceNodeId: connection.source,
                     targetNodeId: connection.target,
                     relationshipType: 'related' as const,
@@ -143,7 +141,7 @@ export function CanvasView() {
                 useCanvasStore.getState().addEdge(newEdge);
             }
         },
-        [nodes]
+        [currentWorkspaceId]
     );
 
     const onSelectionChange: OnSelectionChangeFunc = useCallback(
@@ -182,6 +180,7 @@ export function CanvasView() {
                 <Controls />
             </ReactFlow>
             <AddNodeButton />
+            <CanvasControls />
         </div>
     );
 }

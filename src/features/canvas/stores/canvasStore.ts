@@ -16,6 +16,7 @@ interface CanvasActions {
     // Node actions
     addNode: (node: CanvasNode) => void;
     updateNodePosition: (nodeId: string, position: NodePosition) => void;
+    updateNodeDimensions: (nodeId: string, width: number, height: number) => void;
     updateNodeContent: (nodeId: string, content: string) => void;
     deleteNode: (nodeId: string) => void;
 
@@ -42,6 +43,7 @@ interface CanvasActions {
     // Bulk operations
     setNodes: (nodes: CanvasNode[]) => void;
     setEdges: (edges: CanvasEdge[]) => void;
+    clearCanvas: () => void;
 }
 
 type CanvasStore = CanvasState & CanvasActions;
@@ -66,6 +68,16 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
             nodes: state.nodes.map((node) =>
                 node.id === nodeId
                     ? { ...node, position, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    updateNodeDimensions: (nodeId: string, width: number, height: number) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, width, height, updatedAt: new Date() }
                     : node
             ),
         }));
@@ -233,5 +245,9 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     setEdges: (edges: CanvasEdge[]) => {
         set({ edges });
+    },
+
+    clearCanvas: () => {
+        set({ nodes: [], edges: [], selectedNodeIds: new Set() });
     },
 }));
