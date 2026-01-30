@@ -174,7 +174,6 @@ export function CanvasView() {
                 maxZoom={2}
                 selectionOnDrag
                 selectionMode={SelectionMode.Partial}
-                fitView
             >
                 <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
                 <Controls />

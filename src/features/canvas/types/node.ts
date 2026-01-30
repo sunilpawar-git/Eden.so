@@ -3,6 +3,13 @@
  */
 
 /**
+ * Default dimensions for new nodes (in pixels)
+ * SSOT: These constants are the single source of truth for node sizing
+ */
+export const DEFAULT_NODE_WIDTH = 280;
+export const DEFAULT_NODE_HEIGHT = 120;
+
+/**
  * Node types - 'idea' is the primary type for IdeaCard nodes
  */
 export type NodeType = 'idea' | 'media';
@@ -37,6 +44,7 @@ export interface CanvasNode {
 
 /**
  * Create a unified IdeaCard node (prompt + output in one)
+ * Returns node with default dimensions for consistent sizing
  */
 export function createIdeaNode(
     id: string,
@@ -56,7 +64,10 @@ export function createIdeaNode(
             isPromptCollapsed: false,
         },
         position,
+        width: DEFAULT_NODE_WIDTH,
+        height: DEFAULT_NODE_HEIGHT,
         createdAt: now,
         updatedAt: now,
     };
 }
+

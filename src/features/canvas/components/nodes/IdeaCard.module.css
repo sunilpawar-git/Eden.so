@@ -13,7 +13,8 @@
 
 .ideaCard {
     min-width: var(--card-min-width);
-    max-width: 600px; /* Match NodeResizer maxWidth */
+    max-width: 600px;
+    /* Match NodeResizer maxWidth */
     background: var(--color-surface-elevated);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
@@ -70,7 +71,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     font-family: var(--font-family);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-node);
     line-height: var(--line-height-normal);
     color: var(--color-text);
     background: var(--color-surface);
@@ -88,7 +89,7 @@
 
 /* Prompt Text - For AI cards (lighter styling) */
 .promptText {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-node);
     color: var(--color-text-secondary);
     cursor: pointer;
     padding: var(--space-xs);
@@ -110,7 +111,7 @@
 
 /* Placeholder for empty cards */
 .placeholder {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-node);
     color: var(--color-text-muted);
     font-style: italic;
     text-align: center;

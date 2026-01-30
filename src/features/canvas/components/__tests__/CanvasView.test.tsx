@@ -71,8 +71,8 @@ describe('CanvasView', () => {
         const mockCalls = vi.mocked(ReactFlow).mock.calls;
         const reactFlowProps = mockCalls[0]?.[0] ?? {};
         expect(reactFlowProps.defaultViewport).toEqual({ x: 0, y: 0, zoom: 1 });
-        // fitView is now enabled for better initial view
-        expect(reactFlowProps.fitView).toBe(true);
+        // fitView is disabled to prevent auto-zoom making nodes appear oversized
+        expect(reactFlowProps.fitView).toBeUndefined();
     });
 
     describe('Edge configuration', () => {

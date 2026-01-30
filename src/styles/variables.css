@@ -72,6 +72,7 @@
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.25rem;
   --font-size-2xl: 1.5rem;
+  --font-size-node: 12px; /* Fixed size for node content - SSOT for readability */
   
   --font-weight-normal: 400;
   --font-weight-medium: 500;
