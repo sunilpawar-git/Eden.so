@@ -39,7 +39,7 @@ describe('WorkspaceService Save with Delete Sync', () => {
     });
 
     describe('saveNodes', () => {
-        const createMockNode = (id: string): CanvasNode => ({
+        const createMockNode = (id: string, overrides?: Partial<CanvasNode>): CanvasNode => ({
             id,
             workspaceId: 'ws-1',
             type: 'idea',
@@ -47,6 +47,7 @@ describe('WorkspaceService Save with Delete Sync', () => {
             position: { x: 0, y: 0 },
             createdAt: new Date(),
             updatedAt: new Date(),
+            ...overrides,
         });
 
         it('should delete nodes from Firestore that no longer exist locally', async () => {
@@ -88,6 +89,47 @@ describe('WorkspaceService Save with Delete Sync', () => {
 
             expect(mockBatchDelete).toHaveBeenCalled();
             expect(mockBatchCommit).toHaveBeenCalled();
+        });
+
+        // REGRESSION: Firebase undefined value sanitization
+        it('should sanitize undefined values from node data (Firebase compatibility)', async () => {
+            mockGetDocs.mockResolvedValue({ docs: [] });
+
+            // Node with undefined optional fields (width, height, data.output)
+            const nodeWithUndefined = createMockNode('node-1', {
+                width: undefined,
+                height: undefined,
+                data: { prompt: 'Test', output: undefined, isGenerating: undefined },
+            });
+
+            await saveNodes('user-1', 'ws-1', [nodeWithUndefined]);
+
+            expect(mockBatchSet).toHaveBeenCalledTimes(1);
+            const savedData = mockBatchSet.mock.calls[0]?.[1] as Record<string, unknown>;
+
+            // Verify undefined values are NOT in the saved data
+            expect(savedData).not.toHaveProperty('width');
+            expect(savedData).not.toHaveProperty('height');
+            expect(savedData.data).not.toHaveProperty('output');
+            expect(savedData.data).not.toHaveProperty('isGenerating');
+            // Verify defined values ARE preserved
+            expect((savedData.data as Record<string, unknown>).prompt).toBe('Test');
+            expect(savedData.id).toBe('node-1');
+        });
+
+        it('should preserve defined width/height when present', async () => {
+            mockGetDocs.mockResolvedValue({ docs: [] });
+
+            const nodeWithDimensions = createMockNode('node-1', {
+                width: 300,
+                height: 200,
+            });
+
+            await saveNodes('user-1', 'ws-1', [nodeWithDimensions]);
+
+            const savedData = mockBatchSet.mock.calls[0]?.[1] as Record<string, unknown>;
+            expect(savedData.width).toBe(300);
+            expect(savedData.height).toBe(200);
         });
     });
 

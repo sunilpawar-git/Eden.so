@@ -98,13 +98,24 @@ export function Sidebar() {
             try {
                 const loadedWorkspaces = await loadUserWorkspaces(user!.id);
                 setWorkspaces(loadedWorkspaces);
+
+                // Auto-select first workspace if current doesn't exist in loaded list
+                const firstWorkspace = loadedWorkspaces[0];
+                if (firstWorkspace) {
+                    const currentExists = loadedWorkspaces.some(
+                        (ws) => ws.id === currentWorkspaceId
+                    );
+                    if (!currentExists) {
+                        setCurrentWorkspaceId(firstWorkspace.id);
+                    }
+                }
             } catch (error) {
                 console.error('[Sidebar] Failed to load workspaces:', error);
             }
         }
 
         loadWorkspaces();
-    }, [user, setWorkspaces]);
+    }, [user, setWorkspaces, currentWorkspaceId, setCurrentWorkspaceId]);
 
     const handleSignOut = async () => {
         try {
