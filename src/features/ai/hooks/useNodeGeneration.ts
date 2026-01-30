@@ -8,6 +8,7 @@ import { useAIStore } from '../stores/aiStore';
 import { generateContentWithContext } from '../services/geminiService';
 import { createIdeaNode } from '@/features/canvas/types/node';
 import type { IdeaNodeData } from '@/features/canvas/types/node';
+import { strings } from '@/shared/localization/strings';
 
 const BRANCH_OFFSET_X = 350;
 
@@ -34,14 +35,19 @@ export function useNodeGeneration() {
 
             // Collect upstream context via edges
             const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
+
+            // Reverse for chronological order (oldest ancestor first)
+            // Filter to include any node with content (prompt OR output)
+            // Prioritize output over prompt for context (AI results are more relevant)
             const contextChain: string[] = upstreamNodes
+                .reverse()
                 .filter((n) => {
                     const data = n.data as IdeaNodeData;
-                    return data.prompt;
+                    return data.prompt || data.output;
                 })
                 .map((n) => {
                     const data = n.data as IdeaNodeData;
-                    return data.prompt;
+                    return (data.output || data.prompt) as string;
                 });
 
             // Set generating state on the node
@@ -56,7 +62,7 @@ export function useNodeGeneration() {
                 useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 completeGeneration();
             } catch (error) {
-                const message = error instanceof Error ? error.message : 'Generation failed';
+                const message = error instanceof Error ? error.message : strings.errors.aiError;
                 useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 setError(message);
             }

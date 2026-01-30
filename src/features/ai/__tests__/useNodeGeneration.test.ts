@@ -144,6 +144,106 @@ describe('useNodeGeneration', () => {
             );
         });
 
+        it('should include upstream Note content (output) in context', async () => {
+            // Note (output only) -> AI Node
+            const noteNode = createTestIdeaNode('node-1', '', 'Note content');
+            const aiNode = createTestIdeaNode('node-2', 'AI prompt');
+
+            useCanvasStore.getState().addNode(noteNode);
+            useCanvasStore.getState().addNode(aiNode);
+            useCanvasStore.getState().addEdge({
+                id: 'edge-1',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'node-1',
+                targetNodeId: 'node-2',
+                relationshipType: 'related',
+            });
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Response');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('node-2');
+            });
+
+            // Currently, this will FAIL because it only looks for .prompt
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'AI prompt',
+                expect.arrayContaining(['Note content'])
+            );
+        });
+
+        it('should prioritize output over prompt for context when both exist', async () => {
+            // AI Node (prompt + output) -> AI Node
+            const parentNode = createTestIdeaNode('parent', 'Parent prompt', 'Parent output');
+            const childNode = createTestIdeaNode('child', 'Child prompt');
+
+            useCanvasStore.getState().addNode(parentNode);
+            useCanvasStore.getState().addNode(childNode);
+            useCanvasStore.getState().addEdge({
+                id: 'edge-1',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'parent',
+                targetNodeId: 'child',
+                relationshipType: 'related',
+            });
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Response');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('child');
+            });
+
+            // Should use 'Parent output' instead of 'Parent prompt'
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'Child prompt',
+                expect.arrayContaining(['Parent output'])
+            );
+        });
+
+        it('should preserve chronological order in multi-level chains', async () => {
+            // Grandparent -> Parent -> Child
+            const grandparent = createTestIdeaNode('grandparent', 'Grandparent idea');
+            const parent = createTestIdeaNode('parent', 'Parent evolution');
+            const child = createTestIdeaNode('child', 'Child synthesis');
+
+            useCanvasStore.getState().addNode(grandparent);
+            useCanvasStore.getState().addNode(parent);
+            useCanvasStore.getState().addNode(child);
+
+            // G -> P
+            useCanvasStore.getState().addEdge({
+                id: 'e1',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'grandparent',
+                targetNodeId: 'parent',
+                relationshipType: 'related',
+            });
+            // P -> C
+            useCanvasStore.getState().addEdge({
+                id: 'e2',
+                workspaceId: 'ws-1',
+                sourceNodeId: 'parent',
+                targetNodeId: 'child',
+                relationshipType: 'related',
+            });
+
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Response');
+
+            const { result } = renderHook(() => useNodeGeneration());
+
+            await act(async () => {
+                await result.current.generateFromPrompt('child');
+            });
+
+            // Context should be [Grandparent, Parent]
+            const contextChain = vi.mocked(geminiService.generateContentWithContext).mock.calls[0]?.[1];
+            expect(contextChain).toEqual(['Grandparent idea', 'Parent evolution']);
+        });
+
         it('should exclude unconnected nodes from context', async () => {
             const connected = createTestIdeaNode('idea-connected', 'Connected prompt');
             const unconnected = createTestIdeaNode('idea-unconnected', 'Unconnected prompt');
