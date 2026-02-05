@@ -102,6 +102,15 @@ export const strings = {
         deleteNode: 'Delete Node',
         undo: 'Undo',
         redo: 'Redo',
+        search: 'Search',
+    },
+    search: {
+        placeholder: 'Search notes...',
+        noResults: 'No results found',
+        resultsCount: 'results',
+        inWorkspace: 'in',
+        prompt: 'Prompt',
+        output: 'Output',
     },
     performance: {
         cls: 'Cumulative Layout Shift',
