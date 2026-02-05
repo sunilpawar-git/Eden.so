@@ -23,26 +23,24 @@ import '@/styles/global.css';
 
 function AuthenticatedApp() {
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
-    const { isLoading: workspaceLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
+    const { isLoading: initialLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     
     useKeyboardShortcuts({ onOpenSettings: () => setIsSettingsOpen(true) });
     useThemeApplicator();
     useAutosave(currentWorkspaceId ?? '');
 
-    if (workspaceLoading) {
-        return (
-            <div className="loading-screen">
-                <div className="loading-spinner" />
-                <p>{strings.common.loading}</p>
-            </div>
-        );
-    }
-
+    // Always keep ReactFlowProvider mounted to prevent blink on workspace switch
     return (
         <ReactFlowProvider>
             <Layout onSettingsClick={() => setIsSettingsOpen(true)}>
                 <CanvasView />
+                {initialLoading && (
+                    <div className="canvas-loading-overlay">
+                        <div className="loading-spinner" />
+                        <p>{strings.common.loading}</p>
+                    </div>
+                )}
             </Layout>
             <SettingsPanel 
                 isOpen={isSettingsOpen} 
