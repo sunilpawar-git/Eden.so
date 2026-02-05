@@ -5,7 +5,7 @@
  */
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 
 // These values should come from environment variables in production
 const firebaseConfig = {
@@ -26,4 +26,11 @@ if (import.meta.env.DEV && !firebaseConfig.apiKey) {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Enable offline persistence for instant workspace switching
+// Uses the new PersistentLocalCache API (replaces deprecated enableIndexedDbPersistence)
+export const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+        tabManager: persistentSingleTabManager(undefined),
+    }),
+});

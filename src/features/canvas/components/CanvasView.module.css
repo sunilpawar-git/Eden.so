@@ -82,6 +82,19 @@
     background: var(--color-primary-light);
 }
 
+/* ReactFlow attribution link - WCAG AA contrast fix */
+.canvasContainer :global(.react-flow__attribution) {
+    color: var(--color-text-secondary);
+}
+
+.canvasContainer :global(.react-flow__attribution a) {
+    color: var(--color-text-secondary);
+}
+
+.canvasContainer :global(.react-flow__attribution a:hover) {
+    color: var(--color-primary);
+}
+
 /* Workspace switching transition */
 .canvasContainer {
     transition: opacity 0.15s ease-out;

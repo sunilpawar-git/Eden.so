@@ -18,6 +18,16 @@ vi.mock('../services/workspaceService', () => ({
     saveEdges: (...args: unknown[]) => mockSaveEdges(...args),
 }));
 
+// Mock the workspace cache
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
+vi.mock('../services/workspaceCache', () => ({
+    workspaceCache: {
+        get: (...args: unknown[]) => mockCacheGet(...args),
+        set: (...args: unknown[]) => mockCacheSet(...args),
+    },
+}));
+
 // Mock auth store
 const mockUser = { id: 'user-1', email: 'test@example.com' };
 vi.mock('@/features/auth/stores/authStore', () => ({
@@ -65,6 +75,7 @@ describe('useWorkspaceSwitcher', () => {
         mockSaveNodes.mockResolvedValue(undefined);
         mockSaveEdges.mockResolvedValue(undefined);
         mockGetState.mockReturnValue({ nodes: [], edges: [] });
+        mockCacheGet.mockReturnValue(null); // Default: cache miss
     });
 
     it('returns isSwitching false initially', () => {
@@ -215,5 +226,57 @@ describe('useWorkspaceSwitcher', () => {
 
         expect(mockSaveNodes).toHaveBeenCalledWith('user-1', 'ws-current', mockNodes);
         expect(mockSaveEdges).toHaveBeenCalledWith('user-1', 'ws-current', mockEdges);
+    });
+
+    describe('cache integration', () => {
+        it('reads from cache when available (no Firestore call)', async () => {
+            const cachedData = { nodes: mockNodes, edges: mockEdges, loadedAt: Date.now() };
+            mockCacheGet.mockReturnValue(cachedData);
+
+            const { result } = renderHook(() => useWorkspaceSwitcher());
+
+            await act(async () => {
+                await result.current.switchWorkspace('ws-cached');
+            });
+
+            // Should check cache
+            expect(mockCacheGet).toHaveBeenCalledWith('ws-cached');
+            // Should NOT call Firestore
+            expect(mockLoadNodes).not.toHaveBeenCalled();
+            expect(mockLoadEdges).not.toHaveBeenCalled();
+            // Should still update canvas
+            expect(mockSetNodes).toHaveBeenCalledWith(mockNodes);
+            expect(mockSetEdges).toHaveBeenCalledWith(mockEdges);
+        });
+
+        it('falls back to Firestore on cache miss', async () => {
+            mockCacheGet.mockReturnValue(null); // Cache miss
+
+            const { result } = renderHook(() => useWorkspaceSwitcher());
+
+            await act(async () => {
+                await result.current.switchWorkspace('ws-new');
+            });
+
+            expect(mockCacheGet).toHaveBeenCalledWith('ws-new');
+            expect(mockLoadNodes).toHaveBeenCalledWith('user-1', 'ws-new');
+            expect(mockLoadEdges).toHaveBeenCalledWith('user-1', 'ws-new');
+        });
+
+        it('populates cache after Firestore load', async () => {
+            mockCacheGet.mockReturnValue(null); // Cache miss
+
+            const { result } = renderHook(() => useWorkspaceSwitcher());
+
+            await act(async () => {
+                await result.current.switchWorkspace('ws-new');
+            });
+
+            // Should populate cache with loaded data
+            expect(mockCacheSet).toHaveBeenCalledWith(
+                'ws-new',
+                expect.objectContaining({ nodes: mockNodes, edges: mockEdges })
+            );
+        });
     });
 });

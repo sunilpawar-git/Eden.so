@@ -43,6 +43,22 @@ vi.mock('@/features/workspace/services/workspaceService', () => ({
     saveEdges: vi.fn(),
 }));
 
+// Mock workspace switcher hook
+vi.mock('@/features/workspace/hooks/useWorkspaceSwitcher', () => ({
+    useWorkspaceSwitcher: () => ({
+        isSwitching: false,
+        error: null,
+        switchWorkspace: vi.fn(),
+    }),
+}));
+
+// Mock workspace cache
+vi.mock('@/features/workspace/services/workspaceCache', () => ({
+    workspaceCache: {
+        preload: vi.fn().mockResolvedValue(undefined),
+    },
+}));
+
 describe('Workspace Auto-Selection (Regression)', () => {
     const mockClearCanvas = vi.fn();
     const mockSetCurrentWorkspaceId = vi.fn();

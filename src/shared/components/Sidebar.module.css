@@ -152,7 +152,8 @@
 
 .signOutButton {
     font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
+    /* Use secondary text for WCAG AA contrast compliance */
+    color: var(--color-text-secondary);
     text-align: left;
     padding: 0;
     transition: color var(--transition-fast);

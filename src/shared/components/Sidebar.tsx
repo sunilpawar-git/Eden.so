@@ -15,6 +15,7 @@ import {
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
+import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { toast } from '@/shared/stores/toastStore';
 import { PlusIcon, SettingsIcon } from '@/shared/components/icons';
 import styles from './Sidebar.module.css';
@@ -115,6 +116,14 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     if (!currentExists) {
                         setCurrentWorkspaceId(firstWorkspace.id);
                     }
+                }
+
+                // Preload all workspaces into cache for instant switching
+                if (loadedWorkspaces.length > 0) {
+                    const workspaceIds = loadedWorkspaces.map((ws) => ws.id);
+                    void workspaceCache.preload(user!.id, workspaceIds).catch((err: unknown) => {
+                        console.warn('[Sidebar] Cache preload failed:', err);
+                    });
                 }
             } catch (error) {
                 console.error('[Sidebar] Failed to load workspaces:', error);

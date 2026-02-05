@@ -35,6 +35,14 @@ vi.mock('@/features/workspace/hooks/useWorkspaceSwitcher', () => ({
     })),
 }));
 
+// Mock the workspace cache
+const mockPreload = vi.fn();
+vi.mock('@/features/workspace/services/workspaceCache', () => ({
+    workspaceCache: {
+        preload: (...args: unknown[]) => mockPreload(...args),
+    },
+}));
+
 describe('Sidebar', () => {
     const mockClearCanvas = vi.fn();
     const mockSetCurrentWorkspaceId = vi.fn();
@@ -81,6 +89,8 @@ describe('Sidebar', () => {
         vi.mocked(saveEdges).mockResolvedValue(undefined);
         // Reset workspace switcher mock
         mockSwitchWorkspace.mockResolvedValue(undefined);
+        // Reset cache preload mock
+        mockPreload.mockResolvedValue(undefined);
         vi.mocked(useWorkspaceSwitcher).mockReturnValue({
             isSwitching: false,
             error: null,
@@ -201,6 +211,34 @@ describe('Sidebar', () => {
             // Check that the button contains an SVG icon
             const svgIcon = newWorkspaceButton.parentElement?.querySelector('svg');
             expect(svgIcon).toBeInTheDocument();
+        });
+    });
+
+    describe('cache preloading', () => {
+        it('should preload all workspace data into cache on mount', async () => {
+            vi.mocked(loadUserWorkspaces).mockResolvedValue(mockWorkspacesList);
+            setupWithWorkspaces();
+            render(<Sidebar />);
+
+            await waitFor(() => {
+                expect(mockPreload).toHaveBeenCalledWith('user-1', ['ws-1', 'ws-2']);
+            });
+        });
+
+        it('should handle preload errors gracefully', async () => {
+            vi.mocked(loadUserWorkspaces).mockResolvedValue(mockWorkspacesList);
+            mockPreload.mockRejectedValue(new Error('Preload failed'));
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            setupWithWorkspaces();
+
+            render(<Sidebar />);
+
+            // Should not crash, render should complete normally
+            await waitFor(() => {
+                expect(screen.getByText('Project Alpha')).toBeInTheDocument();
+            });
+
+            consoleSpy.mockRestore();
         });
     });
 });

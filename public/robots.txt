@@ -1,0 +1,8 @@
+# ActionStation - Robots.txt
+# Allow all crawlers to index the site
+
+User-agent: *
+Allow: /
+
+# Sitemap (if available in the future)
+# Sitemap: https://actionstation.app/sitemap.xml
