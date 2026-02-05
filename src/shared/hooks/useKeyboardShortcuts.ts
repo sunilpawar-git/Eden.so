@@ -6,21 +6,23 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 
 interface KeyboardShortcutsOptions {
     onOpenSettings?: () => void;
+    onAddNode?: () => void;
 }
 
 export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
     const { selectedNodeIds, deleteNode, clearSelection } = useCanvasStore();
-    const { onOpenSettings } = options;
+    const { onOpenSettings, onAddNode } = options;
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
             // Don't handle shortcuts when typing in inputs
             const target = e.target as HTMLElement;
-            if (
+            const isEditable =
                 target.tagName === 'INPUT' ||
                 target.tagName === 'TEXTAREA' ||
-                target.isContentEditable
-            ) {
+                target.isContentEditable ||
+                target.contentEditable === 'true';
+            if (isEditable) {
                 return;
             }
 
@@ -28,6 +30,13 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
             if ((e.metaKey || e.ctrlKey) && e.key === ',') {
                 e.preventDefault();
                 onOpenSettings?.();
+                return;
+            }
+
+            // N to add new node
+            if (e.key === 'n' || e.key === 'N') {
+                e.preventDefault();
+                onAddNode?.();
                 return;
             }
 
@@ -44,7 +53,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
                 clearSelection();
             }
         },
-        [selectedNodeIds, deleteNode, clearSelection, onOpenSettings]
+        [selectedNodeIds, deleteNode, clearSelection, onOpenSettings, onAddNode]
     );
 
     useEffect(() => {

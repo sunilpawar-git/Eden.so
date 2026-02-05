@@ -10,10 +10,10 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { subscribeToAuthState } from '@/features/auth/services/authService';
 import { Layout } from '@/shared/components/Layout';
 import { CanvasView } from '@/features/canvas/components/CanvasView';
+import { KeyboardShortcutsProvider } from '@/features/canvas/components/KeyboardShortcutsProvider';
 import { ToastContainer } from '@/shared/components/Toast';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { LoadingFallback } from '@/shared/components/LoadingFallback';
-import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
 import { useThemeApplicator } from '@/shared/hooks/useThemeApplicator';
 import { useAutosave } from '@/features/workspace/hooks/useAutosave';
 import { useWorkspaceLoader } from '@/features/workspace/hooks/useWorkspaceLoader';
@@ -34,13 +34,15 @@ function AuthenticatedApp() {
     const { isLoading: initialLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     
-    useKeyboardShortcuts({ onOpenSettings: () => setIsSettingsOpen(true) });
     useThemeApplicator();
     useAutosave(currentWorkspaceId ?? '');
 
     // Always keep ReactFlowProvider mounted to prevent blink on workspace switch
     return (
         <ReactFlowProvider>
+            <KeyboardShortcutsProvider 
+                onOpenSettings={() => setIsSettingsOpen(true)} 
+            />
             <Layout onSettingsClick={() => setIsSettingsOpen(true)}>
                 <CanvasView />
                 {initialLoading && (

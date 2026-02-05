@@ -13,8 +13,6 @@ const shortcuts: ShortcutItem[] = [
     { action: strings.shortcuts.openSettings, keys: '⌘ ,' },
     { action: strings.shortcuts.addNode, keys: 'N' },
     { action: strings.shortcuts.deleteNode, keys: 'Delete' },
-    { action: strings.shortcuts.undo, keys: '⌘ Z' },
-    { action: strings.shortcuts.redo, keys: '⌘ ⇧ Z' },
 ];
 
 export function KeyboardSection() {
