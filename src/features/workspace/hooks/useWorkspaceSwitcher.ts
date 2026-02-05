@@ -41,16 +41,17 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
         setError(null);
 
         try {
-            // 1. Save current workspace data (if exists)
+            // 1. Fire-and-forget save (non-blocking, parallel with load)
             const { nodes: currentNodes, edges: currentEdges } = useCanvasStore.getState();
             if (currentWorkspaceId && (currentNodes.length > 0 || currentEdges.length > 0)) {
-                await Promise.all([
+                // Don't await - save happens in background while we load new workspace
+                void Promise.all([
                     saveNodes(user.id, currentWorkspaceId, currentNodes),
                     saveEdges(user.id, currentWorkspaceId, currentEdges),
-                ]);
+                ]).catch((err: unknown) => console.error('[useWorkspaceSwitcher] Background save failed:', err));
             }
 
-            // 2. Prefetch new workspace data (before updating any state)
+            // 2. Load new workspace data (only blocking operation now)
             const [newNodes, newEdges] = await Promise.all([
                 loadNodes(user.id, workspaceId),
                 loadEdges(user.id, workspaceId),
