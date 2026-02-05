@@ -1,18 +1,18 @@
 /**
  * App Entry Point
+ * Uses React.lazy for code splitting of non-critical components
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { subscribeToAuthState } from '@/features/auth/services/authService';
-import { LoginPage } from '@/features/auth/components/LoginPage';
 import { Layout } from '@/shared/components/Layout';
 import { CanvasView } from '@/features/canvas/components/CanvasView';
 import { ToastContainer } from '@/shared/components/Toast';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
-import { SettingsPanel } from '@/shared/components/SettingsPanel';
+import { LoadingFallback } from '@/shared/components/LoadingFallback';
 import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
 import { useThemeApplicator } from '@/shared/hooks/useThemeApplicator';
 import { useAutosave } from '@/features/workspace/hooks/useAutosave';
@@ -21,33 +21,41 @@ import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { strings } from '@/shared/localization/strings';
 import '@/styles/global.css';
 
+// Lazy load non-critical components for better initial load performance
+const LoginPage = lazy(() => 
+    import('@/features/auth/components/LoginPage').then(m => ({ default: m.LoginPage }))
+);
+const SettingsPanel = lazy(() => 
+    import('@/shared/components/SettingsPanel').then(m => ({ default: m.SettingsPanel }))
+);
+
 function AuthenticatedApp() {
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
-    const { isLoading: workspaceLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
+    const { isLoading: initialLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     
     useKeyboardShortcuts({ onOpenSettings: () => setIsSettingsOpen(true) });
     useThemeApplicator();
     useAutosave(currentWorkspaceId ?? '');
 
-    if (workspaceLoading) {
-        return (
-            <div className="loading-screen">
-                <div className="loading-spinner" />
-                <p>{strings.common.loading}</p>
-            </div>
-        );
-    }
-
+    // Always keep ReactFlowProvider mounted to prevent blink on workspace switch
     return (
         <ReactFlowProvider>
             <Layout onSettingsClick={() => setIsSettingsOpen(true)}>
                 <CanvasView />
+                {initialLoading && (
+                    <div className="canvas-loading-overlay">
+                        <div className="loading-spinner" />
+                        <p>{strings.common.loading}</p>
+                    </div>
+                )}
             </Layout>
-            <SettingsPanel 
-                isOpen={isSettingsOpen} 
-                onClose={() => setIsSettingsOpen(false)} 
-            />
+            <Suspense fallback={null}>
+                <SettingsPanel 
+                    isOpen={isSettingsOpen} 
+                    onClose={() => setIsSettingsOpen(false)} 
+                />
+            </Suspense>
         </ReactFlowProvider>
     );
 }
@@ -65,9 +73,13 @@ function AppContent() {
         );
     }
 
-    // Not authenticated
+    // Not authenticated - lazy load login page
     if (!isAuthenticated) {
-        return <LoginPage />;
+        return (
+            <Suspense fallback={<LoadingFallback fullScreen />}>
+                <LoginPage />
+            </Suspense>
+        );
     }
 
     // Authenticated - show app with workspace loading

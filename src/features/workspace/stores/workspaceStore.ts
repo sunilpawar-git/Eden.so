@@ -9,6 +9,7 @@ interface WorkspaceState {
     currentWorkspaceId: string | null;
     workspaces: Workspace[];
     isLoading: boolean;
+    isSwitching: boolean;
 }
 
 interface WorkspaceActions {
@@ -18,6 +19,7 @@ interface WorkspaceActions {
     updateWorkspace: (workspaceId: string, updates: Partial<Workspace>) => void;
     removeWorkspace: (workspaceId: string) => void;
     setLoading: (isLoading: boolean) => void;
+    setSwitching: (isSwitching: boolean) => void;
 }
 
 type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -28,6 +30,7 @@ const initialState: WorkspaceState = {
     currentWorkspaceId: DEFAULT_WORKSPACE_ID,
     workspaces: [],
     isLoading: false,
+    isSwitching: false,
 };
 
 export const useWorkspaceStore = create<WorkspaceStore>()((set) => ({
@@ -68,6 +71,10 @@ export const useWorkspaceStore = create<WorkspaceStore>()((set) => ({
 
     setLoading: (isLoading: boolean) => {
         set({ isLoading });
+    },
+
+    setSwitching: (isSwitching: boolean) => {
+        set({ isSwitching });
     },
 }));
 

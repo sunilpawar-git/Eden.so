@@ -14,6 +14,8 @@ import {
 } from '@/features/workspace/services/workspaceService';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
+import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { toast } from '@/shared/stores/toastStore';
 import { PlusIcon, SettingsIcon } from '@/shared/components/icons';
 import styles from './Sidebar.module.css';
@@ -93,6 +95,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
         setWorkspaces,
         updateWorkspace 
     } = useWorkspaceStore();
+    const { switchWorkspace } = useWorkspaceSwitcher();
     const [isCreating, setIsCreating] = useState(false);
 
     // Load workspaces on mount
@@ -113,6 +116,14 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     if (!currentExists) {
                         setCurrentWorkspaceId(firstWorkspace.id);
                     }
+                }
+
+                // Preload all workspaces into cache for instant switching
+                if (loadedWorkspaces.length > 0) {
+                    const workspaceIds = loadedWorkspaces.map((ws) => ws.id);
+                    void workspaceCache.preload(user!.id, workspaceIds).catch((err: unknown) => {
+                        console.warn('[Sidebar] Cache preload failed:', err);
+                    });
                 }
             } catch (error) {
                 console.error('[Sidebar] Failed to load workspaces:', error);
@@ -162,27 +173,15 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
     };
 
     const handleSelectWorkspace = async (workspaceId: string) => {
-        if (workspaceId === currentWorkspaceId || !user) return;
+        if (workspaceId === currentWorkspaceId) return;
         
-        // 1. Save current workspace BEFORE clearing
-        const currentNodes = useCanvasStore.getState().nodes;
-        const currentEdges = useCanvasStore.getState().edges;
-        
-        if (currentWorkspaceId && (currentNodes.length > 0 || currentEdges.length > 0)) {
-            try {
-                await Promise.all([
-                    saveNodes(user.id, currentWorkspaceId, currentNodes),
-                    saveEdges(user.id, currentWorkspaceId, currentEdges),
-                ]);
-            } catch (error) {
-                console.error('[Sidebar] Failed to save workspace before switching:', error);
-                // Continue with switch even if save fails
-            }
+        try {
+            // Use atomic switcher: prefetch → swap → update ID (no clearCanvas)
+            await switchWorkspace(workspaceId);
+        } catch (error) {
+            console.error('[Sidebar] Failed to switch workspace:', error);
+            toast.error(strings.workspace.switchError);
         }
-        
-        // 2. Now safe to clear and switch
-        clearCanvas();
-        setCurrentWorkspaceId(workspaceId);
     };
 
     const handleRenameWorkspace = async (workspaceId: string, newName: string) => {

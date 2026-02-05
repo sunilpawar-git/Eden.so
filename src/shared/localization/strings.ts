@@ -6,6 +6,8 @@ export const strings = {
     app: {
         name: 'ActionStation',
         tagline: 'Think visually. Connect ideas.',
+        description: 'AI-powered infinite whiteboard for creating, connecting, and synthesizing ideas.',
+        keywords: 'AI whiteboard, visual thinking, idea canvas, brainstorming, mind mapping, productivity',
     },
     auth: {
         signInWithGoogle: 'Sign in with Google',
@@ -18,6 +20,9 @@ export const strings = {
         untitled: 'Untitled Workspace',
         created: 'Workspace created',
         deleteConfirm: 'Are you sure you want to delete this workspace?',
+        switching: 'Switching workspace...',
+        switchError: 'Failed to switch workspace',
+        offlineUnavailable: 'Offline mode unavailable',
     },
     canvas: {
         addNode: 'Add node',
@@ -58,6 +63,7 @@ export const strings = {
         save: 'Save',
         retry: 'Retry',
         loading: 'Loading...',
+        loadingComponent: 'Loading component...',
         comingSoon: 'Coming soon!',
     },
     settings: {
@@ -83,6 +89,14 @@ export const strings = {
         deleteNode: 'Delete Node',
         undo: 'Undo',
         redo: 'Redo',
+    },
+    performance: {
+        cls: 'Cumulative Layout Shift',
+        fcp: 'First Contentful Paint',
+        fid: 'First Input Delay',
+        inp: 'Interaction to Next Paint',
+        lcp: 'Largest Contentful Paint',
+        ttfb: 'Time to First Byte',
     },
 } as const;
 

@@ -5,6 +5,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { saveNodes, saveEdges } from '@/features/workspace/services/workspaceService';
+import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 
 const AUTOSAVE_DELAY_MS = 2000; // 2 second debounce
 
@@ -22,6 +23,8 @@ export function useAutosave(workspaceId: string) {
                 saveNodes(user.id, workspaceId, nodes),
                 saveEdges(user.id, workspaceId, edges),
             ]);
+            // Update cache with saved data to keep it fresh
+            workspaceCache.update(workspaceId, nodes, edges);
             console.log('[Autosave] Saved successfully');
         } catch (error) {
             console.error('[Autosave] Failed:', error);

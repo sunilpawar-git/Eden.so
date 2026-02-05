@@ -23,7 +23,8 @@
   
   --color-text-primary: hsl(220, 13%, 18%);
   --color-text-secondary: hsl(220, 9%, 46%);
-  --color-text-muted: hsl(220, 9%, 64%);
+  /* Muted text - WCAG AA compliant (4.5:1 contrast ratio on white) */
+  --color-text-muted: hsl(220, 9%, 46%);
   
   --color-border: hsl(220, 13%, 90%);
   --color-border-focus: var(--color-primary);
