@@ -12,6 +12,7 @@ interface ShortcutItem {
 const shortcuts: ShortcutItem[] = [
     { action: strings.shortcuts.openSettings, keys: '⌘ ,' },
     { action: strings.shortcuts.addNode, keys: 'N' },
+    { action: strings.shortcuts.quickCapture, keys: '⌘ N' },
     { action: strings.shortcuts.deleteNode, keys: 'Delete' },
 ];
 

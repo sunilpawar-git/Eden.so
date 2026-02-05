@@ -7,21 +7,30 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 interface KeyboardShortcutsOptions {
     onOpenSettings?: () => void;
     onAddNode?: () => void;
+    onQuickCapture?: () => void;
 }
 
 export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
     const { selectedNodeIds, deleteNode, clearSelection } = useCanvasStore();
-    const { onOpenSettings, onAddNode } = options;
+    const { onOpenSettings, onAddNode, onQuickCapture } = options;
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
-            // Don't handle shortcuts when typing in inputs
             const target = e.target as HTMLElement;
             const isEditable =
                 target.tagName === 'INPUT' ||
                 target.tagName === 'TEXTAREA' ||
                 target.isContentEditable ||
                 target.contentEditable === 'true';
+
+            // Cmd/Ctrl + N for Quick Capture (works even in input fields)
+            if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) {
+                e.preventDefault();
+                onQuickCapture?.();
+                return;
+            }
+
+            // Don't handle other shortcuts when typing in inputs
             if (isEditable) {
                 return;
             }
@@ -33,7 +42,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
                 return;
             }
 
-            // N to add new node
+            // N to add new node (without modifier)
             if (e.key === 'n' || e.key === 'N') {
                 e.preventDefault();
                 onAddNode?.();
@@ -53,7 +62,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
                 clearSelection();
             }
         },
-        [selectedNodeIds, deleteNode, clearSelection, onOpenSettings, onAddNode]
+        [selectedNodeIds, deleteNode, clearSelection, onOpenSettings, onAddNode, onQuickCapture]
     );
 
     useEffect(() => {

@@ -9,7 +9,8 @@ import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useNodeTransformation, type TransformationType } from '@/features/ai/hooks/useNodeTransformation';
-import { TransformMenu } from './TransformMenu';
+import { FOCUS_NODE_EVENT, type FocusNodeEvent } from '../../hooks/useQuickCapture';
+import { IdeaCardActionBar } from './IdeaCardActionBar';
 import type { IdeaNodeData } from '../../types/node';
 import styles from './IdeaCard.module.css';
 
@@ -59,6 +60,19 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
             setLocalInput(getEditableContent());
         }
     }, [isEditing, getEditableContent]);
+
+    // Listen for quick capture focus events
+    useEffect(() => {
+        const handleFocusEvent = (e: Event) => {
+            const event = e as FocusNodeEvent;
+            if (event.detail.nodeId === id) {
+                setIsEditing(true);
+            }
+        };
+
+        window.addEventListener(FOCUS_NODE_EVENT, handleFocusEvent);
+        return () => window.removeEventListener(FOCUS_NODE_EVENT, handleFocusEvent);
+    }, [id]);
 
     // Save content on blur (prevents data loss)
     const handleInputBlur = useCallback(() => {
@@ -242,40 +256,15 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     )}
                 </div>
 
-                {/* Unified Action Bar - ALL cards get same actions */}
-                <div className={styles.actionBar}>
-                    <TransformMenu
-                        onTransform={handleTransform}
-                        disabled={!hasContent || isGenerating}
-                        isTransforming={isTransforming}
-                    />
-                    <button
-                        className={styles.actionButton}
-                        onClick={handleRegenerate}
-                        disabled={(isGenerating ?? false) || !hasContent}
-                        aria-label={strings.ideaCard.regenerate}
-                        data-tooltip={strings.ideaCard.regenerate}
-                    >
-                        <span className={styles.icon}>↻</span>
-                    </button>
-                    <button
-                        className={styles.actionButton}
-                        onClick={handleBranch}
-                        disabled={!hasContent}
-                        aria-label={strings.ideaCard.branch}
-                        data-tooltip={strings.ideaCard.branch}
-                    >
-                        <span className={styles.icon}>⑂</span>
-                    </button>
-                    <button
-                        className={`${styles.actionButton} ${styles.deleteButton}`}
-                        onClick={handleDelete}
-                        aria-label={strings.ideaCard.delete}
-                        data-tooltip={strings.ideaCard.delete}
-                    >
-                        <span className={styles.icon}>🗑</span>
-                    </button>
-                </div>
+                <IdeaCardActionBar
+                    hasContent={hasContent}
+                    isGenerating={isGenerating ?? false}
+                    isTransforming={isTransforming}
+                    onTransform={handleTransform}
+                    onRegenerate={handleRegenerate}
+                    onBranch={handleBranch}
+                    onDelete={handleDelete}
+                />
             </div>
             <Handle
                 type="source"

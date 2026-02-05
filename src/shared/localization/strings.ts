@@ -98,6 +98,7 @@ export const strings = {
     shortcuts: {
         openSettings: 'Open Settings',
         addNode: 'Add Node',
+        quickCapture: 'Quick Capture',
         deleteNode: 'Delete Node',
         undo: 'Undo',
         redo: 'Redo',

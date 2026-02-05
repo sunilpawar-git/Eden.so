@@ -17,6 +17,7 @@ describe('useKeyboardShortcuts', () => {
     const mockClearSelection = vi.fn();
     const mockOnOpenSettings = vi.fn();
     const mockOnAddNode = vi.fn();
+    const mockOnQuickCapture = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -208,6 +209,61 @@ describe('useKeyboardShortcuts', () => {
 
             expect(mockOnAddNode).not.toHaveBeenCalled();
             document.body.removeChild(div);
+        });
+    });
+
+    describe('Quick Capture (Cmd/Ctrl + N)', () => {
+        it('should call onQuickCapture when Cmd+N is pressed', () => {
+            renderHook(() =>
+                useKeyboardShortcuts({ onQuickCapture: mockOnQuickCapture })
+            );
+
+            fireKeyDown('n', { metaKey: true });
+            expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+        });
+
+        it('should call onQuickCapture when Ctrl+N is pressed', () => {
+            renderHook(() =>
+                useKeyboardShortcuts({ onQuickCapture: mockOnQuickCapture })
+            );
+
+            fireKeyDown('n', { ctrlKey: true });
+            expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not call onAddNode when Cmd+N is pressed (separate action)', () => {
+            renderHook(() =>
+                useKeyboardShortcuts({ 
+                    onAddNode: mockOnAddNode,
+                    onQuickCapture: mockOnQuickCapture 
+                })
+            );
+
+            fireKeyDown('n', { metaKey: true });
+            expect(mockOnAddNode).not.toHaveBeenCalled();
+            expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+        });
+
+        it('should still work in input fields (for quick capture)', () => {
+            renderHook(() =>
+                useKeyboardShortcuts({ onQuickCapture: mockOnQuickCapture })
+            );
+
+            const input = document.createElement('input');
+            document.body.appendChild(input);
+            input.focus();
+
+            // Cmd+N should still work even in input (it's a system shortcut)
+            const event = new KeyboardEvent('keydown', {
+                key: 'n',
+                metaKey: true,
+                bubbles: true,
+            });
+            Object.defineProperty(event, 'target', { value: input });
+            window.dispatchEvent(event);
+
+            expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+            document.body.removeChild(input);
         });
     });
 
