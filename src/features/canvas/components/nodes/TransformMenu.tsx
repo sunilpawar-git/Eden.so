@@ -1,8 +1,10 @@
 /**
  * TransformMenu - Dropdown menu for AI text transformations
  * Provides options: Refine, Shorten, Lengthen, Proofread
+ * Uses React Portal to escape parent overflow constraints
  */
 import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { strings } from '@/shared/localization/strings';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import styles from './TransformMenu.module.css';
@@ -32,12 +34,29 @@ export const TransformMenu = React.memo(({
     isTransforming = false,
 }: TransformMenuProps) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    // Close menu when clicking outside
+    // Calculate menu position when opening
+    useEffect(() => {
+        if (isOpen && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setMenuPosition({
+                top: rect.top,
+                left: rect.left + rect.width / 2,
+            });
+        }
+    }, [isOpen]);
+
+    // Close menu when clicking outside (portal-aware)
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            const isInsideMenu = menuRef.current?.contains(target);
+            const isInsideButton = buttonRef.current?.contains(target);
+            
+            if (!isInsideMenu && !isInsideButton) {
                 setIsOpen(false);
             }
         };
@@ -63,9 +82,31 @@ export const TransformMenu = React.memo(({
         ? strings.ideaCard.transforming 
         : strings.ideaCard.transform;
 
+    const dropdownMenu = isOpen ? (
+        <div 
+            ref={menuRef}
+            className={styles.dropdownMenu} 
+            role="menu"
+            data-testid="transform-menu-portal"
+            style={{ top: menuPosition.top, left: menuPosition.left }}
+        >
+            {TRANSFORM_OPTIONS.map(({ type, labelKey }) => (
+                <button
+                    key={type}
+                    className={styles.menuItem}
+                    onClick={() => handleSelect(type)}
+                    role="menuitem"
+                >
+                    {strings.transformations[labelKey]}
+                </button>
+            ))}
+        </div>
+    ) : null;
+
     return (
-        <div className={styles.transformMenuWrapper} ref={menuRef}>
+        <div className={styles.transformMenuWrapper}>
             <button
+                ref={buttonRef}
                 className={styles.transformButton}
                 onClick={handleToggle}
                 disabled={disabled || isTransforming}
@@ -79,20 +120,7 @@ export const TransformMenu = React.memo(({
                 </span>
             </button>
             
-            {isOpen && (
-                <div className={styles.dropdownMenu} role="menu">
-                    {TRANSFORM_OPTIONS.map(({ type, labelKey }) => (
-                        <button
-                            key={type}
-                            className={styles.menuItem}
-                            onClick={() => handleSelect(type)}
-                            role="menuitem"
-                        >
-                            {strings.transformations[labelKey]}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {dropdownMenu && createPortal(dropdownMenu, document.body)}
         </div>
     );
 });

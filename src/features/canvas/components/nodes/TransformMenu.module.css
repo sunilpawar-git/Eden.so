@@ -32,17 +32,15 @@
 }
 
 .dropdownMenu {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 4px;
+    position: fixed;
+    transform: translate(-50%, -100%);
+    margin-top: -4px;
     background: var(--color-surface, #fff);
     border: 1px solid var(--color-border, #e0e0e0);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     min-width: 120px;
-    z-index: 1000;
+    z-index: 10000;
     overflow: hidden;
 }
 
