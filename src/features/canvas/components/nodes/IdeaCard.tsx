@@ -40,10 +40,42 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         return () => element.removeEventListener('wheel', handleWheel);
     }, []);
 
+    // Get the content that should be edited (prompt for AI cards, output for notes)
+    const getEditableContent = useCallback(() => {
+        return isAICard ? prompt : (output ?? '');
+    }, [isAICard, prompt, output]);
+
+    // Populate localInput when entering edit mode
+    useEffect(() => {
+        if (isEditing) {
+            setLocalInput(getEditableContent());
+        }
+    }, [isEditing, getEditableContent]);
+
+    // Save content on blur (prevents data loss)
     const handleInputBlur = useCallback(() => {
+        const trimmed = localInput.trim();
+        const existingContent = getEditableContent();
+        
+        // Only save if content has changed and is not empty
+        if (trimmed && trimmed !== existingContent) {
+            const AI_PREFIX = strings.ideaCard.aiPrefix;
+            
+            if (trimmed.startsWith(AI_PREFIX)) {
+                // AI Mode: Save prompt (but don't trigger generation on blur)
+                const actualPrompt = trimmed.slice(AI_PREFIX.length).trim();
+                if (actualPrompt) {
+                    updateNodePrompt(id, actualPrompt);
+                }
+            } else {
+                // Note Mode: Save to output
+                updateNodeOutput(id, trimmed);
+            }
+        }
+        
         setIsEditing(false);
         setLocalInput('');
-    }, []);
+    }, [localInput, getEditableContent, id, updateNodePrompt, updateNodeOutput]);
 
     const handleInputKeyDown = useCallback(
         async (e: React.KeyboardEvent) => {
