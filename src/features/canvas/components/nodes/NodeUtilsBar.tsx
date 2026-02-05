@@ -18,6 +18,7 @@ interface NodeUtilsBarProps {
     isTransforming?: boolean;
     disabled?: boolean;
     visible?: boolean;
+    hasTags?: boolean;
 }
 
 export function NodeUtilsBar({
@@ -31,10 +32,12 @@ export function NodeUtilsBar({
     isTransforming = false,
     disabled = false,
     visible = false,
+    hasTags = false,
 }: NodeUtilsBarProps) {
-    const containerClass = visible
-        ? `${styles.container} ${styles.containerVisible}`
-        : styles.container;
+    const containerClasses = [styles.container];
+    if (visible) containerClasses.push(styles.containerVisible);
+    if (hasTags) containerClasses.push(styles.containerWithTags);
+    const containerClass = containerClasses.join(' ');
 
     return (
         <div className={containerClass}>

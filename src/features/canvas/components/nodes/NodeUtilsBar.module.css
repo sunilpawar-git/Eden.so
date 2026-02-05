@@ -33,6 +33,10 @@
     pointer-events: auto;
 }
 
+.containerWithTags {
+    bottom: 48px;
+}
+
 .actionButton {
     position: relative;
     width: 28px;

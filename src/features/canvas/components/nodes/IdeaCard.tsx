@@ -19,6 +19,7 @@ import {
     MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT,
 } from '../../types/node';
 import styles from './IdeaCard.module.css';
+import handleStyles from './IdeaCardHandles.module.css';
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { prompt, output, isGenerating, tags: tagIds = [] } = data as IdeaNodeData;
@@ -176,7 +177,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     return (
         <div
-            className={styles.cardWrapper}
+            className={`${styles.cardWrapper} ${handleStyles.resizerWrapper}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -186,9 +187,9 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 isVisible={selected}
             />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
-                isConnectable={true} className={`${styles.handle} ${styles.handleTop}`} />
-            <div className={styles.ideaCard}>
-                <div className={`${styles.contentArea} nowheel`} data-testid="content-area"
+                isConnectable={true} className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
+            <div className={`${styles.ideaCard} ${isHovered ? styles.ideaCardHovered : ''}`}>
+                <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`} data-testid="content-area"
                     ref={contentRef} tabIndex={selected ? 0 : -1}
                     onKeyDown={selected ? handleContentKeyDown : undefined}>
                     {isEditing ? (
@@ -265,10 +266,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     isTransforming={isTransforming}
                     disabled={isGenerating ?? false}
                     visible={isHovered}
+                    hasTags={tagIds.length > 0 || showTagInput}
                 />
             </div>
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
-                isConnectable={true} className={`${styles.handle} ${styles.handleBottom}`} />
+                isConnectable={true} className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />
         </div>
     );
 });
