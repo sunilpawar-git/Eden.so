@@ -50,6 +50,18 @@ export const strings = {
         aiPrefix: '/ai: ',
         inputPlaceholder: 'Type to save note, or /ai: for AI...',
         aiDividerLabel: 'AI Response',
+        transform: 'Transform',
+        transforming: 'Transforming...',
+    },
+    transformations: {
+        refine: 'Refine',
+        shorten: 'Shorten',
+        lengthen: 'Lengthen',
+        proofread: 'Proofread',
+        refineDescription: 'Improve clarity and polish',
+        shortenDescription: 'Make more concise',
+        lengthenDescription: 'Expand with more detail',
+        proofreadDescription: 'Fix grammar and spelling',
     },
     errors: {
         generic: 'Something went wrong. Please try again.',
