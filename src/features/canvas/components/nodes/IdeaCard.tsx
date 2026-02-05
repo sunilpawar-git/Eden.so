@@ -13,6 +13,12 @@ import { FOCUS_NODE_EVENT, type FocusNodeEvent } from '../../hooks/useQuickCaptu
 import { IdeaCardActionBar } from './IdeaCardActionBar';
 import { TagInput } from '@/features/tags';
 import type { IdeaNodeData } from '../../types/node';
+import {
+    MIN_NODE_WIDTH,
+    MAX_NODE_WIDTH,
+    MIN_NODE_HEIGHT,
+    MAX_NODE_HEIGHT,
+} from '../../types/node';
 import styles from './IdeaCard.module.css';
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
@@ -178,8 +184,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     return (
         <div className={styles.cardWrapper}>
             <NodeResizer 
-                minWidth={280} 
-                maxWidth={600} 
+                minWidth={MIN_NODE_WIDTH}
+                maxWidth={MAX_NODE_WIDTH}
+                minHeight={MIN_NODE_HEIGHT}
+                maxHeight={MAX_NODE_HEIGHT}
                 isVisible={selected}
             />
             <Handle
