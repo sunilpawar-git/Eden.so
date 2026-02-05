@@ -18,6 +18,8 @@ export const strings = {
         untitled: 'Untitled Workspace',
         created: 'Workspace created',
         deleteConfirm: 'Are you sure you want to delete this workspace?',
+        switching: 'Switching workspace...',
+        switchError: 'Failed to switch workspace',
     },
     canvas: {
         addNode: 'Add node',
