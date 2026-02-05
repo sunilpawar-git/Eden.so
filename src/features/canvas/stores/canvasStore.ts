@@ -4,6 +4,7 @@
  */
 import { create } from 'zustand';
 import type { CanvasNode, NodePosition } from '../types/node';
+import { clampNodeDimensions } from '../types/node';
 import type { CanvasEdge } from '../types/edge';
 
 interface CanvasState {
@@ -75,10 +76,11 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
     },
 
     updateNodeDimensions: (nodeId: string, width: number, height: number) => {
+        const clamped = clampNodeDimensions(width, height);
         set((state) => ({
             nodes: state.nodes.map((node) =>
                 node.id === nodeId
-                    ? { ...node, width, height, updatedAt: new Date() }
+                    ? { ...node, width: clamped.width, height: clamped.height, updatedAt: new Date() }
                     : node
             ),
         }));
