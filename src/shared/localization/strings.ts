@@ -60,6 +60,30 @@ export const strings = {
         loading: 'Loading...',
         comingSoon: 'Coming soon!',
     },
+    settings: {
+        title: 'Settings',
+        appearance: 'Appearance',
+        canvas: 'Canvas',
+        account: 'Account',
+        keyboard: 'Keyboard Shortcuts',
+        theme: 'Theme',
+        themeLight: 'Light',
+        themeDark: 'Dark',
+        themeSystem: 'System',
+        canvasGrid: 'Show grid',
+        autoSave: 'Auto-save',
+        autoSaveInterval: 'Auto-save interval',
+        seconds: 'seconds',
+        compactMode: 'Compact mode',
+        close: 'Close',
+    },
+    shortcuts: {
+        openSettings: 'Open Settings',
+        addNode: 'Add Node',
+        deleteNode: 'Delete Node',
+        undo: 'Undo',
+        redo: 'Redo',
+    },
 } as const;
 
 export type StringKeys = typeof strings;
