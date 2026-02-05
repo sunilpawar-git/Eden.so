@@ -42,6 +42,7 @@ const nodeTypes = {
 export function CanvasView() {
     const nodes = useCanvasStore((s) => s.nodes);
     const edges = useCanvasStore((s) => s.edges);
+    const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
     const setNodes = useCanvasStore((s) => s.setNodes);
     const setEdges = useCanvasStore((s) => s.setEdges);
     const updateNodeDimensions = useCanvasStore((s) => s.updateNodeDimensions);
@@ -56,6 +57,7 @@ export function CanvasView() {
         type: node.type, // 'idea' is the primary type now
         position: node.position,
         data: node.data,
+        selected: selectedNodeIds.has(node.id),
         // Use dimensions from store (persisted from Firestore)
         ...(node.width && { width: node.width }),
         ...(node.height && { height: node.height }),

@@ -154,4 +154,74 @@ describe('CanvasView', () => {
             });
         });
     });
+
+    describe('Selection sync', () => {
+        it('should pass selected=true to nodes in selectedNodeIds', () => {
+            // Set a node as selected in the store
+            useCanvasStore.setState({
+                nodes: [
+                    {
+                        id: 'node-1',
+                        workspaceId: 'workspace-1',
+                        type: 'idea',
+                        data: { prompt: 'Test Node', output: undefined, isGenerating: false, isPromptCollapsed: false },
+                        position: { x: 100, y: 100 },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                    {
+                        id: 'node-2',
+                        workspaceId: 'workspace-1',
+                        type: 'idea',
+                        data: { prompt: 'Another Node', output: undefined, isGenerating: false, isPromptCollapsed: false },
+                        position: { x: 200, y: 200 },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                ],
+                edges: [],
+                selectedNodeIds: new Set(['node-1']), // node-1 is selected
+            });
+
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const reactFlowProps = mockCalls[0]?.[0] ?? {};
+            const nodes = reactFlowProps.nodes ?? [];
+
+            // node-1 should have selected=true
+            const node1 = nodes.find((n: { id: string }) => n.id === 'node-1');
+            expect(node1?.selected).toBe(true);
+
+            // node-2 should have selected=false
+            const node2 = nodes.find((n: { id: string }) => n.id === 'node-2');
+            expect(node2?.selected).toBe(false);
+        });
+
+        it('should pass selected=false when no nodes are selected', () => {
+            useCanvasStore.setState({
+                nodes: [
+                    {
+                        id: 'node-1',
+                        workspaceId: 'workspace-1',
+                        type: 'idea',
+                        data: { prompt: 'Test Node', output: undefined, isGenerating: false, isPromptCollapsed: false },
+                        position: { x: 100, y: 100 },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                ],
+                edges: [],
+                selectedNodeIds: new Set(), // No selection
+            });
+
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const reactFlowProps = mockCalls[0]?.[0] ?? {};
+            const nodes = reactFlowProps.nodes ?? [];
+
+            expect(nodes[0]?.selected).toBe(false);
+        });
+    });
 });
