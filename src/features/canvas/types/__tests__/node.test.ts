@@ -20,7 +20,7 @@ describe('createIdeaNode', () => {
         const node = createIdeaNode(testId, testWorkspaceId, testPosition);
 
         expect(node.height).toBe(DEFAULT_NODE_HEIGHT);
-        expect(node.height).toBe(120);
+        expect(node.height).toBe(180); // Updated from 120 for better content display
     });
 
     it('should create node with correct basic properties', () => {

@@ -3,11 +3,31 @@
  */
 
 /**
- * Default dimensions for new nodes (in pixels)
+ * Node dimension constraints (in pixels)
  * SSOT: These constants are the single source of truth for node sizing
+ * NOTE: CSS variables in variables.css must be kept in sync with these values
  */
+export const MIN_NODE_WIDTH = 180;
+export const MAX_NODE_WIDTH = 900;
+export const MIN_NODE_HEIGHT = 100;
+export const MAX_NODE_HEIGHT = 800;
+
 export const DEFAULT_NODE_WIDTH = 280;
-export const DEFAULT_NODE_HEIGHT = 120;
+export const DEFAULT_NODE_HEIGHT = 180;
+
+/**
+ * Clamp dimensions to valid bounds
+ * Pure utility function for dimension validation
+ */
+export function clampNodeDimensions(
+    width: number,
+    height: number
+): { width: number; height: number } {
+    return {
+        width: Math.max(MIN_NODE_WIDTH, Math.min(MAX_NODE_WIDTH, width)),
+        height: Math.max(MIN_NODE_HEIGHT, Math.min(MAX_NODE_HEIGHT, height)),
+    };
+}
 
 /**
  * Node types - 'idea' is the primary type for IdeaCard nodes
