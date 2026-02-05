@@ -9,6 +9,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    height: 100%; /* Fill ReactFlow node for vertical resize support */
 }
 
 .ideaCard {

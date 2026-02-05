@@ -4,6 +4,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import fs from 'fs';
+import path from 'path';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
 import type { IdeaNodeData } from '../../../types/node';
@@ -251,6 +253,38 @@ describe('IdeaCard Resize Integration', () => {
         it('MAX values are greater than MIN values', () => {
             expect(MAX_NODE_WIDTH).toBeGreaterThan(MIN_NODE_WIDTH);
             expect(MAX_NODE_HEIGHT).toBeGreaterThan(MIN_NODE_HEIGHT);
+        });
+    });
+
+    describe('cardWrapper height propagation for vertical resize', () => {
+        it('cardWrapper element has correct CSS class for height propagation', () => {
+            render(<IdeaCard {...defaultProps} />);
+            
+            // Find the cardWrapper element (parent of ideaCard which contains contentArea)
+            const contentArea = screen.getByTestId('content-area');
+            const ideaCard = contentArea.parentElement;
+            const cardWrapper = ideaCard?.parentElement;
+            
+            expect(cardWrapper).toBeTruthy();
+            // Verify cardWrapper has the CSS module class applied
+            expect(cardWrapper?.className).toContain('cardWrapper');
+        });
+
+        it('CSS file contains height: 100% for cardWrapper class', () => {
+            // Read and validate CSS file directly for the height rule
+            // This ensures vertical resize propagates from ReactFlow node to card
+            const cssPath = path.resolve(__dirname, '../IdeaCard.module.css');
+            const cssContent = fs.readFileSync(cssPath, 'utf-8');
+            
+            // Extract .cardWrapper rule content using RegExp.exec()
+            const cardWrapperRegex = /\.cardWrapper\s*\{([^}]+)\}/;
+            const cardWrapperMatch = cardWrapperRegex.exec(cssContent);
+            expect(cardWrapperMatch).toBeTruthy();
+            
+            const cardWrapperContent = cardWrapperMatch?.[1] ?? '';
+            // Verify height: 100% is present for vertical resize support
+            const heightRegex = /height:\s*100%/;
+            expect(heightRegex.test(cardWrapperContent)).toBe(true);
         });
     });
 });
