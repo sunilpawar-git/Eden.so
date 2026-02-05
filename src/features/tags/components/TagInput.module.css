@@ -1,0 +1,91 @@
+/**
+ * TagInput Styles
+ */
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+    padding: var(--space-xs) 0;
+}
+
+.container.compact {
+    gap: 2px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    color: white;
+}
+
+.compact .tag {
+    padding: 1px 4px;
+    font-size: 10px;
+}
+
+.tagName {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.removeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.removeButton:hover {
+    opacity: 1;
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+
+.addButton:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.input {
+    width: 80px;
+    padding: 2px 6px;
+    border: 1px solid var(--primary-color);
+    border-radius: var(--radius-sm);
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-xs);
+}
+
+.input:focus {
+    outline: none;
+}

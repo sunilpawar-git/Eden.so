@@ -11,11 +11,12 @@ import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useNodeTransformation, type TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import { FOCUS_NODE_EVENT, type FocusNodeEvent } from '../../hooks/useQuickCapture';
 import { IdeaCardActionBar } from './IdeaCardActionBar';
+import { TagInput } from '@/features/tags';
 import type { IdeaNodeData } from '../../types/node';
 import styles from './IdeaCard.module.css';
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
-    const { prompt, output, isGenerating } = data as IdeaNodeData;
+    const { prompt, output, isGenerating, tags: tagIds = [] } = data as IdeaNodeData;
     
     // AI card: has both prompt AND output that differ
     const isAICard = Boolean(prompt && output && prompt !== output);
@@ -24,7 +25,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const [isEditing, setIsEditing] = useState(!prompt && !output);
     const [localInput, setLocalInput] = useState('');
     
-    const { deleteNode, updateNodePrompt, updateNodeOutput } = useCanvasStore();
+    const { deleteNode, updateNodePrompt, updateNodeOutput, updateNodeTags } = useCanvasStore();
     const { generateFromPrompt, branchFromNode } = useNodeGeneration();
     const { transformNodeContent, isTransforming } = useNodeTransformation();
 
@@ -167,6 +168,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         generateFromPrompt(id);
     }, [id, generateFromPrompt]);
 
+    const handleTagsChange = useCallback((newTagIds: string[]) => {
+        updateNodeTags(id, newTagIds);
+    }, [id, updateNodeTags]);
+
     // Determine what content to show
     const hasContent = Boolean(output);
 
@@ -254,6 +259,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                             {strings.ideaCard.inputPlaceholder}
                         </div>
                     )}
+                </div>
+
+                {/* Tags Section */}
+                <div className={styles.tagsSection}>
+                    <TagInput selectedTagIds={tagIds} onChange={handleTagsChange} compact />
                 </div>
 
                 <IdeaCardActionBar

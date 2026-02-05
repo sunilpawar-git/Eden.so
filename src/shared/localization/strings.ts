@@ -112,6 +112,12 @@ export const strings = {
         prompt: 'Prompt',
         output: 'Output',
     },
+    tags: {
+        addTag: 'Add tag',
+        placeholder: 'Add tag...',
+        removeTag: 'Remove tag',
+        noTags: 'No tags',
+    },
     performance: {
         cls: 'Cumulative Layout Shift',
         fcp: 'First Contentful Paint',
