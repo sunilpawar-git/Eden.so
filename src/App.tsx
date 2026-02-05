@@ -15,6 +15,7 @@ import { ToastContainer } from '@/shared/components/Toast';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { LoadingFallback } from '@/shared/components/LoadingFallback';
 import { useThemeApplicator } from '@/shared/hooks/useThemeApplicator';
+import { useCompactMode } from '@/shared/hooks/useCompactMode';
 import { useAutosave } from '@/features/workspace/hooks/useAutosave';
 import { useWorkspaceLoader } from '@/features/workspace/hooks/useWorkspaceLoader';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -35,6 +36,7 @@ function AuthenticatedApp() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     
     useThemeApplicator();
+    useCompactMode();
     useAutosave(currentWorkspaceId ?? '');
 
     // Always keep ReactFlowProvider mounted to prevent blink on workspace switch

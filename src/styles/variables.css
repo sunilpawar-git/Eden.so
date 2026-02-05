@@ -114,6 +114,29 @@
   --sidebar-width: 260px;
 }
 
+/* Compact Mode - Reduced spacing and smaller fonts */
+.compact-mode {
+  /* Spacing - reduced by ~25% */
+  --space-xs: 3px;
+  --space-sm: 6px;
+  --space-md: 12px;
+  --space-lg: 18px;
+  --space-xl: 24px;
+  
+  /* Typography - slightly smaller */
+  --font-size-xs: 0.6875rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 0.9375rem;
+  --font-size-node: 11px;
+  
+  /* Card dimensions - tighter */
+  --card-min-width: 240px;
+  --card-output-max-height: 200px;
+  
+  /* Sidebar */
+  --sidebar-width: 220px;
+}
+
 /* Dark theme */
 [data-theme="dark"] {
   --color-primary: hsl(220, 70%, 60%);
