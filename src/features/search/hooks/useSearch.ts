@@ -42,8 +42,8 @@ export function useSearch(): UseSearchReturn {
             const workspaceId = node.workspaceId;
             const workspaceName = workspaceMap.get(workspaceId) ?? 'Unknown';
 
-            // Search in prompt
-            if (prompt.toLowerCase().includes(lowerQuery)) {
+            // Search in prompt (handle empty/undefined prompts)
+            if (prompt && prompt.toLowerCase().includes(lowerQuery)) {
                 searchResults.push({
                     nodeId: node.id,
                     workspaceId,
