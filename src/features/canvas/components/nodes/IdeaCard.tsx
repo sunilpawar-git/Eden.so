@@ -118,8 +118,17 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         [handleInputBlur, localInput, generateFromPrompt, id, updateNodePrompt, updateNodeOutput]
     );
 
-    const handleContentClick = useCallback(() => {
+    // Double-click to enter edit mode (single-click allows node selection)
+    const handleContentDoubleClick = useCallback(() => {
         if (!isGenerating) {
+            setIsEditing(true);
+        }
+    }, [isGenerating]);
+
+    // Keyboard support: Enter on content enters edit mode
+    const handleContentKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !isGenerating) {
+            e.preventDefault();
             setIsEditing(true);
         }
     }, [isGenerating]);
@@ -154,11 +163,13 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 className={`${styles.handle} ${styles.handleTop}`}
             />
             <div className={styles.ideaCard}>
-                {/* Content Area */}
+                {/* Content Area - supports Enter key when node is selected */}
                 <div 
                     className={`${styles.contentArea} nowheel`} 
                     data-testid="content-area"
                     ref={contentRef}
+                    tabIndex={selected ? 0 : -1}
+                    onKeyDown={selected ? handleContentKeyDown : undefined}
                 >
                     {isEditing ? (
                         <textarea
@@ -183,10 +194,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                                 <>
                                     <div 
                                         className={styles.promptText}
-                                        onClick={handleContentClick}
+                                        onDoubleClick={handleContentDoubleClick}
                                         role="button"
                                         tabIndex={0}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleContentClick()}
+                                        onKeyDown={handleContentKeyDown}
                                     >
                                         {prompt}
                                     </div>
@@ -199,10 +210,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                             )}
                             {/* Output (both note and AI cards) */}
                             <div
-                                onClick={!isAICard ? handleContentClick : undefined}
+                                onDoubleClick={!isAICard ? handleContentDoubleClick : undefined}
                                 role={!isAICard ? 'button' : undefined}
                                 tabIndex={!isAICard ? 0 : undefined}
-                                onKeyDown={!isAICard ? (e) => e.key === 'Enter' && handleContentClick() : undefined}
+                                onKeyDown={!isAICard ? handleContentKeyDown : undefined}
                             >
                                 <MarkdownRenderer 
                                     content={output!} 
@@ -213,10 +224,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     ) : (
                         <div 
                             className={styles.placeholder}
-                            onClick={handleContentClick}
+                            onDoubleClick={handleContentDoubleClick}
                             role="button"
                             tabIndex={0}
-                            onKeyDown={(e) => e.key === 'Enter' && handleContentClick()}
+                            onKeyDown={handleContentKeyDown}
                         >
                             {strings.ideaCard.inputPlaceholder}
                         </div>

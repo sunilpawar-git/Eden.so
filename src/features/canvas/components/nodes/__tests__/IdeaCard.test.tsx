@@ -185,15 +185,15 @@ describe('IdeaCard', () => {
     // Connection handles tests are in IdeaCard.features.test.tsx
 
     describe('Editable content area', () => {
-        it('clicking card content enters edit mode', () => {
+        it('double-clicking card content enters edit mode', () => {
             const noteCard = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: '', output: 'My note' },
             };
             render(<IdeaCard {...noteCard} />);
-            // Click the content to edit
+            // Double-click the content to edit
             const content = screen.getByText('My note');
-            fireEvent.click(content);
+            fireEvent.doubleClick(content);
 
             // Should now show a textarea
             expect(screen.getByRole('textbox')).toBeInTheDocument();
