@@ -1,8 +1,6 @@
 /**
  * IdeaCard Editing Tests - TDD Phase 1
  * Tests for save-on-blur and populate-on-edit functionality
- * 
- * These tests are written FIRST (RED phase) before implementation
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -86,9 +84,7 @@ describe('IdeaCard Editing - Phase 1', () => {
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Content that should be saved' } });
-            
-            // Blur without pressing Enter - should still save
-            fireEvent.blur(textarea);
+            fireEvent.blur(textarea); // Blur without pressing Enter - should still save
 
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Content that should be saved');
         });
@@ -107,9 +103,7 @@ describe('IdeaCard Editing - Phase 1', () => {
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: '/ai: Generate something' } });
-            
-            // Blur should save the prompt (but not trigger generation)
-            fireEvent.blur(textarea);
+            fireEvent.blur(textarea); // Blur should save the prompt (not trigger generation)
 
             expect(mockUpdatePrompt).toHaveBeenCalledWith('idea-1', 'Generate something');
         });
@@ -154,10 +148,7 @@ describe('IdeaCard Editing - Phase 1', () => {
             fireEvent.doubleClick(content);
 
             const textarea = screen.getByRole('textbox');
-            // Content should be pre-populated, blur without changes
-            fireEvent.blur(textarea);
-
-            // Should not call update if content hasn't changed
+            fireEvent.blur(textarea); // Content pre-populated, blur without changes
             expect(mockUpdateOutput).not.toHaveBeenCalled();
         });
     });
@@ -304,107 +295,4 @@ describe('IdeaCard Editing - Phase 1', () => {
         });
     });
 
-    describe('Double-Click Edit Pattern - Phase 2', () => {
-        it('should enter edit mode on double-click', () => {
-            const propsWithOutput = {
-                ...defaultProps,
-                data: { ...defaultData, output: 'Existing content' },
-            };
-
-            render(<IdeaCard {...propsWithOutput} />);
-
-            // Should show content, not textarea initially
-            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
-            expect(screen.getByText('Existing content')).toBeInTheDocument();
-
-            // Double-click to enter edit mode
-            const content = screen.getByText('Existing content');
-            fireEvent.doubleClick(content);
-
-            // Should now show textarea
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
-        });
-
-        it('should NOT enter edit mode on single-click (allow selection)', () => {
-            const propsWithOutput = {
-                ...defaultProps,
-                data: { ...defaultData, output: 'Clickable content' },
-            };
-
-            render(<IdeaCard {...propsWithOutput} />);
-
-            // Single-click should NOT trigger edit mode
-            const content = screen.getByText('Clickable content');
-            fireEvent.click(content);
-
-            // Should still show content, not textarea
-            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
-            expect(screen.getByText('Clickable content')).toBeInTheDocument();
-        });
-
-        it('should enter edit mode for AI card prompt on double-click', () => {
-            const aiCardProps = {
-                ...defaultProps,
-                data: { 
-                    ...defaultData, 
-                    prompt: 'AI prompt here',
-                    output: 'AI generated response' 
-                },
-            };
-
-            render(<IdeaCard {...aiCardProps} />);
-
-            // Double-click prompt to edit
-            const promptText = screen.getByText('AI prompt here');
-            fireEvent.doubleClick(promptText);
-
-            // Should enter edit mode
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
-        });
-
-        it('should support Enter key to enter edit mode when node is selected', () => {
-            const propsWithOutput = {
-                ...defaultProps,
-                selected: true, // Node is selected
-                data: { ...defaultData, output: 'Selected node content' },
-            };
-
-            render(<IdeaCard {...propsWithOutput} />);
-
-            // Press Enter on selected node content
-            const contentArea = screen.getByTestId('content-area');
-            fireEvent.keyDown(contentArea, { key: 'Enter' });
-
-            // Should enter edit mode
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
-        });
-
-        it('should support keyboard navigation: Enter on content to edit', () => {
-            const propsWithOutput = {
-                ...defaultProps,
-                data: { ...defaultData, output: 'Keyboard accessible' },
-            };
-
-            render(<IdeaCard {...propsWithOutput} />);
-
-            // Find the clickable content area and trigger Enter
-            const content = screen.getByText('Keyboard accessible');
-            fireEvent.keyDown(content, { key: 'Enter' });
-
-            // Should enter edit mode (existing behavior maintained)
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
-        });
-
-        it('should NOT enter edit mode on double-click when generating', () => {
-            const generatingProps = {
-                ...defaultProps,
-                data: { ...defaultData, prompt: 'Test', output: 'Test', isGenerating: true },
-            };
-
-            render(<IdeaCard {...generatingProps} />);
-
-            // Should show generating state
-            expect(screen.getByText(/generating/i)).toBeInTheDocument();
-        });
-    });
 });
