@@ -118,6 +118,12 @@ export const strings = {
         removeTag: 'Remove tag',
         noTags: 'No tags',
     },
+    resize: {
+        resizeNode: 'Resize node',
+        resizeHandle: 'Drag to resize',
+        corner: 'Corner resize handle',
+        edge: 'Edge resize handle',
+    },
     performance: {
         cls: 'Cumulative Layout Shift',
         fcp: 'First Contentful Paint',
