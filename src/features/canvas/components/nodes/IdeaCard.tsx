@@ -11,7 +11,7 @@ import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useNodeTransformation, type TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import { FOCUS_NODE_EVENT, type FocusNodeEvent } from '../../hooks/useQuickCapture';
 import { useSlashCommandInput } from '../../hooks/useSlashCommandInput';
-import { IdeaCardActionBar } from './IdeaCardActionBar';
+import { NodeUtilsBar } from './NodeUtilsBar';
 import { SlashCommandMenu } from './SlashCommandMenu';
 import { TagInput } from '@/features/tags';
 import type { IdeaNodeData } from '../../types/node';
@@ -19,22 +19,25 @@ import {
     MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT,
 } from '../../types/node';
 import styles from './IdeaCard.module.css';
+import handleStyles from './IdeaCardHandles.module.css';
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { prompt, output, isGenerating, tags: tagIds = [] } = data as IdeaNodeData;
     const isAICard = Boolean(prompt && output && prompt !== output);
-    
+
     const [isEditing, setIsEditing] = useState(!prompt && !output);
+    const [showTagInput, setShowTagInput] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [textareaRect, setTextareaRect] = useState<DOMRect | null>(null);
     const wasEditingRef = useRef(false);
-    
+
     // Slash command hook for "/" menu
     const {
         inputMode, isMenuOpen, query, inputValue,
         handleInputChange, handleCommandSelect, closeMenu, reset
     } = useSlashCommandInput();
-    
+
     const { deleteNode, updateNodePrompt, updateNodeOutput, updateNodeTags } = useCanvasStore();
     const { generateFromPrompt, branchFromNode } = useNodeGeneration();
     const { transformNodeContent, isTransforming } = useNodeTransformation();
@@ -86,10 +89,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const handleInputBlur = useCallback(() => {
         if (isMenuOpen) return;
-        
+
         const trimmed = inputValue.trim();
         const existingContent = getEditableContent();
-        
+
         if (trimmed && trimmed !== existingContent) {
             if (inputMode === 'ai') {
                 updateNodePrompt(id, trimmed);
@@ -97,7 +100,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 updateNodeOutput(id, trimmed);
             }
         }
-        
+
         setIsEditing(false);
         reset();
     }, [isMenuOpen, inputValue, inputMode, getEditableContent, id, updateNodePrompt, updateNodeOutput, reset]);
@@ -116,19 +119,19 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 }
                 return;
             }
-            
+
             // Don't handle other keys if menu is open (menu handles them)
             if (isMenuOpen) return;
-            
+
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 const trimmed = inputValue.trim();
-                
+
                 if (!trimmed) {
                     handleInputBlur();
                     return;
                 }
-                
+
                 if (inputMode === 'ai') {
                     updateNodePrompt(id, trimmed);
                     reset();
@@ -141,8 +144,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 }
             }
         },
-        [handleInputBlur, inputValue, inputMode, isMenuOpen, generateFromPrompt, id, 
-         updateNodePrompt, updateNodeOutput, reset, closeMenu, handleInputChange]
+        [handleInputBlur, inputValue, inputMode, isMenuOpen, generateFromPrompt, id,
+            updateNodePrompt, updateNodeOutput, reset, closeMenu, handleInputChange]
     );
 
     const handleContentDoubleClick = useCallback(() => {
@@ -157,28 +160,36 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     }, [isGenerating]);
 
     const handleDelete = useCallback(() => deleteNode(id), [id, deleteNode]);
-    const handleBranch = useCallback(() => branchFromNode(id), [id, branchFromNode]);
     const handleRegenerate = useCallback(() => generateFromPrompt(id), [id, generateFromPrompt]);
+    const handleTagClick = useCallback(() => setShowTagInput(true), []);
+    const handleConnectClick = useCallback(() => {
+        void branchFromNode(id);
+    }, [id, branchFromNode]);
     const handleTagsChange = useCallback((newTagIds: string[]) => {
         updateNodeTags(id, newTagIds);
+        if (newTagIds.length === 0) setShowTagInput(false);
     }, [id, updateNodeTags]);
 
     const hasContent = Boolean(output);
-    const placeholder = inputMode === 'ai' 
-        ? strings.ideaCard.aiModePlaceholder 
+    const placeholder = inputMode === 'ai'
+        ? strings.ideaCard.aiModePlaceholder
         : strings.ideaCard.inputPlaceholder;
 
     return (
-        <div className={styles.cardWrapper}>
-            <NodeResizer 
+        <div
+            className={`${styles.cardWrapper} ${handleStyles.resizerWrapper}`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <NodeResizer
                 minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}
                 minHeight={MIN_NODE_HEIGHT} maxHeight={MAX_NODE_HEIGHT}
                 isVisible={selected}
             />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
-                isConnectable={true} className={`${styles.handle} ${styles.handleTop}`} />
-            <div className={styles.ideaCard}>
-                <div className={`${styles.contentArea} nowheel`} data-testid="content-area"
+                isConnectable={true} className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
+            <div className={`${styles.ideaCard} ${isHovered ? styles.ideaCardHovered : ''}`}>
+                <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`} data-testid="content-area"
                     ref={contentRef} tabIndex={selected ? 0 : -1}
                     onKeyDown={selected ? handleContentKeyDown : undefined}>
                     {isEditing ? (
@@ -240,15 +251,26 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                         </div>
                     )}
                 </div>
-                <div className={styles.tagsSection}>
-                    <TagInput selectedTagIds={tagIds} onChange={handleTagsChange} compact />
-                </div>
-                <IdeaCardActionBar hasContent={hasContent} isGenerating={isGenerating ?? false}
-                    isTransforming={isTransforming} onTransform={handleTransform}
-                    onRegenerate={handleRegenerate} onBranch={handleBranch} onDelete={handleDelete} />
+                {(showTagInput || tagIds.length > 0) && (
+                    <div className={styles.tagsSection}>
+                        <TagInput selectedTagIds={tagIds} onChange={handleTagsChange} compact />
+                    </div>
+                )}
+                <NodeUtilsBar
+                    onTagClick={handleTagClick}
+                    onConnectClick={handleConnectClick}
+                    onDelete={handleDelete}
+                    onTransform={handleTransform}
+                    onRegenerate={handleRegenerate}
+                    hasContent={hasContent}
+                    isTransforming={isTransforming}
+                    disabled={isGenerating ?? false}
+                    visible={isHovered}
+                    hasTags={tagIds.length > 0 || showTagInput}
+                />
             </div>
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
-                isConnectable={true} className={`${styles.handle} ${styles.handleBottom}`} />
+                isConnectable={true} className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />
         </div>
     );
 });

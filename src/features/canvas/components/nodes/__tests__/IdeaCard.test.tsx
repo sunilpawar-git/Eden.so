@@ -12,13 +12,13 @@ vi.mock('@xyflow/react', async () => {
     const actual = await vi.importActual('@xyflow/react');
     return {
         ...actual,
-        Handle: ({ type, position, isConnectable, className }: { 
-            type: string; 
-            position: string; 
+        Handle: ({ type, position, isConnectable, className }: {
+            type: string;
+            position: string;
             isConnectable?: boolean;
             className?: string;
         }) => (
-            <div 
+            <div
                 data-testid={`handle-${type}-${position}`}
                 data-connectable={isConnectable}
                 className={className}
@@ -36,11 +36,9 @@ vi.mock('@xyflow/react', async () => {
 
 // Mock the generation hook
 const mockGenerateFromPrompt = vi.fn();
-const mockBranchFromNode = vi.fn();
 vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     useNodeGeneration: () => ({
         generateFromPrompt: mockGenerateFromPrompt,
-        branchFromNode: mockBranchFromNode,
     }),
 }));
 
@@ -118,22 +116,22 @@ describe('IdeaCard', () => {
     });
 
     describe('Unified action bar (all cards get same actions)', () => {
-        it('renders Regenerate button for note cards (output only)', () => {
+        it('renders Transform button for note cards (output only)', () => {
             const noteCard = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: '', output: 'My personal note' },
             };
             render(<IdeaCard {...noteCard} />);
-            expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /transform/i })).toBeInTheDocument();
         });
 
-        it('renders Branch button for note cards (output only)', () => {
+        it('renders Tags button for note cards (output only)', () => {
             const noteCard = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: '', output: 'My personal note' },
             };
             render(<IdeaCard {...noteCard} />);
-            expect(screen.getByRole('button', { name: /branch/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /tags/i })).toBeInTheDocument();
         });
 
         it('renders Delete button for all cards', () => {
@@ -147,8 +145,9 @@ describe('IdeaCard', () => {
                 data: { ...defaultData, prompt: 'AI prompt', output: 'AI response' },
             };
             render(<IdeaCard {...aiCard} />);
-            expect(screen.getByRole('button', { name: /regenerate/i })).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: /branch/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /tags/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /transform/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
         });
     });
@@ -205,7 +204,7 @@ describe('IdeaCard', () => {
                 data: { ...defaultData, prompt: '', output: undefined },
             };
             render(<IdeaCard {...emptyCard} />);
-            
+
             // Empty cards start in edit mode
             expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
@@ -216,7 +215,7 @@ describe('IdeaCard', () => {
                 data: { ...defaultData, prompt: '', output: undefined },
             };
             render(<IdeaCard {...emptyCard} />);
-            
+
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Some text' } });
             fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
@@ -230,7 +229,7 @@ describe('IdeaCard', () => {
                 data: { ...defaultData, prompt: 'AI prompt', output: 'Response', isGenerating: true },
             };
             render(<IdeaCard {...generatingProps} />);
-            
+
             // When generating, spinner is shown instead of content
             expect(screen.getByText(/generating/i)).toBeInTheDocument();
             // Content is not visible during generation
@@ -247,7 +246,7 @@ describe('IdeaCard', () => {
                 data: { ...defaultData, isGenerating: true },
             };
             render(<IdeaCard {...generatingProps} />);
-            
+
             expect(screen.getByText(/generating/i)).toBeInTheDocument();
         });
     });

@@ -119,6 +119,13 @@ export const strings = {
         removeTag: 'Remove tag',
         noTags: 'No tags',
     },
+    nodeUtils: {
+        tags: 'Tags',
+        aiActions: 'AI Actions',
+        connect: 'Connect',
+        delete: 'Delete',
+        regenerate: 'Regenerate',
+    },
     resize: {
         resizeNode: 'Resize node',
         resizeHandle: 'Drag to resize',

@@ -11,6 +11,7 @@ import styles from './TransformMenu.module.css';
 
 interface TransformMenuProps {
     onTransform: (type: TransformationType) => void;
+    onRegenerate?: () => void;
     disabled?: boolean;
     isTransforming?: boolean;
 }
@@ -22,14 +23,15 @@ const TRANSFORM_OPTIONS: Array<{
     type: TransformationType;
     labelKey: keyof typeof strings.transformations;
 }> = [
-    { type: 'refine', labelKey: 'refine' },
-    { type: 'shorten', labelKey: 'shorten' },
-    { type: 'lengthen', labelKey: 'lengthen' },
-    { type: 'proofread', labelKey: 'proofread' },
-];
+        { type: 'refine', labelKey: 'refine' },
+        { type: 'shorten', labelKey: 'shorten' },
+        { type: 'lengthen', labelKey: 'lengthen' },
+        { type: 'proofread', labelKey: 'proofread' },
+    ];
 
-export const TransformMenu = React.memo(({ 
-    onTransform, 
+export const TransformMenu = React.memo(({
+    onTransform,
+    onRegenerate,
     disabled = false,
     isTransforming = false,
 }: TransformMenuProps) => {
@@ -55,7 +57,7 @@ export const TransformMenu = React.memo(({
             const target = event.target as Node;
             const isInsideMenu = menuRef.current?.contains(target);
             const isInsideButton = buttonRef.current?.contains(target);
-            
+
             if (!isInsideMenu && !isInsideButton) {
                 setIsOpen(false);
             }
@@ -78,14 +80,19 @@ export const TransformMenu = React.memo(({
         onTransform(type);
     }, [onTransform]);
 
-    const buttonLabel = isTransforming 
-        ? strings.ideaCard.transforming 
+    const handleRegenerate = useCallback(() => {
+        setIsOpen(false);
+        onRegenerate?.();
+    }, [onRegenerate]);
+
+    const buttonLabel = isTransforming
+        ? strings.ideaCard.transforming
         : strings.ideaCard.transform;
 
     const dropdownMenu = isOpen ? (
-        <div 
+        <div
             ref={menuRef}
-            className={styles.dropdownMenu} 
+            className={styles.dropdownMenu}
             role="menu"
             data-testid="transform-menu-portal"
             style={{ top: menuPosition.top, left: menuPosition.left }}
@@ -100,6 +107,15 @@ export const TransformMenu = React.memo(({
                     {strings.transformations[labelKey]}
                 </button>
             ))}
+            {onRegenerate && (
+                <button
+                    className={styles.menuItem}
+                    onClick={handleRegenerate}
+                    role="menuitem"
+                >
+                    {strings.nodeUtils.regenerate}
+                </button>
+            )}
         </div>
     ) : null;
 
@@ -119,7 +135,7 @@ export const TransformMenu = React.memo(({
                     {isTransforming ? '⏳' : '✨'}
                 </span>
             </button>
-            
+
             {dropdownMenu && createPortal(dropdownMenu, document.body)}
         </div>
     );

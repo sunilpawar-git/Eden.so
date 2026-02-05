@@ -1,0 +1,101 @@
+/**
+ * NodeUtilsBar Styles - Floating pill action bar
+ * Slides up from bottom of node on hover
+ */
+
+.container {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    display: flex;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    box-shadow: var(--card-shadow);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity var(--transition-fast),
+        transform var(--transition-fast),
+        visibility var(--transition-fast);
+    z-index: var(--z-dropdown);
+    pointer-events: none;
+}
+
+/* Slide up on parent hover */
+.containerVisible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.containerWithTags {
+    bottom: 48px;
+}
+
+.actionButton {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-full);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.actionButton:hover:not(:disabled) {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    transform: scale(1.1);
+}
+
+.actionButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.deleteButton:hover:not(:disabled) {
+    background: hsla(0, 72%, 51%, 0.1);
+    color: var(--color-error);
+}
+
+.icon {
+    font-size: var(--font-size-sm);
+    line-height: 1;
+}
+
+/* CSS Tooltip on hover */
+.actionButton::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast);
+    pointer-events: none;
+    z-index: var(--z-tooltip);
+}
+
+.actionButton:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
