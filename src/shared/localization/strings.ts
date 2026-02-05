@@ -98,9 +98,25 @@ export const strings = {
     shortcuts: {
         openSettings: 'Open Settings',
         addNode: 'Add Node',
+        quickCapture: 'Quick Capture',
         deleteNode: 'Delete Node',
         undo: 'Undo',
         redo: 'Redo',
+        search: 'Search',
+    },
+    search: {
+        placeholder: 'Search notes...',
+        noResults: 'No results found',
+        resultsCount: 'results',
+        inWorkspace: 'in',
+        prompt: 'Prompt',
+        output: 'Output',
+    },
+    tags: {
+        addTag: 'Add tag',
+        placeholder: 'Add tag...',
+        removeTag: 'Remove tag',
+        noTags: 'No tags',
     },
     performance: {
         cls: 'Cumulative Layout Shift',

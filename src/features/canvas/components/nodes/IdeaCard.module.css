@@ -236,6 +236,12 @@
     visibility: visible;
 }
 
+/* Tags Section */
+.tagsSection {
+    padding: 0 var(--space-sm);
+    border-top: 1px solid var(--color-border-subtle);
+}
+
 /* Connection Handles - Prominent and positioned at card edges */
 .handle {
     width: 16px !important;

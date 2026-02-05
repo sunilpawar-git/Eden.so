@@ -9,12 +9,14 @@ import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useNodeTransformation, type TransformationType } from '@/features/ai/hooks/useNodeTransformation';
-import { TransformMenu } from './TransformMenu';
+import { FOCUS_NODE_EVENT, type FocusNodeEvent } from '../../hooks/useQuickCapture';
+import { IdeaCardActionBar } from './IdeaCardActionBar';
+import { TagInput } from '@/features/tags';
 import type { IdeaNodeData } from '../../types/node';
 import styles from './IdeaCard.module.css';
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
-    const { prompt, output, isGenerating } = data as IdeaNodeData;
+    const { prompt, output, isGenerating, tags: tagIds = [] } = data as IdeaNodeData;
     
     // AI card: has both prompt AND output that differ
     const isAICard = Boolean(prompt && output && prompt !== output);
@@ -23,7 +25,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const [isEditing, setIsEditing] = useState(!prompt && !output);
     const [localInput, setLocalInput] = useState('');
     
-    const { deleteNode, updateNodePrompt, updateNodeOutput } = useCanvasStore();
+    const { deleteNode, updateNodePrompt, updateNodeOutput, updateNodeTags } = useCanvasStore();
     const { generateFromPrompt, branchFromNode } = useNodeGeneration();
     const { transformNodeContent, isTransforming } = useNodeTransformation();
 
@@ -59,6 +61,19 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
             setLocalInput(getEditableContent());
         }
     }, [isEditing, getEditableContent]);
+
+    // Listen for quick capture focus events
+    useEffect(() => {
+        const handleFocusEvent = (e: Event) => {
+            const event = e as FocusNodeEvent;
+            if (event.detail.nodeId === id) {
+                setIsEditing(true);
+            }
+        };
+
+        window.addEventListener(FOCUS_NODE_EVENT, handleFocusEvent);
+        return () => window.removeEventListener(FOCUS_NODE_EVENT, handleFocusEvent);
+    }, [id]);
 
     // Save content on blur (prevents data loss)
     const handleInputBlur = useCallback(() => {
@@ -153,6 +168,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         generateFromPrompt(id);
     }, [id, generateFromPrompt]);
 
+    const handleTagsChange = useCallback((newTagIds: string[]) => {
+        updateNodeTags(id, newTagIds);
+    }, [id, updateNodeTags]);
+
     // Determine what content to show
     const hasContent = Boolean(output);
 
@@ -242,40 +261,20 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     )}
                 </div>
 
-                {/* Unified Action Bar - ALL cards get same actions */}
-                <div className={styles.actionBar}>
-                    <TransformMenu
-                        onTransform={handleTransform}
-                        disabled={!hasContent || isGenerating}
-                        isTransforming={isTransforming}
-                    />
-                    <button
-                        className={styles.actionButton}
-                        onClick={handleRegenerate}
-                        disabled={(isGenerating ?? false) || !hasContent}
-                        aria-label={strings.ideaCard.regenerate}
-                        data-tooltip={strings.ideaCard.regenerate}
-                    >
-                        <span className={styles.icon}>↻</span>
-                    </button>
-                    <button
-                        className={styles.actionButton}
-                        onClick={handleBranch}
-                        disabled={!hasContent}
-                        aria-label={strings.ideaCard.branch}
-                        data-tooltip={strings.ideaCard.branch}
-                    >
-                        <span className={styles.icon}>⑂</span>
-                    </button>
-                    <button
-                        className={`${styles.actionButton} ${styles.deleteButton}`}
-                        onClick={handleDelete}
-                        aria-label={strings.ideaCard.delete}
-                        data-tooltip={strings.ideaCard.delete}
-                    >
-                        <span className={styles.icon}>🗑</span>
-                    </button>
+                {/* Tags Section */}
+                <div className={styles.tagsSection}>
+                    <TagInput selectedTagIds={tagIds} onChange={handleTagsChange} compact />
                 </div>
+
+                <IdeaCardActionBar
+                    hasContent={hasContent}
+                    isGenerating={isGenerating ?? false}
+                    isTransforming={isTransforming}
+                    onTransform={handleTransform}
+                    onRegenerate={handleRegenerate}
+                    onBranch={handleBranch}
+                    onDelete={handleDelete}
+                />
             </div>
             <Handle
                 type="source"

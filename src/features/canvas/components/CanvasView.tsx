@@ -25,8 +25,7 @@ import '@xyflow/react/dist/style.css';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { IdeaCard } from './nodes/IdeaCard';
-import { AddNodeButton } from './AddNodeButton';
-import { CanvasControls } from './CanvasControls';
+import { CanvasActions } from './CanvasActions';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
@@ -43,6 +42,7 @@ const nodeTypes = {
 export function CanvasView() {
     const nodes = useCanvasStore((s) => s.nodes);
     const edges = useCanvasStore((s) => s.edges);
+    const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
     const setNodes = useCanvasStore((s) => s.setNodes);
     const setEdges = useCanvasStore((s) => s.setEdges);
     const updateNodeDimensions = useCanvasStore((s) => s.updateNodeDimensions);
@@ -57,6 +57,7 @@ export function CanvasView() {
         type: node.type, // 'idea' is the primary type now
         position: node.position,
         data: node.data,
+        selected: selectedNodeIds.has(node.id),
         // Use dimensions from store (persisted from Firestore)
         ...(node.width && { width: node.width }),
         ...(node.height && { height: node.height }),
@@ -185,8 +186,7 @@ export function CanvasView() {
                 <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
                 <Controls />
             </ReactFlow>
-            <AddNodeButton />
-            <CanvasControls />
+            <CanvasActions />
         </div>
     );
 }

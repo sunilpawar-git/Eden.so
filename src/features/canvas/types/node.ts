@@ -27,6 +27,7 @@ export interface IdeaNodeData {
     output?: string;
     isGenerating?: boolean;
     isPromptCollapsed?: boolean;
+    tags?: string[]; // Tag IDs for BASB organization
     [key: string]: unknown; // Index signature for ReactFlow compatibility
 }
 

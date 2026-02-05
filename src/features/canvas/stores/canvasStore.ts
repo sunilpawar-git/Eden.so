@@ -23,6 +23,7 @@ interface CanvasActions {
     // IdeaNode-specific actions
     updateNodePrompt: (nodeId: string, prompt: string) => void;
     updateNodeOutput: (nodeId: string, output: string) => void;
+    updateNodeTags: (nodeId: string, tags: string[]) => void;
     appendToNodeOutput: (nodeId: string, chunk: string) => void;
     setNodeGenerating: (nodeId: string, isGenerating: boolean) => void;
     togglePromptCollapsed: (nodeId: string) => void;
@@ -108,6 +109,16 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
             nodes: state.nodes.map((node) =>
                 node.id === nodeId
                     ? { ...node, data: { ...node.data, output }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    updateNodeTags: (nodeId: string, tags: string[]) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, data: { ...node.data, tags }, updatedAt: new Date() }
                     : node
             ),
         }));
