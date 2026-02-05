@@ -30,8 +30,16 @@ export function useAutosave(workspaceId: string) {
     }, [user, workspaceId, nodes, edges]);
 
     useEffect(() => {
-        // Skip if no changes
-        const nodesJson = JSON.stringify(nodes.map((n) => ({ ...n, updatedAt: null })));
+        // Skip if no changes - only compare meaningful fields (exclude timestamps)
+        const nodesJson = JSON.stringify(
+            nodes.map((n) => ({
+                id: n.id,
+                workspaceId: n.workspaceId,
+                type: n.type,
+                position: n.position,
+                data: n.data,
+            }))
+        );
         const edgesJson = JSON.stringify(edges);
 
         if (
@@ -59,13 +67,7 @@ export function useAutosave(workspaceId: string) {
         };
     }, [nodes, edges, save]);
 
-    // Force save on unmount
-    useEffect(() => {
-        return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                save();
-            }
-        };
-    }, [save]);
+    // NOTE: Removed "force save on unmount" effect.
+    // Save-before-switch is now handled explicitly in Sidebar.tsx
+    // to avoid race condition where clearCanvas() runs before cleanup.
 }

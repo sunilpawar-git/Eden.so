@@ -14,16 +14,40 @@ import { ToastContainer } from '@/shared/components/Toast';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
 import { useAutosave } from '@/features/workspace/hooks/useAutosave';
+import { useWorkspaceLoader } from '@/features/workspace/hooks/useWorkspaceLoader';
+import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { strings } from '@/shared/localization/strings';
 import '@/styles/global.css';
 
-function AppContent() {
-    const { isAuthenticated, isLoading } = useAuthStore();
+function AuthenticatedApp() {
+    const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const { isLoading: workspaceLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
     useKeyboardShortcuts();
-    useAutosave('default-workspace'); // TODO: Get from workspace store
+    useAutosave(currentWorkspaceId ?? '');
 
-    // Loading state
-    if (isLoading) {
+    if (workspaceLoading) {
+        return (
+            <div className="loading-screen">
+                <div className="loading-spinner" />
+                <p>{strings.common.loading}</p>
+            </div>
+        );
+    }
+
+    return (
+        <ReactFlowProvider>
+            <Layout>
+                <CanvasView />
+            </Layout>
+        </ReactFlowProvider>
+    );
+}
+
+function AppContent() {
+    const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+
+    // Auth loading state
+    if (authLoading) {
         return (
             <div className="loading-screen">
                 <div className="loading-spinner" />
@@ -37,14 +61,8 @@ function AppContent() {
         return <LoginPage />;
     }
 
-    // Authenticated - show main app with canvas
-    return (
-        <ReactFlowProvider>
-            <Layout>
-                <CanvasView />
-            </Layout>
-        </ReactFlowProvider>
-    );
+    // Authenticated - show app with workspace loading
+    return <AuthenticatedApp />;
 }
 
 export function App() {

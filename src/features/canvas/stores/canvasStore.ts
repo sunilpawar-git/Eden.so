@@ -16,8 +16,16 @@ interface CanvasActions {
     // Node actions
     addNode: (node: CanvasNode) => void;
     updateNodePosition: (nodeId: string, position: NodePosition) => void;
+    updateNodeDimensions: (nodeId: string, width: number, height: number) => void;
     updateNodeContent: (nodeId: string, content: string) => void;
     deleteNode: (nodeId: string) => void;
+
+    // IdeaNode-specific actions
+    updateNodePrompt: (nodeId: string, prompt: string) => void;
+    updateNodeOutput: (nodeId: string, output: string) => void;
+    appendToNodeOutput: (nodeId: string, chunk: string) => void;
+    setNodeGenerating: (nodeId: string, isGenerating: boolean) => void;
+    togglePromptCollapsed: (nodeId: string) => void;
 
     // Edge actions
     addEdge: (edge: CanvasEdge) => void;
@@ -30,10 +38,12 @@ interface CanvasActions {
 
     // Queries
     getConnectedNodes: (nodeId: string) => string[];
+    getUpstreamNodes: (nodeId: string) => CanvasNode[];
 
     // Bulk operations
     setNodes: (nodes: CanvasNode[]) => void;
     setEdges: (edges: CanvasEdge[]) => void;
+    clearCanvas: () => void;
 }
 
 type CanvasStore = CanvasState & CanvasActions;
@@ -63,11 +73,85 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
         }));
     },
 
+    updateNodeDimensions: (nodeId: string, width: number, height: number) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, width, height, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
     updateNodeContent: (nodeId: string, content: string) => {
         set((state) => ({
             nodes: state.nodes.map((node) =>
                 node.id === nodeId
                     ? { ...node, data: { ...node.data, content }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    updateNodePrompt: (nodeId: string, prompt: string) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, data: { ...node.data, prompt }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    updateNodeOutput: (nodeId: string, output: string) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, data: { ...node.data, output }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    appendToNodeOutput: (nodeId: string, chunk: string) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? {
+                          ...node,
+                          data: {
+                              ...node.data,
+                              output: (node.data.output ?? '') + chunk,
+                          },
+                          updatedAt: new Date(),
+                      }
+                    : node
+            ),
+        }));
+    },
+
+    setNodeGenerating: (nodeId: string, isGenerating: boolean) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? { ...node, data: { ...node.data, isGenerating }, updatedAt: new Date() }
+                    : node
+            ),
+        }));
+    },
+
+    togglePromptCollapsed: (nodeId: string) => {
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                node.id === nodeId
+                    ? {
+                          ...node,
+                          data: {
+                              ...node.data,
+                              isPromptCollapsed: !node.data.isPromptCollapsed,
+                          },
+                          updatedAt: new Date(),
+                      }
                     : node
             ),
         }));
@@ -131,11 +215,39 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
         return connected;
     },
 
+    getUpstreamNodes: (nodeId: string) => {
+        const { nodes, edges } = get();
+        const visited = new Set<string>();
+        const queue: string[] = [nodeId];
+        const upstream: CanvasNode[] = [];
+
+        while (queue.length > 0) {
+            const currentId = queue.shift()!;
+            if (visited.has(currentId)) continue;
+            visited.add(currentId);
+
+            // Find all incoming edges to current node
+            const incomingEdges = edges.filter((e) => e.targetNodeId === currentId);
+            for (const edge of incomingEdges) {
+                const sourceNode = nodes.find((n) => n.id === edge.sourceNodeId);
+                if (sourceNode && !visited.has(sourceNode.id)) {
+                    upstream.push(sourceNode);
+                    queue.push(sourceNode.id);
+                }
+            }
+        }
+        return upstream;
+    },
+
     setNodes: (nodes: CanvasNode[]) => {
         set({ nodes });
     },
 
     setEdges: (edges: CanvasEdge[]) => {
         set({ edges });
+    },
+
+    clearCanvas: () => {
+        set({ nodes: [], edges: [], selectedNodeIds: new Set() });
     },
 }));

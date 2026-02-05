@@ -13,12 +13,13 @@
     "security-check": "echo 'Scanning for .env files...' && (ls .env .env.local 2>/dev/null && echo 'WARNING: Local .env files found. Ensure they are in .gitignore.' || echo 'No .env files found in root.') && echo 'Ready for CI scan.'"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.64.2",
+    "@xyflow/react": "^12.4.0",
+    "firebase": "^11.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@xyflow/react": "^12.4.0",
-    "zustand": "^5.0.3",
-    "@tanstack/react-query": "^5.64.2",
-    "firebase": "^11.2.0"
+    "react-markdown": "^10.1.0",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

@@ -37,6 +37,18 @@
   --node-border: hsl(220, 13%, 85%);
   --node-shadow: 0 4px 12px hsla(220, 13%, 13%, 0.08);
   
+  /* IdeaCard Design Tokens */
+  --header-gradient-start: hsl(239, 84%, 67%);
+  --header-gradient-end: hsl(263, 70%, 50%);
+  --header-text: hsl(0, 0%, 100%);
+  --output-bg: hsl(210, 20%, 98%);
+  --card-shadow: 0 2px 8px hsla(220, 13%, 13%, 0.08);
+  --card-shadow-hover: 0 8px 24px hsla(220, 13%, 13%, 0.12);
+  --tooltip-bg: hsl(220, 13%, 18%);
+  --tooltip-text: hsl(0, 0%, 100%);
+  --card-min-width: 280px;
+  --card-output-max-height: 300px;
+  
   /* Spacing */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -60,6 +72,7 @@
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.25rem;
   --font-size-2xl: 1.5rem;
+  --font-size-node: 12px; /* Fixed size for node content - SSOT for readability */
   
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -125,4 +138,12 @@
   
   --glass-bg: hsla(220, 13%, 13%, 0.7);
   --glass-border: 1px solid hsla(0, 0%, 100%, 0.1);
+  
+  /* IdeaCard Design Tokens - Dark */
+  --header-gradient-start: hsl(239, 70%, 55%);
+  --header-gradient-end: hsl(263, 60%, 45%);
+  --output-bg: hsl(220, 13%, 14%);
+  --card-shadow: 0 2px 8px hsla(0, 0%, 0%, 0.25);
+  --card-shadow-hover: 0 8px 24px hsla(0, 0%, 0%, 0.35);
+  --tooltip-bg: hsl(220, 13%, 25%);
 }

@@ -1,114 +1,112 @@
 /**
  * useNodeGeneration Hook - Bridges AI service with canvas store
+ * Handles AI generation for IdeaCard nodes
  */
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '../stores/aiStore';
-import { generateContent, synthesizeNodes } from '../services/geminiService';
-import { createAIOutputNode, createDerivedNode } from '@/features/canvas/types/node';
+import { generateContentWithContext } from '../services/geminiService';
+import { createIdeaNode } from '@/features/canvas/types/node';
+import type { IdeaNodeData } from '@/features/canvas/types/node';
+import { strings } from '@/shared/localization/strings';
 
-const AI_NODE_OFFSET_Y = 150;
+const BRANCH_OFFSET_X = 350;
 
 /**
- * Hook for generating AI content from a prompt node
+ * Hook for generating AI content from IdeaCard nodes
  */
 export function useNodeGeneration() {
-    const { nodes, addNode } = useCanvasStore();
+    const { addNode } = useCanvasStore();
     const { startGeneration, completeGeneration, setError } = useAIStore();
 
     /**
-     * Generate AI output from a prompt node
+     * Generate AI output from an IdeaCard node
+     * Updates output in-place (no new node created)
      */
     const generateFromPrompt = useCallback(
-        async (promptNodeId: string) => {
-            const promptNode = nodes.find((n) => n.id === promptNodeId);
-            if (!promptNode || !promptNode.data.content) return;
+        async (nodeId: string) => {
+            // CRITICAL: Use getState() for fresh data, not closure
+            const freshNodes = useCanvasStore.getState().nodes;
+            const node = freshNodes.find((n) => n.id === nodeId);
+            if (!node || node.type !== 'idea') return;
 
-            startGeneration(promptNodeId);
+            const ideaData = node.data as IdeaNodeData;
+            if (!ideaData.prompt) return;
+
+            // Collect upstream context via edges
+            const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
+
+            // Reverse for chronological order (oldest ancestor first)
+            // Filter to include any node with content (prompt OR output)
+            // Prioritize output over prompt for context (AI results are more relevant)
+            const contextChain: string[] = upstreamNodes
+                .reverse()
+                .filter((n) => {
+                    const data = n.data as IdeaNodeData;
+                    return data.prompt || data.output;
+                })
+                .map((n) => {
+                    const data = n.data as IdeaNodeData;
+                    return (data.output || data.prompt) as string;
+                });
+
+            // Set generating state on the node
+            useCanvasStore.getState().setNodeGenerating(nodeId, true);
+            startGeneration(nodeId);
 
             try {
-                const content = await generateContent(promptNode.data.content as string);
+                const content = await generateContentWithContext(ideaData.prompt, contextChain);
 
-                // Position AI output below the prompt
-                const newNode = createAIOutputNode(
-                    `ai-${Date.now()}`,
-                    promptNode.workspaceId,
-                    {
-                        x: promptNode.position.x,
-                        y: promptNode.position.y + AI_NODE_OFFSET_Y,
-                    },
-                    content
-                );
-
-                addNode(newNode);
+                // Update output in-place (no new node created!)
+                useCanvasStore.getState().updateNodeOutput(nodeId, content);
+                useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 completeGeneration();
-
-                // Auto-connect prompt to output
-                useCanvasStore.getState().addEdge({
-                    id: `edge-${Date.now()}`,
-                    workspaceId: promptNode.workspaceId,
-                    sourceNodeId: promptNodeId,
-                    targetNodeId: newNode.id,
-                    relationshipType: 'derived',
-                });
             } catch (error) {
-                const message = error instanceof Error ? error.message : 'Generation failed';
+                const message = error instanceof Error ? error.message : strings.errors.aiError;
+                useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 setError(message);
             }
         },
-        [nodes, addNode, startGeneration, completeGeneration, setError]
+        [startGeneration, completeGeneration, setError]
     );
 
     /**
-     * Synthesize content from connected nodes
+     * Branch from an IdeaCard to create a new connected IdeaCard
      */
-    const synthesizeConnectedNodes = useCallback(
-        async (nodeIds: string[]) => {
-            if (nodeIds.length < 2) return;
+    const branchFromNode = useCallback(
+        (sourceNodeId: string) => {
+            const freshNodes = useCanvasStore.getState().nodes;
+            const sourceNode = freshNodes.find((n) => n.id === sourceNodeId);
+            if (!sourceNode) return;
 
-            const selectedNodes = nodes.filter((n) => nodeIds.includes(n.id));
-            if (selectedNodes.length < 2) return;
+            const newNode = createIdeaNode(
+                `idea-${Date.now()}`,
+                sourceNode.workspaceId,
+                {
+                    x: sourceNode.position.x + BRANCH_OFFSET_X,
+                    y: sourceNode.position.y,
+                },
+                '' // Empty prompt for user to fill
+            );
 
-            startGeneration(nodeIds[0] ?? '');
+            addNode(newNode);
 
-            try {
-                const contents = selectedNodes.map((n) => n.data.content as string);
-                const synthesizedContent = await synthesizeNodes(contents);
+            // Connect source to new node
+            useCanvasStore.getState().addEdge({
+                id: `edge-${Date.now()}`,
+                workspaceId: sourceNode.workspaceId,
+                sourceNodeId: sourceNodeId,
+                targetNodeId: newNode.id,
+                relationshipType: 'related',
+            });
 
-                // Calculate center position between nodes
-                const avgX = selectedNodes.reduce((sum, n) => sum + n.position.x, 0) / selectedNodes.length;
-                const avgY = selectedNodes.reduce((sum, n) => sum + n.position.y, 0) / selectedNodes.length;
-
-                const newNode = createDerivedNode(
-                    `derived-${Date.now()}`,
-                    selectedNodes[0]?.workspaceId ?? '',
-                    { x: avgX, y: avgY + AI_NODE_OFFSET_Y },
-                    synthesizedContent
-                );
-
-                addNode(newNode);
-                completeGeneration();
-
-                // Connect all source nodes to derived node
-                selectedNodes.forEach((sourceNode) => {
-                    useCanvasStore.getState().addEdge({
-                        id: `edge-${Date.now()}-${sourceNode.id}`,
-                        workspaceId: sourceNode.workspaceId,
-                        sourceNodeId: sourceNode.id,
-                        targetNodeId: newNode.id,
-                        relationshipType: 'derived',
-                    });
-                });
-            } catch (error) {
-                const message = error instanceof Error ? error.message : 'Synthesis failed';
-                setError(message);
-            }
+            return newNode.id;
         },
-        [nodes, addNode, startGeneration, completeGeneration, setError]
+        [addNode]
     );
 
     return {
         generateFromPrompt,
-        synthesizeConnectedNodes,
+        branchFromNode,
     };
 }

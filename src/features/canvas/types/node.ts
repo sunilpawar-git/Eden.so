@@ -1,17 +1,32 @@
 /**
- * Node Model - Strict type definitions for canvas nodes
+ * Node Model - Type definitions for canvas nodes
  */
 
-export type NodeType = 'prompt' | 'ai_output' | 'derived' | 'media';
+/**
+ * Default dimensions for new nodes (in pixels)
+ * SSOT: These constants are the single source of truth for node sizing
+ */
+export const DEFAULT_NODE_WIDTH = 280;
+export const DEFAULT_NODE_HEIGHT = 120;
+
+/**
+ * Node types - 'idea' is the primary type for IdeaCard nodes
+ */
+export type NodeType = 'idea' | 'media';
 
 export interface NodePosition {
     x: number;
     y: number;
 }
 
-export interface NodeData {
-    content: string;
+/**
+ * Data structure for IdeaCard nodes (unified prompt + output)
+ */
+export interface IdeaNodeData {
+    prompt: string;
+    output?: string;
     isGenerating?: boolean;
+    isPromptCollapsed?: boolean;
     [key: string]: unknown; // Index signature for ReactFlow compatibility
 }
 
@@ -19,71 +34,40 @@ export interface CanvasNode {
     id: string;
     workspaceId: string;
     type: NodeType;
-    data: NodeData;
+    data: IdeaNodeData;
     position: NodePosition;
+    width?: number;
+    height?: number;
     createdAt: Date;
     updatedAt: Date;
 }
 
 /**
- * Create a new prompt node
+ * Create a unified IdeaCard node (prompt + output in one)
+ * Returns node with default dimensions for consistent sizing
  */
-export function createPromptNode(
+export function createIdeaNode(
     id: string,
     workspaceId: string,
     position: NodePosition,
-    content: string = ''
+    prompt: string = ''
 ): CanvasNode {
     const now = new Date();
     return {
         id,
         workspaceId,
-        type: 'prompt',
-        data: { content },
+        type: 'idea',
+        data: {
+            prompt,
+            output: undefined,
+            isGenerating: false,
+            isPromptCollapsed: false,
+        },
         position,
+        width: DEFAULT_NODE_WIDTH,
+        height: DEFAULT_NODE_HEIGHT,
         createdAt: now,
         updatedAt: now,
     };
 }
 
-/**
- * Create an AI output node
- */
-export function createAIOutputNode(
-    id: string,
-    workspaceId: string,
-    position: NodePosition,
-    content: string
-): CanvasNode {
-    const now = new Date();
-    return {
-        id,
-        workspaceId,
-        type: 'ai_output',
-        data: { content },
-        position,
-        createdAt: now,
-        updatedAt: now,
-    };
-}
-
-/**
- * Create a derived (synthesis) node
- */
-export function createDerivedNode(
-    id: string,
-    workspaceId: string,
-    position: NodePosition,
-    content: string
-): CanvasNode {
-    const now = new Date();
-    return {
-        id,
-        workspaceId,
-        type: 'derived',
-        data: { content },
-        position,
-        createdAt: now,
-        updatedAt: now,
-    };
-}

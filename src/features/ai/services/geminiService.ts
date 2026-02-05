@@ -8,7 +8,7 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 /**
- * System prompts as defined in PRD Section 16
+ * System prompts for AI generation
  */
 const SYSTEM_PROMPTS = {
     singleNode: `You are a concise content generator.
@@ -16,10 +16,11 @@ Generate high-quality output based on the user prompt.
 Avoid emojis unless explicitly requested.
 Keep responses focused and actionable.`,
 
-    synthesis: `You are an idea synthesis engine.
-Combine the following ideas into a new actionable output.
-Avoid repetition.
-Keep it concise and insightful.`,
+    chainGeneration: `You are an idea evolution engine.
+The user has connected previous ideas in a chain.
+Generate content that naturally builds upon and extends these connected ideas.
+Show clear progression and synthesis from the context provided.
+Keep it concise and actionable.`,
 };
 
 interface GeminiResponse {
@@ -88,30 +89,41 @@ export async function generateContent(prompt: string): Promise<string> {
 }
 
 /**
- * Synthesize content from multiple node contents
+ * Generate content with upstream context from connected nodes
+ * Uses edge-aware context for Obsidian-style idea chaining
  */
-export async function synthesizeNodes(nodeContents: string[]): Promise<string> {
-    if (nodeContents.length < 2) {
-        throw new Error('At least 2 nodes required for synthesis');
+export async function generateContentWithContext(
+    prompt: string,
+    contextChain: string[]
+): Promise<string> {
+    // If no context, delegate to simple generation
+    if (contextChain.length === 0) {
+        return generateContent(prompt);
     }
 
     if (!GEMINI_API_KEY) {
         throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local');
     }
 
-    const combinedContent = nodeContents
-        .map((content, i) => `[Idea ${i + 1}]: ${content}`)
+    // Build context section from connected nodes
+    const contextSection = contextChain
+        .map((content, i) => `[Connected Idea ${i + 1}]: ${content}`)
         .join('\n\n');
+
+    const fullPrompt = `${SYSTEM_PROMPTS.chainGeneration}
+
+Connected ideas (from edge relationships):
+${contextSection}
+
+User's prompt: ${prompt}
+
+Generate content that synthesizes and builds upon the connected ideas above.`;
 
     const requestBody = {
         contents: [
             {
-                parts: [
-                    {
-                        text: `${SYSTEM_PROMPTS.synthesis}\n\n${combinedContent}\n\nCombine these ideas into a single actionable output.`
-                    }
-                ]
-            }
+                parts: [{ text: fullPrompt }],
+            },
         ],
         generationConfig: {
             temperature: 0.7,
