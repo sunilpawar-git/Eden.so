@@ -8,6 +8,8 @@ import { strings } from '@/shared/localization/strings';
 import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
+import { useNodeTransformation, type TransformationType } from '@/features/ai/hooks/useNodeTransformation';
+import { TransformMenu } from './TransformMenu';
 import type { IdeaNodeData } from '../../types/node';
 import styles from './IdeaCard.module.css';
 
@@ -23,6 +25,12 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     
     const { deleteNode, updateNodePrompt, updateNodeOutput } = useCanvasStore();
     const { generateFromPrompt, branchFromNode } = useNodeGeneration();
+    const { transformNodeContent, isTransforming } = useNodeTransformation();
+
+    // Handle transformation from menu
+    const handleTransform = useCallback((type: TransformationType) => {
+        void transformNodeContent(id, type);
+    }, [id, transformNodeContent]);
 
     // Ref for content section to attach native wheel listener
     const contentRef = useRef<HTMLDivElement>(null);
@@ -236,6 +244,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
                 {/* Unified Action Bar - ALL cards get same actions */}
                 <div className={styles.actionBar}>
+                    <TransformMenu
+                        onTransform={handleTransform}
+                        disabled={!hasContent || isGenerating}
+                        isTransforming={isTransforming}
+                    />
                     <button
                         className={styles.actionButton}
                         onClick={handleRegenerate}
