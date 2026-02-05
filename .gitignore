@@ -34,3 +34,10 @@ coverage/
 # Firebase
 .firebase/
 firebase-debug.log
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Editor/IDE specific
+.claude/
+.playwright-mcp/
