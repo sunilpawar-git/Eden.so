@@ -54,8 +54,8 @@
 
 .canvasContainer :global(.react-flow__handle:hover) {
     transform: scale(1.3);
-    background-color: var(--header-gradient-end) !important;
-    box-shadow: 0 0 12px hsla(263, 70%, 50%, 0.6);
+    background-color: var(--color-primary-hover) !important;
+    box-shadow: 0 0 12px hsla(220, 65%, 50%, 0.5);
 }
 
 /* Connection line styling */
