@@ -1,9 +1,9 @@
 /**
- * IdeaCard Editing Tests - TDD Phase 1
+ * IdeaCard Editing Tests
  * Tests for save-on-blur and populate-on-edit functionality
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
 import type { IdeaNodeData } from '../../../types/node';
@@ -37,7 +37,7 @@ vi.mock('@/shared/components/MarkdownRenderer', () => ({
     ),
 }));
 
-describe('IdeaCard Editing - Phase 1', () => {
+describe('IdeaCard Editing', () => {
     const defaultData: IdeaNodeData = {
         prompt: '',
         output: undefined,
@@ -84,12 +84,12 @@ describe('IdeaCard Editing - Phase 1', () => {
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Content that should be saved' } });
-            fireEvent.blur(textarea); // Blur without pressing Enter - should still save
+            fireEvent.blur(textarea);
 
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Content that should be saved');
         });
 
-        it('should handle AI prefix on blur save', () => {
+        it('should save AI prompt on blur in AI mode', async () => {
             const mockUpdatePrompt = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
@@ -102,8 +102,21 @@ describe('IdeaCard Editing - Phase 1', () => {
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/ai: Generate something' } });
-            fireEvent.blur(textarea); // Blur should save the prompt (not trigger generation)
+            
+            // Enter AI mode via slash command
+            fireEvent.change(textarea, { target: { value: '/' } });
+            const menuItem = screen.getByRole('menuitem');
+            fireEvent.click(menuItem);
+
+            // Wait for AI mode
+            await waitFor(() => {
+                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+            });
+
+            // Type prompt and blur
+            const aiTextarea = screen.getByRole('textbox');
+            fireEvent.change(aiTextarea, { target: { value: 'Generate something' } });
+            fireEvent.blur(aiTextarea);
 
             expect(mockUpdatePrompt).toHaveBeenCalledWith('idea-1', 'Generate something');
         });
@@ -148,7 +161,7 @@ describe('IdeaCard Editing - Phase 1', () => {
             fireEvent.doubleClick(content);
 
             const textarea = screen.getByRole('textbox');
-            fireEvent.blur(textarea); // Content pre-populated, blur without changes
+            fireEvent.blur(textarea);
             expect(mockUpdateOutput).not.toHaveBeenCalled();
         });
     });
@@ -166,7 +179,6 @@ describe('IdeaCard Editing - Phase 1', () => {
             const content = screen.getByText('My existing note content');
             fireEvent.doubleClick(content);
 
-            // Textarea should be populated with existing content
             const textarea = screen.getByRole('textbox');
             expect(textarea).toHaveValue('My existing note content');
         });
@@ -187,7 +199,6 @@ describe('IdeaCard Editing - Phase 1', () => {
             const promptText = screen.getByText('Original AI prompt');
             fireEvent.doubleClick(promptText);
 
-            // Textarea should be populated with the prompt
             const textarea = screen.getByRole('textbox');
             expect(textarea).toHaveValue('Original AI prompt');
         });
@@ -247,7 +258,6 @@ describe('IdeaCard Editing - Phase 1', () => {
             // Blur (click outside)
             fireEvent.blur(textarea);
 
-            // Content should be saved on blur
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Partially modified');
         });
     });
@@ -268,7 +278,6 @@ describe('IdeaCard Editing - Phase 1', () => {
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Some content' } });
             
-            // Press Escape - should cancel without saving
             fireEvent.keyDown(textarea, { key: 'Escape' });
 
             expect(mockUpdateOutput).not.toHaveBeenCalled();
@@ -290,9 +299,7 @@ describe('IdeaCard Editing - Phase 1', () => {
             fireEvent.change(textarea, { target: { value: 'Saved content' } });
             fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
 
-            // After save, should exit edit mode (textarea not visible)
             expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
         });
     });
-
 });

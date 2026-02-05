@@ -46,12 +46,13 @@ export const strings = {
         collapse: 'Collapse',
         expandPrompt: 'Expand prompt',
         collapsePrompt: 'Collapse prompt',
-        noOutput: 'Type text to save, or /ai: for AI generation',
-        aiPrefix: '/ai: ',
-        inputPlaceholder: 'Type to save note, or /ai: for AI...',
+        noOutput: 'Type text to save, or / for commands',
+        inputPlaceholder: 'Type a note, or press / for AI commands',
         aiDividerLabel: 'AI Response',
         transform: 'Transform',
         transforming: 'Transforming...',
+        aiModePlaceholder: 'Type your AI prompt...',
+        aiModeIndicator: 'AI Mode',
     },
     transformations: {
         refine: 'Refine',
@@ -131,6 +132,14 @@ export const strings = {
         inp: 'Interaction to Next Paint',
         lcp: 'Largest Contentful Paint',
         ttfb: 'Time to First Byte',
+    },
+    slashCommands: {
+        aiGenerate: {
+            label: 'AI Generate',
+            description: 'Generate content with AI',
+        },
+        noResults: 'No commands found',
+        menuLabel: 'Slash commands',
     },
 } as const;
 

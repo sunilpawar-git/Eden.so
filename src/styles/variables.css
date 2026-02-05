@@ -50,7 +50,7 @@
   --tooltip-bg: hsl(220, 13%, 18%);
   --tooltip-text: hsl(0, 0%, 100%);
   
-  /* Node size constraints - MUST sync with node.ts constants */
+  /* Node size constraints - Synced with node.ts (validated by nodeDimensionSync.test.ts) */
   --card-min-width: 180px;
   --card-max-width: 900px;
   --card-min-height: 100px;
@@ -134,7 +134,7 @@
   --font-size-base: 0.9375rem;
   --font-size-node: 11px;
   
-  /* Card dimensions - tighter (MUST sync with node.ts constants) */
+  /* Card dimensions - tighter (compact mode uses different values) */
   --card-min-width: 160px;
   --card-max-width: 700px;
   --card-min-height: 80px;

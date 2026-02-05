@@ -5,7 +5,7 @@
 /**
  * Node dimension constraints (in pixels)
  * SSOT: These constants are the single source of truth for node sizing
- * NOTE: CSS variables in variables.css must be kept in sync with these values
+ * @see nodeDimensionSync.test.ts - Automated test validates CSS/TS sync
  */
 export const MIN_NODE_WIDTH = 180;
 export const MAX_NODE_WIDTH = 900;
@@ -13,7 +13,7 @@ export const MIN_NODE_HEIGHT = 100;
 export const MAX_NODE_HEIGHT = 800;
 
 export const DEFAULT_NODE_WIDTH = 280;
-export const DEFAULT_NODE_HEIGHT = 180;
+export const DEFAULT_NODE_HEIGHT = 220;
 
 /**
  * Clamp dimensions to valid bounds

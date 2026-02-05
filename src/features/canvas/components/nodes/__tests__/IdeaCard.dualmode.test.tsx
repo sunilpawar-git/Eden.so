@@ -1,11 +1,12 @@
 /**
- * IdeaCard Dual-Mode Input Tests - Second Brain Feature
- * Tests for /ai: prefix detection (AI mode vs Note mode)
+ * IdeaCard Dual-Mode Input Tests - Slash Command Menu
+ * Tests for "/" slash command detection and AI mode switching
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
+import { strings } from '@/shared/localization/strings';
 import type { IdeaNodeData } from '../../../types/node';
 
 // Mock ReactFlow hooks and components
@@ -69,16 +70,15 @@ describe('IdeaCard Dual-Mode Input', () => {
         });
     });
 
-    describe('Note Mode (no /ai: prefix)', () => {
-        it('saves text directly to output when no /ai: prefix', async () => {
+    describe('Note Mode (default)', () => {
+        it('saves text directly to output in note mode', async () => {
             const mockUpdateOutput = vi.fn();
-            const mockUpdatePrompt = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
                 edges: [],
                 selectedNodeIds: new Set(),
                 updateNodeOutput: mockUpdateOutput,
-                updateNodePrompt: mockUpdatePrompt,
+                updateNodePrompt: vi.fn(),
             });
 
             render(<IdeaCard {...defaultProps} />);
@@ -108,14 +108,68 @@ describe('IdeaCard Dual-Mode Input', () => {
             fireEvent.change(textarea, { target: { value: 'Meeting notes' } });
             fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
 
-            // Note mode: should ONLY update output, NOT prompt
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Meeting notes');
             expect(mockUpdatePrompt).not.toHaveBeenCalled();
         });
     });
 
-    describe('AI Mode (/ai: prefix)', () => {
-        it('triggers AI generation when /ai: prefix is used', async () => {
+    describe('Slash Command Menu', () => {
+        it('opens menu when "/" is typed at start', () => {
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/' } });
+
+            expect(screen.getByRole('menu')).toBeInTheDocument();
+        });
+
+        it('shows AI Generate command in menu', () => {
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/' } });
+
+            expect(screen.getByText(strings.slashCommands.aiGenerate.label)).toBeInTheDocument();
+        });
+
+        it('filters menu by query', () => {
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/ai' } });
+
+            expect(screen.getByText(strings.slashCommands.aiGenerate.label)).toBeInTheDocument();
+        });
+
+        it('closes menu on Escape', () => {
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/' } });
+            expect(screen.getByRole('menu')).toBeInTheDocument();
+
+            fireEvent.keyDown(textarea, { key: 'Escape' });
+            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('AI Mode (after command selection)', () => {
+        it('shows AI mode indicator after selecting AI command', async () => {
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/' } });
+
+            // Select AI Generate command
+            const menuItem = screen.getByRole('menuitem');
+            fireEvent.click(menuItem);
+
+            await waitFor(() => {
+                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+            });
+        });
+
+        it('triggers AI generation when Enter pressed in AI mode', async () => {
             const mockUpdatePrompt = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
@@ -127,28 +181,39 @@ describe('IdeaCard Dual-Mode Input', () => {
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/ai: What is the iPhone paradox?' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            
+            // Open menu and select AI command
+            fireEvent.change(textarea, { target: { value: '/' } });
+            const menuItem = screen.getByRole('menuitem');
+            fireEvent.click(menuItem);
 
+            // Now in AI mode - type prompt and press Enter
+            await waitFor(() => {
+                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+            });
+
+            // Get textarea again (may have re-rendered)
+            const aiTextarea = screen.getByRole('textbox');
+            fireEvent.change(aiTextarea, { target: { value: 'What is quantum computing?' } });
+            fireEvent.keyDown(aiTextarea, { key: 'Enter', shiftKey: false });
+
+            expect(mockUpdatePrompt).toHaveBeenCalledWith('idea-1', 'What is quantum computing?');
             expect(mockGenerateFromPrompt).toHaveBeenCalledWith('idea-1');
         });
 
-        it('strips /ai: prefix from prompt before storing', async () => {
-            const mockUpdatePrompt = vi.fn();
-            useCanvasStore.setState({
-                nodes: [],
-                edges: [],
-                selectedNodeIds: new Set(),
-                updateNodePrompt: mockUpdatePrompt,
-            });
-
+        it('shows AI mode placeholder', async () => {
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/ai: What is quantum computing?' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            fireEvent.change(textarea, { target: { value: '/' } });
 
-            expect(mockUpdatePrompt).toHaveBeenCalledWith('idea-1', 'What is quantum computing?');
+            const menuItem = screen.getByRole('menuitem');
+            fireEvent.click(menuItem);
+
+            await waitFor(() => {
+                const aiTextarea = screen.getByRole('textbox');
+                expect(aiTextarea).toHaveAttribute('placeholder', strings.ideaCard.aiModePlaceholder);
+            });
         });
     });
 
@@ -173,41 +238,31 @@ describe('IdeaCard Dual-Mode Input', () => {
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
         });
 
-        it('handles /ai: prefix with only whitespace after it', async () => {
-            useCanvasStore.setState({
-                nodes: [],
-                edges: [],
-                selectedNodeIds: new Set(),
-                updateNodePrompt: vi.fn(),
-            });
-
+        it('does not open menu when "/" is not at start', async () => {
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/ai:    ' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            fireEvent.change(textarea, { target: { value: 'hello /' } });
 
-            expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
+            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
         });
 
-        it('treats /ai without colon as note mode', async () => {
+        it('treats "/" in middle of text as note mode', async () => {
             const mockUpdateOutput = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
                 edges: [],
                 selectedNodeIds: new Set(),
                 updateNodeOutput: mockUpdateOutput,
-                updateNodePrompt: vi.fn(),
             });
 
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/ai without colon' } });
+            fireEvent.change(textarea, { target: { value: 'path/to/file' } });
             fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
 
-            // Should be treated as note, not AI
-            expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', '/ai without colon');
+            expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'path/to/file');
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
         });
     });
