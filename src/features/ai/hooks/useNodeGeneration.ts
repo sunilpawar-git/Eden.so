@@ -7,7 +7,6 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '../stores/aiStore';
 import { generateContentWithContext } from '../services/geminiService';
 import { createIdeaNode } from '@/features/canvas/types/node';
-import type { IdeaNodeData } from '@/features/canvas/types/node';
 import { strings } from '@/shared/localization/strings';
 
 const BRANCH_OFFSET_X = 350;
@@ -28,9 +27,9 @@ export function useNodeGeneration() {
             // CRITICAL: Use getState() for fresh data, not closure
             const freshNodes = useCanvasStore.getState().nodes;
             const node = freshNodes.find((n) => n.id === nodeId);
-            if (!node || node.type !== 'idea') return;
+            if (node?.type !== 'idea') return;
 
-            const ideaData = node.data as IdeaNodeData;
+            const ideaData = node.data;
             if (!ideaData.prompt) return;
 
             // Collect upstream context via edges
@@ -42,12 +41,12 @@ export function useNodeGeneration() {
             const contextChain: string[] = upstreamNodes
                 .reverse()
                 .filter((n) => {
-                    const data = n.data as IdeaNodeData;
+                    const data = n.data;
                     return data.prompt || data.output;
                 })
                 .map((n) => {
-                    const data = n.data as IdeaNodeData;
-                    return (data.output || data.prompt) as string;
+                    const data = n.data;
+                    return data.output ?? data.prompt;
                 });
 
             // Set generating state on the node
@@ -95,7 +94,7 @@ export function useNodeGeneration() {
             useCanvasStore.getState().addEdge({
                 id: `edge-${Date.now()}`,
                 workspaceId: sourceNode.workspaceId,
-                sourceNodeId: sourceNodeId,
+                sourceNodeId,
                 targetNodeId: newNode.id,
                 relationshipType: 'related',
             });

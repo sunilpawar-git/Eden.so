@@ -50,7 +50,7 @@ export function createIdeaNode(
     id: string,
     workspaceId: string,
     position: NodePosition,
-    prompt: string = ''
+    prompt = ''
 ): CanvasNode {
     const now = new Date();
     return {

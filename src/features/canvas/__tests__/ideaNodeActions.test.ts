@@ -40,15 +40,15 @@ describe('IdeaNode actions', () => {
             expect(node.id).toBe('idea-test');
             expect(node.workspaceId).toBe('workspace-1');
             expect(node.position).toEqual({ x: 50, y: 100 });
-            expect((node.data as IdeaNodeData).prompt).toBe('My prompt');
-            expect((node.data as IdeaNodeData).output).toBeUndefined();
-            expect((node.data as IdeaNodeData).isGenerating).toBe(false);
-            expect((node.data as IdeaNodeData).isPromptCollapsed).toBe(false);
+            expect((node.data).prompt).toBe('My prompt');
+            expect((node.data).output).toBeUndefined();
+            expect((node.data).isGenerating).toBe(false);
+            expect((node.data).isPromptCollapsed).toBe(false);
         });
 
         it('creates node with empty prompt by default', () => {
             const node = createIdeaNode('idea-test', 'workspace-1', { x: 0, y: 0 });
-            expect((node.data as IdeaNodeData).prompt).toBe('');
+            expect((node.data).prompt).toBe('');
         });
     });
 
@@ -58,7 +58,7 @@ describe('IdeaNode actions', () => {
             useCanvasStore.getState().updateNodeOutput('idea-1', 'Generated AI output');
 
             const node = useCanvasStore.getState().nodes[0];
-            expect((node?.data as IdeaNodeData).output).toBe('Generated AI output');
+            expect((node?.data!).output).toBe('Generated AI output');
         });
 
         it('does not affect other node fields', () => {
@@ -66,8 +66,8 @@ describe('IdeaNode actions', () => {
             useCanvasStore.getState().updateNodeOutput('idea-1', 'New output');
 
             const node = useCanvasStore.getState().nodes[0];
-            expect((node?.data as IdeaNodeData).prompt).toBe('Test prompt');
-            expect((node?.data as IdeaNodeData).isGenerating).toBe(false);
+            expect((node?.data!).prompt).toBe('Test prompt');
+            expect((node?.data!).isGenerating).toBe(false);
         });
     });
 
@@ -77,7 +77,7 @@ describe('IdeaNode actions', () => {
             useCanvasStore.getState().setNodeGenerating('idea-1', true);
 
             const node = useCanvasStore.getState().nodes[0];
-            expect((node?.data as IdeaNodeData).isGenerating).toBe(true);
+            expect((node?.data!).isGenerating).toBe(true);
         });
 
         it('sets isGenerating flag to false', () => {
@@ -86,7 +86,7 @@ describe('IdeaNode actions', () => {
             useCanvasStore.getState().setNodeGenerating('idea-1', false);
 
             const node = useCanvasStore.getState().nodes[0];
-            expect((node?.data as IdeaNodeData).isGenerating).toBe(false);
+            expect((node?.data!).isGenerating).toBe(false);
         });
     });
 
@@ -95,11 +95,11 @@ describe('IdeaNode actions', () => {
             useCanvasStore.getState().addNode(mockIdeaNode);
 
             // Initially not collapsed
-            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).isPromptCollapsed).toBe(false);
+            expect((useCanvasStore.getState().nodes[0]?.data!).isPromptCollapsed).toBe(false);
 
             // Toggle to collapsed
             useCanvasStore.getState().togglePromptCollapsed('idea-1');
-            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).isPromptCollapsed).toBe(true);
+            expect((useCanvasStore.getState().nodes[0]?.data!).isPromptCollapsed).toBe(true);
         });
 
         it('toggles collapsed state from true to false', () => {
@@ -107,7 +107,7 @@ describe('IdeaNode actions', () => {
             useCanvasStore.getState().togglePromptCollapsed('idea-1'); // false -> true
             useCanvasStore.getState().togglePromptCollapsed('idea-1'); // true -> false
 
-            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).isPromptCollapsed).toBe(false);
+            expect((useCanvasStore.getState().nodes[0]?.data!).isPromptCollapsed).toBe(false);
         });
     });
 
@@ -117,18 +117,18 @@ describe('IdeaNode actions', () => {
             useCanvasStore.getState().updateNodeOutput('idea-1', 'Hello ');
             useCanvasStore.getState().appendToNodeOutput('idea-1', 'World!');
 
-            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).output).toBe('Hello World!');
+            expect((useCanvasStore.getState().nodes[0]?.data!).output).toBe('Hello World!');
         });
 
         it('creates output if undefined', () => {
             useCanvasStore.getState().addNode(mockIdeaNode);
 
             // Output starts undefined
-            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).output).toBeUndefined();
+            expect((useCanvasStore.getState().nodes[0]?.data!).output).toBeUndefined();
 
             // Append creates the output
             useCanvasStore.getState().appendToNodeOutput('idea-1', 'First chunk');
-            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).output).toBe('First chunk');
+            expect((useCanvasStore.getState().nodes[0]?.data!).output).toBe('First chunk');
         });
 
         it('handles multiple sequential appends for streaming', () => {
@@ -139,7 +139,7 @@ describe('IdeaNode actions', () => {
             useCanvasStore.getState().appendToNodeOutput('idea-1', 'brown ');
             useCanvasStore.getState().appendToNodeOutput('idea-1', 'fox');
 
-            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).output).toBe('The quick brown fox');
+            expect((useCanvasStore.getState().nodes[0]?.data!).output).toBe('The quick brown fox');
         });
     });
 });

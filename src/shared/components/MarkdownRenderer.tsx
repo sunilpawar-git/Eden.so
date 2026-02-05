@@ -13,10 +13,10 @@ interface MarkdownRendererProps {
     className?: string;
 }
 
-export const MarkdownRenderer = React.memo(function MarkdownRenderer({
+export const MarkdownRenderer = React.memo(({
     content,
     className,
-}: MarkdownRendererProps) {
+}: MarkdownRendererProps) => {
     const combinedClassName = className 
         ? `${styles.markdownContent} ${className}` 
         : styles.markdownContent;

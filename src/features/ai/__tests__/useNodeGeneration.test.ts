@@ -56,7 +56,7 @@ describe('useNodeGeneration', () => {
             // Should still have only 1 node
             expect(state.nodes).toHaveLength(1);
             // Output should be updated in-place
-            expect((state.nodes[0]?.data as IdeaNodeData).output).toBe('Generated output');
+            expect((state.nodes[0]?.data!).output).toBe('Generated output');
         });
 
         it('should use the LATEST prompt content, not stale closure data', async () => {
@@ -97,7 +97,7 @@ describe('useNodeGeneration', () => {
 
             let generatingState: boolean | undefined;
             vi.mocked(geminiService.generateContentWithContext).mockImplementation(async () => {
-                generatingState = (useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).isGenerating;
+                generatingState = (useCanvasStore.getState().nodes[0]?.data!).isGenerating;
                 return 'Response';
             });
 
@@ -110,7 +110,7 @@ describe('useNodeGeneration', () => {
             // Should have been true during generation
             expect(generatingState).toBe(true);
             // Should be false after completion
-            expect((useCanvasStore.getState().nodes[0]?.data as IdeaNodeData).isGenerating).toBe(false);
+            expect((useCanvasStore.getState().nodes[0]?.data!).isGenerating).toBe(false);
         });
     });
 
@@ -294,7 +294,7 @@ describe('useNodeGeneration', () => {
             // New node should be idea type
             expect(state.nodes[1]?.type).toBe('idea');
             // New node should have empty prompt
-            expect((state.nodes[1]?.data as IdeaNodeData).prompt).toBe('');
+            expect((state.nodes[1]?.data!).prompt).toBe('');
             // Should have edge connecting them
             expect(state.edges).toHaveLength(1);
             expect(state.edges[0]?.sourceNodeId).toBe('idea-source');

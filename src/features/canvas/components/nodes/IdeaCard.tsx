@@ -11,7 +11,7 @@ import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import type { IdeaNodeData } from '../../types/node';
 import styles from './IdeaCard.module.css';
 
-export const IdeaCard = React.memo(function IdeaCard({ id, data, selected }: NodeProps) {
+export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { prompt, output, isGenerating } = data as IdeaNodeData;
     
     // AI card: has both prompt AND output that differ
@@ -196,7 +196,7 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data, selected }: Nod
                     <button
                         className={styles.actionButton}
                         onClick={handleRegenerate}
-                        disabled={isGenerating || !hasContent}
+                        disabled={(isGenerating ?? false) || !hasContent}
                         aria-label={strings.ideaCard.regenerate}
                         data-tooltip={strings.ideaCard.regenerate}
                     >

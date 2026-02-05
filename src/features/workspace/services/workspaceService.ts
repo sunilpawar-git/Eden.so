@@ -25,7 +25,7 @@ const getSubcollectionDocRef = (userId: string, workspaceId: string, subcollecti
 /** Create a new workspace and save to Firestore */
 export async function createNewWorkspace(userId: string, name?: string): Promise<Workspace> {
     const workspaceId = `workspace-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    const workspace = createWorkspace(workspaceId, userId, name || strings.workspace.untitled);
+    const workspace = createWorkspace(workspaceId, userId, name ?? strings.workspace.untitled);
     await saveWorkspace(userId, workspace);
     return workspace;
 }
