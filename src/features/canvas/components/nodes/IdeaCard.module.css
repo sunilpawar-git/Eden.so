@@ -155,7 +155,7 @@
     }
 }
 
-/* Action Bar - Unified for ALL cards */
+/* Action Bar - Hidden by default, visible on card hover */
 .actionBar {
     display: flex;
     justify-content: center;
@@ -164,6 +164,12 @@
     border-top: 1px solid var(--color-border);
     background: var(--color-surface-elevated);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.cardWrapper:hover .actionBar {
+    opacity: 1;
 }
 
 .actionButton {

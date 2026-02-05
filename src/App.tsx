@@ -26,7 +26,7 @@ function AuthenticatedApp() {
     const { isLoading: workspaceLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     
-    useKeyboardShortcuts();
+    useKeyboardShortcuts({ onOpenSettings: () => setIsSettingsOpen(true) });
     useThemeApplicator();
     useAutosave(currentWorkspaceId ?? '');
 
