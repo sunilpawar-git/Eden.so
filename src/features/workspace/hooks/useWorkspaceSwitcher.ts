@@ -19,8 +19,9 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
     const { setNodes, setEdges } = useCanvasStore();
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const setCurrentWorkspaceId = useWorkspaceStore((s) => s.setCurrentWorkspaceId);
+    const isSwitching = useWorkspaceStore((s) => s.isSwitching);
+    const setSwitching = useWorkspaceStore((s) => s.setSwitching);
     
-    const [isSwitching, setIsSwitching] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const switchingRef = useRef(false);
 
@@ -36,7 +37,7 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
         }
 
         switchingRef.current = true;
-        setIsSwitching(true);
+        setSwitching(true);
         setError(null);
 
         try {
@@ -66,10 +67,10 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
             setError(message);
             console.error('[useWorkspaceSwitcher]', err);
         } finally {
-            setIsSwitching(false);
+            setSwitching(false);
             switchingRef.current = false;
         }
-    }, [user, currentWorkspaceId, setNodes, setEdges, setCurrentWorkspaceId]);
+    }, [user, currentWorkspaceId, setNodes, setEdges, setCurrentWorkspaceId, setSwitching]);
 
     return { isSwitching, error, switchWorkspace };
 }

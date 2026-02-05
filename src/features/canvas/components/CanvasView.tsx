@@ -29,6 +29,12 @@ import { AddNodeButton } from './AddNodeButton';
 import { CanvasControls } from './CanvasControls';
 import styles from './CanvasView.module.css';
 
+function getContainerClassName(isSwitching: boolean): string {
+    const base = styles.canvasContainer ?? '';
+    const switchingClass = styles.switching ?? '';
+    return isSwitching ? `${base} ${switchingClass}` : base;
+}
+
 // Memoized node types for performance
 const nodeTypes = {
     idea: IdeaCard,
@@ -43,6 +49,7 @@ export function CanvasView() {
     const selectNode = useCanvasStore((s) => s.selectNode);
     const clearSelection = useCanvasStore((s) => s.clearSelection);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const isSwitching = useWorkspaceStore((s) => s.isSwitching);
 
     // Convert store nodes to ReactFlow format (width/height from store)
     const rfNodes: Node[] = nodes.map((node) => ({
@@ -153,7 +160,7 @@ export function CanvasView() {
     );
 
     return (
-        <div className={styles.canvasContainer}>
+        <div className={getContainerClassName(isSwitching)}>
             <ReactFlow
                 nodes={rfNodes}
                 edges={rfEdges}

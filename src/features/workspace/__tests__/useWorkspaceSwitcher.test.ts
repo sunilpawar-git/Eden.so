@@ -37,12 +37,16 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
 
 // Mock workspace store
 const mockSetCurrentWorkspaceId = vi.fn();
+const mockSetSwitching = vi.fn();
 let mockCurrentWorkspaceId = 'ws-current';
+let mockIsSwitching = false;
 vi.mock('../stores/workspaceStore', () => ({
-    useWorkspaceStore: (selector: (state: { currentWorkspaceId: string }) => unknown) => {
+    useWorkspaceStore: (selector: (state: Record<string, unknown>) => unknown) => {
         const state = {
             currentWorkspaceId: mockCurrentWorkspaceId,
             setCurrentWorkspaceId: mockSetCurrentWorkspaceId,
+            isSwitching: mockIsSwitching,
+            setSwitching: mockSetSwitching,
         };
         return typeof selector === 'function' ? selector(state) : state;
     },
@@ -55,6 +59,7 @@ describe('useWorkspaceSwitcher', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockCurrentWorkspaceId = 'ws-current';
+        mockIsSwitching = false;
         mockLoadNodes.mockResolvedValue(mockNodes);
         mockLoadEdges.mockResolvedValue(mockEdges);
         mockSaveNodes.mockResolvedValue(undefined);
@@ -72,8 +77,8 @@ describe('useWorkspaceSwitcher', () => {
         expect(result.current.error).toBeNull();
     });
 
-    it('sets isSwitching true during switch', async () => {
-        // Delay the load to capture isSwitching state
+    it('calls setSwitching(true) during switch', async () => {
+        // Delay the load to capture setSwitching calls
         mockLoadNodes.mockImplementation(() => new Promise((resolve) => {
             setTimeout(() => resolve(mockNodes), 50);
         }));
@@ -84,10 +89,12 @@ describe('useWorkspaceSwitcher', () => {
             void result.current.switchWorkspace('ws-new');
         });
 
-        expect(result.current.isSwitching).toBe(true);
+        // Should have called setSwitching(true) at start
+        expect(mockSetSwitching).toHaveBeenCalledWith(true);
 
         await waitFor(() => {
-            expect(result.current.isSwitching).toBe(false);
+            // Should have called setSwitching(false) at end
+            expect(mockSetSwitching).toHaveBeenCalledWith(false);
         });
     });
 
@@ -126,14 +133,15 @@ describe('useWorkspaceSwitcher', () => {
         expect(mockSetCurrentWorkspaceId).toHaveBeenCalledWith('ws-new');
     });
 
-    it('sets isSwitching false after switch completes', async () => {
+    it('calls setSwitching(false) after switch completes', async () => {
         const { result } = renderHook(() => useWorkspaceSwitcher());
 
         await act(async () => {
             await result.current.switchWorkspace('ws-new');
         });
 
-        expect(result.current.isSwitching).toBe(false);
+        // Last call should be setSwitching(false)
+        expect(mockSetSwitching).toHaveBeenLastCalledWith(false);
     });
 
     it('handles switch errors gracefully', async () => {
