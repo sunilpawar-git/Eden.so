@@ -103,7 +103,7 @@ describe('IdeaCard', () => {
             render(<IdeaCard {...propsNoOutput} />);
             // Empty cards start in edit mode with textarea
             const textarea = screen.getByRole('textbox');
-            expect(textarea).toHaveAttribute('placeholder', expect.stringMatching(/Type to save note/));
+            expect(textarea).toHaveAttribute('placeholder', expect.stringMatching(/Type a note/));
         });
 
         it('renders top handle for target connections', () => {

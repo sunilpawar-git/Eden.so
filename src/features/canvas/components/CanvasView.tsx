@@ -2,7 +2,7 @@
  * Canvas View - ReactFlow wrapper component
  * Store is the single source of truth, ReactFlow syncs to it
  */
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import {
     ReactFlow,
     Background,
@@ -51,6 +51,19 @@ export function CanvasView() {
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
 
+    // RAF throttling for resize events (performance optimization)
+    const pendingResize = useRef<{ id: string; width: number; height: number } | null>(null);
+    const rafId = useRef<number | null>(null);
+
+    // Cleanup RAF on unmount
+    useEffect(() => {
+        return () => {
+            if (rafId.current !== null) {
+                cancelAnimationFrame(rafId.current);
+            }
+        };
+    }, []);
+
     // Convert store nodes to ReactFlow format (width/height from store)
     const rfNodes: Node[] = nodes.map((node) => ({
         id: node.id,
@@ -89,12 +102,25 @@ export function CanvasView() {
                     }
                 }
                 // Save dimensions to store for persistence (resizing)
+                // Use RAF throttling to batch updates during drag
                 if (change.type === 'dimensions' && change.dimensions && change.resizing) {
-                    updateNodeDimensions(
-                        change.id,
-                        change.dimensions.width,
-                        change.dimensions.height
-                    );
+                    pendingResize.current = {
+                        id: change.id,
+                        width: change.dimensions.width,
+                        height: change.dimensions.height,
+                    };
+
+                    rafId.current ??= requestAnimationFrame(() => {
+                        if (pendingResize.current) {
+                            updateNodeDimensions(
+                                pendingResize.current.id,
+                                pendingResize.current.width,
+                                pendingResize.current.height
+                            );
+                            pendingResize.current = null;
+                        }
+                        rafId.current = null;
+                    });
                 }
                 // Handle node removal
                 if (change.type === 'remove') {

@@ -142,4 +142,60 @@ describe('useSearch', () => {
 
         expect(result.current.results[0]?.matchedContent).toContain('TypeScript');
     });
+
+    it('should handle nodes with empty prompt', () => {
+        useCanvasStore.setState({
+            nodes: [
+                {
+                    id: 'node-empty',
+                    workspaceId: 'ws-1',
+                    type: 'idea',
+                    data: { prompt: '', output: 'This is output content' },
+                    position: { x: 0, y: 0 },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ],
+            edges: [],
+            selectedNodeIds: new Set(),
+        });
+
+        const { result } = renderHook(() => useSearch());
+
+        act(() => {
+            result.current.search('output');
+        });
+
+        // Should find match in output, not crash on empty prompt
+        expect(result.current.results).toHaveLength(1);
+        expect(result.current.results[0]?.matchType).toBe('output');
+    });
+
+    it('should handle nodes with undefined output', () => {
+        useCanvasStore.setState({
+            nodes: [
+                {
+                    id: 'node-no-output',
+                    workspaceId: 'ws-1',
+                    type: 'idea',
+                    data: { prompt: 'Test prompt', output: undefined },
+                    position: { x: 0, y: 0 },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ],
+            edges: [],
+            selectedNodeIds: new Set(),
+        });
+
+        const { result } = renderHook(() => useSearch());
+
+        act(() => {
+            result.current.search('Test');
+        });
+
+        // Should find match in prompt, not crash on undefined output
+        expect(result.current.results).toHaveLength(1);
+        expect(result.current.results[0]?.matchType).toBe('prompt');
+    });
 });

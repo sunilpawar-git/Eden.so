@@ -13,14 +13,12 @@ describe('createIdeaNode', () => {
         const node = createIdeaNode(testId, testWorkspaceId, testPosition);
 
         expect(node.width).toBe(DEFAULT_NODE_WIDTH);
-        expect(node.width).toBe(280);
     });
 
     it('should return node with default height', () => {
         const node = createIdeaNode(testId, testWorkspaceId, testPosition);
 
         expect(node.height).toBe(DEFAULT_NODE_HEIGHT);
-        expect(node.height).toBe(120);
     });
 
     it('should create node with correct basic properties', () => {

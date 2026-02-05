@@ -28,8 +28,27 @@ vi.mock('@xyflow/react', async () => {
             Top: 'top',
             Bottom: 'bottom',
         },
-        NodeResizer: ({ isVisible }: { isVisible?: boolean }) => (
-            <div data-testid="node-resizer" data-visible={isVisible} />
+        NodeResizer: ({ 
+            isVisible, 
+            minWidth, 
+            maxWidth, 
+            minHeight, 
+            maxHeight 
+        }: { 
+            isVisible?: boolean;
+            minWidth?: number;
+            maxWidth?: number;
+            minHeight?: number;
+            maxHeight?: number;
+        }) => (
+            <div 
+                data-testid="node-resizer" 
+                data-visible={isVisible}
+                data-min-width={minWidth}
+                data-max-width={maxWidth}
+                data-min-height={minHeight}
+                data-max-height={maxHeight}
+            />
         ),
     };
 });
@@ -126,6 +145,30 @@ describe('IdeaCard Features', () => {
             render(<IdeaCard {...selectedProps} />);
             const resizer = screen.getByTestId('node-resizer');
             expect(resizer.getAttribute('data-visible')).toBe('true');
+        });
+
+        it('NodeResizer has correct minWidth constraint (180)', () => {
+            render(<IdeaCard {...defaultProps} />);
+            const resizer = screen.getByTestId('node-resizer');
+            expect(resizer.getAttribute('data-min-width')).toBe('180');
+        });
+
+        it('NodeResizer has correct maxWidth constraint (900)', () => {
+            render(<IdeaCard {...defaultProps} />);
+            const resizer = screen.getByTestId('node-resizer');
+            expect(resizer.getAttribute('data-max-width')).toBe('900');
+        });
+
+        it('NodeResizer has correct minHeight constraint (100)', () => {
+            render(<IdeaCard {...defaultProps} />);
+            const resizer = screen.getByTestId('node-resizer');
+            expect(resizer.getAttribute('data-min-height')).toBe('100');
+        });
+
+        it('NodeResizer has correct maxHeight constraint (800)', () => {
+            render(<IdeaCard {...defaultProps} />);
+            const resizer = screen.getByTestId('node-resizer');
+            expect(resizer.getAttribute('data-max-height')).toBe('800');
         });
     });
 

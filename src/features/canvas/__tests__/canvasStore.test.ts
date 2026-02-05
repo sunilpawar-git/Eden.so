@@ -107,6 +107,58 @@ describe('CanvasStore', () => {
         });
     });
 
+    describe('updateNodeDimensions', () => {
+        it('should update node dimensions within bounds', () => {
+            useCanvasStore.getState().addNode(mockNode);
+            useCanvasStore.getState().updateNodeDimensions('node-1', 400, 300);
+
+            const node = useCanvasStore.getState().nodes[0];
+            expect(node?.width).toBe(400);
+            expect(node?.height).toBe(300);
+        });
+
+        it('should clamp dimensions below minimum', () => {
+            useCanvasStore.getState().addNode(mockNode);
+            useCanvasStore.getState().updateNodeDimensions('node-1', 50, 30);
+
+            const node = useCanvasStore.getState().nodes[0];
+            // MIN_NODE_WIDTH = 180, MIN_NODE_HEIGHT = 100
+            expect(node?.width).toBe(180);
+            expect(node?.height).toBe(100);
+        });
+
+        it('should clamp dimensions above maximum', () => {
+            useCanvasStore.getState().addNode(mockNode);
+            useCanvasStore.getState().updateNodeDimensions('node-1', 1500, 1200);
+
+            const node = useCanvasStore.getState().nodes[0];
+            // MAX_NODE_WIDTH = 900, MAX_NODE_HEIGHT = 800
+            expect(node?.width).toBe(900);
+            expect(node?.height).toBe(800);
+        });
+
+        it('should update updatedAt timestamp', () => {
+            useCanvasStore.getState().addNode(mockNode);
+            const beforeUpdate = new Date();
+            useCanvasStore.getState().updateNodeDimensions('node-1', 400, 300);
+            const afterUpdate = new Date();
+
+            const node = useCanvasStore.getState().nodes[0];
+            expect(node?.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime());
+            expect(node?.updatedAt.getTime()).toBeLessThanOrEqual(afterUpdate.getTime());
+        });
+
+        it('should not affect other nodes', () => {
+            useCanvasStore.getState().addNode(mockNode);
+            useCanvasStore.getState().addNode(mockNode2);
+            useCanvasStore.getState().updateNodeDimensions('node-1', 400, 300);
+
+            const node2 = useCanvasStore.getState().nodes[1];
+            expect(node2?.width).toBeUndefined();
+            expect(node2?.height).toBeUndefined();
+        });
+    });
+
     describe('deleteNode', () => {
         it('should remove node from canvas', () => {
             useCanvasStore.getState().addNode(mockNode);

@@ -9,12 +9,14 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    height: 100%; /* Fill ReactFlow node for vertical resize support */
 }
 
 .ideaCard {
     min-width: var(--card-min-width);
-    max-width: 600px;
-    /* Match NodeResizer maxWidth */
+    max-width: var(--card-max-width);
+    min-height: var(--card-min-height);
+    height: 100%; /* Fill parent for resize control */
     background: var(--color-surface-elevated);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
@@ -33,8 +35,7 @@
 /* Content Area - Main scrollable content container */
 .contentArea {
     flex: 1;
-    min-height: 80px;
-    max-height: var(--card-output-max-height);
+    min-height: 0; /* Allow flex shrinking for resize */
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
@@ -60,6 +61,31 @@
 
 .contentArea::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
+}
+
+/* Input Wrapper - Container for textarea and slash menu */
+.inputWrapper {
+    position: relative;
+}
+
+/* AI Mode Indicator */
+.aiIndicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    margin-bottom: var(--space-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    border-radius: var(--radius-full);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Input Area - Textarea for editing */
@@ -269,4 +295,25 @@
 /* Bottom handle - centered at bottom edge */
 .handleBottom {
     /* ReactFlow positions this automatically */
+}
+
+/* Resize Handle Styles - ReactFlow NodeResizer */
+.cardWrapper :global(.react-flow__resize-control.handle) {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary);
+    border: 2px solid var(--color-surface-elevated);
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+.cardWrapper :global(.react-flow__resize-control.handle:hover) {
+    transform: scale(1.2);
+    background: var(--color-primary-hover);
+}
+
+.cardWrapper :global(.react-flow__resize-control.line) {
+    border-color: var(--color-primary);
+    border-width: 2px;
+    border-style: solid;
 }
