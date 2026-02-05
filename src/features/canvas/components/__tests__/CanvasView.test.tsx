@@ -21,12 +21,8 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     };
 });
 
-vi.mock('../AddNodeButton', () => ({
-    AddNodeButton: () => <div data-testid="mock-add-node-button" />,
-}));
-
-vi.mock('@/features/ai/components/SynthesisButton', () => ({
-    SynthesisButton: () => <div data-testid="mock-synthesis-button" />,
+vi.mock('../CanvasActions', () => ({
+    CanvasActions: () => <div data-testid="mock-canvas-actions" />,
 }));
 
 describe('CanvasView', () => {
