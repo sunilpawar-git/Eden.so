@@ -69,7 +69,7 @@
 }
 
 .contentArea.editingMode {
-    padding: 0;
+    padding: var(--space-md);
 }
 
 /* Input Wrapper - Container for textarea and slash menu */
