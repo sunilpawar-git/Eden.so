@@ -1,7 +1,7 @@
 /**
  * App Entry Point
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
@@ -12,7 +12,9 @@ import { Layout } from '@/shared/components/Layout';
 import { CanvasView } from '@/features/canvas/components/CanvasView';
 import { ToastContainer } from '@/shared/components/Toast';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { SettingsPanel } from '@/shared/components/SettingsPanel';
 import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
+import { useThemeApplicator } from '@/shared/hooks/useThemeApplicator';
 import { useAutosave } from '@/features/workspace/hooks/useAutosave';
 import { useWorkspaceLoader } from '@/features/workspace/hooks/useWorkspaceLoader';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -22,7 +24,10 @@ import '@/styles/global.css';
 function AuthenticatedApp() {
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const { isLoading: workspaceLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    
     useKeyboardShortcuts();
+    useThemeApplicator();
     useAutosave(currentWorkspaceId ?? '');
 
     if (workspaceLoading) {
@@ -36,9 +41,13 @@ function AuthenticatedApp() {
 
     return (
         <ReactFlowProvider>
-            <Layout>
+            <Layout onSettingsClick={() => setIsSettingsOpen(true)}>
                 <CanvasView />
             </Layout>
+            <SettingsPanel 
+                isOpen={isSettingsOpen} 
+                onClose={() => setIsSettingsOpen(false)} 
+            />
         </ReactFlowProvider>
     );
 }
