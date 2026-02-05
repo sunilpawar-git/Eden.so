@@ -8,6 +8,11 @@ const GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string | undefine
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 /**
+ * Transformation types for AI-based text transformations (SSOT)
+ */
+export type TransformationType = 'refine' | 'shorten' | 'lengthen' | 'proofread';
+
+/**
  * System prompts for AI generation
  */
 const SYSTEM_PROMPTS = {
@@ -21,6 +26,27 @@ The user has connected previous ideas in a chain.
 Generate content that naturally builds upon and extends these connected ideas.
 Show clear progression and synthesis from the context provided.
 Keep it concise and actionable.`,
+};
+
+/**
+ * Transformation prompts - preserve original meaning while transforming
+ */
+const TRANSFORMATION_PROMPTS: Record<TransformationType, string> = {
+    refine: `Refine and improve the following text while preserving its original meaning and intent.
+Make it clearer, more polished, and better structured.
+Keep the same length unless improvements require slight changes.`,
+
+    shorten: `Make the following text more concise and brief while preserving its original meaning.
+Remove unnecessary words and redundancy.
+Keep all key information intact.`,
+
+    lengthen: `Expand and elaborate on the following text while preserving its original meaning and intent.
+Add more detail, examples, or explanation where appropriate.
+Make it more comprehensive.`,
+
+    proofread: `Proofread and correct the following text for grammar, spelling, and punctuation errors.
+Preserve the original meaning and intent exactly.
+Only fix errors, do not change the style or content.`,
 };
 
 interface GeminiResponse {
@@ -149,7 +175,68 @@ Generate content that synthesizes and builds upon the connected ideas above.`;
     const data: GeminiResponse = await response.json();
 
     if (data.error) {
-        throw new Error(data.error.message || strings.errors.aiError);
+        throw new Error(data.error.message);
+    }
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+        throw new Error(strings.errors.aiError);
+    }
+
+    return text;
+}
+
+/**
+ * Transform existing content using AI (refine, shorten, lengthen, proofread)
+ * Preserves original meaning while applying the transformation
+ */
+export async function transformContent(
+    content: string,
+    type: TransformationType
+): Promise<string> {
+    if (!GEMINI_API_KEY) {
+        throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local');
+    }
+
+    const systemPrompt = TRANSFORMATION_PROMPTS[type];
+    const fullPrompt = `${systemPrompt}
+
+Text to transform:
+${content}
+
+Transformed text:`;
+
+    const requestBody = {
+        contents: [
+            {
+                parts: [{ text: fullPrompt }],
+            },
+        ],
+        generationConfig: {
+            temperature: 0.5, // Lower temperature for more consistent transformations
+            maxOutputTokens: 1024,
+        },
+    };
+
+    const response = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+        if (response.status === 429) {
+            throw new Error(strings.errors.quotaExceeded);
+        }
+        throw new Error(strings.errors.aiError);
+    }
+
+    const data: GeminiResponse = await response.json();
+
+    if (data.error) {
+        throw new Error(data.error.message);
     }
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
