@@ -55,11 +55,6 @@
     background-color: var(--color-primary-hover);
 }
 
-.plusIcon {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-bold);
-}
-
 .workspaceList {
     margin-top: var(--space-md);
 }
@@ -105,10 +100,19 @@
     border-top: 1px solid var(--color-border);
 }
 
+.footerContent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+}
+
 .userSection {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
+    flex: 1;
+    min-width: 0;
 }
 
 .avatar {
@@ -156,4 +160,22 @@
 
 .signOutButton:hover {
     color: var(--color-error);
+}
+
+.settingsButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    background: transparent;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.settingsButton:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
 }

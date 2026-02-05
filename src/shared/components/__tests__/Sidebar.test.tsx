@@ -165,4 +165,27 @@ describe('Sidebar', () => {
             expect(signOut).toHaveBeenCalledTimes(1);
         });
     });
+
+    describe('settings button', () => {
+        it('should render settings button in footer', () => {
+            render(<Sidebar />);
+            expect(screen.getByLabelText(strings.settings.title)).toBeInTheDocument();
+        });
+
+        it('should call onSettingsClick when settings button is clicked', () => {
+            const mockOnSettingsClick = vi.fn();
+            render(<Sidebar onSettingsClick={mockOnSettingsClick} />);
+            
+            fireEvent.click(screen.getByLabelText(strings.settings.title));
+            expect(mockOnSettingsClick).toHaveBeenCalledTimes(1);
+        });
+
+        it('should use PlusIcon for new workspace button', () => {
+            render(<Sidebar />);
+            const newWorkspaceButton = screen.getByText(strings.workspace.newWorkspace);
+            // Check that the button contains an SVG icon
+            const svgIcon = newWorkspaceButton.parentElement?.querySelector('svg');
+            expect(svgIcon).toBeInTheDocument();
+        });
+    });
 });

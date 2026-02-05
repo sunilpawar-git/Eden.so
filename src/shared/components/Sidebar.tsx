@@ -15,7 +15,12 @@ import {
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { toast } from '@/shared/stores/toastStore';
+import { PlusIcon, SettingsIcon } from '@/shared/components/icons';
 import styles from './Sidebar.module.css';
+
+interface SidebarProps {
+    onSettingsClick?: () => void;
+}
 
 interface WorkspaceItemProps {
     id: string;
@@ -77,7 +82,7 @@ function WorkspaceItem({ id, name, isActive, onSelect, onRename }: WorkspaceItem
     );
 }
 
-export function Sidebar() {
+export function Sidebar({ onSettingsClick }: SidebarProps) {
     const { user } = useAuthStore();
     const clearCanvas = useCanvasStore((s) => s.clearCanvas);
     const { 
@@ -227,7 +232,7 @@ export function Sidebar() {
                     onClick={handleNewWorkspace}
                     disabled={isCreating}
                 >
-                    <span className={styles.plusIcon}>+</span>
+                    <PlusIcon size={18} />
                     <span>{isCreating ? strings.common.loading : strings.workspace.newWorkspace}</span>
                 </button>
 
@@ -255,27 +260,36 @@ export function Sidebar() {
 
             <div className={styles.footer}>
                 {user && (
-                    <div className={styles.userSection}>
-                        {user.avatarUrl ? (
-                            <img
-                                src={user.avatarUrl}
-                                alt={user.name}
-                                className={styles.avatar}
-                            />
-                        ) : (
-                            <div className={styles.avatarPlaceholder}>
-                                {user.name.charAt(0).toUpperCase()}
+                    <div className={styles.footerContent}>
+                        <div className={styles.userSection}>
+                            {user.avatarUrl ? (
+                                <img
+                                    src={user.avatarUrl}
+                                    alt={user.name}
+                                    className={styles.avatar}
+                                />
+                            ) : (
+                                <div className={styles.avatarPlaceholder}>
+                                    {user.name.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                            <div className={styles.userInfo}>
+                                <span className={styles.userName}>{user.name}</span>
+                                <button
+                                    className={styles.signOutButton}
+                                    onClick={handleSignOut}
+                                >
+                                    {strings.auth.signOut}
+                                </button>
                             </div>
-                        )}
-                        <div className={styles.userInfo}>
-                            <span className={styles.userName}>{user.name}</span>
-                            <button
-                                className={styles.signOutButton}
-                                onClick={handleSignOut}
-                            >
-                                {strings.auth.signOut}
-                            </button>
                         </div>
+                        <button
+                            className={styles.settingsButton}
+                            onClick={onSettingsClick}
+                            aria-label={strings.settings.title}
+                        >
+                            <SettingsIcon size={20} />
+                        </button>
                     </div>
                 )}
             </div>

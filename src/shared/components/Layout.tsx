@@ -7,12 +7,13 @@ import styles from './Layout.module.css';
 
 interface LayoutProps {
     children: ReactNode;
+    onSettingsClick?: () => void;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, onSettingsClick }: LayoutProps) {
     return (
         <div className={styles.layout}>
-            <Sidebar />
+            <Sidebar onSettingsClick={onSettingsClick} />
             <main className={styles.main}>{children}</main>
         </div>
     );

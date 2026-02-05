@@ -4,8 +4,13 @@
 import { useEffect, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 
-export function useKeyboardShortcuts() {
+interface KeyboardShortcutsOptions {
+    onOpenSettings?: () => void;
+}
+
+export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
     const { selectedNodeIds, deleteNode, clearSelection } = useCanvasStore();
+    const { onOpenSettings } = options;
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
@@ -16,6 +21,13 @@ export function useKeyboardShortcuts() {
                 target.tagName === 'TEXTAREA' ||
                 target.isContentEditable
             ) {
+                return;
+            }
+
+            // Cmd/Ctrl + , to open settings
+            if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+                e.preventDefault();
+                onOpenSettings?.();
                 return;
             }
 
@@ -32,7 +44,7 @@ export function useKeyboardShortcuts() {
                 clearSelection();
             }
         },
-        [selectedNodeIds, deleteNode, clearSelection]
+        [selectedNodeIds, deleteNode, clearSelection, onOpenSettings]
     );
 
     useEffect(() => {

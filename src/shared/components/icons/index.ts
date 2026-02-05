@@ -1,0 +1,5 @@
+/**
+ * Icon Components - Barrel Export
+ */
+export { PlusIcon } from './PlusIcon';
+export { SettingsIcon } from './SettingsIcon';
