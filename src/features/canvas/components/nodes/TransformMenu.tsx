@@ -63,9 +63,20 @@ export const TransformMenu = React.memo(({
             }
         };
 
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsOpen(false);
+            }
+        };
+
         if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => document.removeEventListener('mousedown', handleClickOutside);
+            // Use capture phase to intercept event before React Flow stops propagation
+            document.addEventListener('mousedown', handleClickOutside, true);
+            document.addEventListener('keydown', handleKeyDown);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside, true);
+                document.removeEventListener('keydown', handleKeyDown);
+            };
         }
     }, [isOpen]);
 

@@ -57,7 +57,7 @@ export const SlashCommandMenu = React.memo(({
             switch (e.key) {
                 case 'ArrowDown':
                     e.preventDefault();
-                    setHighlightedIndex(prev => 
+                    setHighlightedIndex(prev =>
                         Math.min(prev + 1, filteredCommands.length - 1)
                     );
                     break;
@@ -90,8 +90,9 @@ export const SlashCommandMenu = React.memo(({
             }
         };
 
-        document.addEventListener('mousedown', handleMouseDown);
-        return () => document.removeEventListener('mousedown', handleMouseDown);
+        // Use capture phase to intercept event before React Flow stops propagation
+        document.addEventListener('mousedown', handleMouseDown, true);
+        return () => document.removeEventListener('mousedown', handleMouseDown, true);
     }, [onClose]);
 
     const handleCommandClick = useCallback((id: SlashCommandId) => {
