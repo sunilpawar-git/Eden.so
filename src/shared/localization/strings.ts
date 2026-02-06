@@ -23,6 +23,7 @@ export const strings = {
         deleteSuccess: 'Workspace deleted successfully',
         deleteDefaultError: 'Cannot delete the default workspace',
         addNodeTooltip: 'Add New Node',
+        arrangeNodesTooltip: 'Auto Arrange (Grid)',
         deleteWorkspaceTooltip: 'Delete Workspace',
         switching: 'Switching workspace...',
         switchError: 'Failed to switch workspace',

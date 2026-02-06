@@ -1,7 +1,8 @@
 /**
  * Icon Components - Barrel Export
  */
-export { PlusIcon } from './PlusIcon';
-export { SettingsIcon } from './SettingsIcon';
-export { TrashIcon } from './TrashIcon';
-export { EraserIcon } from './EraserIcon';
+export * from './PlusIcon';
+export * from './EraserIcon';
+export * from './TrashIcon';
+export * from './SettingsIcon';
+export * from './GridIcon';

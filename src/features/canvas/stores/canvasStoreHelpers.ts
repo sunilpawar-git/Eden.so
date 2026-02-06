@@ -3,7 +3,7 @@
  * Extracted from canvasStore.ts to reduce store callback size
  */
 import type { CanvasNode, NodePosition } from '../types/node';
-import { clampNodeDimensions } from '../types/node';
+import { clampNodeDimensions, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '../types/node';
 import type { CanvasEdge } from '../types/edge';
 
 /**
@@ -155,3 +155,61 @@ export function getUpstreamNodesFromArrays(
     }
     return upstream;
 }
+
+// ============================================================================
+// Grid Layout Helpers
+// ============================================================================
+
+/** Grid Layout Constants - SSOT for node arrangement */
+export const GRID_COLUMNS = 4;
+export const GRID_GAP = 40;
+
+/**
+ * Arranges nodes in a grid layout (4 columns)
+ * Sorts by createdAt (oldest first) to maintain logical ordering.
+ * Pure function - does not mutate input.
+ */
+export function arrangeNodesInGrid(nodes: CanvasNode[]): CanvasNode[] {
+    if (nodes.length === 0) return [];
+
+    // Import node dimensions from SSOT
+    const nodeWidth = DEFAULT_NODE_WIDTH;
+    const nodeHeight = DEFAULT_NODE_HEIGHT;
+
+    // Sort by creation date (oldest first)
+    const sorted = [...nodes].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    return sorted.map((node, index) => {
+        const col = index % GRID_COLUMNS;
+        const row = Math.floor(index / GRID_COLUMNS);
+        return {
+            ...node,
+            position: {
+                x: col * (nodeWidth + GRID_GAP),
+                y: row * (nodeHeight + GRID_GAP),
+            },
+            updatedAt: new Date(),
+        };
+    });
+}
+
+/**
+ * Calculates the position for the next node in the grid.
+ * Based on total count (not last node's position) for predictability.
+ */
+export function calculateNextNodePosition(nodes: CanvasNode[]): NodePosition {
+    const nodeWidth = DEFAULT_NODE_WIDTH;
+    const nodeHeight = DEFAULT_NODE_HEIGHT;
+
+    const index = nodes.length; // Next index
+    const col = index % GRID_COLUMNS;
+    const row = Math.floor(index / GRID_COLUMNS);
+
+    return {
+        x: col * (nodeWidth + GRID_GAP),
+        y: row * (nodeHeight + GRID_GAP),
+    };
+}
+

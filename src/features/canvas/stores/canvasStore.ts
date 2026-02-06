@@ -14,6 +14,7 @@ import {
     deleteNodeFromArrays,
     getConnectedNodeIds,
     getUpstreamNodesFromArrays,
+    arrangeNodesInGrid,
 } from './canvasStoreHelpers';
 
 interface CanvasState {
@@ -41,6 +42,9 @@ interface CanvasActions {
     // Edge actions
     addEdge: (edge: CanvasEdge) => void;
     deleteEdge: (edgeId: string) => void;
+
+    // Layout actions
+    arrangeNodes: () => void;
 
     // Selection actions (decoupled for performance)
     selectNode: (nodeId: string) => void;
@@ -104,6 +108,8 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     deleteEdge: (edgeId) =>
         set((s) => ({ edges: s.edges.filter((e) => e.id !== edgeId) })),
+
+    arrangeNodes: () => set((s) => ({ nodes: arrangeNodesInGrid(s.nodes) })),
 
     selectNode: (nodeId) =>
         set((s) => ({ selectedNodeIds: new Set([...s.selectedNodeIds, nodeId]) })),
