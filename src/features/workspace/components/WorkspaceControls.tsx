@@ -42,11 +42,11 @@ export function WorkspaceControls() {
 
         // Don't delete the default/only workspace if possible, or at least confirm
         if (currentWorkspaceId === DEFAULT_WORKSPACE_ID) {
-            toast.error('Cannot delete the default workspace');
+            toast.error(strings.workspace.deleteDefaultError);
             return;
         }
 
-        const confirmed = window.confirm('Are you sure you want to delete this workspace? This action cannot be undone.');
+        const confirmed = window.confirm(strings.workspace.deleteConfirm);
         if (!confirmed) return;
 
         setIsDeleting(true);
@@ -65,7 +65,7 @@ export function WorkspaceControls() {
                 clearCanvas();
             }
 
-            toast.success('Workspace deleted successfully');
+            toast.success(strings.workspace.deleteSuccess);
         } catch (error) {
             console.error('[WorkspaceControls] Failed to delete workspace:', error);
             toast.error(strings.errors.generic);
@@ -79,7 +79,7 @@ export function WorkspaceControls() {
             <button
                 className={styles.button}
                 onClick={handleAddNode}
-                title="Add New Node"
+                title={strings.workspace.addNodeTooltip}
             >
                 <PlusIcon size={20} />
             </button>
@@ -88,7 +88,7 @@ export function WorkspaceControls() {
                 className={`${styles.button} ${styles.deleteButton}`}
                 onClick={handleDeleteWorkspace}
                 disabled={isDeleting}
-                title="Delete Workspace"
+                title={strings.workspace.deleteWorkspaceTooltip}
             >
                 <TrashIcon size={20} />
             </button>
