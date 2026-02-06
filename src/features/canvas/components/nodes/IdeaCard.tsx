@@ -173,6 +173,59 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         ? strings.ideaCard.aiModePlaceholder
         : strings.ideaCard.inputPlaceholder;
 
+    const renderContent = () => {
+        if (isEditing) {
+            return (
+                <EditingContent
+                    inputMode={inputMode}
+                    inputValue={inputValue}
+                    placeholder={placeholder}
+                    isMenuOpen={isMenuOpen}
+                    isGenerating={isGenerating ?? false}
+                    query={query}
+                    textareaRef={textareaRef}
+                    textareaRect={textareaRect}
+                    onInputChange={handleInputChange}
+                    onBlur={handleInputBlur}
+                    onKeyDown={handleInputKeyDown}
+                    onCommandSelect={handleCommandSelect}
+                    onMenuClose={closeMenu}
+                />
+            );
+        }
+
+        if (isGenerating) {
+            return <GeneratingContent />;
+        }
+
+        if (hasContent) {
+            if (isAICard) {
+                return (
+                    <AICardContent
+                        prompt={prompt}
+                        output={output ?? ''}
+                        onDoubleClick={handleContentDoubleClick}
+                        onKeyDown={handleContentKeyDown}
+                    />
+                );
+            }
+            return (
+                <SimpleCardContent
+                    output={output ?? ''}
+                    onDoubleClick={handleContentDoubleClick}
+                    onKeyDown={handleContentKeyDown}
+                />
+            );
+        }
+
+        return (
+            <PlaceholderContent
+                onDoubleClick={handleContentDoubleClick}
+                onKeyDown={handleContentKeyDown}
+            />
+        );
+    };
+
     return (
         <div
             className={`${styles.cardWrapper} ${handleStyles.resizerWrapper}`}
@@ -190,45 +243,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`}
                     data-testid="content-area" ref={contentRef} tabIndex={selected ? 0 : -1}
                     onKeyDown={selected ? handleContentKeyDown : undefined}>
-                    {isEditing ? (
-                        <EditingContent
-                            inputMode={inputMode}
-                            inputValue={inputValue}
-                            placeholder={placeholder}
-                            isMenuOpen={isMenuOpen}
-                            isGenerating={isGenerating ?? false}
-                            query={query}
-                            textareaRef={textareaRef}
-                            textareaRect={textareaRect}
-                            onInputChange={handleInputChange}
-                            onBlur={handleInputBlur}
-                            onKeyDown={handleInputKeyDown}
-                            onCommandSelect={handleCommandSelect}
-                            onMenuClose={closeMenu}
-                        />
-                    ) : isGenerating ? (
-                        <GeneratingContent />
-                    ) : hasContent ? (
-                        isAICard ? (
-                            <AICardContent
-                                prompt={prompt}
-                                output={output ?? ''}
-                                onDoubleClick={handleContentDoubleClick}
-                                onKeyDown={handleContentKeyDown}
-                            />
-                        ) : (
-                            <SimpleCardContent
-                                output={output ?? ''}
-                                onDoubleClick={handleContentDoubleClick}
-                                onKeyDown={handleContentKeyDown}
-                            />
-                        )
-                    ) : (
-                        <PlaceholderContent
-                            onDoubleClick={handleContentDoubleClick}
-                            onKeyDown={handleContentKeyDown}
-                        />
-                    )}
+                    {renderContent()}
                 </div>
                 {(showTagInput || tagIds.length > 0) && (
                     <div className={styles.tagsSection}>
