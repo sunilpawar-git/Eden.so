@@ -25,7 +25,6 @@ import '@xyflow/react/dist/style.css';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { IdeaCard } from './nodes/IdeaCard';
-import { CanvasActions } from './CanvasActions';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
@@ -212,7 +211,6 @@ export function CanvasView() {
                 <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
                 <Controls />
             </ReactFlow>
-            <CanvasActions />
         </div>
     );
 }

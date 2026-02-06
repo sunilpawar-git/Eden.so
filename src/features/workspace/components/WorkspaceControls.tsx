@@ -3,7 +3,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '../stores/workspaceStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { deleteWorkspace } from '../services/workspaceService';
-import { PlusIcon, TrashIcon } from '@/shared/components/icons';
+import { PlusIcon, TrashIcon, EraserIcon } from '@/shared/components/icons';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import styles from './WorkspaceControls.module.css';
@@ -11,7 +11,12 @@ import styles from './WorkspaceControls.module.css';
 export function WorkspaceControls() {
     const { user } = useAuthStore();
     const { currentWorkspaceId, workspaces, removeWorkspace, setCurrentWorkspaceId } = useWorkspaceStore();
-    const { addNode, clearCanvas } = useCanvasStore();
+
+    // Optimize store selectors to avoid unnecessary re-renders
+    const addNode = useCanvasStore((s) => s.addNode);
+    const clearCanvas = useCanvasStore((s) => s.clearCanvas);
+    const nodeCount = useCanvasStore((s) => s.nodes.length);
+
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleAddNode = useCallback(() => {
@@ -35,6 +40,15 @@ export function WorkspaceControls() {
             updatedAt: new Date(),
         });
     }, [addNode, currentWorkspaceId]);
+
+    const handleClearCanvas = useCallback(() => {
+        if (nodeCount === 0) return;
+
+        const confirmed = window.confirm(strings.canvas.clearConfirm);
+        if (confirmed) {
+            clearCanvas();
+        }
+    }, [clearCanvas, nodeCount]);
 
     const handleDeleteWorkspace = useCallback(async () => {
         if (!user || !currentWorkspaceId || isDeleting) return;
@@ -82,6 +96,15 @@ export function WorkspaceControls() {
                 title={strings.workspace.addNodeTooltip}
             >
                 <PlusIcon size={20} />
+            </button>
+            <div className={styles.divider} />
+            <button
+                className={styles.button}
+                onClick={handleClearCanvas}
+                disabled={nodeCount === 0}
+                title={strings.canvas.clearCanvas}
+            >
+                <EraserIcon size={20} />
             </button>
             <div className={styles.divider} />
             <button

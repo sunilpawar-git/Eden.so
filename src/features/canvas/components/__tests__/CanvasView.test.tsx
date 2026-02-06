@@ -21,9 +21,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     };
 });
 
-vi.mock('../CanvasActions', () => ({
-    CanvasActions: () => <div data-testid="mock-canvas-actions" />,
-}));
+
 
 describe('CanvasView', () => {
     beforeEach(() => {
