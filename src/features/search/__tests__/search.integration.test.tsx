@@ -2,11 +2,18 @@
  * Search Integration Tests
  * TDD: Tests for complete search flow including node selection
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Layout } from '@/shared/components/Layout';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+
+// Mock usePanToNode to avoid ReactFlow dependency in Layout tests
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({
+        panToPosition: vi.fn(),
+    }),
+}));
 
 describe('Search Integration', () => {
     beforeEach(() => {
@@ -36,20 +43,20 @@ describe('Search Integration', () => {
         });
         useWorkspaceStore.setState({
             currentWorkspaceId: 'ws-1',
-            workspaces: [{ 
-                id: 'ws-1', 
+            workspaces: [{
+                id: 'ws-1',
                 userId: 'user-1',
-                name: 'My Workspace', 
+                name: 'My Workspace',
                 canvasSettings: { backgroundColor: 'grid' },
-                createdAt: new Date(), 
-                updatedAt: new Date() 
+                createdAt: new Date(),
+                updatedAt: new Date()
             }],
         });
     });
 
     it('should select node when clicking search result', () => {
         render(
-            <Layout onSettingsClick={() => {}}>
+            <Layout onSettingsClick={() => { }}>
                 <div>Canvas Content</div>
             </Layout>
         );
@@ -74,7 +81,7 @@ describe('Search Integration', () => {
         useCanvasStore.getState().selectNode('node-2');
 
         render(
-            <Layout onSettingsClick={() => {}}>
+            <Layout onSettingsClick={() => { }}>
                 <div>Canvas Content</div>
             </Layout>
         );
@@ -95,27 +102,27 @@ describe('Search Integration', () => {
         useWorkspaceStore.setState({
             currentWorkspaceId: 'ws-2',
             workspaces: [
-                { 
-                    id: 'ws-1', 
+                {
+                    id: 'ws-1',
                     userId: 'user-1',
-                    name: 'Workspace 1', 
+                    name: 'Workspace 1',
                     canvasSettings: { backgroundColor: 'grid' },
-                    createdAt: new Date(), 
-                    updatedAt: new Date() 
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 },
-                { 
-                    id: 'ws-2', 
+                {
+                    id: 'ws-2',
                     userId: 'user-1',
-                    name: 'Workspace 2', 
+                    name: 'Workspace 2',
                     canvasSettings: { backgroundColor: 'grid' },
-                    createdAt: new Date(), 
-                    updatedAt: new Date() 
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 },
             ],
         });
 
         render(
-            <Layout onSettingsClick={() => {}}>
+            <Layout onSettingsClick={() => { }}>
                 <div>Canvas Content</div>
             </Layout>
         );

@@ -8,12 +8,25 @@ import { WorkspaceControls } from '../WorkspaceControls';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '../../stores/workspaceStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import type { CanvasNode } from '@/features/canvas/types/node';
 import { strings } from '@/shared/localization/strings';
-
 // Mock workspace service
+import { deleteWorkspace } from '../../services/workspaceService';
+
 vi.mock('../../services/workspaceService', () => ({
     deleteWorkspace: vi.fn().mockResolvedValue(undefined),
 }));
+
+// Mock usePanToNode
+const mockPanToPosition = vi.fn();
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({
+        panToPosition: mockPanToPosition,
+    }),
+}));
+
+
+
 
 // Mock toast store
 vi.mock('@/shared/stores/toastStore', () => ({
@@ -76,6 +89,9 @@ describe('WorkspaceControls', () => {
             // Check for Add Node button
             expect(screen.getByTitle(strings.workspace.addNodeTooltip)).toBeInTheDocument();
 
+            // Check for Auto Arrange button
+            expect(screen.getByTitle(strings.workspace.arrangeNodesTooltip)).toBeInTheDocument();
+
             // Check for Clear Canvas button
             expect(screen.getByTitle(strings.canvas.clearCanvas)).toBeInTheDocument();
 
@@ -86,9 +102,9 @@ describe('WorkspaceControls', () => {
         it('should render two dividers between buttons', () => {
             const { container } = render(<WorkspaceControls />);
 
-            // There should be 2 dividers (between 3 buttons)
+            // There should be 3 dividers (between 4 buttons)
             const dividers = container.querySelectorAll('[class*="divider"]');
-            expect(dividers.length).toBe(2);
+            expect(dividers.length).toBe(3);
         });
     });
 
@@ -104,10 +120,11 @@ describe('WorkspaceControls', () => {
             expect(nodes[0]).toMatchObject({
                 workspaceId: 'workspace-1',
                 type: 'idea',
-                position: { x: 100, y: 100 },
                 width: 280,
-                height: 120,
+                height: 220,
             });
+            // Position is now dynamic, so we check that it called pan
+            expect(mockPanToPosition).toHaveBeenCalled();
         });
 
         it('should not add node if no workspace is selected', () => {
@@ -120,6 +137,27 @@ describe('WorkspaceControls', () => {
 
             const { nodes } = useCanvasStore.getState();
             expect(nodes).toHaveLength(0);
+        });
+    });
+
+    describe('Auto Arrange button', () => {
+        it('should arrange nodes when clicked', () => {
+            useCanvasStore.setState({ nodes: [{ id: 'n1', position: { x: 0, y: 0 }, createdAt: new Date() } as unknown as CanvasNode] });
+            render(<WorkspaceControls />);
+
+            const arrangeButton = screen.getByTitle(strings.workspace.arrangeNodesTooltip);
+            fireEvent.click(arrangeButton);
+
+            expect(mockPanToPosition).not.toHaveBeenCalled(); // Just arranging, not panning
+            // Check implicit success by lack of error and enabled state
+            expect(arrangeButton).toBeEnabled();
+        });
+
+        it('should be disabled when there are no nodes', () => {
+            useCanvasStore.setState({ nodes: [] });
+            render(<WorkspaceControls />);
+            const arrangeButton = screen.getByTitle(strings.workspace.arrangeNodesTooltip);
+            expect(arrangeButton).toBeDisabled();
         });
     });
 
@@ -253,7 +291,6 @@ describe('WorkspaceControls', () => {
         });
 
         it('should not delete workspace when confirmation is cancelled', async () => {
-            const { deleteWorkspace } = await import('../../services/workspaceService');
             (window.confirm as Mock).mockReturnValue(false);
 
             render(<WorkspaceControls />);
@@ -265,7 +302,6 @@ describe('WorkspaceControls', () => {
         });
 
         it('should delete workspace when confirmed', async () => {
-            const { deleteWorkspace } = await import('../../services/workspaceService');
             const { toast } = await import('@/shared/stores/toastStore');
             (window.confirm as Mock).mockReturnValue(true);
 

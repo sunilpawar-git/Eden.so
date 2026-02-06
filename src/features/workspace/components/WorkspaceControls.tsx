@@ -2,31 +2,42 @@ import { useCallback, useState } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '../stores/workspaceStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '@/features/canvas/types/node';
 import { deleteWorkspace } from '../services/workspaceService';
-import { PlusIcon, TrashIcon, EraserIcon } from '@/shared/components/icons';
+import { PlusIcon, TrashIcon, EraserIcon, GridIcon } from '@/shared/components/icons';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
+import { calculateNextNodePosition } from '@/features/canvas/stores/canvasStoreHelpers';
+import { usePanToNode } from '@/features/canvas/hooks/usePanToNode';
 import styles from './WorkspaceControls.module.css';
 
 export function WorkspaceControls() {
     const { user } = useAuthStore();
     const { currentWorkspaceId, workspaces, removeWorkspace, setCurrentWorkspaceId } = useWorkspaceStore();
+    const { panToPosition } = usePanToNode();
 
     // Optimize store selectors to avoid unnecessary re-renders
     const addNode = useCanvasStore((s) => s.addNode);
     const clearCanvas = useCanvasStore((s) => s.clearCanvas);
-    const nodeCount = useCanvasStore((s) => s.nodes.length);
+    const arrangeNodes = useCanvasStore((s) => s.arrangeNodes);
+    // Needed for calculating next position
+    const nodes = useCanvasStore((s) => s.nodes);
+    const nodeCount = nodes.length;
 
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleAddNode = useCallback(() => {
         if (!currentWorkspaceId) return;
+
+        // Smart Append: Calculate next grid position
+        const nextPos = calculateNextNodePosition(nodes);
         const id = `node-${Date.now()}`;
+
         addNode({
             id,
             workspaceId: currentWorkspaceId,
             type: 'idea',
-            position: { x: 100, y: 100 },
+            position: nextPos,
             data: {
                 content: '',
                 prompt: '',
@@ -34,12 +45,21 @@ export function WorkspaceControls() {
                 isGenerating: false,
                 isPromptCollapsed: false
             },
-            width: 280,
-            height: 120,
+            width: DEFAULT_NODE_WIDTH,
+            height: DEFAULT_NODE_HEIGHT,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
-    }, [addNode, currentWorkspaceId]);
+
+        // Pan to the new node to ensure it's visible
+        panToPosition(nextPos.x, nextPos.y);
+    }, [addNode, currentWorkspaceId, nodes, panToPosition]);
+
+    const handleArrangeNodes = useCallback(() => {
+        if (nodeCount === 0) return;
+        arrangeNodes();
+        toast.success('Nodes arranged in grid');
+    }, [arrangeNodes, nodeCount]);
 
     const handleClearCanvas = useCallback(() => {
         if (nodeCount === 0) return;
@@ -96,6 +116,15 @@ export function WorkspaceControls() {
                 title={strings.workspace.addNodeTooltip}
             >
                 <PlusIcon size={20} />
+            </button>
+            <div className={styles.divider} />
+            <button
+                className={styles.button}
+                onClick={handleArrangeNodes}
+                disabled={nodeCount === 0}
+                title={strings.workspace.arrangeNodesTooltip}
+            >
+                <GridIcon size={20} />
             </button>
             <div className={styles.divider} />
             <button
