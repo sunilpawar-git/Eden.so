@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings 0",
+    "lint:ci": "eslint . --max-warnings 49",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",

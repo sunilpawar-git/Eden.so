@@ -4,8 +4,17 @@
  */
 import { create } from 'zustand';
 import type { CanvasNode, NodePosition } from '../types/node';
-import { clampNodeDimensions } from '../types/node';
 import type { CanvasEdge } from '../types/edge';
+import {
+    updateNodePositionInArray,
+    updateNodeDimensionsInArray,
+    updateNodeDataField,
+    appendToNodeOutputInArray,
+    togglePromptCollapsedInArray,
+    deleteNodeFromArrays,
+    getConnectedNodeIds,
+    getUpstreamNodesFromArrays,
+} from './canvasStoreHelpers';
 
 interface CanvasState {
     nodes: CanvasNode[];
@@ -59,208 +68,65 @@ const initialState: CanvasState = {
 export const useCanvasStore = create<CanvasStore>()((set, get) => ({
     ...initialState,
 
-    addNode: (node: CanvasNode) => {
-        set((state) => ({
-            nodes: [...state.nodes, node],
-        }));
-    },
+    addNode: (node) => set((s) => ({ nodes: [...s.nodes, node] })),
 
-    updateNodePosition: (nodeId: string, position: NodePosition) => {
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? { ...node, position, updatedAt: new Date() }
-                    : node
-            ),
-        }));
-    },
+    updateNodePosition: (nodeId, position) =>
+        set((s) => ({ nodes: updateNodePositionInArray(s.nodes, nodeId, position) })),
 
-    updateNodeDimensions: (nodeId: string, width: number, height: number) => {
-        const clamped = clampNodeDimensions(width, height);
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? { ...node, width: clamped.width, height: clamped.height, updatedAt: new Date() }
-                    : node
-            ),
-        }));
-    },
+    updateNodeDimensions: (nodeId, width, height) =>
+        set((s) => ({ nodes: updateNodeDimensionsInArray(s.nodes, nodeId, width, height) })),
 
-    updateNodeContent: (nodeId: string, content: string) => {
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? { ...node, data: { ...node.data, content }, updatedAt: new Date() }
-                    : node
-            ),
-        }));
-    },
+    updateNodeContent: (nodeId, content) =>
+        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'content', content) })),
 
-    updateNodePrompt: (nodeId: string, prompt: string) => {
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? { ...node, data: { ...node.data, prompt }, updatedAt: new Date() }
-                    : node
-            ),
-        }));
-    },
+    updateNodePrompt: (nodeId, prompt) =>
+        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'prompt', prompt) })),
 
-    updateNodeOutput: (nodeId: string, output: string) => {
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? { ...node, data: { ...node.data, output }, updatedAt: new Date() }
-                    : node
-            ),
-        }));
-    },
+    updateNodeOutput: (nodeId, output) =>
+        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'output', output) })),
 
-    updateNodeTags: (nodeId: string, tags: string[]) => {
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? { ...node, data: { ...node.data, tags }, updatedAt: new Date() }
-                    : node
-            ),
-        }));
-    },
+    updateNodeTags: (nodeId, tags) =>
+        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'tags', tags) })),
 
-    appendToNodeOutput: (nodeId: string, chunk: string) => {
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? {
-                          ...node,
-                          data: {
-                              ...node.data,
-                              output: (node.data.output ?? '') + chunk,
-                          },
-                          updatedAt: new Date(),
-                      }
-                    : node
-            ),
-        }));
-    },
+    appendToNodeOutput: (nodeId, chunk) =>
+        set((s) => ({ nodes: appendToNodeOutputInArray(s.nodes, nodeId, chunk) })),
 
-    setNodeGenerating: (nodeId: string, isGenerating: boolean) => {
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? { ...node, data: { ...node.data, isGenerating }, updatedAt: new Date() }
-                    : node
-            ),
-        }));
-    },
+    setNodeGenerating: (nodeId, isGenerating) =>
+        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'isGenerating', isGenerating) })),
 
-    togglePromptCollapsed: (nodeId: string) => {
-        set((state) => ({
-            nodes: state.nodes.map((node) =>
-                node.id === nodeId
-                    ? {
-                          ...node,
-                          data: {
-                              ...node.data,
-                              isPromptCollapsed: !node.data.isPromptCollapsed,
-                          },
-                          updatedAt: new Date(),
-                      }
-                    : node
-            ),
-        }));
-    },
+    togglePromptCollapsed: (nodeId) =>
+        set((s) => ({ nodes: togglePromptCollapsedInArray(s.nodes, nodeId) })),
 
-    deleteNode: (nodeId: string) => {
-        set((state) => ({
-            nodes: state.nodes.filter((node) => node.id !== nodeId),
-            edges: state.edges.filter(
-                (edge) => edge.sourceNodeId !== nodeId && edge.targetNodeId !== nodeId
-            ),
-            selectedNodeIds: new Set(
-                [...state.selectedNodeIds].filter((id) => id !== nodeId)
-            ),
-        }));
-    },
+    deleteNode: (nodeId) =>
+        set((s) => deleteNodeFromArrays(s.nodes, s.edges, s.selectedNodeIds, nodeId)),
 
-    addEdge: (edge: CanvasEdge) => {
-        set((state) => ({
-            edges: [...state.edges, edge],
-        }));
-    },
+    addEdge: (edge) => set((s) => ({ edges: [...s.edges, edge] })),
 
-    deleteEdge: (edgeId: string) => {
-        set((state) => ({
-            edges: state.edges.filter((edge) => edge.id !== edgeId),
-        }));
-    },
+    deleteEdge: (edgeId) =>
+        set((s) => ({ edges: s.edges.filter((e) => e.id !== edgeId) })),
 
-    selectNode: (nodeId: string) => {
-        set((state) => ({
-            selectedNodeIds: new Set([...state.selectedNodeIds, nodeId]),
-        }));
-    },
+    selectNode: (nodeId) =>
+        set((s) => ({ selectedNodeIds: new Set([...s.selectedNodeIds, nodeId]) })),
 
-    deselectNode: (nodeId: string) => {
-        set((state) => {
-            const newSet = new Set(state.selectedNodeIds);
+    deselectNode: (nodeId) =>
+        set((s) => {
+            const newSet = new Set(s.selectedNodeIds);
             newSet.delete(nodeId);
             return { selectedNodeIds: newSet };
-        });
-    },
+        }),
 
-    clearSelection: () => {
-        set({ selectedNodeIds: new Set() });
-    },
+    clearSelection: () => set({ selectedNodeIds: new Set() }),
 
-    getConnectedNodes: (nodeId: string) => {
-        const { edges } = get();
-        const connected: string[] = [];
+    getConnectedNodes: (nodeId) => getConnectedNodeIds(get().edges, nodeId),
 
-        edges.forEach((edge) => {
-            if (edge.sourceNodeId === nodeId) {
-                connected.push(edge.targetNodeId);
-            }
-            if (edge.targetNodeId === nodeId) {
-                connected.push(edge.sourceNodeId);
-            }
-        });
-
-        return connected;
-    },
-
-    getUpstreamNodes: (nodeId: string) => {
+    getUpstreamNodes: (nodeId) => {
         const { nodes, edges } = get();
-        const visited = new Set<string>();
-        const queue: string[] = [nodeId];
-        const upstream: CanvasNode[] = [];
-
-        while (queue.length > 0) {
-            const currentId = queue.shift()!;
-            if (visited.has(currentId)) continue;
-            visited.add(currentId);
-
-            // Find all incoming edges to current node
-            const incomingEdges = edges.filter((e) => e.targetNodeId === currentId);
-            for (const edge of incomingEdges) {
-                const sourceNode = nodes.find((n) => n.id === edge.sourceNodeId);
-                if (sourceNode && !visited.has(sourceNode.id)) {
-                    upstream.push(sourceNode);
-                    queue.push(sourceNode.id);
-                }
-            }
-        }
-        return upstream;
+        return getUpstreamNodesFromArrays(nodes, edges, nodeId);
     },
 
-    setNodes: (nodes: CanvasNode[]) => {
-        set({ nodes });
-    },
+    setNodes: (nodes) => set({ nodes }),
 
-    setEdges: (edges: CanvasEdge[]) => {
-        set({ edges });
-    },
+    setEdges: (edges) => set({ edges }),
 
-    clearCanvas: () => {
-        set({ nodes: [], edges: [], selectedNodeIds: new Set() });
-    },
+    clearCanvas: () => set({ nodes: [], edges: [], selectedNodeIds: new Set() }),
 }));

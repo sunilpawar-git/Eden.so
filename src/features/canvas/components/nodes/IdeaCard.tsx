@@ -5,19 +5,22 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { strings } from '@/shared/localization/strings';
-import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useNodeTransformation, type TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import { FOCUS_NODE_EVENT, type FocusNodeEvent } from '../../hooks/useQuickCapture';
 import { useSlashCommandInput } from '../../hooks/useSlashCommandInput';
 import { NodeUtilsBar } from './NodeUtilsBar';
-import { SlashCommandMenu } from './SlashCommandMenu';
 import { TagInput } from '@/features/tags';
-import type { IdeaNodeData } from '../../types/node';
 import {
-    MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT,
-} from '../../types/node';
+    EditingContent,
+    GeneratingContent,
+    AICardContent,
+    SimpleCardContent,
+    PlaceholderContent,
+} from './IdeaCardContent';
+import type { IdeaNodeData } from '../../types/node';
+import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT } from '../../types/node';
 import styles from './IdeaCard.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
 
@@ -31,8 +34,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [textareaRect, setTextareaRect] = useState<DOMRect | null>(null);
     const wasEditingRef = useRef(false);
+    const contentRef = useRef<HTMLDivElement>(null);
 
-    // Slash command hook for "/" menu
     const {
         inputMode, isMenuOpen, query, inputValue,
         handleInputChange, handleCommandSelect, closeMenu, reset
@@ -46,8 +49,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         void transformNodeContent(id, type);
     }, [id, transformNodeContent]);
 
-    const contentRef = useRef<HTMLDivElement>(null);
-
+    // Wheel event passthrough for scrolling
     useEffect(() => {
         const element = contentRef.current;
         if (!element) return;
@@ -60,7 +62,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         return isAICard ? prompt : (output ?? '');
     }, [isAICard, prompt, output]);
 
-    // Populate input when ENTERING edit mode (not on every render)
+    // Populate input when ENTERING edit mode
     useEffect(() => {
         if (isEditing && !wasEditingRef.current) {
             handleInputChange(getEditableContent());
@@ -79,20 +81,15 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     useEffect(() => {
         const handleFocusEvent = (e: Event) => {
             const event = e as FocusNodeEvent;
-            if (event.detail.nodeId === id) {
-                setIsEditing(true);
-            }
+            if (event.detail.nodeId === id) setIsEditing(true);
         };
         window.addEventListener(FOCUS_NODE_EVENT, handleFocusEvent);
         return () => window.removeEventListener(FOCUS_NODE_EVENT, handleFocusEvent);
     }, [id]);
 
-    const handleInputBlur = useCallback(() => {
-        if (isMenuOpen) return;
-
-        const trimmed = inputValue.trim();
+    const saveContent = useCallback((value: string) => {
+        const trimmed = value.trim();
         const existingContent = getEditableContent();
-
         if (trimmed && trimmed !== existingContent) {
             if (inputMode === 'ai') {
                 updateNodePrompt(id, trimmed);
@@ -100,65 +97,52 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 updateNodeOutput(id, trimmed);
             }
         }
+    }, [getEditableContent, id, inputMode, updateNodePrompt, updateNodeOutput]);
 
+    const handleInputBlur = useCallback(() => {
+        if (isMenuOpen) return;
+        saveContent(inputValue);
         setIsEditing(false);
         reset();
-    }, [isMenuOpen, inputValue, inputMode, getEditableContent, id, updateNodePrompt, updateNodeOutput, reset]);
+    }, [isMenuOpen, inputValue, saveContent, reset]);
 
-    const handleInputKeyDown = useCallback(
-        async (e: React.KeyboardEvent) => {
-            // Handle Escape - save content and exit (same behavior as blur)
-            if (e.key === 'Escape') {
-                e.stopPropagation(); // Prevent global keyboard handler
-                if (isMenuOpen) {
-                    // Close menu, clear the "/" and stay in edit mode
-                    closeMenu();
-                    handleInputChange('');
-                } else {
-                    // Save current content before exiting (prevents text vanishing)
-                    const trimmed = inputValue.trim();
-                    const existingContent = getEditableContent();
-                    if (trimmed && trimmed !== existingContent) {
-                        if (inputMode === 'ai') {
-                            updateNodePrompt(id, trimmed);
-                        } else {
-                            updateNodeOutput(id, trimmed);
-                        }
-                    }
-                    setIsEditing(false);
-                    reset();
-                }
+    const handleInputKeyDown = useCallback(async (e: React.KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            e.stopPropagation();
+            if (isMenuOpen) {
+                closeMenu();
+                handleInputChange('');
+            } else {
+                saveContent(inputValue);
+                setIsEditing(false);
+                reset();
+            }
+            return;
+        }
+
+        if (isMenuOpen) return;
+
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            const trimmed = inputValue.trim();
+            if (!trimmed) {
+                handleInputBlur();
                 return;
             }
-
-            // Don't handle other keys if menu is open (menu handles them)
-            if (isMenuOpen) return;
-
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                e.stopPropagation(); // Prevent global keyboard handler
-                const trimmed = inputValue.trim();
-
-                if (!trimmed) {
-                    handleInputBlur();
-                    return;
-                }
-
-                if (inputMode === 'ai') {
-                    updateNodePrompt(id, trimmed);
-                    setIsEditing(false); // Exit first
-                    reset();             // Then clear local state
-                    await generateFromPrompt(id);
-                } else {
-                    updateNodeOutput(id, trimmed);
-                    setIsEditing(false); // Exit first
-                    reset();             // Then clear local state
-                }
+            if (inputMode === 'ai') {
+                updateNodePrompt(id, trimmed);
+                setIsEditing(false);
+                reset();
+                await generateFromPrompt(id);
+            } else {
+                updateNodeOutput(id, trimmed);
+                setIsEditing(false);
+                reset();
             }
-        },
-        [handleInputBlur, inputValue, inputMode, isMenuOpen, generateFromPrompt, id,
-            updateNodePrompt, updateNodeOutput, reset, closeMenu, handleInputChange, getEditableContent]
-    );
+        }
+    }, [handleInputBlur, inputValue, inputMode, isMenuOpen, generateFromPrompt, id,
+        updateNodePrompt, updateNodeOutput, reset, closeMenu, handleInputChange, saveContent]);
 
     const handleContentDoubleClick = useCallback(() => {
         if (!isGenerating) setIsEditing(true);
@@ -166,29 +150,19 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const handleContentKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (isGenerating) return;
-
-        // Enter key - explicit edit mode trigger
         if (e.key === 'Enter') {
             e.preventDefault();
             setIsEditing(true);
             return;
         }
-
-        // Printable character - instant type-to-edit (Google Keep style)
-        // Single printable character key (length 1), not a modifier combo
         const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
-        if (isPrintable) {
-            setIsEditing(true);
-            // Note: The typed character will need to be handled after textarea mounts
-        }
+        if (isPrintable) setIsEditing(true);
     }, [isGenerating]);
 
     const handleDelete = useCallback(() => deleteNode(id), [id, deleteNode]);
     const handleRegenerate = useCallback(() => generateFromPrompt(id), [id, generateFromPrompt]);
     const handleTagClick = useCallback(() => setShowTagInput(true), []);
-    const handleConnectClick = useCallback(() => {
-        void branchFromNode(id);
-    }, [id, branchFromNode]);
+    const handleConnectClick = useCallback(() => { void branchFromNode(id); }, [id, branchFromNode]);
     const handleTagsChange = useCallback((newTagIds: string[]) => {
         updateNodeTags(id, newTagIds);
         if (newTagIds.length === 0) setShowTagInput(false);
@@ -213,66 +187,47 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
             <Handle type="target" position={Position.Top} id={`${id}-target`}
                 isConnectable={true} className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
             <div className={`${styles.ideaCard} ${isHovered ? styles.ideaCardHovered : ''}`}>
-                <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`} data-testid="content-area"
-                    ref={contentRef} tabIndex={selected ? 0 : -1}
+                <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`}
+                    data-testid="content-area" ref={contentRef} tabIndex={selected ? 0 : -1}
                     onKeyDown={selected ? handleContentKeyDown : undefined}>
                     {isEditing ? (
-                        <div className={styles.inputWrapper}>
-                            {inputMode === 'ai' && (
-                                <div className={styles.aiIndicator} data-testid="ai-mode-indicator">
-                                    ✨ {strings.ideaCard.aiModeIndicator}
-                                </div>
-                            )}
-                            <textarea
-                                ref={textareaRef}
-                                className={styles.inputArea}
-                                value={inputValue}
-                                onChange={(e) => handleInputChange(e.target.value)}
-                                onBlur={handleInputBlur}
-                                onKeyDown={handleInputKeyDown}
-                                placeholder={placeholder}
-                                autoFocus
-                                disabled={isGenerating}
-                            />
-                            {isMenuOpen && textareaRect && (
-                                <SlashCommandMenu
-                                    query={query}
-                                    onSelect={handleCommandSelect}
-                                    onClose={closeMenu}
-                                    anchorRect={textareaRect}
-                                />
-                            )}
-                        </div>
+                        <EditingContent
+                            inputMode={inputMode}
+                            inputValue={inputValue}
+                            placeholder={placeholder}
+                            isMenuOpen={isMenuOpen}
+                            isGenerating={isGenerating ?? false}
+                            query={query}
+                            textareaRef={textareaRef}
+                            textareaRect={textareaRect}
+                            onInputChange={handleInputChange}
+                            onBlur={handleInputBlur}
+                            onKeyDown={handleInputKeyDown}
+                            onCommandSelect={handleCommandSelect}
+                            onMenuClose={closeMenu}
+                        />
                     ) : isGenerating ? (
-                        <div className={styles.generating}>
-                            <div className={styles.spinner} />
-                            <span>{strings.canvas.generating}</span>
-                        </div>
+                        <GeneratingContent />
                     ) : hasContent ? (
-                        <>
-                            {isAICard && (
-                                <>
-                                    <div className={styles.promptText}
-                                        onDoubleClick={handleContentDoubleClick}
-                                        role="button" tabIndex={0} onKeyDown={handleContentKeyDown}>
-                                        {prompt}
-                                    </div>
-                                    <div className={styles.divider} data-testid="ai-divider"
-                                        aria-label={strings.ideaCard.aiDividerLabel} />
-                                </>
-                            )}
-                            <div onDoubleClick={!isAICard ? handleContentDoubleClick : undefined}
-                                role={!isAICard ? 'button' : undefined}
-                                tabIndex={!isAICard ? 0 : undefined}
-                                onKeyDown={!isAICard ? handleContentKeyDown : undefined}>
-                                <MarkdownRenderer content={output!} className={styles.outputContent} />
-                            </div>
-                        </>
+                        isAICard ? (
+                            <AICardContent
+                                prompt={prompt}
+                                output={output ?? ''}
+                                onDoubleClick={handleContentDoubleClick}
+                                onKeyDown={handleContentKeyDown}
+                            />
+                        ) : (
+                            <SimpleCardContent
+                                output={output ?? ''}
+                                onDoubleClick={handleContentDoubleClick}
+                                onKeyDown={handleContentKeyDown}
+                            />
+                        )
                     ) : (
-                        <div className={styles.placeholder} onDoubleClick={handleContentDoubleClick}
-                            role="button" tabIndex={0} onKeyDown={handleContentKeyDown}>
-                            {strings.ideaCard.inputPlaceholder}
-                        </div>
+                        <PlaceholderContent
+                            onDoubleClick={handleContentDoubleClick}
+                            onKeyDown={handleContentKeyDown}
+                        />
                     )}
                 </div>
                 {(showTagInput || tagIds.length > 0) && (

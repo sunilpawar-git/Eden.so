@@ -100,7 +100,7 @@ export async function generateContent(prompt: string): Promise<string> {
         throw new Error(strings.errors.aiError);
     }
 
-    const data: GeminiResponse = await response.json();
+    const data = await response.json() as GeminiResponse;
 
     if (data.error) {
         throw new Error(data.error.message || strings.errors.aiError);

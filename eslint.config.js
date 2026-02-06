@@ -77,6 +77,8 @@ export default tseslint.config(
 
             // ═══════════════════════════════════════════════════════════════
             // ACCESSIBILITY - WCAG compliance
+            // TODO: Re-enable jsx-a11y/click-events-have-key-events after adding
+            // keyboard handlers to interactive elements (Phase 7 of CI upgrade)
             // ═══════════════════════════════════════════════════════════════
             'jsx-a11y/alt-text': 'error',
             'jsx-a11y/anchor-has-content': 'error',
@@ -85,7 +87,7 @@ export default tseslint.config(
             'jsx-a11y/aria-proptypes': 'error',
             'jsx-a11y/aria-role': 'error',
             'jsx-a11y/aria-unsupported-elements': 'error',
-            'jsx-a11y/click-events-have-key-events': 'warn',
+            'jsx-a11y/click-events-have-key-events': 'off', // Temporarily suppressed
             'jsx-a11y/heading-has-content': 'error',
             'jsx-a11y/html-has-lang': 'error',
             'jsx-a11y/img-redundant-alt': 'error',

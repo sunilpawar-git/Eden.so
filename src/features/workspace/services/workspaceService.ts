@@ -42,14 +42,26 @@ export async function saveWorkspace(userId: string, workspace: Workspace): Promi
     });
 }
 
+/** Firestore workspace document shape */
+interface WorkspaceDoc {
+    id: string;
+    name: string;
+    canvasSettings?: Workspace['canvasSettings'];
+    createdAt?: { toDate?: () => Date };
+    updatedAt?: { toDate?: () => Date };
+}
+
 /** Load workspace from Firestore */
 export async function loadWorkspace(userId: string, workspaceId: string): Promise<Workspace | null> {
     const workspaceRef = doc(db, 'users', userId, 'workspaces', workspaceId);
     const snapshot = await getDoc(workspaceRef);
     if (!snapshot.exists()) return null;
-    const data = snapshot.data();
+    const data = snapshot.data() as WorkspaceDoc;
     return {
-        id: data.id, userId, name: data.name, canvasSettings: data.canvasSettings,
+        id: data.id,
+        userId,
+        name: data.name,
+        canvasSettings: data.canvasSettings ?? { backgroundColor: 'grid' },
         createdAt: data.createdAt?.toDate?.() ?? new Date(),
         updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
     };
@@ -60,9 +72,12 @@ export async function loadUserWorkspaces(userId: string): Promise<Workspace[]> {
     const workspacesRef = collection(db, 'users', userId, 'workspaces');
     const snapshot = await getDocs(workspacesRef);
     return snapshot.docs.map((docSnapshot) => {
-        const data = docSnapshot.data();
+        const data = docSnapshot.data() as WorkspaceDoc;
         return {
-            id: data.id, userId, name: data.name, canvasSettings: data.canvasSettings,
+            id: data.id,
+            userId,
+            name: data.name,
+            canvasSettings: data.canvasSettings ?? { backgroundColor: 'grid' },
             createdAt: data.createdAt?.toDate?.() ?? new Date(),
             updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
         };
