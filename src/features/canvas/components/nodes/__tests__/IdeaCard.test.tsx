@@ -181,6 +181,8 @@ describe('IdeaCard', () => {
         });
     });
 
+    // Typography tests are in IdeaCard.style.test.tsx
+
     // Connection handles tests are in IdeaCard.features.test.tsx
 
     describe('Editable content area', () => {
@@ -234,6 +236,24 @@ describe('IdeaCard', () => {
             expect(screen.getByText(/generating/i)).toBeInTheDocument();
             // Content is not visible during generation
             expect(screen.queryByText('AI prompt')).not.toBeInTheDocument();
+        });
+
+        it('pressing a printable character key on selected node enters edit mode', () => {
+            const noteCard = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, prompt: '', output: 'My note' },
+            };
+            render(<IdeaCard {...noteCard} />);
+
+            // Content area should be focusable when selected
+            const contentArea = screen.getByTestId('content-area');
+
+            // Press a printable character (h)
+            fireEvent.keyDown(contentArea, { key: 'h' });
+
+            // Should enter edit mode and show textarea
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
     });
 

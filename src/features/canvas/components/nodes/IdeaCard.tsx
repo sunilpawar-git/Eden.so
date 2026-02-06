@@ -107,13 +107,24 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const handleInputKeyDown = useCallback(
         async (e: React.KeyboardEvent) => {
-            // Handle Escape - different behavior if menu is open
+            // Handle Escape - save content and exit (same behavior as blur)
             if (e.key === 'Escape') {
+                e.stopPropagation(); // Prevent global keyboard handler
                 if (isMenuOpen) {
                     // Close menu, clear the "/" and stay in edit mode
                     closeMenu();
                     handleInputChange('');
                 } else {
+                    // Save current content before exiting (prevents text vanishing)
+                    const trimmed = inputValue.trim();
+                    const existingContent = getEditableContent();
+                    if (trimmed && trimmed !== existingContent) {
+                        if (inputMode === 'ai') {
+                            updateNodePrompt(id, trimmed);
+                        } else {
+                            updateNodeOutput(id, trimmed);
+                        }
+                    }
                     setIsEditing(false);
                     reset();
                 }
@@ -125,6 +136,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
+                e.stopPropagation(); // Prevent global keyboard handler
                 const trimmed = inputValue.trim();
 
                 if (!trimmed) {
@@ -134,18 +146,18 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
                 if (inputMode === 'ai') {
                     updateNodePrompt(id, trimmed);
-                    reset();
-                    setIsEditing(false);
+                    setIsEditing(false); // Exit first
+                    reset();             // Then clear local state
                     await generateFromPrompt(id);
                 } else {
                     updateNodeOutput(id, trimmed);
-                    reset();
-                    setIsEditing(false);
+                    setIsEditing(false); // Exit first
+                    reset();             // Then clear local state
                 }
             }
         },
         [handleInputBlur, inputValue, inputMode, isMenuOpen, generateFromPrompt, id,
-            updateNodePrompt, updateNodeOutput, reset, closeMenu, handleInputChange]
+            updateNodePrompt, updateNodeOutput, reset, closeMenu, handleInputChange, getEditableContent]
     );
 
     const handleContentDoubleClick = useCallback(() => {
@@ -153,9 +165,21 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     }, [isGenerating]);
 
     const handleContentKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !isGenerating) {
+        if (isGenerating) return;
+
+        // Enter key - explicit edit mode trigger
+        if (e.key === 'Enter') {
             e.preventDefault();
             setIsEditing(true);
+            return;
+        }
+
+        // Printable character - instant type-to-edit (Google Keep style)
+        // Single printable character key (length 1), not a modifier combo
+        const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+        if (isPrintable) {
+            setIsEditing(true);
+            // Note: The typed character will need to be handled after textarea mounts
         }
     }, [isGenerating]);
 
