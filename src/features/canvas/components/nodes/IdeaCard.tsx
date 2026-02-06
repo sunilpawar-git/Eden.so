@@ -153,9 +153,21 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     }, [isGenerating]);
 
     const handleContentKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !isGenerating) {
+        if (isGenerating) return;
+
+        // Enter key - explicit edit mode trigger
+        if (e.key === 'Enter') {
             e.preventDefault();
             setIsEditing(true);
+            return;
+        }
+
+        // Printable character - instant type-to-edit (Google Keep style)
+        // Single printable character key (length 1), not a modifier combo
+        const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+        if (isPrintable) {
+            setIsEditing(true);
+            // Note: The typed character will need to be handled after textarea mounts
         }
     }, [isGenerating]);
 
