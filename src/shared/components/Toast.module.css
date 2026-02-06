@@ -25,23 +25,23 @@
 }
 
 .success {
-    background: hsl(145, 65%, 42%);
-    color: white;
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
 }
 
 .error {
-    background: hsl(0, 72%, 51%);
-    color: white;
+    background: var(--color-error-bg);
+    color: var(--color-error-text);
 }
 
 .info {
-    background: var(--color-primary);
-    color: white;
+    background: var(--color-info-bg);
+    color: var(--color-info-text);
 }
 
 .warning {
-    background: hsl(38, 92%, 50%);
-    color: hsl(38, 92%, 10%);
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
 }
 
 .message {

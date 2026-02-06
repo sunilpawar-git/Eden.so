@@ -7,10 +7,10 @@
     position: fixed;
     min-width: 200px;
     max-width: 280px;
-    background: var(--color-surface, #fff);
-    border: 1px solid var(--color-border, #e0e0e0);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-dropdown);
     z-index: 10000;
     overflow: hidden;
     padding: 4px 0;
@@ -30,13 +30,14 @@
 }
 
 .menuItem:hover {
-    background-color: var(--color-hover, rgba(0, 0, 0, 0.05));
+    background-color: var(--color-hover);
 }
 
 .menuItem[data-highlighted="true"] {
-    background-color: var(--color-primary-light, rgba(59, 130, 246, 0.1));
-    border-left: 3px solid var(--color-primary, #3b82f6);
-    padding-left: 9px; /* Adjust for border */
+    background-color: var(--color-primary-light);
+    border-left: 3px solid var(--color-primary);
+    padding-left: 9px;
+    /* Adjust for border */
 }
 
 .icon {
@@ -54,12 +55,12 @@
 .label {
     font-size: 14px;
     font-weight: 500;
-    color: var(--color-text, #333);
+    color: var(--color-text-primary);
 }
 
 .description {
     font-size: 12px;
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -68,6 +69,6 @@
 .noResults {
     padding: 12px 14px;
     font-size: 13px;
-    color: var(--color-text-secondary, #666);
+    color: var(--color-text-secondary);
     text-align: center;
 }
