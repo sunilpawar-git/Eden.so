@@ -102,7 +102,7 @@ describe('IdeaCard Editing', () => {
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
-            
+
             // Enter AI mode via slash command
             fireEvent.change(textarea, { target: { value: '/' } });
             const menuItem = screen.getByRole('menuitem');
@@ -186,10 +186,10 @@ describe('IdeaCard Editing', () => {
         it('should populate textarea with prompt for AI cards when entering edit mode', () => {
             const aiCardProps = {
                 ...defaultProps,
-                data: { 
-                    ...defaultData, 
+                data: {
+                    ...defaultData,
                     prompt: 'Original AI prompt',
-                    output: 'AI generated response' 
+                    output: 'AI generated response'
                 },
             };
 
@@ -263,7 +263,7 @@ describe('IdeaCard Editing', () => {
     });
 
     describe('Edit Mode Transitions', () => {
-        it('should exit edit mode on Escape without saving changes', () => {
+        it('should exit edit mode on Escape and save changes (same as blur)', () => {
             const mockUpdateOutput = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
@@ -277,10 +277,11 @@ describe('IdeaCard Editing', () => {
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Some content' } });
-            
+
             fireEvent.keyDown(textarea, { key: 'Escape' });
 
-            expect(mockUpdateOutput).not.toHaveBeenCalled();
+            // Escape now saves content to prevent text vanishing bug
+            expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Some content');
         });
 
         it('should exit edit mode after successful save on Enter', () => {
