@@ -167,3 +167,30 @@ export async function loadEdges(userId: string, workspaceId: string): Promise<Ca
         } as CanvasEdge;
     });
 }
+
+/** Delete a workspace and all its contents (nodes, edges) */
+export async function deleteWorkspace(userId: string, workspaceId: string): Promise<void> {
+    const batch = writeBatch(db);
+
+    // 1. Get all nodes and edges for this workspace
+    const nodesRef = getSubcollectionRef(userId, workspaceId, 'nodes');
+    const edgesRef = getSubcollectionRef(userId, workspaceId, 'edges');
+
+    const [nodesSnapshot, edgesSnapshot] = await Promise.all([
+        getDocs(nodesRef),
+        getDocs(edgesRef)
+    ]);
+
+    // 2. Queue all nodes for deletion
+    nodesSnapshot.docs.forEach((d) => batch.delete(d.ref));
+
+    // 3. Queue all edges for deletion
+    edgesSnapshot.docs.forEach((d) => batch.delete(d.ref));
+
+    // 4. Queue the workspace document itself
+    const workspaceRef = doc(db, 'users', userId, 'workspaces', workspaceId);
+    batch.delete(workspaceRef);
+
+    // 5. Commit batch
+    await batch.commit();
+}
