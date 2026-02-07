@@ -13,6 +13,7 @@ interface TagInputProps {
     compact?: boolean;
 }
 
+// eslint-disable-next-line max-lines-per-function -- tag input with autocomplete + CRUD
 export function TagInput({ selectedTagIds, onChange, compact = false }: TagInputProps) {
     const [isInputVisible, setIsInputVisible] = useState(false);
     const [inputValue, setInputValue] = useState('');

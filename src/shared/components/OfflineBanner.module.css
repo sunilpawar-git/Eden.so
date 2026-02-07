@@ -1,0 +1,50 @@
+/**
+ * OfflineBanner Styles
+ */
+.banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-xs) var(--space-md);
+    background: var(--offline-banner-bg, hsl(38, 90%, 95%));
+    color: var(--offline-banner-text, hsl(38, 80%, 20%));
+    border-bottom: 1px solid var(--offline-banner-border, hsl(38, 70%, 80%));
+    font-size: var(--font-size-sm);
+    animation: slideDown var(--transition-fast);
+}
+
+.message {
+    flex: 1;
+}
+
+.count {
+    color: var(--offline-banner-text, hsl(38, 80%, 20%));
+    opacity: 0.8;
+}
+
+.dismiss {
+    background: none;
+    border: none;
+    color: var(--offline-banner-text, hsl(38, 80%, 20%));
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    text-decoration: underline;
+    padding: var(--space-xs);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.dismiss:hover {
+    opacity: 1;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

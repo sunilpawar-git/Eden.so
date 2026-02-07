@@ -127,6 +127,33 @@ describe('WorkspaceControls', () => {
             expect(mockPanToPosition).toHaveBeenCalled();
         });
 
+        it('should position node at grid origin for first node', () => {
+            render(<WorkspaceControls />);
+
+            const addButton = screen.getByTitle(strings.workspace.addNodeTooltip);
+            fireEvent.click(addButton);
+
+            const { nodes } = useCanvasStore.getState();
+            expect(nodes[0]?.position).toEqual({ x: 0, y: 0 });
+        });
+
+        it('should position subsequent nodes using grid layout', () => {
+            render(<WorkspaceControls />);
+
+            const addButton = screen.getByTitle(strings.workspace.addNodeTooltip);
+            
+            // Add first node
+            fireEvent.click(addButton);
+            let nodes = useCanvasStore.getState().nodes;
+            expect(nodes[0]?.position).toEqual({ x: 0, y: 0 });
+
+            // Add second node
+            fireEvent.click(addButton);
+            nodes = useCanvasStore.getState().nodes;
+            expect(nodes[1]?.position.x).toBeGreaterThan(0); // Should be in next column
+            expect(nodes[1]?.position.y).toBe(0); // Same row
+        });
+
         it('should not add node if no workspace is selected', () => {
             useWorkspaceStore.setState({ currentWorkspaceId: null });
 

@@ -3,6 +3,7 @@
  * SSOT for theme, canvas settings, and user preferences
  */
 import { create } from 'zustand';
+import { getStorageItem, setStorageItem } from '@/shared/utils/storage';
 
 export type ThemeOption = 'light' | 'dark' | 'system';
 type ResolvedTheme = 'light' | 'dark';
@@ -22,14 +23,11 @@ const AUTO_SAVE_MAX = 300;
 const AUTO_SAVE_DEFAULT = 30;
 
 interface SettingsState {
-    // State
     theme: ThemeOption;
     canvasGrid: boolean;
     autoSave: boolean;
     autoSaveInterval: number;
     compactMode: boolean;
-    
-    // Actions
     setTheme: (theme: ThemeOption) => void;
     toggleCanvasGrid: () => void;
     setAutoSave: (enabled: boolean) => void;
@@ -39,50 +37,11 @@ interface SettingsState {
     loadFromStorage: () => void;
 }
 
-/**
- * Helper to safely get from localStorage
- */
-function getStorageItem<T>(key: string, defaultValue: T): T {
-    try {
-        const item = localStorage.getItem(key);
-        if (item === null) return defaultValue;
-        
-        // Handle boolean values
-        if (typeof defaultValue === 'boolean') {
-            return (item === 'true') as T;
-        }
-        // Handle number values
-        if (typeof defaultValue === 'number') {
-            const parsed = parseInt(item, 10);
-            return (isNaN(parsed) ? defaultValue : parsed) as T;
-        }
-        // Handle string values (including ThemeOption)
-        return item as T;
-    } catch {
-        return defaultValue;
-    }
-}
-
-/**
- * Helper to safely set to localStorage
- */
-function setStorageItem(key: string, value: string | number | boolean): void {
-    try {
-        localStorage.setItem(key, String(value));
-    } catch {
-        // Silently fail if localStorage is not available
-    }
-}
-
-/**
- * Clamp a number to a range
- */
 function clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
 }
 
 export const useSettingsStore = create<SettingsState>()((set, get) => ({
-    // Initial state with localStorage values
     theme: getStorageItem<ThemeOption>(STORAGE_KEYS.theme, 'system'),
     canvasGrid: getStorageItem<boolean>(STORAGE_KEYS.canvasGrid, true),
     autoSave: getStorageItem<boolean>(STORAGE_KEYS.autoSave, true),
@@ -119,17 +78,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
 
     getResolvedTheme: (): ResolvedTheme => {
         const { theme } = get();
-        
-        if (theme === 'light' || theme === 'dark') {
-            return theme;
-        }
-        
-        // System preference
+        if (theme === 'light' || theme === 'dark') return theme;
         if (typeof window !== 'undefined') {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            return prefersDark ? 'dark' : 'light';
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
-        
         return 'light';
     },
 

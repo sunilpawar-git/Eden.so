@@ -1,36 +1,37 @@
 /**
- * useAddNode Hook - Create new nodes at viewport center
- * Requires ReactFlow context for viewport position calculation
+ * useAddNode Hook - Create new nodes at next grid position
+ * Single source of truth for node creation logic (used by both N shortcut and + button)
  */
 import { useCallback } from 'react';
-import { useReactFlow } from '@xyflow/react';
 import { useCanvasStore } from '../stores/canvasStore';
-import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
+import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { createIdeaNode } from '../types/node';
+import { calculateNextNodePosition } from '../stores/canvasStoreHelpers';
+import { usePanToNode } from './usePanToNode';
 
 export function useAddNode() {
-    const { screenToFlowPosition } = useReactFlow();
     const addNode = useCanvasStore((s) => s.addNode);
+    const nodes = useCanvasStore((s) => s.nodes);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const { panToPosition } = usePanToNode();
 
     const handleAddNode = useCallback(() => {
-        // Get center of viewport
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
+        if (!currentWorkspaceId) return;
 
-        const position = screenToFlowPosition({
-            x: centerX,
-            y: centerY,
-        });
+        // Calculate next grid position for consistency
+        const position = calculateNextNodePosition(nodes);
 
         const newNode = createIdeaNode(
             `idea-${Date.now()}`,
-            currentWorkspaceId ?? DEFAULT_WORKSPACE_ID,
+            currentWorkspaceId,
             position
         );
 
         addNode(newNode);
-    }, [screenToFlowPosition, addNode, currentWorkspaceId]);
+
+        // Pan to the new node to ensure it's visible
+        panToPosition(position.x, position.y);
+    }, [addNode, nodes, currentWorkspaceId, panToPosition]);
 
     return handleAddNode;
 }

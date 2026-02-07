@@ -6,6 +6,7 @@
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import { loadNodes, loadEdges } from './workspaceService';
+import { persistentCacheService } from './persistentCacheService';
 
 export interface WorkspaceData {
     nodes: CanvasNode[];
@@ -26,11 +27,23 @@ interface WorkspaceCacheService {
 const cache = new Map<string, WorkspaceData>();
 
 function get(workspaceId: string): WorkspaceData | null {
-    return cache.get(workspaceId) ?? null;
+    const memoryHit = cache.get(workspaceId);
+    if (memoryHit) return memoryHit;
+
+    // Fallthrough to persistent cache
+    const persisted = persistentCacheService.getWorkspaceData(workspaceId);
+    if (persisted) {
+        // Hydrate into in-memory cache
+        cache.set(workspaceId, persisted);
+        return persisted;
+    }
+
+    return null;
 }
 
 function set(workspaceId: string, data: WorkspaceData): void {
     cache.set(workspaceId, data);
+    persistentCacheService.setWorkspaceData(workspaceId, data);
 }
 
 function update(workspaceId: string, nodes: CanvasNode[], edges: CanvasEdge[]): void {
@@ -40,10 +53,12 @@ function update(workspaceId: string, nodes: CanvasNode[], edges: CanvasEdge[]): 
 
 function invalidate(workspaceId: string): void {
     cache.delete(workspaceId);
+    persistentCacheService.removeWorkspaceData(workspaceId);
 }
 
 function clear(): void {
     cache.clear();
+    persistentCacheService.clear();
 }
 
 function has(workspaceId: string): boolean {

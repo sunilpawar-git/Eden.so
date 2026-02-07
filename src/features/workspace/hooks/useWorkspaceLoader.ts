@@ -1,51 +1,117 @@
 /**
- * useWorkspaceLoader - Loads workspace data from Firestore on mount
- * Responsibility: Bridge between persistence layer and canvas store
+ * useWorkspaceLoader - Cache-first workspace loading
+ * Loads from cache instantly, background-refreshes from Firestore when online.
+ * Falls back to Firestore on cache miss. Shows error when offline + no cache.
  */
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { loadNodes, loadEdges } from '../services/workspaceService';
+import { workspaceCache } from '../services/workspaceCache';
+import { checkForConflict } from '../services/conflictDetector';
+import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
+import { toast } from '@/shared/stores/toastStore';
+import { strings } from '@/shared/localization/strings';
 
 interface UseWorkspaceLoaderResult {
     isLoading: boolean;
     error: string | null;
 }
 
+// eslint-disable-next-line max-lines-per-function -- cache-first loading with background refresh
 export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResult {
     const { user } = useAuthStore();
     const { setNodes, setEdges } = useCanvasStore();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // eslint-disable-next-line max-lines-per-function -- cache-first with background refresh
     useEffect(() => {
-        // Skip loading if no user or workspaceId
         if (!user || !workspaceId) {
             setIsLoading(false);
             return;
         }
 
-        // Capture user.id for the async closure
         const userId = user.id;
         let mounted = true;
 
+        // eslint-disable-next-line max-lines-per-function -- handles cache hit + miss + background refresh
         async function load() {
             setIsLoading(true);
             setError(null);
 
+            // 1. Try cache first (in-memory → persistent localStorage)
+            const cached = workspaceCache.get(workspaceId);
+
+            if (cached) {
+                // Cache hit — instant load
+                if (mounted) {
+                    setNodes(cached.nodes);
+                    setEdges(cached.edges);
+                    setIsLoading(false);
+                }
+
+                // Background refresh from Firestore when online
+                const isOnline = useNetworkStatusStore.getState().isOnline;
+                if (isOnline) {
+                    try {
+                        const [freshNodes, freshEdges] = await Promise.all([
+                            loadNodes(userId, workspaceId),
+                            loadEdges(userId, workspaceId),
+                        ]);
+
+                        // Check for conflicts before overwriting
+                        if (freshNodes.length > 0 && cached.nodes.length > 0) {
+                            const latestServer = Math.max(
+                                ...freshNodes.map((n) => n.updatedAt.getTime())
+                            );
+                            const latestLocal = Math.max(
+                                ...cached.nodes.map((n) => n.updatedAt.getTime())
+                            );
+                            const conflict = checkForConflict(latestLocal, latestServer);
+                            // eslint-disable-next-line max-depth -- deeply nested cache conflict check
+                            if (conflict.hasConflict) {
+                                toast.info(strings.offline.conflictDetected);
+                            }
+                        }
+
+                        if (mounted) {
+                            setNodes(freshNodes);
+                            setEdges(freshEdges);
+                            workspaceCache.set(workspaceId, {
+                                nodes: freshNodes,
+                                edges: freshEdges,
+                                loadedAt: Date.now(),
+                            });
+                        }
+                    } catch (err) {
+                        // Background refresh failure is non-critical
+                        console.warn('[useWorkspaceLoader] Background refresh failed:', err);
+                    }
+                }
+                return;
+            }
+
+            // 2. Cache miss — load from Firestore
             try {
                 const [nodes, edges] = await Promise.all([
                     loadNodes(userId, workspaceId),
                     loadEdges(userId, workspaceId),
                 ]);
-
                 if (mounted) {
                     setNodes(nodes);
                     setEdges(edges);
+                    workspaceCache.set(workspaceId, {
+                        nodes,
+                        edges,
+                        loadedAt: Date.now(),
+                    });
                 }
             } catch (err) {
                 if (mounted) {
-                    const message = err instanceof Error ? err.message : 'Failed to load workspace';
+                    const message = err instanceof Error
+                        ? err.message
+                        : strings.offline.noOfflineData;
                     setError(message);
                     console.error('[useWorkspaceLoader]', err);
                 }
@@ -56,7 +122,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
             }
         }
 
-        load();
+        void load();
 
         return () => {
             mounted = false;

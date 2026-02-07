@@ -146,12 +146,14 @@ export async function loadNodes(userId: string, workspaceId: string): Promise<Ca
     const snapshot = await getDocs(nodesRef);
     return snapshot.docs.map((docSnapshot) => {
         const data = docSnapshot.data();
+        /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- Firestore DocumentData fields */
         return {
             id: data.id, workspaceId, type: data.type, data: data.data, position: data.position,
             width: data.width, height: data.height,
             createdAt: data.createdAt?.toDate?.() ?? new Date(),
             updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
         } as CanvasNode;
+        /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
     });
 }
 
@@ -161,10 +163,12 @@ export async function loadEdges(userId: string, workspaceId: string): Promise<Ca
     const snapshot = await getDocs(edgesRef);
     return snapshot.docs.map((docSnapshot) => {
         const data = docSnapshot.data();
+        /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Firestore DocumentData fields */
         return {
             id: data.id, sourceNodeId: data.sourceNodeId,
             targetNodeId: data.targetNodeId, relationshipType: data.relationshipType,
         } as CanvasEdge;
+        /* eslint-enable @typescript-eslint/no-unsafe-assignment */
     });
 }
 

@@ -28,6 +28,7 @@ interface SettingsPanelProps {
     onClose: () => void;
 }
 
+// eslint-disable-next-line max-lines-per-function -- settings panel with multiple sections
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     const [activeTab, setActiveTab] = useState<TabId>('appearance');
 

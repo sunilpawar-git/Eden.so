@@ -7,6 +7,7 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '../stores/workspaceStore';
 import { loadNodes, loadEdges, saveNodes, saveEdges } from '../services/workspaceService';
 import { workspaceCache } from '../services/workspaceCache';
+import { persistentCacheService } from '../services/persistentCacheService';
 import { strings } from '@/shared/localization/strings';
 
 interface UseWorkspaceSwitcherResult {
@@ -15,6 +16,7 @@ interface UseWorkspaceSwitcherResult {
     switchWorkspace: (workspaceId: string) => Promise<void>;
 }
 
+// eslint-disable-next-line max-lines-per-function -- workspace switcher with cache logic
 export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
     const { user } = useAuthStore();
     const { setNodes, setEdges } = useCanvasStore();
@@ -26,6 +28,7 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
     const [error, setError] = useState<string | null>(null);
     const switchingRef = useRef(false);
 
+    // eslint-disable-next-line max-lines-per-function -- workspace switch with save + load + cache
     const switchWorkspace = useCallback(async (workspaceId: string): Promise<void> => {
         // Guard: same workspace or no user
         if (workspaceId === currentWorkspaceId || !user) {
@@ -70,10 +73,18 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
                     loadNodes(user.id, workspaceId),
                     loadEdges(user.id, workspaceId),
                 ]);
-                // Populate cache for next time
+                // Populate cache for next time (writes through to persistent)
                 workspaceCache.set(workspaceId, { nodes: newNodes, edges: newEdges, loadedAt: Date.now() });
+
+                // Update persistent metadata with this workspace
+                const existingMeta = persistentCacheService.getWorkspaceMetadata();
+                if (!existingMeta.some((m) => m.id === workspaceId)) {
+                    existingMeta.push({ id: workspaceId, name: workspaceId, updatedAt: Date.now() });
+                    persistentCacheService.setWorkspaceMetadata(existingMeta);
+                }
             }
             const loadTime = performance.now() - startTime;
+            // eslint-disable-next-line no-console -- intentional performance logging
             console.log(`[WorkspaceSwitcher] Switch completed in ${loadTime.toFixed(2)}ms (cache ${cacheHit ? 'HIT' : 'MISS'})`);
 
             // 3. Atomic swap: update nodes/edges directly (no clearCanvas)
