@@ -4,11 +4,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import type { ReactNode } from 'react';
 import { useAddNode } from '../useAddNode';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
-import { usePanToNode } from '../usePanToNode';
 
 // Mock usePanToNode
 vi.mock('../usePanToNode', () => ({

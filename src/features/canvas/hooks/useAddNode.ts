@@ -4,7 +4,7 @@
  */
 import { useCallback } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
-import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
+import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { createIdeaNode } from '../types/node';
 import { calculateNextNodePosition } from '../stores/canvasStoreHelpers';
 import { usePanToNode } from './usePanToNode';
@@ -23,7 +23,7 @@ export function useAddNode() {
 
         const newNode = createIdeaNode(
             `idea-${Date.now()}`,
-            currentWorkspaceId ?? DEFAULT_WORKSPACE_ID,
+            currentWorkspaceId,
             position
         );
 
