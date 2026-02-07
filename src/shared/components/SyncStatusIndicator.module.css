@@ -1,0 +1,64 @@
+/**
+ * SyncStatusIndicator Styles
+ */
+.indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--sync-indicator-gap, 6px);
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    user-select: none;
+}
+
+.dot {
+    width: var(--sync-dot-size, 8px);
+    height: var(--sync-dot-size, 8px);
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.green {
+    background-color: var(--color-success);
+    animation: fadeIn var(--transition-fast);
+}
+
+.spinner {
+    background-color: var(--color-primary);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.yellow {
+    background-color: var(--color-warning);
+}
+
+.gray {
+    background-color: var(--color-text-muted);
+}
+
+.red {
+    background-color: var(--color-error);
+}
+
+.label {
+    white-space: nowrap;
+    line-height: 1;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

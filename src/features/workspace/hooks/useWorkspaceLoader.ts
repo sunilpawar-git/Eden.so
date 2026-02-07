@@ -8,7 +8,9 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { loadNodes, loadEdges } from '../services/workspaceService';
 import { workspaceCache } from '../services/workspaceCache';
+import { checkForConflict } from '../services/conflictDetector';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
+import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 
 interface UseWorkspaceLoaderResult {
@@ -54,6 +56,21 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                             loadNodes(userId, workspaceId),
                             loadEdges(userId, workspaceId),
                         ]);
+
+                        // Check for conflicts before overwriting
+                        if (freshNodes.length > 0 && cached.nodes.length > 0) {
+                            const latestServer = Math.max(
+                                ...freshNodes.map((n) => n.updatedAt.getTime())
+                            );
+                            const latestLocal = Math.max(
+                                ...cached.nodes.map((n) => n.updatedAt.getTime())
+                            );
+                            const conflict = checkForConflict(latestLocal, latestServer);
+                            if (conflict.hasConflict) {
+                                toast.info(strings.offline.conflictDetected);
+                            }
+                        }
+
                         if (mounted) {
                             setNodes(freshNodes);
                             setEdges(freshEdges);

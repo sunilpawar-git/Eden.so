@@ -137,6 +137,15 @@
 
   /* Sidebar */
   --sidebar-width: 260px;
+
+  /* Sync Status Indicator */
+  --sync-dot-size: 8px;
+  --sync-indicator-gap: 6px;
+
+  /* Offline Banner */
+  --offline-banner-bg: hsl(38, 90%, 95%);
+  --offline-banner-text: hsl(38, 80%, 20%);
+  --offline-banner-border: hsl(38, 70%, 80%);
 }
 
 /* Compact Mode - Reduced spacing and smaller fonts */
@@ -223,4 +232,9 @@
 
   /* Text alias - Dark */
   --color-text: var(--color-text-primary);
+
+  /* Offline Banner - Dark */
+  --offline-banner-bg: hsl(38, 40%, 18%);
+  --offline-banner-text: hsl(38, 60%, 80%);
+  --offline-banner-border: hsl(38, 30%, 28%);
 }

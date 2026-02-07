@@ -4,6 +4,8 @@
 import type { ReactNode } from 'react';
 import { useCallback } from 'react';
 import { Sidebar } from './Sidebar';
+import { SyncStatusIndicator } from './SyncStatusIndicator';
+import { OfflineBanner } from './OfflineBanner';
 import { SearchBar } from '@/features/search';
 import { WorkspaceControls } from '@/features/workspace/components/WorkspaceControls';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
@@ -38,7 +40,9 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
                 <header className={styles.topBar}>
                     <SearchBar onResultClick={handleSearchResultClick} />
                     <WorkspaceControls />
+                    <SyncStatusIndicator />
                 </header>
+                <OfflineBanner />
                 <main className={styles.main}>{children}</main>
             </div>
         </div>
