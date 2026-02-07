@@ -1,5 +1,5 @@
 /**
- * useAutosave Hook - Debounced autosave for canvas state
+ * useAutosave Hook - Debounced autosave with offline queue support
  */
 import { useEffect, useRef, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
@@ -7,6 +7,8 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { saveNodes, saveEdges } from '@/features/workspace/services/workspaceService';
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { useSaveStatusStore } from '@/shared/stores/saveStatusStore';
+import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
+import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 
@@ -21,6 +23,17 @@ export function useAutosave(workspaceId: string) {
     const save = useCallback(async () => {
         if (!user || !workspaceId) return;
 
+        const isOnline = useNetworkStatusStore.getState().isOnline;
+
+        // Offline: queue save for later
+        if (!isOnline) {
+            useOfflineQueueStore.getState().queueSave(user.id, workspaceId, nodes, edges);
+            useSaveStatusStore.getState().setQueued();
+            workspaceCache.update(workspaceId, nodes, edges);
+            return;
+        }
+
+        // Online: save directly to Firestore
         const { setSaving, setSaved, setError } = useSaveStatusStore.getState();
         setSaving();
 
@@ -39,7 +52,6 @@ export function useAutosave(workspaceId: string) {
     }, [user, workspaceId, nodes, edges]);
 
     useEffect(() => {
-        // Skip if no changes - only compare meaningful fields (exclude timestamps)
         const nodesJson = JSON.stringify(
             nodes.map((n) => ({
                 id: n.id,
@@ -58,12 +70,10 @@ export function useAutosave(workspaceId: string) {
             return;
         }
 
-        // Clear previous timeout
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
 
-        // Set new debounced save
         timeoutRef.current = setTimeout(() => {
             lastSavedRef.current = { nodes: nodesJson, edges: edgesJson };
             save();
@@ -75,8 +85,4 @@ export function useAutosave(workspaceId: string) {
             }
         };
     }, [nodes, edges, save]);
-
-    // NOTE: Removed "force save on unmount" effect.
-    // Save-before-switch is now handled explicitly in Sidebar.tsx
-    // to avoid race condition where clearCanvas() runs before cleanup.
 }
