@@ -81,7 +81,7 @@
     min-height: 100%;
 }
 
-/* AI Mode Indicator */
+/* AI Mode Indicator — replaced by CommandPrefixPill */
 .aiIndicator {
     display: inline-flex;
     align-items: center;
@@ -94,6 +94,13 @@
     background: var(--color-primary-light);
     border-radius: var(--radius-full);
     animation: fadeIn 0.2s ease;
+}
+
+/* Prefix row — holds the CommandPrefixPill above textarea */
+.prefixRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-xs);
 }
 
 @keyframes fadeIn {

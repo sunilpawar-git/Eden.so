@@ -154,7 +154,7 @@ describe('IdeaCard Dual-Mode Input', () => {
     });
 
     describe('AI Mode (after command selection)', () => {
-        it('shows AI mode indicator after selecting AI command', async () => {
+        it('shows prefix pill after selecting AI command', async () => {
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
@@ -165,7 +165,7 @@ describe('IdeaCard Dual-Mode Input', () => {
             fireEvent.click(menuItem);
 
             await waitFor(() => {
-                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+                expect(screen.getByTestId('command-prefix-pill')).toBeInTheDocument();
             });
         });
 
@@ -189,7 +189,7 @@ describe('IdeaCard Dual-Mode Input', () => {
 
             // Now in AI mode - type prompt and press Enter
             await waitFor(() => {
-                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+                expect(screen.getByTestId('command-prefix-pill')).toBeInTheDocument();
             });
 
             // Get textarea again (may have re-rendered)

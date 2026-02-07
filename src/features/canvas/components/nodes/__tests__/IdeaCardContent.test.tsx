@@ -22,13 +22,14 @@ describe('IdeaCardContent sub-components', () => {
             isMenuOpen: false,
             isGenerating: false,
             query: '',
+            activeCommand: null,
             textareaRef: { current: null } as React.RefObject<HTMLTextAreaElement>,
-            textareaRect: null,
             onInputChange: vi.fn(),
             onBlur: vi.fn(),
             onKeyDown: vi.fn(),
             onCommandSelect: vi.fn(),
             onMenuClose: vi.fn(),
+            onDeactivateCommand: vi.fn(),
         };
 
         it('should render textarea with correct value', () => {
@@ -37,14 +38,22 @@ describe('IdeaCardContent sub-components', () => {
             expect(textarea).toHaveValue('test value');
         });
 
-        it('should show AI indicator when in AI mode', () => {
-            render(<EditingContent {...defaultProps} inputMode="ai" />);
-            expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+        it('should show prefix pill when command is active', () => {
+            const command = {
+                id: 'ai-generate' as const,
+                labelKey: 'slashCommands.aiGenerate.label',
+                descriptionKey: 'slashCommands.aiGenerate.description',
+                icon: '✨',
+                keywords: ['ai'],
+                prefix: 'ai',
+            };
+            render(<EditingContent {...defaultProps} inputMode="ai" activeCommand={command} />);
+            expect(screen.getByTestId('command-prefix-pill')).toBeInTheDocument();
         });
 
-        it('should not show AI indicator in note mode', () => {
+        it('should not show prefix pill when no command active', () => {
             render(<EditingContent {...defaultProps} inputMode="note" />);
-            expect(screen.queryByTestId('ai-mode-indicator')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('command-prefix-pill')).not.toBeInTheDocument();
         });
 
         it('should call onInputChange when typing', () => {

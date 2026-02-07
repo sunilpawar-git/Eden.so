@@ -33,13 +33,12 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const [showTagInput, setShowTagInput] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [textareaRect, setTextareaRect] = useState<DOMRect | null>(null);
     const wasEditingRef = useRef(false);
     const contentRef = useRef<HTMLDivElement>(null);
 
     const {
-        inputMode, isMenuOpen, query, inputValue,
-        handleInputChange, handleCommandSelect, closeMenu, reset
+        inputMode, isMenuOpen, query, inputValue, activeCommand,
+        handleInputChange, handleCommandSelect, handleDeactivateCommand, closeMenu, reset
     } = useSlashCommandInput();
 
     const { deleteNode, updateNodePrompt, updateNodeOutput, updateNodeTags } = useCanvasStore();
@@ -70,13 +69,6 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         }
         wasEditingRef.current = isEditing;
     }, [isEditing, getEditableContent, handleInputChange]);
-
-    // Update textarea rect when editing starts
-    useEffect(() => {
-        if (isEditing && textareaRef.current) {
-            setTextareaRect(textareaRef.current.getBoundingClientRect());
-        }
-    }, [isEditing, isMenuOpen]);
 
     // Listen for quick capture focus events
     useEffect(() => {
@@ -184,13 +176,14 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     isMenuOpen={isMenuOpen}
                     isGenerating={isGenerating ?? false}
                     query={query}
+                    activeCommand={activeCommand}
                     textareaRef={textareaRef}
-                    textareaRect={textareaRect}
                     onInputChange={handleInputChange}
                     onBlur={handleInputBlur}
                     onKeyDown={handleInputKeyDown}
                     onCommandSelect={handleCommandSelect}
                     onMenuClose={closeMenu}
+                    onDeactivateCommand={handleDeactivateCommand}
                 />
             );
         }

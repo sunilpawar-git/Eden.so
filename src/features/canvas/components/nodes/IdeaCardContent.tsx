@@ -5,8 +5,9 @@
 import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
-import { SlashCommandMenu } from './SlashCommandMenu';
-import type { SlashCommandId } from '../../types/slashCommand';
+import { InlineSlashMenu } from './InlineSlashMenu';
+import { CommandPrefixPill } from './CommandPrefixPill';
+import type { SlashCommand, SlashCommandId } from '../../types/slashCommand';
 import styles from './IdeaCard.module.css';
 
 interface EditingContentProps {
@@ -16,34 +17,38 @@ interface EditingContentProps {
     isMenuOpen: boolean;
     isGenerating: boolean;
     query: string;
+    activeCommand: SlashCommand | null;
     textareaRef: React.RefObject<HTMLTextAreaElement>;
-    textareaRect: DOMRect | null;
     onInputChange: (value: string) => void;
     onBlur: () => void;
     onKeyDown: (e: React.KeyboardEvent) => void;
     onCommandSelect: (id: SlashCommandId) => void;
     onMenuClose: () => void;
+    onDeactivateCommand: () => void;
 }
 
 export const EditingContent = React.memo(({
-    inputMode,
     inputValue,
     placeholder,
     isMenuOpen,
     isGenerating,
     query,
+    activeCommand,
     textareaRef,
-    textareaRect,
     onInputChange,
     onBlur,
     onKeyDown,
     onCommandSelect,
     onMenuClose,
+    onDeactivateCommand,
 }: EditingContentProps) => (
     <div className={styles.inputWrapper}>
-        {inputMode === 'ai' && (
-            <div className={styles.aiIndicator} data-testid="ai-mode-indicator">
-                ✨ {strings.ideaCard.aiModeIndicator}
+        {activeCommand && (
+            <div className={styles.prefixRow}>
+                <CommandPrefixPill
+                    command={activeCommand}
+                    onDeactivate={onDeactivateCommand}
+                />
             </div>
         )}
         <textarea
@@ -57,12 +62,11 @@ export const EditingContent = React.memo(({
             autoFocus
             disabled={isGenerating}
         />
-        {isMenuOpen && textareaRect && (
-            <SlashCommandMenu
+        {isMenuOpen && (
+            <InlineSlashMenu
                 query={query}
                 onSelect={onCommandSelect}
                 onClose={onMenuClose}
-                anchorRect={textareaRect}
             />
         )}
     </div>

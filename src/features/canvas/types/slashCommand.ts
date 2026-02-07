@@ -17,6 +17,8 @@ export interface SlashCommand {
     icon: string;
     /** Keywords for filtering/search (lowercase) */
     keywords: string[];
+    /** Prefix used for inline command mode (e.g. "ai" for "/ai:") */
+    prefix: string;
 }
 
 /**

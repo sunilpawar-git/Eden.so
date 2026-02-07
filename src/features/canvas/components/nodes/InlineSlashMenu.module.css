@@ -1,19 +1,30 @@
 /**
- * SlashCommandMenu Styles
- * Dropdown menu for slash commands with keyboard navigation
+ * InlineSlashMenu Styles
+ * Inline dropdown menu for slash commands (renders inside card)
  */
 
-.slashCommandMenu {
-    position: fixed;
-    min-width: 200px;
-    max-width: 280px;
+.inlineMenu {
+    position: relative;
+    width: 100%;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
-    box-shadow: var(--shadow-dropdown);
-    z-index: 10000;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
     padding: 4px 0;
+    margin-top: var(--space-xs);
+    animation: slideIn 0.15s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .menuItem {
@@ -37,7 +48,6 @@
     background-color: var(--color-primary-light);
     border-left: 3px solid var(--color-primary);
     padding-left: 9px;
-    /* Adjust for border */
 }
 
 .icon {
@@ -50,6 +60,7 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1;
 }
 
 .label {
@@ -64,6 +75,16 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.prefixHint {
+    font-size: 11px;
+    font-family: var(--font-family-mono, monospace);
+    color: var(--color-text-muted);
+    background: var(--color-surface-elevated);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
 }
 
 .noResults {

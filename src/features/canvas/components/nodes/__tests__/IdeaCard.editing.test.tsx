@@ -108,9 +108,9 @@ describe('IdeaCard Editing', () => {
             const menuItem = screen.getByRole('menuitem');
             fireEvent.click(menuItem);
 
-            // Wait for AI mode
+            // Wait for AI mode (prefix pill visible)
             await waitFor(() => {
-                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+                expect(screen.getByTestId('command-prefix-pill')).toBeInTheDocument();
             });
 
             // Type prompt and blur
