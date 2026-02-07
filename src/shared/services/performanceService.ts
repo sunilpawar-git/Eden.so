@@ -30,8 +30,7 @@ function createConsoleReporter(): MetricReporter {
         
         // Only log in development
         if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console -- intentional dev-only performance logging
-            console.log(`[WebVitals] ${label}: ${value}`);
+            console.info(`[WebVitals] ${label}: ${value}`);
         }
     };
 }

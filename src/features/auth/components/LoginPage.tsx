@@ -6,7 +6,7 @@ import { signInWithGoogle } from '../services/authService';
 import { useAuthStore } from '../stores/authStore';
 import styles from './LoginPage.module.css';
 
-// eslint-disable-next-line max-lines-per-function -- JSX-heavy component
+ 
 export function LoginPage() {
     const { isLoading, error } = useAuthStore();
 

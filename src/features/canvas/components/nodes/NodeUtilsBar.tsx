@@ -21,7 +21,7 @@ interface NodeUtilsBarProps {
     hasTags?: boolean;
 }
 
-// eslint-disable-next-line max-lines-per-function -- JSX-heavy toolbar component
+ 
 export function NodeUtilsBar({
     onTagClick,
     onAIClick,

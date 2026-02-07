@@ -35,7 +35,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
         const userId = user.id;
         let mounted = true;
 
-        // eslint-disable-next-line max-lines-per-function -- handles cache hit + miss + background refresh
+         
         async function load() {
             setIsLoading(true);
             setError(null);
@@ -69,7 +69,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                                 ...cached.nodes.map((n) => n.updatedAt.getTime())
                             );
                             const conflict = checkForConflict(latestLocal, latestServer);
-                            // eslint-disable-next-line max-depth -- deeply nested cache conflict check
+                             
                             if (conflict.hasConflict) {
                                 toast.info(strings.offline.conflictDetected);
                             }

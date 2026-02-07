@@ -34,7 +34,8 @@ export function WorkspaceControls() {
     const handleClearCanvas = useCallback(() => {
         if (nodeCount === 0) return;
 
-        // eslint-disable-next-line no-alert -- confirmation dialog for destructive action
+        // TODO: Replace with a ConfirmDialog component
+        // eslint-disable-next-line no-alert -- acceptable for MVP, replace with modal later
         const confirmed = window.confirm(strings.canvas.clearConfirm);
         if (confirmed) {
             clearCanvas();
@@ -51,7 +52,8 @@ export function WorkspaceControls() {
             return;
         }
 
-        // eslint-disable-next-line no-alert -- confirmation dialog for destructive action
+        // TODO: Replace with a ConfirmDialog component
+        // eslint-disable-next-line no-alert -- acceptable for MVP, replace with modal later
         const confirmed = window.confirm(strings.workspace.deleteConfirm);
         if (!confirmed) return;
 
@@ -64,9 +66,9 @@ export function WorkspaceControls() {
 
             // Switch to another workspace if available
             const remainingWorkspaces = workspaces.filter(ws => ws.id !== currentWorkspaceId);
-            if (remainingWorkspaces.length > 0) {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length check guarantees element exists
-                setCurrentWorkspaceId(remainingWorkspaces[0]!.id);
+            const nextWorkspace = remainingWorkspaces[0];
+            if (nextWorkspace) {
+                setCurrentWorkspaceId(nextWorkspace.id);
             } else {
                 setCurrentWorkspaceId(DEFAULT_WORKSPACE_ID);
                 clearCanvas();

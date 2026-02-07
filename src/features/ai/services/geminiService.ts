@@ -118,7 +118,7 @@ export async function generateContent(prompt: string): Promise<string> {
  * Generate content with upstream context from connected nodes
  * Uses edge-aware context for Obsidian-style idea chaining
  */
-// eslint-disable-next-line max-lines-per-function -- long fetch flow with context building
+ 
 export async function generateContentWithContext(
     prompt: string,
     contextChain: string[]

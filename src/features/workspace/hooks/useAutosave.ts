@@ -14,7 +14,7 @@ import { strings } from '@/shared/localization/strings';
 
 const AUTOSAVE_DELAY_MS = 2000; // 2 second debounce
 
-// eslint-disable-next-line max-lines-per-function -- autosave with debounce + offline queue
+ 
 export function useAutosave(workspaceId: string) {
     const { nodes, edges } = useCanvasStore();
     const { user } = useAuthStore();

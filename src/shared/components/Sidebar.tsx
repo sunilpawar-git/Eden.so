@@ -44,11 +44,11 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
     // Load workspaces on mount
     useEffect(() => {
         if (!user) return;
+        const userId = user.id;
 
         async function loadWorkspaces() {
             try {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by if (!user) return above
-                const loadedWorkspaces = await loadUserWorkspaces(user!.id);
+                const loadedWorkspaces = await loadUserWorkspaces(userId);
                 setWorkspaces(loadedWorkspaces);
 
                 // Persist workspace metadata for offline fallback
@@ -74,8 +74,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                 // Preload all workspaces into cache for instant switching
                 if (loadedWorkspaces.length > 0) {
                     const workspaceIds = loadedWorkspaces.map((ws) => ws.id);
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by if (!user) return above
-                    void workspaceCache.preload(user!.id, workspaceIds).catch((err: unknown) => {
+                    void workspaceCache.preload(userId, workspaceIds).catch((err: unknown) => {
                         console.warn('[Sidebar] Cache preload failed:', err);
                     });
                 }
@@ -87,8 +86,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     setWorkspaces(
                         cachedMetadata.map((meta) => ({
                             id: meta.id,
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by if (!user) return above
-                            userId: user!.id,
+                            userId,
                             name: meta.name,
                             canvasSettings: { backgroundColor: 'white' as const },
                             createdAt: new Date(meta.updatedAt),

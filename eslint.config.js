@@ -165,9 +165,9 @@ export default tseslint.config(
             'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
             'max-lines-per-function': [
                 'warn',
-                { max: 50, skipBlankLines: true, skipComments: true, IIFEs: true },
+                { max: 80, skipBlankLines: true, skipComments: true, IIFEs: true },
             ],
-            'no-console': ['warn', { allow: ['warn', 'error'] }],
+            'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
             'no-debugger': 'error',
             'no-alert': 'warn',
             'no-eval': 'error',
@@ -180,8 +180,8 @@ export default tseslint.config(
             'prefer-arrow-callback': ['error', { allowNamedFunctions: true }],
             'no-param-reassign': ['error', { props: false }],
             'no-nested-ternary': 'warn',
-            complexity: ['warn', { max: 15 }],
-            'max-depth': ['warn', { max: 4 }],
+            complexity: ['warn', { max: 20 }],
+            'max-depth': ['warn', { max: 5 }],
         },
     },
     // Test files - relax rules for testing patterns

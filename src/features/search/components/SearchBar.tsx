@@ -11,7 +11,7 @@ interface SearchBarProps {
     onResultClick?: (nodeId: string, workspaceId: string) => void;
 }
 
-// eslint-disable-next-line max-lines-per-function -- search bar with dropdown logic
+ 
 export function SearchBar({ onResultClick }: SearchBarProps) {
     const [inputValue, setInputValue] = useState('');
     const [isOpen, setIsOpen] = useState(false);
