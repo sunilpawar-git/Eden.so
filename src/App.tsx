@@ -16,6 +16,7 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { LoadingFallback } from '@/shared/components/LoadingFallback';
 import { useThemeApplicator } from '@/shared/hooks/useThemeApplicator';
 import { useCompactMode } from '@/shared/hooks/useCompactMode';
+import { useNetworkStatus } from '@/shared/hooks/useNetworkStatus';
 import { useAutosave } from '@/features/workspace/hooks/useAutosave';
 import { useWorkspaceLoader } from '@/features/workspace/hooks/useWorkspaceLoader';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -37,6 +38,7 @@ function AuthenticatedApp() {
     
     useThemeApplicator();
     useCompactMode();
+    useNetworkStatus();
     useAutosave(currentWorkspaceId ?? '');
 
     // Always keep ReactFlowProvider mounted to prevent blink on workspace switch

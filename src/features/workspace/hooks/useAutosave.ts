@@ -6,6 +6,9 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { saveNodes, saveEdges } from '@/features/workspace/services/workspaceService';
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
+import { useSaveStatusStore } from '@/shared/stores/saveStatusStore';
+import { toast } from '@/shared/stores/toastStore';
+import { strings } from '@/shared/localization/strings';
 
 const AUTOSAVE_DELAY_MS = 2000; // 2 second debounce
 
@@ -18,17 +21,20 @@ export function useAutosave(workspaceId: string) {
     const save = useCallback(async () => {
         if (!user || !workspaceId) return;
 
+        const { setSaving, setSaved, setError } = useSaveStatusStore.getState();
+        setSaving();
+
         try {
             await Promise.all([
                 saveNodes(user.id, workspaceId, nodes),
                 saveEdges(user.id, workspaceId, edges),
             ]);
-            // Update cache with saved data to keep it fresh
             workspaceCache.update(workspaceId, nodes, edges);
-            console.log('[Autosave] Saved successfully');
+            setSaved();
         } catch (error) {
-            console.error('[Autosave] Failed:', error);
-            // TODO: Show toast notification
+            const message = error instanceof Error ? error.message : strings.offline.saveError;
+            setError(message);
+            toast.error(strings.offline.saveFailed);
         }
     }, [user, workspaceId, nodes, edges]);
 

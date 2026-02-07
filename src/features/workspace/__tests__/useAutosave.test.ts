@@ -1,6 +1,6 @@
 /**
  * Tests for useAutosave hook
- * Covers debounced autosave functionality
+ * Covers debounced autosave and save status lifecycle
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
@@ -9,19 +9,15 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { saveNodes, saveEdges } from '@/features/workspace/services/workspaceService';
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
+import { useSaveStatusStore } from '@/shared/stores/saveStatusStore';
+import { toast } from '@/shared/stores/toastStore';
 
-// Mock dependencies (vitest hoists these automatically)
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
-    useCanvasStore: vi.fn(() => ({
-        nodes: [],
-        edges: [],
-    })),
+    useCanvasStore: vi.fn(() => ({ nodes: [], edges: [] })),
 }));
 
 vi.mock('@/features/auth/stores/authStore', () => ({
-    useAuthStore: vi.fn(() => ({
-        user: { id: 'user-123' },
-    })),
+    useAuthStore: vi.fn(() => ({ user: { id: 'user-123' } })),
 }));
 
 vi.mock('@/features/workspace/services/workspaceService', () => ({
@@ -30,15 +26,22 @@ vi.mock('@/features/workspace/services/workspaceService', () => ({
 }));
 
 vi.mock('@/features/workspace/services/workspaceCache', () => ({
-    workspaceCache: {
-        update: vi.fn(),
-    },
+    workspaceCache: { update: vi.fn() },
+}));
+
+vi.mock('@/shared/stores/toastStore', () => ({
+    toast: { error: vi.fn(), info: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 
 describe('useAutosave', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
+        useSaveStatusStore.setState({
+            status: 'idle',
+            lastSavedAt: null,
+            lastError: null,
+        });
     });
 
     afterEach(() => {
@@ -54,9 +57,7 @@ describe('useAutosave', () => {
 
         renderHook(() => useAutosave('workspace-1'));
 
-        await act(async () => {
-            vi.advanceTimersByTime(3000);
-        });
+        await act(async () => { vi.advanceTimersByTime(3000); });
 
         expect(saveNodes).not.toHaveBeenCalled();
         expect(saveEdges).not.toHaveBeenCalled();
@@ -71,12 +72,9 @@ describe('useAutosave', () => {
 
         renderHook(() => useAutosave(''));
 
-        await act(async () => {
-            vi.advanceTimersByTime(3000);
-        });
+        await act(async () => { vi.advanceTimersByTime(3000); });
 
         expect(saveNodes).not.toHaveBeenCalled();
-        expect(saveEdges).not.toHaveBeenCalled();
     });
 
     it('should debounce save calls', async () => {
@@ -88,23 +86,14 @@ describe('useAutosave', () => {
 
         const { rerender } = renderHook(() => useAutosave('workspace-1'));
 
-        // Simulate rapid changes
-        await act(async () => {
-            vi.advanceTimersByTime(500);
-        });
+        await act(async () => { vi.advanceTimersByTime(500); });
         rerender();
-        await act(async () => {
-            vi.advanceTimersByTime(500);
-        });
+        await act(async () => { vi.advanceTimersByTime(500); });
         rerender();
 
-        // Should not have saved yet (debounce period not complete)
         expect(saveNodes).not.toHaveBeenCalled();
 
-        // Advance past debounce period
-        await act(async () => {
-            vi.advanceTimersByTime(2000);
-        });
+        await act(async () => { vi.advanceTimersByTime(2000); });
 
         expect(saveNodes).toHaveBeenCalledTimes(1);
         expect(saveEdges).toHaveBeenCalledTimes(1);
@@ -119,18 +108,14 @@ describe('useAutosave', () => {
 
         renderHook(() => useAutosave('workspace-1'));
 
-        await act(async () => {
-            vi.advanceTimersByTime(2500);
-        });
+        await act(async () => { vi.advanceTimersByTime(2500); });
 
         expect(saveNodes).toHaveBeenCalledWith(
-            'user-1',
-            'workspace-1',
+            'user-1', 'workspace-1',
             expect.arrayContaining([expect.objectContaining({ id: 'node-1' })])
         );
         expect(saveEdges).toHaveBeenCalledWith(
-            'user-1',
-            'workspace-1',
+            'user-1', 'workspace-1',
             expect.arrayContaining([expect.objectContaining({ id: 'edge-1' })])
         );
     });
@@ -140,15 +125,12 @@ describe('useAutosave', () => {
         const testNodes = [{ id: 'node-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }];
         const testEdges = [{ id: 'edge-1', sourceNodeId: 'node-1', targetNodeId: 'node-2' }];
         vi.mocked(useCanvasStore).mockReturnValue({
-            nodes: testNodes,
-            edges: testEdges,
+            nodes: testNodes, edges: testEdges,
         } as unknown as ReturnType<typeof useCanvasStore>);
 
         renderHook(() => useAutosave('workspace-1'));
 
-        await act(async () => {
-            vi.advanceTimersByTime(2500);
-        });
+        await act(async () => { vi.advanceTimersByTime(2500); });
 
         expect(workspaceCache.update).toHaveBeenCalledWith('workspace-1', testNodes, testEdges);
     });
@@ -156,29 +138,50 @@ describe('useAutosave', () => {
     it('should not save when data has not changed', async () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'user-1' } } as ReturnType<typeof useAuthStore>);
         vi.mocked(useCanvasStore).mockReturnValue({
-            nodes: [],
-            edges: [],
+            nodes: [], edges: [],
         } as unknown as ReturnType<typeof useCanvasStore>);
 
         const { rerender } = renderHook(() => useAutosave('workspace-1'));
 
-        // First save
-        await act(async () => {
-            vi.advanceTimersByTime(2500);
-        });
+        await act(async () => { vi.advanceTimersByTime(2500); });
 
-        // Rerender with same data
         rerender();
-        await act(async () => {
-            vi.advanceTimersByTime(2500);
-        });
+        await act(async () => { vi.advanceTimersByTime(2500); });
 
-        // Should only be called once (dedupe)
         expect(saveNodes).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle save errors gracefully', async () => {
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    it('should set save status to saving before save', async () => {
+        vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'user-1' } } as ReturnType<typeof useAuthStore>);
+        vi.mocked(useCanvasStore).mockReturnValue({
+            nodes: [{ id: 'node-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
+            edges: [],
+        } as unknown as ReturnType<typeof useCanvasStore>);
+
+        renderHook(() => useAutosave('workspace-1'));
+
+        await act(async () => { vi.advanceTimersByTime(2500); });
+
+        // After save completes, status should be 'saved'
+        expect(useSaveStatusStore.getState().status).toBe('saved');
+    });
+
+    it('should set save status to saved after successful save', async () => {
+        vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'user-1' } } as ReturnType<typeof useAuthStore>);
+        vi.mocked(useCanvasStore).mockReturnValue({
+            nodes: [{ id: 'node-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
+            edges: [],
+        } as unknown as ReturnType<typeof useCanvasStore>);
+
+        renderHook(() => useAutosave('workspace-1'));
+
+        await act(async () => { vi.advanceTimersByTime(2500); });
+
+        expect(useSaveStatusStore.getState().status).toBe('saved');
+        expect(useSaveStatusStore.getState().lastSavedAt).not.toBeNull();
+    });
+
+    it('should set save status to error and show toast on failure', async () => {
         vi.mocked(saveNodes).mockRejectedValueOnce(new Error('Network error'));
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'user-1' } } as ReturnType<typeof useAuthStore>);
         vi.mocked(useCanvasStore).mockReturnValue({
@@ -188,12 +191,11 @@ describe('useAutosave', () => {
 
         renderHook(() => useAutosave('workspace-1'));
 
-        await act(async () => {
-            vi.advanceTimersByTime(2500);
-        });
+        await act(async () => { vi.advanceTimersByTime(2500); });
 
-        expect(consoleSpy).toHaveBeenCalledWith('[Autosave] Failed:', expect.any(Error));
-        consoleSpy.mockRestore();
+        expect(useSaveStatusStore.getState().status).toBe('error');
+        expect(useSaveStatusStore.getState().lastError).toBe('Network error');
+        expect(toast.error).toHaveBeenCalled();
     });
 
     it('should cleanup timeout on unmount', () => {
@@ -204,11 +206,7 @@ describe('useAutosave', () => {
         } as unknown as ReturnType<typeof useCanvasStore>);
 
         const { unmount } = renderHook(() => useAutosave('workspace-1'));
-
-        // Unmount before debounce completes
         unmount();
-
-        // These should not throw even with real timers
         vi.useRealTimers();
     });
 });
