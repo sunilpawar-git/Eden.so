@@ -27,7 +27,7 @@ export function usePanToNode() {
             const centerX = x + DEFAULT_NODE_WIDTH / 2;
             const centerY = y + DEFAULT_NODE_HEIGHT / 2;
 
-            setCenter(centerX, centerY, { zoom, duration });
+            void setCenter(centerX, centerY, { zoom, duration });
         },
         [setCenter]
     );

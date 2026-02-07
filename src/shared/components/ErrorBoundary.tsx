@@ -36,6 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     render() {
         if (this.state.hasError) {
+            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions -- fallback is ReactNode|undefined
             if (this.props.fallback) {
                 return this.props.fallback;
             }

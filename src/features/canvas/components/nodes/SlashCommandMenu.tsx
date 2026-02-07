@@ -29,11 +29,13 @@ function getStringByKey(key: string): string {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic key access
     let result: any = strings;
     for (const part of parts) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- dynamic key traversal
         result = result?.[part];
     }
     return typeof result === 'string' ? result : key;
 }
 
+// eslint-disable-next-line max-lines-per-function -- complex menu with keyboard nav
 export const SlashCommandMenu = React.memo(({
     query,
     onSelect,

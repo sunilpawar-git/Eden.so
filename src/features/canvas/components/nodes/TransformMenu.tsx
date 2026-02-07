@@ -29,6 +29,7 @@ const TRANSFORM_OPTIONS: Array<{
         { type: 'proofread', labelKey: 'proofread' },
     ];
 
+// eslint-disable-next-line max-lines-per-function -- transform menu with portal positioning
 export const TransformMenu = React.memo(({
     onTransform,
     onRegenerate,

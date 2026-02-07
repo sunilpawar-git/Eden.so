@@ -38,6 +38,7 @@ const nodeTypes = {
     idea: IdeaCard,
 };
 
+// eslint-disable-next-line max-lines-per-function -- main ReactFlow integration component
 export function CanvasView() {
     const nodes = useCanvasStore((s) => s.nodes);
     const edges = useCanvasStore((s) => s.edges);

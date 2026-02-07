@@ -24,6 +24,7 @@ import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT } from
 import styles from './IdeaCard.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
 
+// eslint-disable-next-line max-lines-per-function -- primary node component with rich interaction logic
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { prompt, output, isGenerating, tags: tagIds = [] } = data as IdeaNodeData;
     const isAICard = Boolean(prompt && output && prompt !== output);

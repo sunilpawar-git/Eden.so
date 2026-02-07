@@ -18,12 +18,14 @@ interface UseWorkspaceLoaderResult {
     error: string | null;
 }
 
+// eslint-disable-next-line max-lines-per-function -- cache-first loading with background refresh
 export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResult {
     const { user } = useAuthStore();
     const { setNodes, setEdges } = useCanvasStore();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // eslint-disable-next-line max-lines-per-function -- cache-first with background refresh
     useEffect(() => {
         if (!user || !workspaceId) {
             setIsLoading(false);
@@ -33,6 +35,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
         const userId = user.id;
         let mounted = true;
 
+        // eslint-disable-next-line max-lines-per-function -- handles cache hit + miss + background refresh
         async function load() {
             setIsLoading(true);
             setError(null);
@@ -66,6 +69,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                                 ...cached.nodes.map((n) => n.updatedAt.getTime())
                             );
                             const conflict = checkForConflict(latestLocal, latestServer);
+                            // eslint-disable-next-line max-depth -- deeply nested cache conflict check
                             if (conflict.hasConflict) {
                                 toast.info(strings.offline.conflictDetected);
                             }
@@ -118,7 +122,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
             }
         }
 
-        load();
+        void load();
 
         return () => {
             mounted = false;

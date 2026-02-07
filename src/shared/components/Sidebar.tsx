@@ -26,6 +26,7 @@ interface SidebarProps {
     onSettingsClick?: () => void;
 }
 
+// eslint-disable-next-line max-lines-per-function -- sidebar with workspace management
 export function Sidebar({ onSettingsClick }: SidebarProps) {
     const { user } = useAuthStore();
     const clearCanvas = useCanvasStore((s) => s.clearCanvas);
@@ -46,6 +47,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
 
         async function loadWorkspaces() {
             try {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by if (!user) return above
                 const loadedWorkspaces = await loadUserWorkspaces(user!.id);
                 setWorkspaces(loadedWorkspaces);
 
@@ -72,6 +74,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                 // Preload all workspaces into cache for instant switching
                 if (loadedWorkspaces.length > 0) {
                     const workspaceIds = loadedWorkspaces.map((ws) => ws.id);
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by if (!user) return above
                     void workspaceCache.preload(user!.id, workspaceIds).catch((err: unknown) => {
                         console.warn('[Sidebar] Cache preload failed:', err);
                     });
@@ -84,6 +87,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     setWorkspaces(
                         cachedMetadata.map((meta) => ({
                             id: meta.id,
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by if (!user) return above
                             userId: user!.id,
                             name: meta.name,
                             canvasSettings: { backgroundColor: 'white' as const },
@@ -95,7 +99,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             }
         }
 
-        loadWorkspaces();
+        void loadWorkspaces();
     }, [user, setWorkspaces, currentWorkspaceId, setCurrentWorkspaceId]);
 
     const handleSignOut = async () => {

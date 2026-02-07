@@ -15,6 +15,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
     const { onOpenSettings, onAddNode, onQuickCapture } = options;
 
     const handleKeyDown = useCallback(
+        // eslint-disable-next-line complexity -- keyboard shortcut handler with many key bindings
         (e: KeyboardEvent) => {
             const target = e.target as HTMLElement;
             const isEditable =

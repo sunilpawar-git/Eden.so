@@ -118,6 +118,7 @@ export async function generateContent(prompt: string): Promise<string> {
  * Generate content with upstream context from connected nodes
  * Uses edge-aware context for Obsidian-style idea chaining
  */
+// eslint-disable-next-line max-lines-per-function -- long fetch flow with context building
 export async function generateContentWithContext(
     prompt: string,
     contextChain: string[]
@@ -172,6 +173,7 @@ Generate content that synthesizes and builds upon the connected ideas above.`;
         throw new Error(strings.errors.aiError);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- typed as GeminiResponse
     const data: GeminiResponse = await response.json();
 
     if (data.error) {
@@ -233,6 +235,7 @@ Transformed text:`;
         throw new Error(strings.errors.aiError);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- typed as GeminiResponse
     const data: GeminiResponse = await response.json();
 
     if (data.error) {

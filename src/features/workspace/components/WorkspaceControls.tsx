@@ -9,6 +9,7 @@ import { strings } from '@/shared/localization/strings';
 import { useAddNode } from '@/features/canvas/hooks/useAddNode';
 import styles from './WorkspaceControls.module.css';
 
+// eslint-disable-next-line max-lines-per-function -- workspace toolbar with multiple actions
 export function WorkspaceControls() {
     const { user } = useAuthStore();
     const { currentWorkspaceId, workspaces, removeWorkspace, setCurrentWorkspaceId } = useWorkspaceStore();
@@ -33,6 +34,7 @@ export function WorkspaceControls() {
     const handleClearCanvas = useCallback(() => {
         if (nodeCount === 0) return;
 
+        // eslint-disable-next-line no-alert -- confirmation dialog for destructive action
         const confirmed = window.confirm(strings.canvas.clearConfirm);
         if (confirmed) {
             clearCanvas();
@@ -49,6 +51,7 @@ export function WorkspaceControls() {
             return;
         }
 
+        // eslint-disable-next-line no-alert -- confirmation dialog for destructive action
         const confirmed = window.confirm(strings.workspace.deleteConfirm);
         if (!confirmed) return;
 
@@ -62,6 +65,7 @@ export function WorkspaceControls() {
             // Switch to another workspace if available
             const remainingWorkspaces = workspaces.filter(ws => ws.id !== currentWorkspaceId);
             if (remainingWorkspaces.length > 0) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length check guarantees element exists
                 setCurrentWorkspaceId(remainingWorkspaces[0]!.id);
             } else {
                 setCurrentWorkspaceId(DEFAULT_WORKSPACE_ID);

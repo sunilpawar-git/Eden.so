@@ -15,6 +15,7 @@ interface UseSearchReturn {
     clear: () => void;
 }
 
+// eslint-disable-next-line max-lines-per-function -- search hook with memo logic
 export function useSearch(): UseSearchReturn {
     const [query, setQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
