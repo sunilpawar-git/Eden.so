@@ -138,6 +138,50 @@ describe('WorkspaceCache', () => {
         });
     });
 
+    describe('persistent cache fallthrough', () => {
+        it('falls through to persistent cache on memory miss', async () => {
+            const { persistentCacheService } = await import('../services/persistentCacheService');
+            const testData: WorkspaceData = {
+                nodes: [{ id: 'node-1', createdAt: new Date(), updatedAt: new Date() }] as WorkspaceData['nodes'],
+                edges: [],
+                loadedAt: Date.now(),
+            };
+            // Put data in persistent cache only (not in-memory)
+            persistentCacheService.setWorkspaceData('ws-persist', testData);
+
+            const result = workspaceCache.get('ws-persist');
+            expect(result).not.toBeNull();
+            expect(result!.nodes).toHaveLength(1);
+        });
+
+        it('writes through to persistent on set', async () => {
+            const { persistentCacheService } = await import('../services/persistentCacheService');
+            const testData: WorkspaceData = {
+                nodes: [],
+                edges: [],
+                loadedAt: Date.now(),
+            };
+            workspaceCache.set('ws-through', testData);
+
+            const persisted = persistentCacheService.getWorkspaceData('ws-through');
+            expect(persisted).not.toBeNull();
+            expect(persisted!.loadedAt).toBe(testData.loadedAt);
+        });
+
+        it('removes from persistent on invalidate', async () => {
+            const { persistentCacheService } = await import('../services/persistentCacheService');
+            const testData: WorkspaceData = {
+                nodes: [],
+                edges: [],
+                loadedAt: Date.now(),
+            };
+            workspaceCache.set('ws-rm', testData);
+            workspaceCache.invalidate('ws-rm');
+
+            expect(persistentCacheService.getWorkspaceData('ws-rm')).toBeNull();
+        });
+    });
+
     describe('preload', () => {
         it('preloads multiple workspaces', async () => {
             const { loadNodes, loadEdges } = await import('../services/workspaceService');

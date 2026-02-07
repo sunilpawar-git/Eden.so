@@ -16,72 +16,14 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
+import { persistentCacheService } from '@/features/workspace/services/persistentCacheService';
 import { toast } from '@/shared/stores/toastStore';
 import { PlusIcon, SettingsIcon } from '@/shared/components/icons';
+import { WorkspaceItem } from './WorkspaceItem';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
     onSettingsClick?: () => void;
-}
-
-interface WorkspaceItemProps {
-    id: string;
-    name: string;
-    isActive: boolean;
-    onSelect: (id: string) => void;
-    onRename: (id: string, newName: string) => void;
-}
-
-function WorkspaceItem({ id, name, isActive, onSelect, onRename }: WorkspaceItemProps) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editName, setEditName] = useState(name);
-
-    const handleDoubleClick = () => {
-        setIsEditing(true);
-        setEditName(name);
-    };
-
-    const handleBlur = () => {
-        setIsEditing(false);
-        if (editName.trim() && editName !== name) {
-            onRename(id, editName.trim());
-        }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleBlur();
-        } else if (e.key === 'Escape') {
-            setIsEditing(false);
-            setEditName(name);
-        }
-    };
-
-    return (
-        <div
-            className={`${styles.workspaceItem} ${isActive ? styles.active : ''}`}
-            onClick={() => !isEditing && onSelect(id)}
-        >
-            {isEditing ? (
-                <input
-                    type="text"
-                    className={styles.workspaceNameInput}
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onBlur={handleBlur}
-                    onKeyDown={handleKeyDown}
-                    autoFocus
-                />
-            ) : (
-                <span 
-                    className={styles.workspaceName}
-                    onDoubleClick={handleDoubleClick}
-                >
-                    {name}
-                </span>
-            )}
-        </div>
-    );
 }
 
 export function Sidebar({ onSettingsClick }: SidebarProps) {
@@ -107,6 +49,15 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                 const loadedWorkspaces = await loadUserWorkspaces(user!.id);
                 setWorkspaces(loadedWorkspaces);
 
+                // Persist workspace metadata for offline fallback
+                persistentCacheService.setWorkspaceMetadata(
+                    loadedWorkspaces.map((ws) => ({
+                        id: ws.id,
+                        name: ws.name,
+                        updatedAt: Date.now(),
+                    }))
+                );
+
                 // Auto-select first workspace if current doesn't exist in loaded list
                 const firstWorkspace = loadedWorkspaces[0];
                 if (firstWorkspace) {
@@ -127,6 +78,20 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                 }
             } catch (error) {
                 console.error('[Sidebar] Failed to load workspaces:', error);
+                // Fallback: try loading from persistent cache when offline
+                const cachedMetadata = persistentCacheService.getWorkspaceMetadata();
+                if (cachedMetadata.length > 0) {
+                    setWorkspaces(
+                        cachedMetadata.map((meta) => ({
+                            id: meta.id,
+                            userId: user!.id,
+                            name: meta.name,
+                            canvasSettings: { backgroundColor: 'white' as const },
+                            createdAt: new Date(meta.updatedAt),
+                            updatedAt: new Date(meta.updatedAt),
+                        }))
+                    );
+                }
             }
         }
 

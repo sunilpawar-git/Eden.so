@@ -14,6 +14,36 @@ vi.mock('../services/workspaceService', () => ({
     loadEdges: (...args: unknown[]) => mockLoadEdges(...args),
 }));
 
+// Mock the workspace cache
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
+vi.mock('../services/workspaceCache', () => ({
+    workspaceCache: {
+        get: (...args: unknown[]) => mockCacheGet(...args),
+        set: (...args: unknown[]) => mockCacheSet(...args),
+        update: vi.fn(),
+        has: vi.fn(),
+        invalidate: vi.fn(),
+        clear: vi.fn(),
+        preload: vi.fn(),
+    },
+}));
+
+// Mock network status store
+const mockIsOnline = vi.fn().mockReturnValue(true);
+vi.mock('@/shared/stores/networkStatusStore', () => ({
+    useNetworkStatusStore: Object.assign(
+        vi.fn(() => ({ isOnline: mockIsOnline() })),
+        { getState: () => ({ isOnline: mockIsOnline() }) }
+    ),
+}));
+
+// Mock toast store
+const mockToastError = vi.fn();
+vi.mock('@/shared/stores/toastStore', () => ({
+    toast: { error: (...args: unknown[]) => mockToastError(...args), success: vi.fn(), info: vi.fn() },
+}));
+
 // Mock auth store
 const mockUser = { id: 'user-1', email: 'test@example.com' };
 vi.mock('@/features/auth/stores/authStore', () => ({
@@ -108,5 +138,65 @@ describe('useWorkspaceLoader', () => {
         // Should not call load functions when user is null
         // Note: This test may not work perfectly due to module caching
         expect(result.current.isLoading).toBe(false);
+    });
+
+    describe('cache-first loading', () => {
+        it('loads from cache first when available', async () => {
+            const cachedNodes = [{ id: 'cached-node', type: 'idea', data: { prompt: 'Cached' }, createdAt: new Date(), updatedAt: new Date() }];
+            const cachedEdges = [{ id: 'cached-edge', sourceNodeId: 'n1', targetNodeId: 'n2' }];
+            mockCacheGet.mockReturnValue({
+                nodes: cachedNodes,
+                edges: cachedEdges,
+                loadedAt: Date.now(),
+            });
+
+            const { result } = renderHook(() => useWorkspaceLoader('ws-cached'));
+
+            await waitFor(() => {
+                expect(result.current.isLoading).toBe(false);
+            });
+
+            // Should set cached data into store immediately
+            expect(mockSetNodes).toHaveBeenCalledWith(cachedNodes);
+            expect(mockSetEdges).toHaveBeenCalledWith(cachedEdges);
+        });
+
+        it('background-refreshes from Firestore after cache hit when online', async () => {
+            const cachedNodes = [{ id: 'cached-node' }];
+            mockCacheGet.mockReturnValue({
+                nodes: cachedNodes,
+                edges: [],
+                loadedAt: Date.now() - 60000,
+            });
+            mockIsOnline.mockReturnValue(true);
+
+            const freshNodes = [{ id: 'fresh-node' }];
+            mockLoadNodes.mockResolvedValue(freshNodes);
+            mockLoadEdges.mockResolvedValue([]);
+
+            renderHook(() => useWorkspaceLoader('ws-bg'));
+
+            // Background refresh should still call Firestore
+            await waitFor(() => {
+                expect(mockLoadNodes).toHaveBeenCalledWith('user-1', 'ws-bg');
+            });
+        });
+
+        it('shows error toast when offline and no cache available', async () => {
+            mockCacheGet.mockReturnValue(null);
+            mockIsOnline.mockReturnValue(false);
+            mockLoadNodes.mockRejectedValue(new Error('offline'));
+
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            const { result } = renderHook(() => useWorkspaceLoader('ws-none'));
+
+            await waitFor(() => {
+                expect(result.current.isLoading).toBe(false);
+                expect(result.current.error).toBeTruthy();
+            });
+
+            consoleSpy.mockRestore();
+        });
     });
 });
