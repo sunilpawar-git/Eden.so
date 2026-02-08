@@ -23,7 +23,6 @@ describe('IdeaCardContent sub-components', () => {
             isGenerating: false,
             query: '',
             textareaRef: { current: null } as React.RefObject<HTMLTextAreaElement>,
-            textareaRect: null,
             onInputChange: vi.fn(),
             onBlur: vi.fn(),
             onKeyDown: vi.fn(),
@@ -37,14 +36,14 @@ describe('IdeaCardContent sub-components', () => {
             expect(textarea).toHaveValue('test value');
         });
 
-        it('should show AI indicator when in AI mode', () => {
-            render(<EditingContent {...defaultProps} inputMode="ai" />);
-            expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+        it('should render textarea with provided placeholder', () => {
+            render(<EditingContent {...defaultProps} placeholder="Type something..." />);
+            expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type something...');
         });
 
-        it('should not show AI indicator in note mode', () => {
-            render(<EditingContent {...defaultProps} inputMode="note" />);
-            expect(screen.queryByTestId('ai-mode-indicator')).not.toBeInTheDocument();
+        it('should render textarea in disabled state when generating', () => {
+            render(<EditingContent {...defaultProps} isGenerating={true} />);
+            expect(screen.getByRole('textbox')).toBeDisabled();
         });
 
         it('should call onInputChange when typing', () => {

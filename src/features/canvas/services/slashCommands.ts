@@ -15,6 +15,7 @@ export const slashCommands: SlashCommand[] = [
         descriptionKey: 'slashCommands.aiGenerate.description',
         icon: '✨',
         keywords: ['ai', 'generate', 'create', 'write'],
+        prefix: 'ai',
     },
 ];
 
@@ -42,4 +43,17 @@ export function filterCommands(query: string): SlashCommand[] {
  */
 export function getCommandById(id: string): SlashCommand | undefined {
     return slashCommands.find(cmd => cmd.id === id);
+}
+
+/**
+ * Get a command by its prefix (case-insensitive)
+ * @param prefix - Command prefix to find (e.g. "ai")
+ * @returns Command if found, undefined otherwise
+ */
+export function getCommandByPrefix(prefix: string): SlashCommand | undefined {
+    if (!prefix) {
+        return undefined;
+    }
+    const p = prefix.toLowerCase();
+    return slashCommands.find(cmd => cmd.prefix === p);
 }

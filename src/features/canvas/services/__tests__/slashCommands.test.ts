@@ -7,6 +7,7 @@ import {
     slashCommands,
     filterCommands,
     getCommandById,
+    getCommandByPrefix,
 } from '../slashCommands';
 
 describe('slashCommands', () => {
@@ -32,7 +33,23 @@ describe('slashCommands', () => {
                 expect(cmd.keywords).toBeDefined();
                 expect(Array.isArray(cmd.keywords)).toBe(true);
                 expect(cmd.keywords.length).toBeGreaterThan(0);
+                expect(cmd.prefix).toBeDefined();
+                expect(typeof cmd.prefix).toBe('string');
+                expect(cmd.prefix.length).toBeGreaterThan(0);
             });
+        });
+
+        it('all commands have unique prefixes', () => {
+            const prefixes = slashCommands.map(cmd => cmd.prefix);
+            const uniquePrefixes = new Set(prefixes);
+            expect(uniquePrefixes.size).toBe(prefixes.length);
+        });
+
+        it('ai-generate command has prefix "ai"', () => {
+            const targetId = 'ai-generate';
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test validates command exists
+            const aiCommand = slashCommands.find(cmd => cmd.id === targetId);
+            expect(aiCommand?.prefix).toBe('ai');
         });
     });
 
@@ -101,6 +118,33 @@ describe('slashCommands', () => {
         it('returns undefined for empty id', () => {
             const result = getCommandById('');
             expect(result).toBeUndefined();
+        });
+    });
+
+    describe('getCommandByPrefix', () => {
+        it('returns command for valid prefix "ai"', () => {
+            const result = getCommandByPrefix('ai');
+            expect(result).toBeDefined();
+            expect(result?.id).toBe('ai-generate');
+            expect(result?.prefix).toBe('ai');
+        });
+
+        it('returns undefined for invalid prefix', () => {
+            const result = getCommandByPrefix('nonexistent');
+            expect(result).toBeUndefined();
+        });
+
+        it('returns undefined for empty prefix', () => {
+            const result = getCommandByPrefix('');
+            expect(result).toBeUndefined();
+        });
+
+        it('is case insensitive', () => {
+            const lowerResult = getCommandByPrefix('ai');
+            const upperResult = getCommandByPrefix('AI');
+            const mixedResult = getCommandByPrefix('Ai');
+            expect(lowerResult).toEqual(upperResult);
+            expect(upperResult).toEqual(mixedResult);
         });
     });
 });

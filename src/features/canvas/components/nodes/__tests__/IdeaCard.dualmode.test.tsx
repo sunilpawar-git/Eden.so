@@ -129,7 +129,8 @@ describe('IdeaCard Dual-Mode Input', () => {
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: '/' } });
 
-            expect(screen.getByText(strings.slashCommands.aiGenerate.label)).toBeInTheDocument();
+            expect(screen.getByText('ai')).toBeInTheDocument();
+            expect(screen.getByText('Press Enter')).toBeInTheDocument();
         });
 
         it('filters menu by query', () => {
@@ -138,7 +139,8 @@ describe('IdeaCard Dual-Mode Input', () => {
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: '/ai' } });
 
-            expect(screen.getByText(strings.slashCommands.aiGenerate.label)).toBeInTheDocument();
+            expect(screen.getByText('ai')).toBeInTheDocument();
+            expect(screen.getByText('Press Enter')).toBeInTheDocument();
         });
 
         it('closes menu on Escape', () => {
@@ -151,10 +153,40 @@ describe('IdeaCard Dual-Mode Input', () => {
             fireEvent.keyDown(textarea, { key: 'Escape' });
             expect(screen.queryByRole('menu')).not.toBeInTheDocument();
         });
+
+        it('closes menu when space is typed after "/"', () => {
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/' } });
+            expect(screen.getByRole('menu')).toBeInTheDocument();
+
+            fireEvent.change(textarea, { target: { value: '/ ' } });
+            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        });
+
+        it('allows Enter to save text starting with "/" after space closes menu', () => {
+            const mockUpdateOutput = vi.fn();
+            useCanvasStore.setState({
+                nodes: [],
+                edges: [],
+                selectedNodeIds: new Set(),
+                updateNodeOutput: mockUpdateOutput,
+            });
+
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/ my note text' } });
+            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', '/ my note text');
+        });
     });
 
     describe('AI Mode (after command selection)', () => {
-        it('shows AI mode indicator after selecting AI command', async () => {
+        it('shows prefix pill after selecting AI command', async () => {
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
@@ -165,7 +197,7 @@ describe('IdeaCard Dual-Mode Input', () => {
             fireEvent.click(menuItem);
 
             await waitFor(() => {
-                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
             });
         });
 
@@ -189,7 +221,7 @@ describe('IdeaCard Dual-Mode Input', () => {
 
             // Now in AI mode - type prompt and press Enter
             await waitFor(() => {
-                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
             });
 
             // Get textarea again (may have re-rendered)

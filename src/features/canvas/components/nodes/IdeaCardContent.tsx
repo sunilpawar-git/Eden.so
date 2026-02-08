@@ -5,7 +5,7 @@
 import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
-import { SlashCommandMenu } from './SlashCommandMenu';
+import { InlineSlashMenu } from './InlineSlashMenu';
 import type { SlashCommandId } from '../../types/slashCommand';
 import styles from './IdeaCard.module.css';
 
@@ -17,7 +17,6 @@ interface EditingContentProps {
     isGenerating: boolean;
     query: string;
     textareaRef: React.RefObject<HTMLTextAreaElement>;
-    textareaRect: DOMRect | null;
     onInputChange: (value: string) => void;
     onBlur: () => void;
     onKeyDown: (e: React.KeyboardEvent) => void;
@@ -26,26 +25,19 @@ interface EditingContentProps {
 }
 
 export const EditingContent = React.memo(({
-    inputMode,
     inputValue,
     placeholder,
     isMenuOpen,
     isGenerating,
     query,
     textareaRef,
-    textareaRect,
     onInputChange,
     onBlur,
     onKeyDown,
     onCommandSelect,
     onMenuClose,
-}: EditingContentProps) => (
-    <div className={styles.inputWrapper}>
-        {inputMode === 'ai' && (
-            <div className={styles.aiIndicator} data-testid="ai-mode-indicator">
-                ✨ {strings.ideaCard.aiModeIndicator}
-            </div>
-        )}
+}: EditingContentProps) => {
+    const textarea = (
         <textarea
             ref={textareaRef}
             className={styles.inputArea}
@@ -57,16 +49,21 @@ export const EditingContent = React.memo(({
             autoFocus
             disabled={isGenerating}
         />
-        {isMenuOpen && textareaRect && (
-            <SlashCommandMenu
-                query={query}
-                onSelect={onCommandSelect}
-                onClose={onMenuClose}
-                anchorRect={textareaRect}
-            />
-        )}
-    </div>
-));
+    );
+
+    return (
+        <div className={styles.inputWrapper}>
+            {textarea}
+            {isMenuOpen && (
+                <InlineSlashMenu
+                    query={query}
+                    onSelect={onCommandSelect}
+                    onClose={onMenuClose}
+                />
+            )}
+        </div>
+    );
+});
 
 export const GeneratingContent = React.memo(() => (
     <div className={styles.generating}>

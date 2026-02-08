@@ -108,9 +108,9 @@ describe('IdeaCard Editing', () => {
             const menuItem = screen.getByRole('menuitem');
             fireEvent.click(menuItem);
 
-            // Wait for AI mode
+            // Wait for AI mode (placeholder changes)
             await waitFor(() => {
-                expect(screen.getByTestId('ai-mode-indicator')).toBeInTheDocument();
+                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
             });
 
             // Type prompt and blur

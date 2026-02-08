@@ -173,6 +173,8 @@ export const strings = {
         },
         noResults: 'No commands found',
         menuLabel: 'Slash commands',
+        prefixSeparator: ':',
+        prefixLabel: 'Command mode active',
     },
 } as const;
 
