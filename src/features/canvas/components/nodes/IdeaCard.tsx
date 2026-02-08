@@ -189,7 +189,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
             setIsEditing(true);
             focusAtEnd();
             // Insert the triggering character so it isn't swallowed
-            editor?.commands.insertContent(e.key);
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            if (editor) editor.commands.insertContent(e.key);
         }
     }, [isGenerating, focusAtEnd, editor]);
 
