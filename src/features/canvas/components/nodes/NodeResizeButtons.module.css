@@ -1,0 +1,55 @@
+/**
+ * NodeResizeButtons Styles
+ * Arrow buttons for incremental node resizing
+ * Positioned at corners, visible on hover
+ */
+
+.resizeButton {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-elevated);
+    color: var(--color-text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 0;
+    line-height: 1;
+}
+
+.resizeButton.visible {
+    opacity: 0.6;
+    pointer-events: auto;
+}
+
+.resizeButton.visible:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.resizeButton:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Right arrow - positioned at top-right corner */
+.expandWidth {
+    top: -8px;
+    right: -8px;
+}
+
+/* Down arrow - positioned at bottom-left corner */
+.expandHeight {
+    bottom: -8px;
+    left: -8px;
+}

@@ -77,4 +77,114 @@ describe('Grid Layout Service (Masonry)', () => {
             expect(n4!.position.y).toBe(292);
         });
     });
+
+    describe('Flexible Column Widths (Variable-width nodes)', () => {
+        describe('arrangeMasonry with wide nodes', () => {
+            it('should expand column width to accommodate widest node', () => {
+                // Node 0 is wider (472px) in column 0
+                // Other nodes are default width (280px)
+                const nodes = [
+                    createMockNode('n0', { width: 472, createdAt: new Date('2024-01-01') }), // Col 0, wide
+                    createMockNode('n1', { width: 280, createdAt: new Date('2024-01-02') }), // Col 1
+                    createMockNode('n2', { width: 280, createdAt: new Date('2024-01-03') }), // Col 2
+                    createMockNode('n3', { width: 280, createdAt: new Date('2024-01-04') }), // Col 3
+                ];
+
+                const arranged = arrangeMasonry(nodes);
+
+                // Col 0 x = 32 (padding)
+                expect(arranged.find(n => n.id === 'n0')!.position.x).toBe(32);
+                
+                // Col 1 x = 32 + 472 + 40 = 544 (shifted right to avoid overlap)
+                expect(arranged.find(n => n.id === 'n1')!.position.x).toBe(544);
+                
+                // Col 2 x = 544 + 280 + 40 = 864
+                expect(arranged.find(n => n.id === 'n2')!.position.x).toBe(864);
+                
+                // Col 3 x = 864 + 280 + 40 = 1184
+                expect(arranged.find(n => n.id === 'n3')!.position.x).toBe(1184);
+            });
+
+            it('should handle multiple wide nodes in different columns', () => {
+                const nodes = [
+                    createMockNode('n0', { width: 376, createdAt: new Date('2024-01-01') }), // Col 0, wide
+                    createMockNode('n1', { width: 280, createdAt: new Date('2024-01-02') }), // Col 1, default
+                    createMockNode('n2', { width: 472, createdAt: new Date('2024-01-03') }), // Col 2, wider
+                    createMockNode('n3', { width: 280, createdAt: new Date('2024-01-04') }), // Col 3, default
+                ];
+
+                const arranged = arrangeMasonry(nodes);
+
+                // Col 0: x = 32
+                expect(arranged.find(n => n.id === 'n0')!.position.x).toBe(32);
+                
+                // Col 1: x = 32 + 376 + 40 = 448
+                expect(arranged.find(n => n.id === 'n1')!.position.x).toBe(448);
+                
+                // Col 2: x = 448 + 280 + 40 = 768
+                expect(arranged.find(n => n.id === 'n2')!.position.x).toBe(768);
+                
+                // Col 3: x = 768 + 472 + 40 = 1280
+                expect(arranged.find(n => n.id === 'n3')!.position.x).toBe(1280);
+            });
+
+            it('should use widest node width for column when stacking', () => {
+                // Two nodes in column 0: one default, one wide
+                const nodes = [
+                    createMockNode('n0', { width: 280, createdAt: new Date('2024-01-01') }), // Col 0
+                    createMockNode('n1', { width: 280, createdAt: new Date('2024-01-02') }), // Col 1
+                    createMockNode('n2', { width: 280, createdAt: new Date('2024-01-03') }), // Col 2
+                    createMockNode('n3', { width: 280, createdAt: new Date('2024-01-04') }), // Col 3
+                    createMockNode('n4', { width: 472, createdAt: new Date('2024-01-05') }), // Col 0 (stacked), WIDE
+                ];
+
+                const arranged = arrangeMasonry(nodes);
+
+                // n4 is in Col 0, which should now have width 472
+                const n4 = arranged.find(n => n.id === 'n4');
+                expect(n4!.position.x).toBe(32); // Still in col 0
+
+                // n1 (Col 1) should be shifted right: 32 + 472 + 40 = 544
+                expect(arranged.find(n => n.id === 'n1')!.position.x).toBe(544);
+            });
+
+            it('should maintain backward compatibility with default-width-only nodes', () => {
+                // All default width nodes - should produce same layout as before
+                const nodes = [
+                    createMockNode('n0', { createdAt: new Date('2024-01-01') }),
+                    createMockNode('n1', { createdAt: new Date('2024-01-02') }),
+                    createMockNode('n2', { createdAt: new Date('2024-01-03') }),
+                    createMockNode('n3', { createdAt: new Date('2024-01-04') }),
+                ];
+
+                const arranged = arrangeMasonry(nodes);
+
+                // Same as original layout
+                expect(arranged.find(n => n.id === 'n0')!.position.x).toBe(32);
+                expect(arranged.find(n => n.id === 'n1')!.position.x).toBe(352);
+                expect(arranged.find(n => n.id === 'n2')!.position.x).toBe(672);
+                expect(arranged.find(n => n.id === 'n3')!.position.x).toBe(992);
+            });
+        });
+
+        describe('calculateMasonryPosition with wide nodes', () => {
+            it('should calculate next position accounting for wide node in column', () => {
+                // Wide node in column 0, others default
+                const nodes = [
+                    createMockNode('n0', { width: 472, createdAt: new Date('2024-01-01') }),
+                    createMockNode('n1', { width: 280, createdAt: new Date('2024-01-02') }),
+                    createMockNode('n2', { width: 280, createdAt: new Date('2024-01-03') }),
+                    createMockNode('n3', { width: 280, createdAt: new Date('2024-01-04') }),
+                ];
+
+                const result = calculateMasonryPosition(nodes);
+
+                // Next node goes to shortest column (col 0, 1, 2, or 3 - all same height)
+                // If col 0, x = 32
+                // If col 1, x = 32 + 472 + 40 = 544
+                expect(result.x).toBe(32); // First shortest column
+                expect(result.y).toBe(292); // Below first node
+            });
+        });
+    });
 });

@@ -3,7 +3,7 @@
  * Tests for full resize flow: NodeResizer -> Store -> Persistence
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import fs from 'fs';
 import path from 'path';
 import { IdeaCard } from '../IdeaCard';
@@ -16,6 +16,8 @@ import {
     MAX_NODE_HEIGHT,
     DEFAULT_NODE_WIDTH,
     DEFAULT_NODE_HEIGHT,
+    RESIZE_INCREMENT_PX,
+    createIdeaNode,
 } from '../../../types/node';
 
 // Mock ReactFlow components with dimension props
@@ -285,6 +287,115 @@ describe('IdeaCard Resize Integration', () => {
             // Verify height: 100% is present for vertical resize support
             const heightRegex = /height:\s*100%/;
             expect(heightRegex.test(cardWrapperContent)).toBe(true);
+        });
+    });
+
+    describe('NodeResizeButtons integration', () => {
+        const TEST_WORKSPACE_ID = 'test-workspace';
+
+        beforeEach(() => {
+            // Add a node to the store for resize button integration tests
+            const node = createIdeaNode(defaultProps.id, TEST_WORKSPACE_ID, { x: 0, y: 0 });
+            node.data = defaultData;
+            useCanvasStore.getState().addNode(node);
+        });
+
+        it('renders resize buttons when node is hovered', () => {
+            render(<IdeaCard {...defaultProps} />);
+            
+            // Find the cardWrapper and trigger hover
+            const contentArea = screen.getByTestId('content-area');
+            const ideaCard = contentArea.parentElement;
+            const cardWrapper = ideaCard?.parentElement;
+            
+            expect(cardWrapper).toBeTruthy();
+            fireEvent.mouseEnter(cardWrapper!);
+            
+            // Resize buttons should be present
+            expect(screen.getByRole('button', { name: /expand width/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /expand height/i })).toBeInTheDocument();
+        });
+
+        it('resize buttons have visible class when hovered', () => {
+            render(<IdeaCard {...defaultProps} />);
+            
+            const contentArea = screen.getByTestId('content-area');
+            const ideaCard = contentArea.parentElement;
+            const cardWrapper = ideaCard?.parentElement;
+            
+            fireEvent.mouseEnter(cardWrapper!);
+            
+            const widthButton = screen.getByRole('button', { name: /expand width/i });
+            expect(widthButton.className).toContain('visible');
+        });
+
+        it('resize buttons lose visible class when hover ends', () => {
+            render(<IdeaCard {...defaultProps} />);
+            
+            const contentArea = screen.getByTestId('content-area');
+            const ideaCard = contentArea.parentElement;
+            const cardWrapper = ideaCard?.parentElement;
+            
+            // Hover then leave
+            fireEvent.mouseEnter(cardWrapper!);
+            fireEvent.mouseLeave(cardWrapper!);
+            
+            const widthButton = screen.getByRole('button', { name: /expand width/i });
+            expect(widthButton.className).not.toContain('visible');
+        });
+
+        it('clicking expand width button increases node width in store', () => {
+            render(<IdeaCard {...defaultProps} />);
+            
+            const contentArea = screen.getByTestId('content-area');
+            const cardWrapper = contentArea.parentElement?.parentElement;
+            fireEvent.mouseEnter(cardWrapper!);
+            
+            const widthButton = screen.getByRole('button', { name: /expand width/i });
+            fireEvent.click(widthButton);
+            
+            const node = useCanvasStore.getState().nodes.find((n) => n.id === defaultProps.id);
+            expect(node?.width).toBe(DEFAULT_NODE_WIDTH + RESIZE_INCREMENT_PX);
+        });
+
+        it('clicking expand height button increases node height in store', () => {
+            render(<IdeaCard {...defaultProps} />);
+            
+            const contentArea = screen.getByTestId('content-area');
+            const cardWrapper = contentArea.parentElement?.parentElement;
+            fireEvent.mouseEnter(cardWrapper!);
+            
+            const heightButton = screen.getByRole('button', { name: /expand height/i });
+            fireEvent.click(heightButton);
+            
+            const node = useCanvasStore.getState().nodes.find((n) => n.id === defaultProps.id);
+            expect(node?.height).toBe(DEFAULT_NODE_HEIGHT + RESIZE_INCREMENT_PX);
+        });
+
+        it('width button is hidden when node is at max width', () => {
+            // Set node to max width
+            useCanvasStore.getState().updateNodeDimensions(defaultProps.id, MAX_NODE_WIDTH, DEFAULT_NODE_HEIGHT);
+            
+            render(<IdeaCard {...defaultProps} />);
+            
+            const contentArea = screen.getByTestId('content-area');
+            const cardWrapper = contentArea.parentElement?.parentElement;
+            fireEvent.mouseEnter(cardWrapper!);
+            
+            expect(screen.queryByRole('button', { name: /expand width/i })).not.toBeInTheDocument();
+        });
+
+        it('height button is hidden when node is at max height', () => {
+            // Set node to max height
+            useCanvasStore.getState().updateNodeDimensions(defaultProps.id, DEFAULT_NODE_WIDTH, MAX_NODE_HEIGHT);
+            
+            render(<IdeaCard {...defaultProps} />);
+            
+            const contentArea = screen.getByTestId('content-area');
+            const cardWrapper = contentArea.parentElement?.parentElement;
+            fireEvent.mouseEnter(cardWrapper!);
+            
+            expect(screen.queryByRole('button', { name: /expand height/i })).not.toBeInTheDocument();
         });
     });
 });

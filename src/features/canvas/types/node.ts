@@ -15,6 +15,9 @@ export const MAX_NODE_HEIGHT = 800;
 export const DEFAULT_NODE_WIDTH = 280;
 export const DEFAULT_NODE_HEIGHT = 220;
 
+/** Resize increment per arrow click (96px = 1 CSS inch = 6 grid snaps) */
+export const RESIZE_INCREMENT_PX = 96;
+
 /**
  * Clamp dimensions to valid bounds
  * Pure utility function for dimension validation
