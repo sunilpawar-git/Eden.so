@@ -163,6 +163,7 @@ export function getUpstreamNodesFromArrays(
 /** Grid Layout Constants - SSOT for node arrangement */
 export const GRID_COLUMNS = 4;
 export const GRID_GAP = 40;
+export const GRID_PADDING = 32; // Reduced offset for tighter breathing room
 
 /**
  * Arranges nodes in a grid layout (4 columns)
@@ -187,8 +188,8 @@ export function arrangeNodesInGrid(nodes: CanvasNode[]): CanvasNode[] {
         return {
             ...node,
             position: {
-                x: col * (nodeWidth + GRID_GAP),
-                y: row * (nodeHeight + GRID_GAP),
+                x: GRID_PADDING + col * (nodeWidth + GRID_GAP),
+                y: GRID_PADDING + row * (nodeHeight + GRID_GAP),
             },
             updatedAt: new Date(),
         };
@@ -208,8 +209,8 @@ export function calculateNextNodePosition(nodes: CanvasNode[]): NodePosition {
     const row = Math.floor(index / GRID_COLUMNS);
 
     return {
-        x: col * (nodeWidth + GRID_GAP),
-        y: row * (nodeHeight + GRID_GAP),
+        x: GRID_PADDING + col * (nodeWidth + GRID_GAP),
+        y: GRID_PADDING + row * (nodeHeight + GRID_GAP),
     };
 }
 
