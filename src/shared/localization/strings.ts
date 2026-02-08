@@ -136,6 +136,8 @@ export const strings = {
         resizeHandle: 'Drag to resize',
         corner: 'Corner resize handle',
         edge: 'Edge resize handle',
+        expandWidth: 'Expand width',
+        expandHeight: 'Expand height',
     },
     performance: {
         cls: 'Cumulative Layout Shift',

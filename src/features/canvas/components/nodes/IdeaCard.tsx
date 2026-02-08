@@ -11,6 +11,7 @@ import { useNodeTransformation, type TransformationType } from '@/features/ai/ho
 import { FOCUS_NODE_EVENT, type FocusNodeEvent } from '../../hooks/useQuickCapture';
 import { useSlashCommandInput } from '../../hooks/useSlashCommandInput';
 import { NodeUtilsBar } from './NodeUtilsBar';
+import { NodeResizeButtons } from './NodeResizeButtons';
 import { TagInput } from '@/features/tags';
 import {
     EditingContent,
@@ -233,6 +234,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 minHeight={MIN_NODE_HEIGHT} maxHeight={MAX_NODE_HEIGHT}
                 isVisible={selected}
             />
+            <NodeResizeButtons nodeId={id} visible={isHovered} />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
                 isConnectable={true} className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
             <div className={`${styles.ideaCard} ${isHovered ? styles.ideaCardHovered : ''}`}>

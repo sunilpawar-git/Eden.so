@@ -21,6 +21,14 @@ describe('strings.resize', () => {
     it('should have edge string', () => {
         expect(strings.resize.edge).toBe('Edge resize handle');
     });
+
+    it('should have expandWidth string', () => {
+        expect(strings.resize.expandWidth).toBe('Expand width');
+    });
+
+    it('should have expandHeight string', () => {
+        expect(strings.resize.expandHeight).toBe('Expand height');
+    });
 });
 
 describe('strings structure', () => {
