@@ -165,7 +165,7 @@ describe('IdeaCard Dual-Mode Input', () => {
             fireEvent.click(menuItem);
 
             await waitFor(() => {
-                expect(screen.getByTestId('command-prefix-pill')).toBeInTheDocument();
+                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
             });
         });
 
@@ -189,7 +189,7 @@ describe('IdeaCard Dual-Mode Input', () => {
 
             // Now in AI mode - type prompt and press Enter
             await waitFor(() => {
-                expect(screen.getByTestId('command-prefix-pill')).toBeInTheDocument();
+                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
             });
 
             // Get textarea again (may have re-rendered)

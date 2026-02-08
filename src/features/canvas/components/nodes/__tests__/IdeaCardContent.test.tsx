@@ -22,7 +22,6 @@ describe('IdeaCardContent sub-components', () => {
             isMenuOpen: false,
             isGenerating: false,
             query: '',
-            activeCommand: null,
             textareaRef: { current: null } as React.RefObject<HTMLTextAreaElement>,
             onInputChange: vi.fn(),
             onBlur: vi.fn(),
@@ -37,22 +36,14 @@ describe('IdeaCardContent sub-components', () => {
             expect(textarea).toHaveValue('test value');
         });
 
-        it('should show prefix pill when command is active', () => {
-            const command = {
-                id: 'ai-generate' as const,
-                labelKey: 'slashCommands.aiGenerate.label',
-                descriptionKey: 'slashCommands.aiGenerate.description',
-                icon: '✨',
-                keywords: ['ai'],
-                prefix: 'ai',
-            };
-            render(<EditingContent {...defaultProps} inputMode="ai" activeCommand={command} />);
-            expect(screen.getByTestId('command-prefix-pill')).toBeInTheDocument();
+        it('should render textarea with provided placeholder', () => {
+            render(<EditingContent {...defaultProps} placeholder="Type something..." />);
+            expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type something...');
         });
 
-        it('should not show prefix pill when no command active', () => {
-            render(<EditingContent {...defaultProps} inputMode="note" />);
-            expect(screen.queryByTestId('command-prefix-pill')).not.toBeInTheDocument();
+        it('should render textarea in disabled state when generating', () => {
+            render(<EditingContent {...defaultProps} isGenerating={true} />);
+            expect(screen.getByRole('textbox')).toBeDisabled();
         });
 
         it('should call onInputChange when typing', () => {

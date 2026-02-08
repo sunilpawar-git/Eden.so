@@ -108,9 +108,9 @@ describe('IdeaCard Editing', () => {
             const menuItem = screen.getByRole('menuitem');
             fireEvent.click(menuItem);
 
-            // Wait for AI mode (prefix pill visible)
+            // Wait for AI mode (placeholder changes)
             await waitFor(() => {
-                expect(screen.getByTestId('command-prefix-pill')).toBeInTheDocument();
+                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
             });
 
             // Type prompt and blur

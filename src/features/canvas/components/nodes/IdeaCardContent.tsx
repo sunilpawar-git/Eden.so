@@ -6,8 +6,7 @@ import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
 import { InlineSlashMenu } from './InlineSlashMenu';
-import { CommandPrefixPill } from './CommandPrefixPill';
-import type { SlashCommand, SlashCommandId } from '../../types/slashCommand';
+import type { SlashCommandId } from '../../types/slashCommand';
 import styles from './IdeaCard.module.css';
 
 interface EditingContentProps {
@@ -17,7 +16,6 @@ interface EditingContentProps {
     isMenuOpen: boolean;
     isGenerating: boolean;
     query: string;
-    activeCommand: SlashCommand | null;
     textareaRef: React.RefObject<HTMLTextAreaElement>;
     onInputChange: (value: string) => void;
     onBlur: () => void;
@@ -32,7 +30,6 @@ export const EditingContent = React.memo(({
     isMenuOpen,
     isGenerating,
     query,
-    activeCommand,
     textareaRef,
     onInputChange,
     onBlur,
@@ -56,14 +53,7 @@ export const EditingContent = React.memo(({
 
     return (
         <div className={styles.inputWrapper}>
-            {activeCommand ? (
-                <div className={styles.prefixRow}>
-                    <CommandPrefixPill command={activeCommand} />
-                    {textarea}
-                </div>
-            ) : (
-                textarea
-            )}
+            {textarea}
             {isMenuOpen && (
                 <InlineSlashMenu
                     query={query}

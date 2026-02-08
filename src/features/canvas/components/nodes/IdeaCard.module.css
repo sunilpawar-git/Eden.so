@@ -81,33 +81,6 @@
     min-height: 100%;
 }
 
-/* Prefix row — pill as tiny tag above textarea */
-.prefixRow {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-    min-height: 0;
-}
-
-/* When prefixRow is present, textarea grows to fill remaining space */
-.prefixRow .inputArea {
-    flex: 1;
-    min-height: 60px;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 /* Input Area - Textarea for editing */
 .inputArea {
     width: 100%;

@@ -180,7 +180,6 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     isMenuOpen={isMenuOpen}
                     isGenerating={isGenerating ?? false}
                     query={query}
-                    activeCommand={activeCommand}
                     textareaRef={textareaRef}
                     onInputChange={handleInputChange}
                     onBlur={handleInputBlur}
