@@ -11,6 +11,12 @@ import { SlashCommandList, type SlashCommandListRef } from '../components/nodes/
 
 export type OnSlashCommandSelect = (id: SlashCommandId) => void;
 
+/** Popup z-index — sourced from CSS var --z-suggestion-popup in variables.css */
+const POPUP_Z_INDEX = '9999';
+
+/** Vertical offset (px) between cursor and popup top edge */
+const POPUP_OFFSET_PX = 4;
+
 interface SlashCommandSuggestionOptions {
     suggestion: Partial<SuggestionOptions<SlashCommand>>;
 }
@@ -71,7 +77,7 @@ export function createSlashSuggestionRender(
 
                 popup = document.createElement('div');
                 popup.style.position = 'absolute';
-                popup.style.zIndex = '9999';
+                popup.style.zIndex = POPUP_Z_INDEX;
                 popup.appendChild(renderer.element);
                 document.body.appendChild(popup);
 
@@ -103,7 +109,7 @@ export function createSlashSuggestionRender(
 }
 
 /** Position popup below the cursor using clientRect from suggestion props */
-function updatePosition(
+export function updatePosition(
     popup: HTMLDivElement | null,
     clientRect: (() => DOMRect | null) | null | undefined,
 ): void {
@@ -111,5 +117,5 @@ function updatePosition(
     const rect = clientRect();
     if (!rect) return;
     popup.style.left = `${rect.left + window.scrollX}px`;
-    popup.style.top = `${rect.bottom + window.scrollY + 4}px`;
+    popup.style.top = `${rect.bottom + window.scrollY + POPUP_OFFSET_PX}px`;
 }

@@ -96,6 +96,86 @@ export function hookMock() {
     };
 }
 
+/** useIdeaCardEditor mock factory — returns module shape with shared state */
+export function useIdeaCardEditorMock() {
+    return {
+        useIdeaCardEditor: (opts: {
+            isEditing: boolean;
+            output?: string;
+            getEditableContent: () => string;
+            placeholder: string;
+            saveContent: (md: string) => void;
+            onExitEditing: () => void;
+            onSlashCommand: (id: string) => void;
+        }) => {
+            const display = opts.isEditing ? opts.getEditableContent() : (opts.output ?? '');
+            if (display !== state.lastInitialContent) {
+                state.content = display || '';
+                state.lastInitialContent = display;
+            }
+            state.placeholder = opts.placeholder || '';
+            state.onBlur = (md: string) => {
+                opts.saveContent(md);
+                opts.onExitEditing();
+            };
+            return {
+                editor: {
+                    view: { get dom() { return state.domElement ?? document.createElement('div'); } },
+                    isEmpty: !state.content,
+                    commands: {
+                        insertContent: (text: string) => {
+                            state.insertedChars.push(text);
+                            state.content += text;
+                        },
+                    },
+                },
+                getMarkdown: () => state.content,
+                setContent: (md: string) => { state.content = md; },
+                focusAtEnd: () => { state.focusAtEndCallCount++; },
+                suggestionActiveRef: { current: false },
+            };
+        },
+    };
+}
+
+/** useIdeaCardKeyboard mock factory — simulates real behavior via captured callbacks */
+export function useIdeaCardKeyboardMock() {
+    return {
+        useIdeaCardKeyboard: (opts: {
+            editor: unknown; isEditing: boolean; isGenerating: boolean;
+            inputMode: string; getMarkdown: () => string;
+            setContent: (md: string) => void; getEditableContent: () => string;
+            suggestionActiveRef: { current: boolean };
+            saveContent: (md: string) => void; onExitEditing: () => void;
+            onEnterEditing: () => void;
+            onSubmitNote: (t: string) => void; onSubmitAI: (t: string) => void;
+        }) => ({
+            handleContentDoubleClick: () => {
+                if (opts.isGenerating) return;
+                opts.setContent(opts.getEditableContent());
+                opts.onEnterEditing();
+            },
+            handleContentKeyDown: (e: { key: string; preventDefault?: () => void;
+                ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }) => {
+                if (opts.isGenerating) return;
+                if (e.key === 'Enter') {
+                    e.preventDefault?.();
+                    opts.setContent(opts.getEditableContent());
+                    opts.onEnterEditing();
+                    return;
+                }
+                const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+                if (isPrintable) {
+                    opts.setContent(opts.getEditableContent());
+                    opts.onEnterEditing();
+                    const ed = opts.editor as { commands: { insertContent: (t: string) => void } };
+                    ed.commands.insertContent(e.key);
+                }
+            },
+        }),
+    };
+}
+
 /** TipTapEditor component mock factory — returns module shape */
 export function componentMock() {
     return {

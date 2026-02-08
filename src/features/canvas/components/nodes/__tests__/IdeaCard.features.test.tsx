@@ -72,6 +72,12 @@ vi.mock('../TipTapEditor', async () =>
 vi.mock('../../../extensions/slashCommandSuggestion', async () =>
     (await import('./helpers/tipTapTestMock')).extensionMock()
 );
+vi.mock('../../../hooks/useIdeaCardEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
+);
+vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+);
 
 describe('IdeaCard Features', () => {
     const defaultData: IdeaNodeData = {

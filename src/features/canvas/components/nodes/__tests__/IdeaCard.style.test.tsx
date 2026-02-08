@@ -8,6 +8,23 @@ import { ReactFlowProvider } from '@xyflow/react';
 import { IdeaCard } from '../IdeaCard';
 import type { NodeProps } from '@xyflow/react';
 
+// Mock TipTap hooks and extensions
+vi.mock('../../../hooks/useIdeaCardEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
+);
+vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+);
+vi.mock('../../../hooks/useTipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).hookMock()
+);
+vi.mock('../TipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).componentMock()
+);
+vi.mock('../../../extensions/slashCommandSuggestion', async () =>
+    (await import('./helpers/tipTapTestMock')).extensionMock()
+);
+
 // Mock CSS modules - returns class name as-is for testing
 vi.mock('../IdeaCard.module.css', () => ({
     default: {

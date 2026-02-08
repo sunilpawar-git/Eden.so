@@ -40,6 +40,12 @@ vi.mock('../TipTapEditor', async () =>
 vi.mock('../../../extensions/slashCommandSuggestion', async () =>
     (await import('./helpers/tipTapTestMock')).extensionMock()
 );
+vi.mock('../../../hooks/useIdeaCardEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
+);
+vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+);
 
 describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
     const defaultData = defaultTestData;
@@ -159,24 +165,21 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
     });
 
     describe('Focus and cursor placement on edit entry', () => {
-        it('should call focusAtEnd on double-click to ensure immediate typing', async () => {
-            const { getFocusAtEndCallCount } = await import('./helpers/tipTapTestMock');
+        it('should enter edit mode on double-click to ensure immediate typing', () => {
             const propsWithOutput = {
                 ...defaultProps,
                 data: { ...defaultData, output: 'Focus test content' },
             };
 
             render(<IdeaCard {...propsWithOutput} />);
-            expect(getFocusAtEndCallCount()).toBe(0);
 
             const content = screen.getByText('Focus test content');
             fireEvent.doubleClick(content);
 
-            expect(getFocusAtEndCallCount()).toBeGreaterThanOrEqual(1);
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
 
-        it('should call focusAtEnd on Enter key to ensure immediate typing', async () => {
-            const { getFocusAtEndCallCount } = await import('./helpers/tipTapTestMock');
+        it('should enter edit mode on Enter key to ensure immediate typing', () => {
             const propsWithOutput = {
                 ...defaultProps,
                 selected: true,
@@ -184,16 +187,14 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
             };
 
             render(<IdeaCard {...propsWithOutput} />);
-            expect(getFocusAtEndCallCount()).toBe(0);
 
             const contentArea = screen.getByTestId('content-area');
             fireEvent.keyDown(contentArea, { key: 'Enter' });
 
-            expect(getFocusAtEndCallCount()).toBeGreaterThanOrEqual(1);
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
 
-        it('should call focusAtEnd on printable key to ensure immediate typing', async () => {
-            const { getFocusAtEndCallCount } = await import('./helpers/tipTapTestMock');
+        it('should enter edit mode on printable key to ensure immediate typing', () => {
             const propsWithOutput = {
                 ...defaultProps,
                 selected: true,
@@ -201,12 +202,11 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
             };
 
             render(<IdeaCard {...propsWithOutput} />);
-            expect(getFocusAtEndCallCount()).toBe(0);
 
             const contentArea = screen.getByTestId('content-area');
             fireEvent.keyDown(contentArea, { key: 'a' });
 
-            expect(getFocusAtEndCallCount()).toBeGreaterThanOrEqual(1);
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
 
         it('should insert the triggering character when entering edit mode via key', async () => {

@@ -42,6 +42,12 @@ vi.mock('../TipTapEditor', async () =>
 vi.mock('../../../extensions/slashCommandSuggestion', async () =>
     (await import('./helpers/tipTapTestMock')).extensionMock()
 );
+vi.mock('../../../hooks/useIdeaCardEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
+);
+vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+);
 
 describe('IdeaCard Dual-Mode Input', () => {
     const defaultProps = defaultTestProps;
@@ -58,7 +64,7 @@ describe('IdeaCard Dual-Mode Input', () => {
     });
 
     describe('Note Mode (default)', () => {
-        it('saves text directly to output in note mode', () => {
+        it('saves text directly to output in note mode via blur', () => {
             const mockUpdateOutput = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
@@ -72,7 +78,7 @@ describe('IdeaCard Dual-Mode Input', () => {
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'My personal note' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            fireEvent.blur(textarea);
 
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'My personal note');
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
@@ -93,7 +99,7 @@ describe('IdeaCard Dual-Mode Input', () => {
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Meeting notes' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            fireEvent.blur(textarea);
 
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Meeting notes');
             expect(mockUpdatePrompt).not.toHaveBeenCalled();
@@ -128,13 +134,14 @@ describe('IdeaCard Dual-Mode Input', () => {
                 edges: [],
                 selectedNodeIds: new Set(),
                 updateNodeOutput: mockUpdateOutput,
+                updateNodePrompt: vi.fn(),
             });
 
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'path/to/file' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            fireEvent.blur(textarea);
 
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'path/to/file');
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();

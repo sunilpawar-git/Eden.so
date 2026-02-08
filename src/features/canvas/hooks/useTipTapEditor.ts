@@ -24,7 +24,6 @@ interface UseTipTapEditorReturn {
     getText: () => string;
     isEmpty: boolean;
     setContent: (markdown: string) => void;
-    /** Make editor editable, focus it, and place cursor at end of document */
     focusAtEnd: () => void;
 }
 
@@ -71,7 +70,5 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
     }, [editor]);
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const isEmpty = editor ? editor.isEmpty : true;
-
-    return { editor, getMarkdown, getText, isEmpty, setContent, focusAtEnd };
+    return { editor, getMarkdown, getText, setContent, focusAtEnd, isEmpty: editor ? editor.isEmpty : true };
 }

@@ -68,7 +68,11 @@ function parseList(
     return { html: `<${tag}>${lis}</${tag}>`, nextIndex: i };
 }
 
-/** Convert inline markdown (bold, italic, code) to HTML */
+/**
+ * Convert inline markdown (bold, italic, code) to HTML.
+ * Handles single-level formatting only — nested markup (e.g. bold+italic)
+ * is not supported. TipTap StarterKit never produces nested inline markup.
+ */
 function convertInline(text: string): string {
     return text
         .replace(/`([^`]+)`/g, '<code>$1</code>')
