@@ -46,8 +46,8 @@ describe('useAddNode', () => {
         const nodes = useCanvasStore.getState().nodes;
         const firstNode = nodes[0];
         expect(firstNode).toBeDefined();
-        // First node should be at origin (0,0) in grid
-        expect(firstNode?.position).toEqual({ x: 0, y: 0 });
+        // First node should be at origin (32,32) in grid
+        expect(firstNode?.position).toEqual({ x: 32, y: 32 });
     });
 
     it('should position second node at next grid column', () => {
@@ -73,9 +73,9 @@ describe('useAddNode', () => {
         const nodes = useCanvasStore.getState().nodes;
         const secondNode = nodes[1];
         expect(secondNode).toBeDefined();
-        // Second node should be in next grid column (x > 0)
-        expect(secondNode?.position.x).toBeGreaterThan(0);
-        expect(secondNode?.position.y).toBe(0);
+        // Second node should be in next grid column (x > 32)
+        expect(secondNode?.position.x).toBeGreaterThan(32);
+        expect(secondNode?.position.y).toBe(32);
     });
 
     it('should use current workspace ID', () => {
