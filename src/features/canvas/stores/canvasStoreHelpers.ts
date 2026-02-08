@@ -3,8 +3,9 @@
  * Extracted from canvasStore.ts to reduce store callback size
  */
 import type { CanvasNode, NodePosition } from '../types/node';
-import { clampNodeDimensions, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '../types/node';
+import { clampNodeDimensions } from '../types/node';
 import type { CanvasEdge } from '../types/edge';
+import { arrangeMasonry, calculateMasonryPosition } from '../services/gridLayoutService';
 
 /**
  * Updates a node's position in the nodes array
@@ -161,56 +162,22 @@ export function getUpstreamNodesFromArrays(
 // ============================================================================
 
 /** Grid Layout Constants - SSOT for node arrangement */
-export const GRID_COLUMNS = 4;
-export const GRID_GAP = 40;
-export const GRID_PADDING = 32; // Reduced offset for tighter breathing room
+export { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from '../services/gridLayoutService';
 
 /**
- * Arranges nodes in a grid layout (4 columns)
- * Sorts by createdAt (oldest first) to maintain logical ordering.
+ * Arranges nodes in a grid layout (Masonry)
+ * Sorts by createdAt (oldest first) and stacks in shortest column.
  * Pure function - does not mutate input.
  */
 export function arrangeNodesInGrid(nodes: CanvasNode[]): CanvasNode[] {
-    if (nodes.length === 0) return [];
-
-    // Import node dimensions from SSOT
-    const nodeWidth = DEFAULT_NODE_WIDTH;
-    const nodeHeight = DEFAULT_NODE_HEIGHT;
-
-    // Sort by creation date (oldest first)
-    const sorted = [...nodes].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-
-    return sorted.map((node, index) => {
-        const col = index % GRID_COLUMNS;
-        const row = Math.floor(index / GRID_COLUMNS);
-        return {
-            ...node,
-            position: {
-                x: GRID_PADDING + col * (nodeWidth + GRID_GAP),
-                y: GRID_PADDING + row * (nodeHeight + GRID_GAP),
-            },
-            updatedAt: new Date(),
-        };
-    });
+    return arrangeMasonry(nodes);
 }
 
 /**
- * Calculates the position for the next node in the grid.
- * Based on total count (not last node's position) for predictability.
+ * Calculates the position for the next node in the grid (Masonry).
+ * Stacks in the shortest column.
  */
 export function calculateNextNodePosition(nodes: CanvasNode[]): NodePosition {
-    const nodeWidth = DEFAULT_NODE_WIDTH;
-    const nodeHeight = DEFAULT_NODE_HEIGHT;
-
-    const index = nodes.length; // Next index
-    const col = index % GRID_COLUMNS;
-    const row = Math.floor(index / GRID_COLUMNS);
-
-    return {
-        x: GRID_PADDING + col * (nodeWidth + GRID_GAP),
-        y: GRID_PADDING + row * (nodeHeight + GRID_GAP),
-    };
+    return calculateMasonryPosition(nodes);
 }
 
