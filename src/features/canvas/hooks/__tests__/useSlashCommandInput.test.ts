@@ -78,6 +78,56 @@ describe('useSlashCommandInput', () => {
 
             expect(result.current.isMenuOpen).toBe(false);
         });
+
+        it('should close menu when space is typed after "/"', () => {
+            const { result } = renderHook(() => useSlashCommandInput());
+
+            act(() => {
+                result.current.handleInputChange('/');
+            });
+            expect(result.current.isMenuOpen).toBe(true);
+
+            act(() => {
+                result.current.handleInputChange('/ ');
+            });
+            expect(result.current.isMenuOpen).toBe(false);
+            expect(result.current.query).toBe('');
+        });
+
+        it('should close menu when space is typed after "/a"', () => {
+            const { result } = renderHook(() => useSlashCommandInput());
+
+            act(() => {
+                result.current.handleInputChange('/a');
+            });
+            expect(result.current.isMenuOpen).toBe(true);
+
+            act(() => {
+                result.current.handleInputChange('/a ');
+            });
+            expect(result.current.isMenuOpen).toBe(false);
+            expect(result.current.query).toBe('');
+        });
+
+        it('should preserve inputValue when space closes menu', () => {
+            const { result } = renderHook(() => useSlashCommandInput());
+
+            act(() => {
+                result.current.handleInputChange('/ hello world');
+            });
+            expect(result.current.isMenuOpen).toBe(false);
+            expect(result.current.inputValue).toBe('/ hello world');
+        });
+
+        it('should remain in note mode when space closes menu', () => {
+            const { result } = renderHook(() => useSlashCommandInput());
+
+            act(() => {
+                result.current.handleInputChange('/ text');
+            });
+            expect(result.current.inputMode).toBe('note');
+            expect(result.current.activeCommand).toBeNull();
+        });
     });
 
     describe('Prefix Auto-Detection', () => {

@@ -153,6 +153,36 @@ describe('IdeaCard Dual-Mode Input', () => {
             fireEvent.keyDown(textarea, { key: 'Escape' });
             expect(screen.queryByRole('menu')).not.toBeInTheDocument();
         });
+
+        it('closes menu when space is typed after "/"', () => {
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/' } });
+            expect(screen.getByRole('menu')).toBeInTheDocument();
+
+            fireEvent.change(textarea, { target: { value: '/ ' } });
+            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        });
+
+        it('allows Enter to save text starting with "/" after space closes menu', () => {
+            const mockUpdateOutput = vi.fn();
+            useCanvasStore.setState({
+                nodes: [],
+                edges: [],
+                selectedNodeIds: new Set(),
+                updateNodeOutput: mockUpdateOutput,
+            });
+
+            render(<IdeaCard {...defaultProps} />);
+
+            const textarea = screen.getByRole('textbox');
+            fireEvent.change(textarea, { target: { value: '/ my note text' } });
+            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', '/ my note text');
+        });
     });
 
     describe('AI Mode (after command selection)', () => {

@@ -82,8 +82,15 @@ export function useSlashCommandInput(): UseSlashCommandInputReturn {
         // Standard slash detection in note mode
         setInputValue(value);
         if (value.startsWith('/')) {
-            setIsMenuOpen(true);
-            setQuery(value.slice(1));
+            const q = value.slice(1);
+            if (q.includes(' ')) {
+                // Space after "/" means user is typing regular text
+                setIsMenuOpen(false);
+                setQuery('');
+            } else {
+                setIsMenuOpen(true);
+                setQuery(q);
+            }
         } else {
             setIsMenuOpen(false);
             setQuery('');
