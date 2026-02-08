@@ -2,8 +2,8 @@
  * CommandPrefixPill Tests - TDD
  * Tests for the locked prefix pill shown when a command is active
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { CommandPrefixPill } from '../CommandPrefixPill';
 import type { SlashCommand } from '../../../types/slashCommand';
 
@@ -19,12 +19,7 @@ const mockCommand: SlashCommand = {
 describe('CommandPrefixPill', () => {
     const defaultProps = {
         command: mockCommand,
-        onDeactivate: vi.fn(),
     };
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
 
     describe('Rendering', () => {
         it('should render the prefix pill', () => {
@@ -37,41 +32,19 @@ describe('CommandPrefixPill', () => {
             expect(screen.getByText('✨')).toBeInTheDocument();
         });
 
-        it('should display the prefix with separator', () => {
+        it('should display the command label', () => {
             render(<CommandPrefixPill {...defaultProps} />);
-            expect(screen.getByText('/ai:')).toBeInTheDocument();
+            expect(screen.getByText('AI Generate')).toBeInTheDocument();
         });
 
-        it('should have a dismiss button', () => {
+        it('should show an esc hint', () => {
             render(<CommandPrefixPill {...defaultProps} />);
-            const dismissBtn = screen.getByRole('button', { name: /deactivate/i });
-            expect(dismissBtn).toBeInTheDocument();
-        });
-    });
-
-    describe('Interaction', () => {
-        it('should call onDeactivate when dismiss button is clicked', () => {
-            const onDeactivate = vi.fn();
-            render(<CommandPrefixPill {...defaultProps} onDeactivate={onDeactivate} />);
-            
-            const dismissBtn = screen.getByRole('button', { name: /deactivate/i });
-            fireEvent.click(dismissBtn);
-            
-            expect(onDeactivate).toHaveBeenCalledTimes(1);
+            expect(screen.getByText('esc')).toBeInTheDocument();
         });
 
-        it('should not propagate click events from dismiss button', () => {
-            const outerClick = vi.fn();
-            render(
-                <div onClick={outerClick}>
-                    <CommandPrefixPill {...defaultProps} />
-                </div>
-            );
-            
-            const dismissBtn = screen.getByRole('button', { name: /deactivate/i });
-            fireEvent.click(dismissBtn);
-            
-            expect(outerClick).not.toHaveBeenCalled();
+        it('should not have a dismiss button', () => {
+            render(<CommandPrefixPill {...defaultProps} />);
+            expect(screen.queryByRole('button')).not.toBeInTheDocument();
         });
     });
 });

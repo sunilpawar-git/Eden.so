@@ -24,7 +24,6 @@ interface EditingContentProps {
     onKeyDown: (e: React.KeyboardEvent) => void;
     onCommandSelect: (id: SlashCommandId) => void;
     onMenuClose: () => void;
-    onDeactivateCommand: () => void;
 }
 
 export const EditingContent = React.memo(({
@@ -40,17 +39,8 @@ export const EditingContent = React.memo(({
     onKeyDown,
     onCommandSelect,
     onMenuClose,
-    onDeactivateCommand,
-}: EditingContentProps) => (
-    <div className={styles.inputWrapper}>
-        {activeCommand && (
-            <div className={styles.prefixRow}>
-                <CommandPrefixPill
-                    command={activeCommand}
-                    onDeactivate={onDeactivateCommand}
-                />
-            </div>
-        )}
+}: EditingContentProps) => {
+    const textarea = (
         <textarea
             ref={textareaRef}
             className={styles.inputArea}
@@ -62,15 +52,28 @@ export const EditingContent = React.memo(({
             autoFocus
             disabled={isGenerating}
         />
-        {isMenuOpen && (
-            <InlineSlashMenu
-                query={query}
-                onSelect={onCommandSelect}
-                onClose={onMenuClose}
-            />
-        )}
-    </div>
-));
+    );
+
+    return (
+        <div className={styles.inputWrapper}>
+            {activeCommand ? (
+                <div className={styles.prefixRow}>
+                    <CommandPrefixPill command={activeCommand} />
+                    {textarea}
+                </div>
+            ) : (
+                textarea
+            )}
+            {isMenuOpen && (
+                <InlineSlashMenu
+                    query={query}
+                    onSelect={onCommandSelect}
+                    onClose={onMenuClose}
+                />
+            )}
+        </div>
+    );
+});
 
 export const GeneratingContent = React.memo(() => (
     <div className={styles.generating}>

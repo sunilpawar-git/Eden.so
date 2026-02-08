@@ -6,14 +6,12 @@
 .inlineMenu {
     position: relative;
     width: 100%;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
+    background: transparent;
+    border-top: 1px solid var(--color-border);
     overflow: hidden;
-    padding: 4px 0;
+    padding: 2px 0;
     margin-top: var(--space-xs);
-    animation: slideIn 0.15s ease;
+    animation: slideIn 0.1s ease;
 }
 
 @keyframes slideIn {
@@ -30,14 +28,15 @@
 .menuItem {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    padding: 10px 12px;
+    padding: 6px 8px;
     text-align: left;
     background: none;
     border: none;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.1s ease;
 }
 
 .menuItem:hover {
@@ -46,32 +45,31 @@
 
 .menuItem[data-highlighted="true"] {
     background-color: var(--color-primary-light);
-    border-left: 3px solid var(--color-primary);
-    padding-left: 9px;
 }
 
 .icon {
-    font-size: 16px;
+    font-size: 14px;
     flex-shrink: 0;
+    line-height: 1;
 }
 
 .commandInfo {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: baseline;
+    gap: 6px;
     min-width: 0;
     flex: 1;
 }
 
 .label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--color-text-primary);
 }
 
 .description {
-    font-size: 12px;
-    color: var(--color-text-secondary);
+    font-size: 11px;
+    color: var(--color-text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -88,8 +86,8 @@
 }
 
 .noResults {
-    padding: 12px 14px;
-    font-size: 13px;
-    color: var(--color-text-secondary);
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--color-text-muted);
     text-align: center;
 }

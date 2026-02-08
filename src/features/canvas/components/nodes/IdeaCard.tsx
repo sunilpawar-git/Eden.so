@@ -105,6 +105,9 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
             if (isMenuOpen) {
                 closeMenu();
                 handleInputChange('');
+            } else if (activeCommand) {
+                // First Escape: deactivate command (back to note mode)
+                handleDeactivateCommand();
             } else {
                 saveContent(inputValue);
                 setIsEditing(false);
@@ -134,8 +137,9 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 reset();
             }
         }
-    }, [handleInputBlur, inputValue, inputMode, isMenuOpen, generateFromPrompt, id,
-        updateNodePrompt, updateNodeOutput, reset, closeMenu, handleInputChange, saveContent]);
+    }, [handleInputBlur, inputValue, inputMode, isMenuOpen, activeCommand, generateFromPrompt, id,
+        updateNodePrompt, updateNodeOutput, reset, closeMenu, handleInputChange,
+        handleDeactivateCommand, saveContent]);
 
     const handleContentDoubleClick = useCallback(() => {
         if (!isGenerating) setIsEditing(true);
@@ -183,7 +187,6 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     onKeyDown={handleInputKeyDown}
                     onCommandSelect={handleCommandSelect}
                     onMenuClose={closeMenu}
-                    onDeactivateCommand={handleDeactivateCommand}
                 />
             );
         }
@@ -253,7 +256,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     hasContent={hasContent}
                     isTransforming={isTransforming}
                     disabled={isGenerating ?? false}
-                    visible={isHovered}
+                    visible={isHovered && !isMenuOpen}
                     hasTags={tagIds.length > 0 || showTagInput}
                 />
             </div>

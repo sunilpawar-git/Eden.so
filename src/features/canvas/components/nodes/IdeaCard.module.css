@@ -81,26 +81,17 @@
     min-height: 100%;
 }
 
-/* AI Mode Indicator — replaced by CommandPrefixPill */
-.aiIndicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    margin-bottom: var(--space-sm);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-primary);
-    background: var(--color-primary-light);
-    border-radius: var(--radius-full);
-    animation: fadeIn 0.2s ease;
-}
-
-/* Prefix row — holds the CommandPrefixPill above textarea */
+/* Prefix row — pill inline-left of textarea on same line */
 .prefixRow {
     display: flex;
-    align-items: center;
-    margin-bottom: var(--space-xs);
+    align-items: flex-start;
+    gap: 6px;
+}
+
+/* When prefixRow is present, textarea grows to fill remaining space */
+.prefixRow .inputArea {
+    flex: 1;
+    min-height: 60px;
 }
 
 @keyframes fadeIn {

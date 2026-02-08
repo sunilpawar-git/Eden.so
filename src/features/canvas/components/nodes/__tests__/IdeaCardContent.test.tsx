@@ -29,7 +29,6 @@ describe('IdeaCardContent sub-components', () => {
             onKeyDown: vi.fn(),
             onCommandSelect: vi.fn(),
             onMenuClose: vi.fn(),
-            onDeactivateCommand: vi.fn(),
         };
 
         it('should render textarea with correct value', () => {
