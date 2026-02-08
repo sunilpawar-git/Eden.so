@@ -81,11 +81,13 @@
     min-height: 100%;
 }
 
-/* Prefix row — pill inline-left of textarea on same line */
+/* Prefix row — pill as tiny tag above textarea */
 .prefixRow {
     display: flex;
-    align-items: flex-start;
-    gap: 6px;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
 }
 
 /* When prefixRow is present, textarea grows to fill remaining space */
@@ -123,8 +125,6 @@
 
 .inputArea:focus {
     outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .inputArea::placeholder {

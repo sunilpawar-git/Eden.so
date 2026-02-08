@@ -1,54 +1,50 @@
 /**
  * CommandPrefixPill Styles
- * Compact inline chip for active slash commands
+ * Tiny subtle inline tag for active slash command mode
  */
 
 .prefixPill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px 2px 6px;
-    font-size: var(--font-size-sm);
-    color: var(--color-primary);
-    background: var(--color-primary-light);
-    border-radius: var(--radius-full);
+    gap: 3px;
+    padding: 1px 6px;
+    font-size: 11px;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     user-select: none;
-    flex-shrink: 0;
     white-space: nowrap;
-    animation: pillIn 0.15s ease;
+    opacity: 0.8;
+    animation: pillIn 0.12s ease;
 }
 
 @keyframes pillIn {
     from {
         opacity: 0;
-        transform: scale(0.95);
     }
     to {
-        opacity: 1;
-        transform: scale(1);
+        opacity: 0.8;
     }
 }
 
 .icon {
-    font-size: 12px;
+    font-size: 10px;
     line-height: 1;
 }
 
 .label {
-    font-size: 12px;
-    font-weight: var(--font-weight-medium);
+    font-size: 10px;
+    font-weight: 500;
     line-height: 1;
 }
 
 .escHint {
-    font-size: 9px;
+    font-size: 8px;
     font-family: var(--font-family);
     color: var(--color-text-muted);
-    background: var(--color-surface);
-    padding: 1px 4px;
-    border-radius: 3px;
-    border: 1px solid var(--color-border);
-    margin-left: 2px;
-    line-height: 1.2;
-    opacity: 0.7;
+    padding: 0 2px;
+    margin-left: 1px;
+    line-height: 1;
+    opacity: 0.5;
 }
