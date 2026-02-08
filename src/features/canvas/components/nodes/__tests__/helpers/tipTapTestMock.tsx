@@ -23,6 +23,8 @@ const state = {
     placeholder: '',
     domElement: null as HTMLElement | null,
     lastInitialContent: undefined as string | undefined,
+    focusAtEndCallCount: 0,
+    insertedChars: [] as string[],
 };
 
 /** Reset mock state to initial values — call in beforeEach */
@@ -33,6 +35,18 @@ export function resetMockState(): void {
     state.placeholder = '';
     state.domElement = null;
     state.lastInitialContent = undefined;
+    state.focusAtEndCallCount = 0;
+    state.insertedChars = [];
+}
+
+/** Get count of focusAtEnd calls since last reset */
+export function getFocusAtEndCallCount(): number {
+    return state.focusAtEndCallCount;
+}
+
+/** Get characters inserted via insertContent since last reset */
+export function getInsertedChars(): string[] {
+    return [...state.insertedChars];
 }
 
 /** SlashCommandSuggestion extension mock — returns module shape */
@@ -65,11 +79,18 @@ export function hookMock() {
                 editor: {
                     view: { get dom() { return state.domElement ?? document.createElement('div'); } },
                     isEmpty: !state.content,
+                    commands: {
+                        insertContent: (text: string) => {
+                            state.insertedChars.push(text);
+                            state.content += text;
+                        },
+                    },
                 },
                 getMarkdown: () => state.content,
                 getText: () => state.content,
                 isEmpty: !state.content,
                 setContent: (md: string) => { state.content = md; },
+                focusAtEnd: () => { state.focusAtEndCallCount++; },
             };
         },
     };

@@ -157,4 +157,91 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
         // Should show generating state
         expect(screen.getByText(/generating/i)).toBeInTheDocument();
     });
+
+    describe('Focus and cursor placement on edit entry', () => {
+        it('should call focusAtEnd on double-click to ensure immediate typing', async () => {
+            const { getFocusAtEndCallCount } = await import('./helpers/tipTapTestMock');
+            const propsWithOutput = {
+                ...defaultProps,
+                data: { ...defaultData, output: 'Focus test content' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+            expect(getFocusAtEndCallCount()).toBe(0);
+
+            const content = screen.getByText('Focus test content');
+            fireEvent.doubleClick(content);
+
+            expect(getFocusAtEndCallCount()).toBeGreaterThanOrEqual(1);
+        });
+
+        it('should call focusAtEnd on Enter key to ensure immediate typing', async () => {
+            const { getFocusAtEndCallCount } = await import('./helpers/tipTapTestMock');
+            const propsWithOutput = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, output: 'Enter focus test' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+            expect(getFocusAtEndCallCount()).toBe(0);
+
+            const contentArea = screen.getByTestId('content-area');
+            fireEvent.keyDown(contentArea, { key: 'Enter' });
+
+            expect(getFocusAtEndCallCount()).toBeGreaterThanOrEqual(1);
+        });
+
+        it('should call focusAtEnd on printable key to ensure immediate typing', async () => {
+            const { getFocusAtEndCallCount } = await import('./helpers/tipTapTestMock');
+            const propsWithOutput = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, output: 'Key focus test' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+            expect(getFocusAtEndCallCount()).toBe(0);
+
+            const contentArea = screen.getByTestId('content-area');
+            fireEvent.keyDown(contentArea, { key: 'a' });
+
+            expect(getFocusAtEndCallCount()).toBeGreaterThanOrEqual(1);
+        });
+
+        it('should insert the triggering character when entering edit mode via key', async () => {
+            const { getInsertedChars } = await import('./helpers/tipTapTestMock');
+            const propsWithOutput = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, output: 'Existing text' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+
+            const contentArea = screen.getByTestId('content-area');
+            fireEvent.keyDown(contentArea, { key: 'h' });
+
+            // The 'h' keypress that triggered edit mode must be inserted
+            expect(getInsertedChars()).toContain('h');
+        });
+
+        it('should NOT insert character for Enter key (Enter enters edit mode only)', async () => {
+            const { getInsertedChars } = await import('./helpers/tipTapTestMock');
+            const propsWithOutput = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, output: 'Enter test' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+
+            const contentArea = screen.getByTestId('content-area');
+            fireEvent.keyDown(contentArea, { key: 'Enter' });
+
+            // Enter should NOT be inserted as text
+            expect(getInsertedChars()).not.toContain('Enter');
+            expect(getInsertedChars()).not.toContain('\n');
+        });
+    });
 });

@@ -104,4 +104,42 @@ describe('useTipTapEditor', () => {
         // After clearing, getMarkdown returns empty and editor content is cleared
         expect(result.current.getMarkdown()).toBe('');
     });
+
+    describe('focusAtEnd', () => {
+        it('returns a focusAtEnd function', () => {
+            const { result } = renderHook(() =>
+                useTipTapEditor({ initialContent: 'test', placeholder: '' })
+            );
+            expect(typeof result.current.focusAtEnd).toBe('function');
+        });
+
+        it('focuses the editor and places cursor at end of document', () => {
+            const { result } = renderHook(() =>
+                useTipTapEditor({ initialContent: 'hello world', placeholder: '' })
+            );
+            // Should not throw — focus('end') is a ProseMirror command
+            expect(() => result.current.focusAtEnd()).not.toThrow();
+            // Editor should remain editable after focusAtEnd
+            expect(result.current.editor!.isEditable).toBe(true);
+        });
+
+        it('sets editor to editable before focusing', () => {
+            const { result } = renderHook(() =>
+                useTipTapEditor({ initialContent: 'text', placeholder: '', editable: false })
+            );
+            expect(result.current.editor!.isEditable).toBe(false);
+            result.current.focusAtEnd();
+            // focusAtEnd must flip editable to true so typing is accepted
+            expect(result.current.editor!.isEditable).toBe(true);
+        });
+
+        it('does not throw when editor is null', () => {
+            // Edge case: editor not yet initialized
+            const { result } = renderHook(() =>
+                useTipTapEditor({ initialContent: '', placeholder: '' })
+            );
+            // Should not throw even if called immediately
+            expect(() => result.current.focusAtEnd()).not.toThrow();
+        });
+    });
 });

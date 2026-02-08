@@ -82,7 +82,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const blurHandlerRef = useRef<(markdown: string) => void>((_md: string) => undefined);
     const displayContent = isEditing ? getEditableContent() : (output ?? '');
 
-    const { editor, getMarkdown, setContent } = useTipTapEditor({
+    const { editor, getMarkdown, setContent, focusAtEnd } = useTipTapEditor({
         initialContent: displayContent,
         placeholder,
         editable: isEditing,
@@ -170,25 +170,28 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const handleContentDoubleClick = useCallback(() => {
         if (!isGenerating) {
-            setContent(getEditableContent());
             setIsEditing(true);
+            focusAtEnd();
         }
-    }, [isGenerating, setContent, getEditableContent]);
+    }, [isGenerating, focusAtEnd]);
 
     const handleContentKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (isGenerating) return;
         if (e.key === 'Enter') {
             e.preventDefault();
-            setContent(getEditableContent());
             setIsEditing(true);
+            focusAtEnd();
             return;
         }
         const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
         if (isPrintable) {
-            setContent(getEditableContent());
+            e.preventDefault();
             setIsEditing(true);
+            focusAtEnd();
+            // Insert the triggering character so it isn't swallowed
+            editor?.commands.insertContent(e.key);
         }
-    }, [isGenerating, setContent, getEditableContent]);
+    }, [isGenerating, focusAtEnd, editor]);
 
     const handleDelete = useCallback(() => deleteNode(id), [id, deleteNode]);
     const handleRegenerate = useCallback(() => generateFromPrompt(id), [id, generateFromPrompt]);

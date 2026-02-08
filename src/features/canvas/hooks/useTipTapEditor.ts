@@ -24,6 +24,8 @@ interface UseTipTapEditorReturn {
     getText: () => string;
     isEmpty: boolean;
     setContent: (markdown: string) => void;
+    /** Make editor editable, focus it, and place cursor at end of document */
+    focusAtEnd: () => void;
 }
 
 /** Hook for managing a TipTap editor with markdown serialization */
@@ -61,8 +63,15 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
         else { editor.commands.clearContent(); }
     }, [editor]);
 
+    const focusAtEnd = useCallback((): void => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!editor) return;
+        editor.setEditable(true);
+        editor.commands.focus('end');
+    }, [editor]);
+
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const isEmpty = editor ? editor.isEmpty : true;
 
-    return { editor, getMarkdown, getText, isEmpty, setContent };
+    return { editor, getMarkdown, getText, isEmpty, setContent, focusAtEnd };
 }
