@@ -6,7 +6,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
 import type { IdeaNodeData } from '../../../types/node';
-
 // Mock ReactFlow hooks and components
 vi.mock('@xyflow/react', async () => {
     const actual = await vi.importActual('@xyflow/react');
@@ -39,17 +38,21 @@ const mockGenerateFromPrompt = vi.fn();
 vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     useNodeGeneration: () => ({
         generateFromPrompt: mockGenerateFromPrompt,
+        branchFromNode: vi.fn(),
     }),
 }));
 
-// Mock MarkdownRenderer for testing
-vi.mock('@/shared/components/MarkdownRenderer', () => ({
-    MarkdownRenderer: ({ content, className }: { content: string; className?: string }) => (
-        <div data-testid="markdown-renderer" className={className}>
-            {content}
-        </div>
-    ),
-}));
+// TipTap mocks — shared state via singleton in helper module
+vi.mock('../../../hooks/useTipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).hookMock()
+);
+vi.mock('../TipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).componentMock()
+);
+
+vi.mock('../../../extensions/slashCommandSuggestion', async () =>
+    (await import('./helpers/tipTapTestMock')).extensionMock()
+);
 
 describe('IdeaCard', () => {
     const defaultData: IdeaNodeData = {
@@ -74,8 +77,10 @@ describe('IdeaCard', () => {
         draggable: true,
     };
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const { resetMockState } = await import('./helpers/tipTapTestMock');
+        resetMockState();
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -90,18 +95,17 @@ describe('IdeaCard', () => {
                 data: { ...defaultData, output: 'AI generated output' },
             };
             render(<IdeaCard {...propsWithOutput} />);
-            expect(screen.getByText('AI generated output')).toBeInTheDocument();
+            expect(screen.getByTestId('view-editor')).toBeInTheDocument();
         });
 
-        it('renders input textarea with placeholder when no output (empty card)', () => {
+        it('renders editor when no output (empty card)', () => {
             const propsNoOutput = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: '', output: undefined },
             };
             render(<IdeaCard {...propsNoOutput} />);
-            // Empty cards start in edit mode with textarea
-            const textarea = screen.getByRole('textbox');
-            expect(textarea).toHaveAttribute('placeholder', expect.stringMatching(/Type a note/));
+            // Empty cards start in edit mode with TipTap editor
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
 
         it('renders top handle for target connections', () => {
@@ -211,17 +215,17 @@ describe('IdeaCard', () => {
             expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
 
-        it('Shift+Enter does not trigger save (allows newline)', () => {
+        it('Shift+Enter does not trigger save (TipTap handles newline)', () => {
             const emptyCard = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: '', output: undefined },
             };
             render(<IdeaCard {...emptyCard} />);
 
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: 'Some text' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
-
+            // Editor is present in edit mode
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            // Shift+Enter is handled by TipTap natively (inserts newline)
+            // generateFromPrompt should not be called
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
         });
 

@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
-import type { IdeaNodeData } from '../../../types/node';
+import { defaultTestData, defaultTestProps } from './helpers/ideaCardTestMocks';
 
 // Mock ReactFlow hooks and components
 vi.mock('@xyflow/react', async () => {
@@ -29,38 +29,26 @@ vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     }),
 }));
 
-// Mock MarkdownRenderer
-vi.mock('@/shared/components/MarkdownRenderer', () => ({
-    MarkdownRenderer: ({ content }: { content: string }) => (
-        <div data-testid="markdown-renderer">{content}</div>
-    ),
-}));
+// TipTap mocks — shared state via singleton in helper module
+vi.mock('../../../hooks/useTipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).hookMock()
+);
+vi.mock('../TipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).componentMock()
+);
+
+vi.mock('../../../extensions/slashCommandSuggestion', async () =>
+    (await import('./helpers/tipTapTestMock')).extensionMock()
+);
 
 describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
-    const defaultData: IdeaNodeData = {
-        prompt: '',
-        output: undefined,
-        isGenerating: false,
-        isPromptCollapsed: false,
-    };
+    const defaultData = defaultTestData;
+    const defaultProps = defaultTestProps;
 
-    const defaultProps = {
-        id: 'idea-1',
-        data: defaultData,
-        type: 'idea' as const,
-        selected: false,
-        isConnectable: true,
-        positionAbsoluteX: 0,
-        positionAbsoluteY: 0,
-        zIndex: 0,
-        dragging: false,
-        selectable: true,
-        deletable: true,
-        draggable: true,
-    };
-
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const { resetMockState } = await import('./helpers/tipTapTestMock');
+        resetMockState();
         useCanvasStore.setState({
             nodes: [],
             edges: [],

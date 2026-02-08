@@ -1,0 +1,96 @@
+/**
+ * TipTapEditor Styles - Matches existing textarea and output styling
+ * Uses CSS variables only (no hardcoded values per CLAUDE.md)
+ */
+
+.tiptapEditor {
+    width: 100%;
+    flex: 1;
+    min-height: var(--editor-min-height);
+}
+
+/* ProseMirror core editor area */
+.tiptapEditor :global(.ProseMirror) {
+    outline: none;
+    font-family: var(--font-family);
+    font-size: var(--font-size-node);
+    line-height: var(--line-height-normal);
+    color: var(--color-text-primary);
+    min-height: var(--editor-min-height);
+}
+
+/* Placeholder text styling (matches textarea ::placeholder) */
+.tiptapEditor :global(.ProseMirror p.is-editor-empty:first-child::before) {
+    content: attr(data-placeholder);
+    color: var(--color-text-muted);
+    float: left;
+    height: 0;
+    pointer-events: none;
+}
+
+/* Remove default paragraph margins for consistency */
+.tiptapEditor :global(.ProseMirror p) {
+    margin: 0;
+    min-height: 1.5em;
+}
+
+/* Heading styles */
+.tiptapEditor :global(.ProseMirror h1) {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    margin: var(--space-sm) 0;
+}
+
+.tiptapEditor :global(.ProseMirror h2) {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    margin: var(--space-sm) 0;
+}
+
+.tiptapEditor :global(.ProseMirror h3) {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    margin: var(--space-xs) 0;
+}
+
+/* List styles */
+.tiptapEditor :global(.ProseMirror ul),
+.tiptapEditor :global(.ProseMirror ol) {
+    padding-left: var(--space-lg);
+    margin: var(--space-xs) 0;
+}
+
+/* Blockquote */
+.tiptapEditor :global(.ProseMirror blockquote) {
+    border-left: var(--blockquote-border-width) solid var(--color-border);
+    padding-left: var(--space-md);
+    margin: var(--space-xs) 0;
+    color: var(--color-text-secondary);
+}
+
+/* Code blocks */
+.tiptapEditor :global(.ProseMirror pre) {
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
+    margin: var(--space-xs) 0;
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+    overflow-x: auto;
+}
+
+/* Inline code */
+.tiptapEditor :global(.ProseMirror code) {
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    padding: var(--code-inline-v-padding) var(--space-xs);
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+}
+
+/* Don't double-style code inside pre */
+.tiptapEditor :global(.ProseMirror pre code) {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}

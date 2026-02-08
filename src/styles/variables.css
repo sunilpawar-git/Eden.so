@@ -75,6 +75,9 @@
   --card-min-height: 100px;
   --card-max-height: 800px;
   --card-output-max-height: 300px;
+  --editor-min-height: 60px;
+  --blockquote-border-width: 3px;
+  --code-inline-v-padding: 1px;
 
   /* Spacing */
   --space-xs: 4px;
@@ -169,6 +172,9 @@
   --card-min-height: 80px;
   --card-max-height: 600px;
   --card-output-max-height: 200px;
+  --editor-min-height: 48px;
+  --blockquote-border-width: 2px;
+  --code-inline-v-padding: 1px;
 
   /* Sidebar */
   --sidebar-width: 220px;

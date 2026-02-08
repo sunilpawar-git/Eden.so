@@ -1,6 +1,6 @@
 /**
  * Tests for IdeaCardContent sub-components
- * TDD: Write tests FIRST before refactoring IdeaCard.tsx
+ * TDD: Validates content rendering and interaction for each view state
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -11,54 +11,19 @@ import {
     SimpleCardContent,
     PlaceholderContent,
 } from '../IdeaCardContent';
-import React from 'react';
+
+// Mock TipTapEditor to avoid ProseMirror DOM complexity in tests
+vi.mock('../TipTapEditor', () => ({
+    TipTapEditor: ({ 'data-testid': testId }: { 'data-testid'?: string }) => (
+        <div data-testid={testId ?? 'tiptap-editor'} role="textbox" />
+    ),
+}));
 
 describe('IdeaCardContent sub-components', () => {
     describe('EditingContent', () => {
-        const defaultProps = {
-            inputMode: 'note' as const,
-            inputValue: 'test value',
-            placeholder: 'Enter text...',
-            isMenuOpen: false,
-            isGenerating: false,
-            query: '',
-            textareaRef: { current: null } as React.RefObject<HTMLTextAreaElement>,
-            onInputChange: vi.fn(),
-            onBlur: vi.fn(),
-            onKeyDown: vi.fn(),
-            onCommandSelect: vi.fn(),
-            onMenuClose: vi.fn(),
-        };
-
-        it('should render textarea with correct value', () => {
-            render(<EditingContent {...defaultProps} />);
-            const textarea = screen.getByRole('textbox');
-            expect(textarea).toHaveValue('test value');
-        });
-
-        it('should render textarea with provided placeholder', () => {
-            render(<EditingContent {...defaultProps} placeholder="Type something..." />);
-            expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type something...');
-        });
-
-        it('should render textarea in disabled state when generating', () => {
-            render(<EditingContent {...defaultProps} isGenerating={true} />);
-            expect(screen.getByRole('textbox')).toBeDisabled();
-        });
-
-        it('should call onInputChange when typing', () => {
-            const onInputChange = vi.fn();
-            render(<EditingContent {...defaultProps} onInputChange={onInputChange} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: 'new value' } });
-
-            expect(onInputChange).toHaveBeenCalledWith('new value');
-        });
-
-        it('should disable textarea when generating', () => {
-            render(<EditingContent {...defaultProps} isGenerating={true} />);
-            expect(screen.getByRole('textbox')).toBeDisabled();
+        it('should render TipTapEditor', () => {
+            render(<EditingContent editor={null} />);
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
         });
     });
 
@@ -72,7 +37,7 @@ describe('IdeaCardContent sub-components', () => {
     describe('AICardContent', () => {
         const defaultProps = {
             prompt: 'Test prompt',
-            output: 'Test output',
+            editor: null,
             onDoubleClick: vi.fn(),
             onKeyDown: vi.fn(),
         };
@@ -87,6 +52,11 @@ describe('IdeaCardContent sub-components', () => {
             expect(screen.getByTestId('ai-divider')).toBeInTheDocument();
         });
 
+        it('should render TipTapEditor for output', () => {
+            render(<AICardContent {...defaultProps} />);
+            expect(screen.getByTestId('view-editor')).toBeInTheDocument();
+        });
+
         it('should call onDoubleClick on prompt double-click', () => {
             const onDoubleClick = vi.fn();
             render(<AICardContent {...defaultProps} onDoubleClick={onDoubleClick} />);
@@ -98,7 +68,7 @@ describe('IdeaCardContent sub-components', () => {
 
     describe('SimpleCardContent', () => {
         const defaultProps = {
-            output: 'Simple content',
+            editor: null,
             onDoubleClick: vi.fn(),
             onKeyDown: vi.fn(),
         };
@@ -121,7 +91,6 @@ describe('IdeaCardContent sub-components', () => {
 
         it('should render placeholder text', () => {
             render(<PlaceholderContent {...defaultProps} />);
-            // Placeholder text comes from strings
             expect(screen.getByRole('button')).toBeInTheDocument();
         });
 

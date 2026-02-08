@@ -1,13 +1,13 @@
 /**
- * IdeaCard Dual-Mode Input Tests - Slash Command Menu
- * Tests for "/" slash command detection and AI mode switching
+ * IdeaCard Dual-Mode Input Tests
+ * Tests for note mode saving and edge cases.
+ * Slash command popup behavior is tested in SlashCommandList.test.tsx.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
-import { strings } from '@/shared/localization/strings';
-import type { IdeaNodeData } from '../../../types/node';
+import { defaultTestProps } from './helpers/ideaCardTestMocks';
 
 // Mock ReactFlow hooks and components
 vi.mock('@xyflow/react', async () => {
@@ -31,38 +31,25 @@ vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     }),
 }));
 
-// Mock MarkdownRenderer
-vi.mock('@/shared/components/MarkdownRenderer', () => ({
-    MarkdownRenderer: ({ content }: { content: string }) => (
-        <div data-testid="markdown-renderer">{content}</div>
-    ),
-}));
+// TipTap mocks — shared state via singleton in helper module
+vi.mock('../../../hooks/useTipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).hookMock()
+);
+vi.mock('../TipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).componentMock()
+);
+
+vi.mock('../../../extensions/slashCommandSuggestion', async () =>
+    (await import('./helpers/tipTapTestMock')).extensionMock()
+);
 
 describe('IdeaCard Dual-Mode Input', () => {
-    const defaultData: IdeaNodeData = {
-        prompt: '',
-        output: undefined,
-        isGenerating: false,
-        isPromptCollapsed: false,
-    };
+    const defaultProps = defaultTestProps;
 
-    const defaultProps = {
-        id: 'idea-1',
-        data: defaultData,
-        type: 'idea' as const,
-        selected: false,
-        isConnectable: true,
-        positionAbsoluteX: 0,
-        positionAbsoluteY: 0,
-        zIndex: 0,
-        dragging: false,
-        selectable: true,
-        deletable: true,
-        draggable: true,
-    };
-
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const { resetMockState } = await import('./helpers/tipTapTestMock');
+        resetMockState();
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -71,7 +58,7 @@ describe('IdeaCard Dual-Mode Input', () => {
     });
 
     describe('Note Mode (default)', () => {
-        it('saves text directly to output in note mode', async () => {
+        it('saves text directly to output in note mode', () => {
             const mockUpdateOutput = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
@@ -91,7 +78,7 @@ describe('IdeaCard Dual-Mode Input', () => {
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
         });
 
-        it('does NOT update prompt for note mode (only output)', async () => {
+        it('does NOT update prompt for note mode (only output)', () => {
             const mockUpdatePrompt = vi.fn();
             const mockUpdateOutput = vi.fn();
             useCanvasStore.setState({
@@ -113,144 +100,8 @@ describe('IdeaCard Dual-Mode Input', () => {
         });
     });
 
-    describe('Slash Command Menu', () => {
-        it('opens menu when "/" is typed at start', () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/' } });
-
-            expect(screen.getByRole('menu')).toBeInTheDocument();
-        });
-
-        it('shows AI Generate command in menu', () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/' } });
-
-            expect(screen.getByText('ai')).toBeInTheDocument();
-            expect(screen.getByText('Press Enter')).toBeInTheDocument();
-        });
-
-        it('filters menu by query', () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/ai' } });
-
-            expect(screen.getByText('ai')).toBeInTheDocument();
-            expect(screen.getByText('Press Enter')).toBeInTheDocument();
-        });
-
-        it('closes menu on Escape', () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/' } });
-            expect(screen.getByRole('menu')).toBeInTheDocument();
-
-            fireEvent.keyDown(textarea, { key: 'Escape' });
-            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-        });
-
-        it('closes menu when space is typed after "/"', () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/' } });
-            expect(screen.getByRole('menu')).toBeInTheDocument();
-
-            fireEvent.change(textarea, { target: { value: '/ ' } });
-            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-        });
-
-        it('allows Enter to save text starting with "/" after space closes menu', () => {
-            const mockUpdateOutput = vi.fn();
-            useCanvasStore.setState({
-                nodes: [],
-                edges: [],
-                selectedNodeIds: new Set(),
-                updateNodeOutput: mockUpdateOutput,
-            });
-
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/ my note text' } });
-            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
-            expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', '/ my note text');
-        });
-    });
-
-    describe('AI Mode (after command selection)', () => {
-        it('shows prefix pill after selecting AI command', async () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/' } });
-
-            // Select AI Generate command
-            const menuItem = screen.getByRole('menuitem');
-            fireEvent.click(menuItem);
-
-            await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
-            });
-        });
-
-        it('triggers AI generation when Enter pressed in AI mode', async () => {
-            const mockUpdatePrompt = vi.fn();
-            useCanvasStore.setState({
-                nodes: [],
-                edges: [],
-                selectedNodeIds: new Set(),
-                updateNodePrompt: mockUpdatePrompt,
-            });
-
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            
-            // Open menu and select AI command
-            fireEvent.change(textarea, { target: { value: '/' } });
-            const menuItem = screen.getByRole('menuitem');
-            fireEvent.click(menuItem);
-
-            // Now in AI mode - type prompt and press Enter
-            await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
-            });
-
-            // Get textarea again (may have re-rendered)
-            const aiTextarea = screen.getByRole('textbox');
-            fireEvent.change(aiTextarea, { target: { value: 'What is quantum computing?' } });
-            fireEvent.keyDown(aiTextarea, { key: 'Enter', shiftKey: false });
-
-            expect(mockUpdatePrompt).toHaveBeenCalledWith('idea-1', 'What is quantum computing?');
-            expect(mockGenerateFromPrompt).toHaveBeenCalledWith('idea-1');
-        });
-
-        it('shows AI mode placeholder', async () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: '/' } });
-
-            const menuItem = screen.getByRole('menuitem');
-            fireEvent.click(menuItem);
-
-            await waitFor(() => {
-                const aiTextarea = screen.getByRole('textbox');
-                expect(aiTextarea).toHaveAttribute('placeholder', strings.ideaCard.aiModePlaceholder);
-            });
-        });
-    });
-
     describe('Edge cases', () => {
-        it('does not trigger anything for empty input', async () => {
+        it('does not trigger anything for empty input', () => {
             const mockUpdateOutput = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
@@ -270,16 +121,7 @@ describe('IdeaCard Dual-Mode Input', () => {
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
         });
 
-        it('does not open menu when "/" is not at start', async () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-            fireEvent.change(textarea, { target: { value: 'hello /' } });
-
-            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-        });
-
-        it('treats "/" in middle of text as note mode', async () => {
+        it('treats "/" in middle of text as note mode', () => {
             const mockUpdateOutput = vi.fn();
             useCanvasStore.setState({
                 nodes: [],

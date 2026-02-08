@@ -62,16 +62,15 @@ const renderWithProvider = (props: Partial<NodeProps>) => {
 };
 
 describe('IdeaCard styles', () => {
-    it('should apply inputArea class to textarea in edit mode', () => {
+    it('should render TipTap editor in edit mode', () => {
         // Empty node starts in edit mode
         renderWithProvider({
             id: 'test-node',
             data: { prompt: '', output: undefined },
         });
 
-        const textarea = screen.getByRole('textbox');
-        expect(textarea).toBeInTheDocument();
-        expect(textarea).toHaveClass('inputArea');
+        const editor = screen.getByTestId('tiptap-editor');
+        expect(editor).toBeInTheDocument();
     });
 
     it('should apply outputContent class when displaying content', () => {
