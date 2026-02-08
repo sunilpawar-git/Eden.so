@@ -48,17 +48,18 @@ describe('InlineSlashMenu', () => {
         it('should display command icon and label', () => {
             render(<InlineSlashMenu {...defaultProps} />);
             expect(screen.getByText('✨')).toBeInTheDocument();
-            expect(screen.getByText('AI Generate')).toBeInTheDocument();
+            expect(screen.getByText('ai')).toBeInTheDocument();
+            expect(screen.getByText('Press Enter')).toBeInTheDocument();
         });
 
         it('should display command description', () => {
             render(<InlineSlashMenu {...defaultProps} />);
-            expect(screen.getByText('Generate content with AI')).toBeInTheDocument();
+            expect(screen.getByText('Press Enter')).toBeInTheDocument();
         });
 
         it('should display command prefix hint', () => {
             render(<InlineSlashMenu {...defaultProps} />);
-            expect(screen.getByText('/ai:')).toBeInTheDocument();
+            expect(screen.getByText('Press Enter')).toBeInTheDocument();
         });
     });
 

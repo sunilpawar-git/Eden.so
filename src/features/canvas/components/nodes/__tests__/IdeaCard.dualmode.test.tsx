@@ -129,7 +129,8 @@ describe('IdeaCard Dual-Mode Input', () => {
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: '/' } });
 
-            expect(screen.getByText(strings.slashCommands.aiGenerate.label)).toBeInTheDocument();
+            expect(screen.getByText('ai')).toBeInTheDocument();
+            expect(screen.getByText('Press Enter')).toBeInTheDocument();
         });
 
         it('filters menu by query', () => {
@@ -138,7 +139,8 @@ describe('IdeaCard Dual-Mode Input', () => {
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: '/ai' } });
 
-            expect(screen.getByText(strings.slashCommands.aiGenerate.label)).toBeInTheDocument();
+            expect(screen.getByText('ai')).toBeInTheDocument();
+            expect(screen.getByText('Press Enter')).toBeInTheDocument();
         });
 
         it('closes menu on Escape', () => {

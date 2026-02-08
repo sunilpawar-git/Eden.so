@@ -9,8 +9,8 @@
     background: transparent;
     border-top: 1px solid var(--color-border);
     overflow: hidden;
-    padding: 2px 0;
-    margin-top: var(--space-xs);
+    padding: 1px 0;
+    margin-top: 2px;
     animation: slideIn 0.1s ease;
 }
 
@@ -28,15 +28,16 @@
 .menuItem {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     width: 100%;
-    padding: 6px 8px;
+    padding: 3px 4px;
     text-align: left;
     background: none;
     border: none;
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background-color 0.1s ease;
+    font-size: 11px;
 }
 
 .menuItem:hover {
@@ -48,46 +49,42 @@
 }
 
 .icon {
-    font-size: 14px;
+    font-size: 11px;
     flex-shrink: 0;
     line-height: 1;
 }
 
 .commandInfo {
     display: flex;
-    align-items: baseline;
-    gap: 6px;
+    align-items: center;
+    gap: 3px;
     min-width: 0;
     flex: 1;
 }
 
 .label {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 400;
     color: var(--color-text-primary);
 }
 
 .description {
-    font-size: 11px;
-    color: var(--color-text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: none;
 }
 
 .prefixHint {
-    font-size: 11px;
+    font-size: 10px;
     font-family: var(--font-family-mono, monospace);
     color: var(--color-text-muted);
-    background: var(--color-surface-elevated);
-    padding: 2px 6px;
-    border-radius: var(--radius-sm);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
     flex-shrink: 0;
 }
 
 .noResults {
-    padding: 8px 10px;
-    font-size: 12px;
+    padding: 2px 4px;
+    font-size: 10px;
     color: var(--color-text-muted);
     text-align: center;
 }
