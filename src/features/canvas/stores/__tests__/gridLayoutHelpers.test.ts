@@ -33,10 +33,10 @@ describe('Grid Layout Helpers', () => {
             ];
 
             const result = arrangeNodesInGrid(nodes);
-
             // Node 5 should be on row 2 (index 4, col 0)
-            expect(result[4]!.position.x).toBe(0);
-            expect(result[4]!.position.y).toBeGreaterThan(0);
+            // Expected with padding: x = 0 + 32, y = row1_y + gap + padding
+            expect(result[4]!.position.x).toBe(32);
+            expect(result[4]!.position.y).toBeGreaterThan(32);
         });
 
         it('should sort nodes by createdAt before arranging', () => {
@@ -47,10 +47,10 @@ describe('Grid Layout Helpers', () => {
 
             const result = arrangeNodesInGrid(nodes);
 
-            // n1 should be first (earlier date) at position 0,0
+            // n1 should be first (earlier date) at position padding,padding
             expect(result[0]!.id).toBe('n1');
-            expect(result[0]!.position.x).toBe(0);
-            expect(result[0]!.position.y).toBe(0);
+            expect(result[0]!.position.x).toBe(32);
+            expect(result[0]!.position.y).toBe(32);
         });
 
         it('should return empty array for empty input', () => {
@@ -69,11 +69,11 @@ describe('Grid Layout Helpers', () => {
     });
 
     describe('calculateNextNodePosition', () => {
-        it('should return origin for empty nodes array', () => {
+        it('should return origin with padding for empty nodes array', () => {
             const result = calculateNextNodePosition([]);
 
-            expect(result.x).toBe(0);
-            expect(result.y).toBe(0);
+            expect(result.x).toBe(32);
+            expect(result.y).toBe(32);
         });
 
         it('should return next slot in first row when less than 4 nodes', () => {
@@ -85,8 +85,8 @@ describe('Grid Layout Helpers', () => {
             const result = calculateNextNodePosition(nodes);
 
             // 3rd node should be at column 2 (index 2)
-            expect(result.x).toBeGreaterThan(0);
-            expect(result.y).toBe(0);
+            expect(result.x).toBeGreaterThan(32);
+            expect(result.y).toBe(32);
         });
 
         it('should wrap to second row after 4 nodes', () => {
@@ -95,8 +95,9 @@ describe('Grid Layout Helpers', () => {
             const result = calculateNextNodePosition(nodes);
 
             // 5th node should be at row 1, column 0
-            expect(result.x).toBe(0);
-            expect(result.y).toBeGreaterThan(0);
+            // Expected with padding: x = 0 + 32
+            expect(result.x).toBe(32);
+            expect(result.y).toBeGreaterThan(32);
         });
 
         it('should calculate correct position for 9th node', () => {
@@ -105,7 +106,7 @@ describe('Grid Layout Helpers', () => {
             const result = calculateNextNodePosition(nodes);
 
             // 9th node: row 2, column 0
-            expect(result.x).toBe(0);
+            expect(result.x).toBe(32);
         });
     });
 });

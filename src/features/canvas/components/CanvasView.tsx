@@ -201,7 +201,7 @@ export function CanvasView() {
                     type: 'bezier',
                     markerEnd: { type: MarkerType.ArrowClosed },
                 }}
-                defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+                defaultViewport={{ x: 32, y: 32, zoom: 1 }}
                 snapToGrid
                 snapGrid={[16, 16]}
                 minZoom={0.1}

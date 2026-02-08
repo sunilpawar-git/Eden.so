@@ -64,7 +64,7 @@ describe('CanvasView', () => {
 
         const mockCalls = vi.mocked(ReactFlow).mock.calls;
         const reactFlowProps = mockCalls[0]?.[0] ?? {};
-        expect(reactFlowProps.defaultViewport).toEqual({ x: 0, y: 0, zoom: 1 });
+        expect(reactFlowProps.defaultViewport).toEqual({ x: 32, y: 32, zoom: 1 });
         // fitView is disabled to prevent auto-zoom making nodes appear oversized
         expect(reactFlowProps.fitView).toBeUndefined();
     });

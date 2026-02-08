@@ -41,9 +41,9 @@ describe('canvasStore', () => {
             // Node 5 should be moved to row 2
             expect(updatedNodes[4]!.position.y).toBeGreaterThan(0);
 
-            // Node 1 should be at 0,0
-            expect(updatedNodes[0]!.position.x).toBe(0);
-            expect(updatedNodes[0]!.position.y).toBe(0);
+            // Node 1 should be at 32,32
+            expect(updatedNodes[0]!.position.x).toBe(32);
+            expect(updatedNodes[0]!.position.y).toBe(32);
         });
 
         it('should trigger store update', () => {
