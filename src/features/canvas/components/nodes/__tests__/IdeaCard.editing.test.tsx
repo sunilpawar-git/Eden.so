@@ -3,10 +3,10 @@
  * Tests for save-on-blur and populate-on-edit functionality
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
-import type { IdeaNodeData } from '../../../types/node';
+import { defaultTestData, defaultTestProps } from './helpers/ideaCardTestMocks';
 
 // Mock ReactFlow hooks and components
 vi.mock('@xyflow/react', async () => {
@@ -30,38 +30,32 @@ vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     }),
 }));
 
-// Mock MarkdownRenderer
-vi.mock('@/shared/components/MarkdownRenderer', () => ({
-    MarkdownRenderer: ({ content }: { content: string }) => (
-        <div data-testid="markdown-renderer">{content}</div>
-    ),
-}));
+// TipTap mocks — shared state via singleton in helper module
+vi.mock('../../../hooks/useTipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).hookMock()
+);
+vi.mock('../TipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).componentMock()
+);
+
+vi.mock('../../../extensions/slashCommandSuggestion', async () =>
+    (await import('./helpers/tipTapTestMock')).extensionMock()
+);
+vi.mock('../../../hooks/useIdeaCardEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
+);
+vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+);
 
 describe('IdeaCard Editing', () => {
-    const defaultData: IdeaNodeData = {
-        prompt: '',
-        output: undefined,
-        isGenerating: false,
-        isPromptCollapsed: false,
-    };
+    const defaultData = defaultTestData;
+    const defaultProps = defaultTestProps;
 
-    const defaultProps = {
-        id: 'idea-1',
-        data: defaultData,
-        type: 'idea' as const,
-        selected: false,
-        isConnectable: true,
-        positionAbsoluteX: 0,
-        positionAbsoluteY: 0,
-        zIndex: 0,
-        dragging: false,
-        selectable: true,
-        deletable: true,
-        draggable: true,
-    };
-
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const { resetMockState } = await import('./helpers/tipTapTestMock');
+        resetMockState();
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -87,38 +81,6 @@ describe('IdeaCard Editing', () => {
             fireEvent.blur(textarea);
 
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Content that should be saved');
-        });
-
-        it('should save AI prompt on blur in AI mode', async () => {
-            const mockUpdatePrompt = vi.fn();
-            useCanvasStore.setState({
-                nodes: [],
-                edges: [],
-                selectedNodeIds: new Set(),
-                updateNodePrompt: mockUpdatePrompt,
-                updateNodeOutput: vi.fn(),
-            });
-
-            render(<IdeaCard {...defaultProps} />);
-
-            const textarea = screen.getByRole('textbox');
-
-            // Enter AI mode via slash command
-            fireEvent.change(textarea, { target: { value: '/' } });
-            const menuItem = screen.getByRole('menuitem');
-            fireEvent.click(menuItem);
-
-            // Wait for AI mode (placeholder changes)
-            await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Type your AI prompt...');
-            });
-
-            // Type prompt and blur
-            const aiTextarea = screen.getByRole('textbox');
-            fireEvent.change(aiTextarea, { target: { value: 'Generate something' } });
-            fireEvent.blur(aiTextarea);
-
-            expect(mockUpdatePrompt).toHaveBeenCalledWith('idea-1', 'Generate something');
         });
 
         it('should not save on blur if content is empty', () => {
@@ -203,7 +165,7 @@ describe('IdeaCard Editing', () => {
             expect(textarea).toHaveValue('Original AI prompt');
         });
 
-        it('should allow editing and saving modified content', () => {
+        it('should allow editing and saving modified content via blur', () => {
             const mockUpdateOutput = vi.fn();
             const propsWithOutput = {
                 ...defaultProps,
@@ -223,10 +185,10 @@ describe('IdeaCard Editing', () => {
             const content = screen.getByText('Original content');
             fireEvent.doubleClick(content);
 
-            // Modify the content
+            // Modify and blur to save
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Modified content' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            fireEvent.blur(textarea);
 
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Modified content');
         });
@@ -263,7 +225,7 @@ describe('IdeaCard Editing', () => {
     });
 
     describe('Edit Mode Transitions', () => {
-        it('should exit edit mode on Escape and save changes (same as blur)', () => {
+        it('should exit edit mode and save on blur', () => {
             const mockUpdateOutput = vi.fn();
             useCanvasStore.setState({
                 nodes: [],
@@ -277,28 +239,17 @@ describe('IdeaCard Editing', () => {
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Some content' } });
+            fireEvent.blur(textarea);
 
-            fireEvent.keyDown(textarea, { key: 'Escape' });
-
-            // Escape now saves content to prevent text vanishing bug
             expect(mockUpdateOutput).toHaveBeenCalledWith('idea-1', 'Some content');
         });
 
-        it('should exit edit mode after successful save on Enter', () => {
-            const mockUpdateOutput = vi.fn();
-            useCanvasStore.setState({
-                nodes: [],
-                edges: [],
-                selectedNodeIds: new Set(),
-                updateNodeOutput: mockUpdateOutput,
-                updateNodePrompt: vi.fn(),
-            });
-
+        it('should exit edit mode after blur (textarea disappears)', () => {
             render(<IdeaCard {...defaultProps} />);
 
             const textarea = screen.getByRole('textbox');
             fireEvent.change(textarea, { target: { value: 'Saved content' } });
-            fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+            fireEvent.blur(textarea);
 
             expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
         });

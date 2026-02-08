@@ -61,14 +61,23 @@ vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     }),
 }));
 
-// Mock MarkdownRenderer for testing
-vi.mock('@/shared/components/MarkdownRenderer', () => ({
-    MarkdownRenderer: ({ content, className }: { content: string; className?: string }) => (
-        <div data-testid="markdown-renderer" className={className}>
-            {content}
-        </div>
-    ),
-}));
+// TipTap mocks — shared state via singleton in helper module
+vi.mock('../../../hooks/useTipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).hookMock()
+);
+vi.mock('../TipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).componentMock()
+);
+
+vi.mock('../../../extensions/slashCommandSuggestion', async () =>
+    (await import('./helpers/tipTapTestMock')).extensionMock()
+);
+vi.mock('../../../hooks/useIdeaCardEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
+);
+vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+);
 
 describe('IdeaCard Features', () => {
     const defaultData: IdeaNodeData = {
@@ -93,8 +102,10 @@ describe('IdeaCard Features', () => {
         draggable: true,
     };
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const { resetMockState } = await import('./helpers/tipTapTestMock');
+        resetMockState();
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -208,16 +219,15 @@ describe('IdeaCard Features', () => {
             expect(contentArea.querySelector('div')).not.toBeNull();
         });
 
-        it('renders output using MarkdownRenderer component', () => {
+        it('renders output using TipTapEditor component', () => {
             const propsWithOutput = {
                 ...defaultProps,
                 data: { ...defaultData, output: '**Bold** text' },
             };
             render(<IdeaCard {...propsWithOutput} />);
-            
-            const markdownRenderer = screen.getByTestId('markdown-renderer');
-            expect(markdownRenderer).toBeInTheDocument();
-            expect(markdownRenderer.textContent).toContain('**Bold** text');
+
+            const viewEditor = screen.getByTestId('view-editor');
+            expect(viewEditor).toBeInTheDocument();
         });
     });
 

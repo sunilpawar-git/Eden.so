@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
-import type { IdeaNodeData } from '../../../types/node';
+import { defaultTestData, defaultTestProps } from './helpers/ideaCardTestMocks';
 
 // Mock ReactFlow hooks and components
 vi.mock('@xyflow/react', async () => {
@@ -29,38 +29,32 @@ vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     }),
 }));
 
-// Mock MarkdownRenderer
-vi.mock('@/shared/components/MarkdownRenderer', () => ({
-    MarkdownRenderer: ({ content }: { content: string }) => (
-        <div data-testid="markdown-renderer">{content}</div>
-    ),
-}));
+// TipTap mocks — shared state via singleton in helper module
+vi.mock('../../../hooks/useTipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).hookMock()
+);
+vi.mock('../TipTapEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).componentMock()
+);
+
+vi.mock('../../../extensions/slashCommandSuggestion', async () =>
+    (await import('./helpers/tipTapTestMock')).extensionMock()
+);
+vi.mock('../../../hooks/useIdeaCardEditor', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
+);
+vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+);
 
 describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
-    const defaultData: IdeaNodeData = {
-        prompt: '',
-        output: undefined,
-        isGenerating: false,
-        isPromptCollapsed: false,
-    };
+    const defaultData = defaultTestData;
+    const defaultProps = defaultTestProps;
 
-    const defaultProps = {
-        id: 'idea-1',
-        data: defaultData,
-        type: 'idea' as const,
-        selected: false,
-        isConnectable: true,
-        positionAbsoluteX: 0,
-        positionAbsoluteY: 0,
-        zIndex: 0,
-        dragging: false,
-        selectable: true,
-        deletable: true,
-        draggable: true,
-    };
-
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const { resetMockState } = await import('./helpers/tipTapTestMock');
+        resetMockState();
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -168,5 +162,86 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
 
         // Should show generating state
         expect(screen.getByText(/generating/i)).toBeInTheDocument();
+    });
+
+    describe('Focus and cursor placement on edit entry', () => {
+        it('should enter edit mode on double-click to ensure immediate typing', () => {
+            const propsWithOutput = {
+                ...defaultProps,
+                data: { ...defaultData, output: 'Focus test content' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+
+            const content = screen.getByText('Focus test content');
+            fireEvent.doubleClick(content);
+
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
+        });
+
+        it('should enter edit mode on Enter key to ensure immediate typing', () => {
+            const propsWithOutput = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, output: 'Enter focus test' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+
+            const contentArea = screen.getByTestId('content-area');
+            fireEvent.keyDown(contentArea, { key: 'Enter' });
+
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
+        });
+
+        it('should enter edit mode on printable key to ensure immediate typing', () => {
+            const propsWithOutput = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, output: 'Key focus test' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+
+            const contentArea = screen.getByTestId('content-area');
+            fireEvent.keyDown(contentArea, { key: 'a' });
+
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
+        });
+
+        it('should insert the triggering character when entering edit mode via key', async () => {
+            const { getInsertedChars } = await import('./helpers/tipTapTestMock');
+            const propsWithOutput = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, output: 'Existing text' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+
+            const contentArea = screen.getByTestId('content-area');
+            fireEvent.keyDown(contentArea, { key: 'h' });
+
+            // The 'h' keypress that triggered edit mode must be inserted
+            expect(getInsertedChars()).toContain('h');
+        });
+
+        it('should NOT insert character for Enter key (Enter enters edit mode only)', async () => {
+            const { getInsertedChars } = await import('./helpers/tipTapTestMock');
+            const propsWithOutput = {
+                ...defaultProps,
+                selected: true,
+                data: { ...defaultData, output: 'Enter test' },
+            };
+
+            render(<IdeaCard {...propsWithOutput} />);
+
+            const contentArea = screen.getByTestId('content-area');
+            fireEvent.keyDown(contentArea, { key: 'Enter' });
+
+            // Enter should NOT be inserted as text
+            expect(getInsertedChars()).not.toContain('Enter');
+            expect(getInsertedChars()).not.toContain('\n');
+        });
     });
 });

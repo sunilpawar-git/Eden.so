@@ -3,67 +3,20 @@
  * Reduces IdeaCard.tsx complexity by separating view state rendering
  */
 import React from 'react';
+import type { Editor } from '@tiptap/react';
 import { strings } from '@/shared/localization/strings';
-import { MarkdownRenderer } from '@/shared/components/MarkdownRenderer';
-import { InlineSlashMenu } from './InlineSlashMenu';
-import type { SlashCommandId } from '../../types/slashCommand';
+import { TipTapEditor } from './TipTapEditor';
 import styles from './IdeaCard.module.css';
 
 interface EditingContentProps {
-    inputMode: 'note' | 'ai';
-    inputValue: string;
-    placeholder: string;
-    isMenuOpen: boolean;
-    isGenerating: boolean;
-    query: string;
-    textareaRef: React.RefObject<HTMLTextAreaElement>;
-    onInputChange: (value: string) => void;
-    onBlur: () => void;
-    onKeyDown: (e: React.KeyboardEvent) => void;
-    onCommandSelect: (id: SlashCommandId) => void;
-    onMenuClose: () => void;
+    editor: Editor | null;
 }
 
-export const EditingContent = React.memo(({
-    inputValue,
-    placeholder,
-    isMenuOpen,
-    isGenerating,
-    query,
-    textareaRef,
-    onInputChange,
-    onBlur,
-    onKeyDown,
-    onCommandSelect,
-    onMenuClose,
-}: EditingContentProps) => {
-    const textarea = (
-        <textarea
-            ref={textareaRef}
-            className={styles.inputArea}
-            value={inputValue}
-            onChange={(e) => onInputChange(e.target.value)}
-            onBlur={onBlur}
-            onKeyDown={onKeyDown}
-            placeholder={placeholder}
-            autoFocus
-            disabled={isGenerating}
-        />
-    );
-
-    return (
-        <div className={styles.inputWrapper}>
-            {textarea}
-            {isMenuOpen && (
-                <InlineSlashMenu
-                    query={query}
-                    onSelect={onCommandSelect}
-                    onClose={onMenuClose}
-                />
-            )}
-        </div>
-    );
-});
+export const EditingContent = React.memo(({ editor }: EditingContentProps) => (
+    <div className={styles.inputWrapper}>
+        <TipTapEditor editor={editor} data-testid="tiptap-editor" />
+    </div>
+));
 
 export const GeneratingContent = React.memo(() => (
     <div className={styles.generating}>
@@ -72,18 +25,18 @@ export const GeneratingContent = React.memo(() => (
     </div>
 ));
 
-interface AICardContentProps {
-    prompt: string;
-    output: string;
+interface ViewContentProps {
+    editor: Editor | null;
     onDoubleClick: () => void;
     onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
+interface AICardContentProps extends ViewContentProps {
+    prompt: string;
+}
+
 export const AICardContent = React.memo(({
-    prompt,
-    output,
-    onDoubleClick,
-    onKeyDown,
+    prompt, editor, onDoubleClick, onKeyDown,
 }: AICardContentProps) => (
     <>
         <div
@@ -100,28 +53,15 @@ export const AICardContent = React.memo(({
             data-testid="ai-divider"
             aria-label={strings.ideaCard.aiDividerLabel}
         />
-        <MarkdownRenderer content={output} className={styles.outputContent} />
+        <TipTapEditor editor={editor} className={styles.outputContent} data-testid="view-editor" />
     </>
 ));
 
-interface SimpleCardContentProps {
-    output: string;
-    onDoubleClick: () => void;
-    onKeyDown: (e: React.KeyboardEvent) => void;
-}
-
 export const SimpleCardContent = React.memo(({
-    output,
-    onDoubleClick,
-    onKeyDown,
-}: SimpleCardContentProps) => (
-    <div
-        onDoubleClick={onDoubleClick}
-        role="button"
-        tabIndex={0}
-        onKeyDown={onKeyDown}
-    >
-        <MarkdownRenderer content={output} className={styles.outputContent} />
+    editor, onDoubleClick, onKeyDown,
+}: ViewContentProps) => (
+    <div onDoubleClick={onDoubleClick} role="button" tabIndex={0} onKeyDown={onKeyDown}>
+        <TipTapEditor editor={editor} className={styles.outputContent} data-testid="view-editor" />
     </div>
 ));
 
@@ -131,8 +71,7 @@ interface PlaceholderContentProps {
 }
 
 export const PlaceholderContent = React.memo(({
-    onDoubleClick,
-    onKeyDown,
+    onDoubleClick, onKeyDown,
 }: PlaceholderContentProps) => (
     <div
         className={styles.placeholder}
