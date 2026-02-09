@@ -43,6 +43,38 @@ export interface NodePosition {
 }
 
 /**
+ * Input mode for IdeaCard (note = plain text, ai = AI prompt)
+ * Re-exported from slashCommand.ts for convenience
+ */
+export type { InputMode } from './slashCommand';
+
+/**
+ * Editing state owned exclusively by canvasStore (SSOT)
+ * Only one node can be in editing mode at a time
+ */
+export interface EditingState {
+    editingNodeId: string | null;
+    draftContent: string | null;
+    inputMode: 'note' | 'ai';
+}
+
+/**
+ * Metadata fetched from a URL for rich link preview cards
+ * Parsed from Open Graph and Twitter Card meta tags
+ */
+export interface LinkPreviewMetadata {
+    url: string;
+    title?: string;
+    description?: string;
+    image?: string;
+    favicon?: string;
+    domain?: string;
+    cardType?: 'summary' | 'summary_large_image' | 'player' | 'app';
+    fetchedAt: number;
+    error?: boolean;
+}
+
+/**
  * Data structure for IdeaCard nodes (unified prompt + output)
  */
 export interface IdeaNodeData {
@@ -51,6 +83,7 @@ export interface IdeaNodeData {
     isGenerating?: boolean;
     isPromptCollapsed?: boolean;
     tags?: string[]; // Tag IDs for BASB organization
+    linkPreviews?: Record<string, LinkPreviewMetadata>; // Keyed by URL
     [key: string]: unknown; // Index signature for ReactFlow compatibility
 }
 

@@ -3,7 +3,8 @@
  * Performance: Selection state decoupled from nodes array
  */
 import { create } from 'zustand';
-import type { CanvasNode, NodePosition } from '../types/node';
+import type { CanvasNode, NodePosition, EditingState, LinkPreviewMetadata } from '../types/node';
+import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
 import {
     updateNodePositionInArray,
@@ -21,6 +22,11 @@ interface CanvasState {
     nodes: CanvasNode[];
     edges: CanvasEdge[];
     selectedNodeIds: Set<string>;
+
+    // Editing state (SSOT — only one node editable at a time)
+    editingNodeId: string | null;
+    draftContent: string | null;
+    inputMode: InputMode;
 }
 
 interface CanvasActions {
@@ -59,6 +65,16 @@ interface CanvasActions {
     setNodes: (nodes: CanvasNode[]) => void;
     setEdges: (edges: CanvasEdge[]) => void;
     clearCanvas: () => void;
+
+    // Editing state actions (SSOT for "who is editing")
+    startEditing: (nodeId: string) => void;
+    stopEditing: () => void;
+    updateDraft: (content: string) => void;
+    setInputMode: (mode: InputMode) => void;
+
+    // Link preview actions
+    addLinkPreview: (nodeId: string, url: string, metadata: LinkPreviewMetadata) => void;
+    removeLinkPreview: (nodeId: string, url: string) => void;
 }
 
 type CanvasStore = CanvasState & CanvasActions;
@@ -67,6 +83,9 @@ const initialState: CanvasState = {
     nodes: [],
     edges: [],
     selectedNodeIds: new Set(),
+    editingNodeId: null,
+    draftContent: null,
+    inputMode: 'note',
 };
 
 export const useCanvasStore = create<CanvasStore>()((set, get) => ({
@@ -102,7 +121,12 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
         set((s) => ({ nodes: togglePromptCollapsedInArray(s.nodes, nodeId) })),
 
     deleteNode: (nodeId) =>
-        set((s) => deleteNodeFromArrays(s.nodes, s.edges, s.selectedNodeIds, nodeId)),
+        set((s) => ({
+            ...deleteNodeFromArrays(s.nodes, s.edges, s.selectedNodeIds, nodeId),
+            ...(s.editingNodeId === nodeId
+                ? { editingNodeId: null, draftContent: null, inputMode: 'note' as const }
+                : {}),
+        })),
 
     addEdge: (edge) => set((s) => ({ edges: [...s.edges, edge] })),
 
@@ -134,5 +158,47 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     setEdges: (edges) => set({ edges }),
 
-    clearCanvas: () => set({ nodes: [], edges: [], selectedNodeIds: new Set() }),
+    clearCanvas: () => set({
+        nodes: [], edges: [], selectedNodeIds: new Set(),
+        editingNodeId: null, draftContent: null, inputMode: 'note',
+    }),
+
+    // Editing state actions
+    startEditing: (nodeId) => set({ editingNodeId: nodeId, draftContent: null, inputMode: 'note' }),
+
+    stopEditing: () => set({ editingNodeId: null, draftContent: null, inputMode: 'note' }),
+
+    updateDraft: (content) => set({ draftContent: content }),
+
+    setInputMode: (mode) => set({ inputMode: mode }),
+
+    // Link preview actions
+    addLinkPreview: (nodeId, url, metadata) =>
+        set((s) => ({
+            nodes: s.nodes.map((node) =>
+                node.id === nodeId
+                    ? {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            linkPreviews: { ...node.data.linkPreviews, [url]: metadata },
+                        },
+                        updatedAt: new Date(),
+                    }
+                    : node
+            ),
+        })),
+
+    removeLinkPreview: (nodeId, url) =>
+        set((s) => ({
+            nodes: s.nodes.map((node) => {
+                if (node.id !== nodeId) return node;
+                const { [url]: _, ...rest } = node.data.linkPreviews ?? {};
+                return {
+                    ...node,
+                    data: { ...node.data, linkPreviews: rest },
+                    updatedAt: new Date(),
+                };
+            }),
+        })),
 }));

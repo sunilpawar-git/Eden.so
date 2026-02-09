@@ -178,6 +178,20 @@ export const strings = {
         prefixSeparator: ':',
         prefixLabel: 'Command mode active',
     },
+    editing: {
+        enterEditMode: 'Enter edit mode',
+        exitEditMode: 'Exit edit mode',
+        unsavedDraft: 'Unsaved draft',
+        draftSaved: 'Draft saved',
+    },
+    linkPreview: {
+        loading: 'Loading preview...',
+        unavailable: 'Preview unavailable',
+        openLink: 'Open link',
+        removePreview: 'Remove preview',
+        refreshPreview: 'Refresh preview',
+        fetchError: 'Could not load link preview',
+    },
 } as const;
 
 export type StringKeys = typeof strings;
