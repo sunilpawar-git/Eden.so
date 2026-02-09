@@ -280,9 +280,33 @@ describe('useNodeInput', () => {
         });
     });
 
-    describe('inputMode derivation', () => {
-        it('returns current inputMode from store', () => {
-            useCanvasStore.getState().setInputMode('ai');
+    describe('editor editable state management', () => {
+        it('sets editor editable to false on exitEditing (Escape)', () => {
+            useCanvasStore.getState().startEditing(NODE_ID);
+            const { result } = renderHook(() =>
+                useNodeInput({
+                    nodeId: NODE_ID,
+                    editor: mockEditor as never,
+                    getMarkdown: vi.fn(() => 'content'),
+                    setContent: vi.fn(),
+                    getEditableContent: vi.fn(() => ''),
+                    saveContent: vi.fn(),
+                    onSubmitNote: vi.fn(),
+                    onSubmitAI: vi.fn(),
+                    suggestionActiveRef: { current: false },
+                    isGenerating: false,
+                }),
+            );
+
+            const event = new KeyboardEvent('keydown', { key: 'Escape' });
+            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
+            act(() => { result.current.handleKeyDown(event); });
+
+            expect(mockEditor.setEditable).toHaveBeenCalledWith(false);
+            expect(useCanvasStore.getState().editingNodeId).toBeNull();
+        });
+
+        it('sets editor editable to true on enterEditing', () => {
             const { result } = renderHook(() =>
                 useNodeInput({
                     nodeId: NODE_ID,
@@ -297,7 +321,13 @@ describe('useNodeInput', () => {
                     isGenerating: false,
                 }),
             );
-            expect(result.current.inputMode).toBe('ai');
+
+            const event = new KeyboardEvent('keydown', { key: 'Enter' });
+            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
+            act(() => { result.current.handleKeyDown(event); });
+
+            expect(mockEditor.setEditable).toHaveBeenCalledWith(true);
         });
     });
 

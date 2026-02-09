@@ -11,7 +11,9 @@ interface KeyboardShortcutsOptions {
 }
 
 export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
-    const { selectedNodeIds, deleteNode, clearSelection } = useCanvasStore();
+    const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+    const deleteNode = useCanvasStore((s) => s.deleteNode);
+    const clearSelection = useCanvasStore((s) => s.clearSelection);
     const editingNodeId = useCanvasStore((s) => s.editingNodeId);
     const { onOpenSettings, onAddNode, onQuickCapture } = options;
 

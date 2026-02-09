@@ -21,7 +21,6 @@ interface UseIdeaCardEditorReturn {
     editor: ReturnType<typeof useEditor>;
     getMarkdown: () => string;
     setContent: (markdown: string) => void;
-    focusAtEnd: () => void;
     suggestionActiveRef: React.RefObject<boolean>;
 }
 
@@ -51,7 +50,7 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
         useCanvasStore.getState().updateDraft(markdown);
     }, []);
 
-    const { editor, getMarkdown, setContent, focusAtEnd } = useTipTapEditor({
+    const { editor, getMarkdown, setContent } = useTipTapEditor({
         initialContent: displayContent, placeholder, editable: isEditing,
         onBlur: useCallback((md: string) => blurRef.current(md), []),
         onUpdate,
@@ -75,5 +74,5 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
         }
     }, [output, isEditing, setContent]);
 
-    return { editor, getMarkdown, setContent, focusAtEnd, suggestionActiveRef };
+    return { editor, getMarkdown, setContent, suggestionActiveRef };
 }

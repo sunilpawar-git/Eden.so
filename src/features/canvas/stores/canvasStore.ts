@@ -3,7 +3,7 @@
  * Performance: Selection state decoupled from nodes array
  */
 import { create } from 'zustand';
-import type { CanvasNode, NodePosition, EditingState, LinkPreviewMetadata } from '../types/node';
+import type { CanvasNode, NodePosition, LinkPreviewMetadata } from '../types/node';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
 import {

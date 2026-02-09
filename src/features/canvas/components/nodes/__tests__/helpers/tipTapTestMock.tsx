@@ -23,7 +23,6 @@ const state = {
     placeholder: '',
     domElement: null as HTMLElement | null,
     lastInitialContent: undefined as string | undefined,
-    focusAtEndCallCount: 0,
     insertedChars: [] as string[],
 };
 
@@ -35,14 +34,8 @@ export function resetMockState(): void {
     state.placeholder = '';
     state.domElement = null;
     state.lastInitialContent = undefined;
-    state.focusAtEndCallCount = 0;
     state.insertedChars = [];
     _canvasStore = null;
-}
-
-/** Get count of focusAtEnd calls since last reset */
-export function getFocusAtEndCallCount(): number {
-    return state.focusAtEndCallCount;
 }
 
 /** Get characters inserted via insertContent since last reset */
@@ -91,7 +84,6 @@ export function hookMock() {
                 getText: () => state.content,
                 isEmpty: !state.content,
                 setContent: (md: string) => { state.content = md; },
-                focusAtEnd: () => { state.focusAtEndCallCount++; },
             };
         },
     };
@@ -132,7 +124,6 @@ export function useIdeaCardEditorMock() {
                 },
                 getMarkdown: () => state.content,
                 setContent: (md: string) => { state.content = md; },
-                focusAtEnd: () => { state.focusAtEndCallCount++; },
                 suggestionActiveRef: { current: false },
             };
         },

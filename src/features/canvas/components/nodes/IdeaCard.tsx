@@ -79,14 +79,16 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         return () => window.removeEventListener(FOCUS_NODE_EVENT, h);
     }, [id]);
 
-    // Auto-enter edit mode for empty new cards (synchronous via ref guard)
+    // Auto-enter edit mode for empty new cards
     const autoEditRef = useRef(!prompt && !output);
-    if (autoEditRef.current) {
-        autoEditRef.current = false;
-        if (!useCanvasStore.getState().editingNodeId) {
-            useCanvasStore.getState().startEditing(id);
+    useEffect(() => {
+        if (autoEditRef.current) {
+            autoEditRef.current = false;
+            if (!useCanvasStore.getState().editingNodeId) {
+                useCanvasStore.getState().startEditing(id);
+            }
         }
-    }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleDelete = useCallback(() => deleteNode(id), [id, deleteNode]);
     const handleRegenerate = useCallback(() => generateFromPrompt(id), [id, generateFromPrompt]);

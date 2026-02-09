@@ -49,16 +49,6 @@ export interface NodePosition {
 export type { InputMode } from './slashCommand';
 
 /**
- * Editing state owned exclusively by canvasStore (SSOT)
- * Only one node can be in editing mode at a time
- */
-export interface EditingState {
-    editingNodeId: string | null;
-    draftContent: string | null;
-    inputMode: 'note' | 'ai';
-}
-
-/**
  * Metadata fetched from a URL for rich link preview cards
  * Parsed from Open Graph and Twitter Card meta tags
  */

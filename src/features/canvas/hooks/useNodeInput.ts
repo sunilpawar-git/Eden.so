@@ -3,11 +3,10 @@
  * Replaces useIdeaCardKeyboard + useIdeaCardEditor keyboard logic
  * Reads editingNodeId from canvasStore (SSOT), routes view/edit keys
  */
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useLinkPreviewFetch } from './useLinkPreviewFetch';
-import type { InputMode } from '../types/slashCommand';
 
 /** Regex to extract http/https URLs from text */
 const URL_REGEX = /https?:\/\/[^\s)]+/g;
@@ -34,7 +33,6 @@ export interface UseNodeInputOptions {
 
 export interface UseNodeInputReturn {
     isEditing: boolean;
-    inputMode: InputMode;
     handleKeyDown: (e: KeyboardEvent) => void;
     handleDoubleClick: () => void;
 }
@@ -47,11 +45,13 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     } = options;
 
     const isEditing = useCanvasStore((s) => s.editingNodeId === nodeId);
-    const inputMode = useCanvasStore((s) => s.inputMode);
     const draftContent = useCanvasStore((s) => s.draftContent);
 
-    // Wire link preview fetching with URL detection
-    const detectedUrls = isEditing ? extractUrls(draftContent) : [];
+    // Memoize detected URLs to prevent useLinkPreviewFetch effect re-firing every render
+    const detectedUrls = useMemo(
+        () => (isEditing ? extractUrls(draftContent) : []),
+        [isEditing, draftContent],
+    );
     useLinkPreviewFetch(nodeId, detectedUrls);
 
     const enterEditing = useCallback(() => {
@@ -63,8 +63,10 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
 
     const exitEditing = useCallback(() => {
         saveContent(getMarkdown());
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (editor) editor.setEditable(false);
         useCanvasStore.getState().stopEditing();
-    }, [saveContent, getMarkdown]);
+    }, [saveContent, getMarkdown, editor]);
 
     // Paste handler: immediately update draft for URL detection (no debounce)
     useEffect(() => {
@@ -134,5 +136,5 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         if (!isGenerating) enterEditing();
     }, [isGenerating, enterEditing]);
 
-    return { isEditing, inputMode, handleKeyDown, handleDoubleClick };
+    return { isEditing, handleKeyDown, handleDoubleClick };
 }
