@@ -39,7 +39,6 @@ describe('IdeaCardContent sub-components', () => {
             prompt: 'Test prompt',
             editor: null,
             onDoubleClick: vi.fn(),
-            onKeyDown: vi.fn(),
         };
 
         it('should render prompt text', () => {
@@ -70,7 +69,6 @@ describe('IdeaCardContent sub-components', () => {
         const defaultProps = {
             editor: null,
             onDoubleClick: vi.fn(),
-            onKeyDown: vi.fn(),
         };
 
         it('should call onDoubleClick on double-click', () => {
@@ -86,7 +84,6 @@ describe('IdeaCardContent sub-components', () => {
     describe('PlaceholderContent', () => {
         const defaultProps = {
             onDoubleClick: vi.fn(),
-            onKeyDown: vi.fn(),
         };
 
         it('should render placeholder text', () => {

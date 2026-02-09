@@ -28,7 +28,6 @@ export const GeneratingContent = React.memo(() => (
 interface ViewContentProps {
     editor: Editor | null;
     onDoubleClick: () => void;
-    onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 interface AICardContentProps extends ViewContentProps {
@@ -36,7 +35,7 @@ interface AICardContentProps extends ViewContentProps {
 }
 
 export const AICardContent = React.memo(({
-    prompt, editor, onDoubleClick, onKeyDown,
+    prompt, editor, onDoubleClick,
 }: AICardContentProps) => (
     <>
         <div
@@ -44,7 +43,6 @@ export const AICardContent = React.memo(({
             onDoubleClick={onDoubleClick}
             role="button"
             tabIndex={0}
-            onKeyDown={onKeyDown}
         >
             {prompt}
         </div>
@@ -58,27 +56,25 @@ export const AICardContent = React.memo(({
 ));
 
 export const SimpleCardContent = React.memo(({
-    editor, onDoubleClick, onKeyDown,
+    editor, onDoubleClick,
 }: ViewContentProps) => (
-    <div onDoubleClick={onDoubleClick} role="button" tabIndex={0} onKeyDown={onKeyDown}>
+    <div onDoubleClick={onDoubleClick} role="button" tabIndex={0}>
         <TipTapEditor editor={editor} className={styles.outputContent} data-testid="view-editor" />
     </div>
 ));
 
 interface PlaceholderContentProps {
     onDoubleClick: () => void;
-    onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 export const PlaceholderContent = React.memo(({
-    onDoubleClick, onKeyDown,
+    onDoubleClick,
 }: PlaceholderContentProps) => (
     <div
         className={styles.placeholder}
         onDoubleClick={onDoubleClick}
         role="button"
         tabIndex={0}
-        onKeyDown={onKeyDown}
     >
         {strings.ideaCard.inputPlaceholder}
     </div>
