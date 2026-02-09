@@ -5,7 +5,9 @@
 import React from 'react';
 import type { Editor } from '@tiptap/react';
 import { strings } from '@/shared/localization/strings';
+import type { LinkPreviewMetadata } from '../../types/node';
 import { TipTapEditor } from './TipTapEditor';
+import { LinkPreviewList } from './LinkPreviewCard';
 import styles from './IdeaCard.module.css';
 
 interface EditingContentProps {
@@ -28,6 +30,7 @@ export const GeneratingContent = React.memo(() => (
 interface ViewContentProps {
     editor: Editor | null;
     onDoubleClick: () => void;
+    linkPreviews?: Record<string, LinkPreviewMetadata>;
 }
 
 interface AICardContentProps extends ViewContentProps {
@@ -35,7 +38,7 @@ interface AICardContentProps extends ViewContentProps {
 }
 
 export const AICardContent = React.memo(({
-    prompt, editor, onDoubleClick,
+    prompt, editor, onDoubleClick, linkPreviews,
 }: AICardContentProps) => (
     <>
         <div
@@ -52,14 +55,16 @@ export const AICardContent = React.memo(({
             aria-label={strings.ideaCard.aiDividerLabel}
         />
         <TipTapEditor editor={editor} className={styles.outputContent} data-testid="view-editor" />
+        <LinkPreviewList previews={linkPreviews ?? {}} />
     </>
 ));
 
 export const SimpleCardContent = React.memo(({
-    editor, onDoubleClick,
+    editor, onDoubleClick, linkPreviews,
 }: ViewContentProps) => (
     <div onDoubleClick={onDoubleClick} role="button" tabIndex={0}>
         <TipTapEditor editor={editor} className={styles.outputContent} data-testid="view-editor" />
+        <LinkPreviewList previews={linkPreviews ?? {}} />
     </div>
 ));
 

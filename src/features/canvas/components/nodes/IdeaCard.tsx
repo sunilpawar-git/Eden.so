@@ -23,7 +23,7 @@ import styles from './IdeaCard.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
-    const { prompt, output, isGenerating, tags: tagIds = [] } = data as IdeaNodeData;
+    const { prompt, output, isGenerating, tags: tagIds = [], linkPreviews } = data as IdeaNodeData;
     const isAICard = Boolean(prompt && output && prompt !== output);
     const [showTagInput, setShowTagInput] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -114,8 +114,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     onKeyDown={selected ? onKeyDownReact : undefined}>
                     {isEditing ? <EditingContent editor={editor} /> :
                      isGenerating ? <GeneratingContent /> :
-                     hasContent && isAICard ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} /> :
-                     hasContent ? <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} /> :
+                     hasContent && isAICard ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
+                     hasContent ? <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
                      <PlaceholderContent onDoubleClick={handleDoubleClick} />}
                 </div>
                 {(showTagInput || tagIds.length > 0) && (
