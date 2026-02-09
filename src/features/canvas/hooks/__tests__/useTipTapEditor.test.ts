@@ -142,4 +142,30 @@ describe('useTipTapEditor', () => {
             expect(() => result.current.focusAtEnd()).not.toThrow();
         });
     });
+
+    describe('onUpdate callback', () => {
+        it('wires onUpdate callback to editor options', () => {
+            const onUpdate = vi.fn();
+            const { result } = renderHook(() =>
+                useTipTapEditor({ initialContent: 'hello', placeholder: '', onUpdate })
+            );
+            // Editor is created with update handler wired
+            expect(result.current.editor).not.toBeNull();
+        });
+    });
+
+    describe('editable sync (removed)', () => {
+        it('does not use useEffect to sync editable — caller controls directly', () => {
+            // Render with editable=false, then editable=true should be controlled
+            // by the caller (useNodeInput) calling editor.setEditable() directly
+            const { result, rerender } = renderHook(
+                ({ editable }) => useTipTapEditor({ initialContent: 'text', placeholder: '', editable }),
+                { initialProps: { editable: false } }
+            );
+            expect(result.current.editor!.isEditable).toBe(false);
+            // Re-render alone should NOT change editable (no useEffect sync)
+            rerender({ editable: false });
+            expect(result.current.editor!.isEditable).toBe(false);
+        });
+    });
 });

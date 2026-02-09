@@ -1,6 +1,7 @@
 /** useIdeaCardEditor - Editor lifecycle, blur guard, content sync for IdeaCard */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { useEditor } from '@tiptap/react';
+import { useCanvasStore } from '../stores/canvasStore';
 import { useTipTapEditor } from './useTipTapEditor';
 import {
     SlashCommandSuggestion, createSlashSuggestionRender,
@@ -46,9 +47,14 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
     const blurRef = useRef<(md: string) => void>(() => undefined);
     const displayContent = isEditing ? getEditableContent() : (output ?? '');
 
+    const onUpdate = useCallback((markdown: string) => {
+        useCanvasStore.getState().updateDraft(markdown);
+    }, []);
+
     const { editor, getMarkdown, setContent, focusAtEnd } = useTipTapEditor({
         initialContent: displayContent, placeholder, editable: isEditing,
         onBlur: useCallback((md: string) => blurRef.current(md), []),
+        onUpdate,
         extraExtensions: slashExtensions,
     });
 

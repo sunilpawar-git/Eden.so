@@ -3,7 +3,7 @@
  * Replaces useIdeaCardKeyboard + useIdeaCardEditor keyboard logic
  * Reads editingNodeId from canvasStore (SSOT), routes view/edit keys
  */
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useLinkPreviewFetch } from './useLinkPreviewFetch';
@@ -65,6 +65,20 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         saveContent(getMarkdown());
         useCanvasStore.getState().stopEditing();
     }, [saveContent, getMarkdown]);
+
+    // Paste handler: immediately update draft for URL detection (no debounce)
+    useEffect(() => {
+        if (!isEditing || !editor) return;
+        const dom = editor.view.dom;
+        const onPaste = () => {
+            // Defer to let TipTap process paste first, then read updated content
+            queueMicrotask(() => {
+                useCanvasStore.getState().updateDraft(getMarkdown());
+            });
+        };
+        dom.addEventListener('paste', onPaste);
+        return () => { dom.removeEventListener('paste', onPaste); };
+    }, [isEditing, editor, getMarkdown]);
 
     const handleViewModeKey = useCallback((e: KeyboardEvent) => {
         if (isGenerating) return;

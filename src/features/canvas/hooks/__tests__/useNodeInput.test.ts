@@ -374,4 +374,96 @@ describe('useNodeInput', () => {
             expect(useLinkPreviewFetch).toHaveBeenCalledWith(NODE_ID, []);
         });
     });
+
+    describe('paste handler for URL detection', () => {
+        it('updates draftContent on paste with URL text', async () => {
+            useCanvasStore.getState().startEditing(NODE_ID);
+            const dom = document.createElement('div');
+            const editorWithDom = {
+                ...mockEditor,
+                view: { dom },
+            };
+
+            renderHook(() =>
+                useNodeInput({
+                    nodeId: NODE_ID,
+                    editor: editorWithDom as never,
+                    getMarkdown: vi.fn(() => 'existing text https://pasted.com/page'),
+                    setContent: vi.fn(),
+                    getEditableContent: vi.fn(() => ''),
+                    saveContent: vi.fn(),
+                    onSubmitNote: vi.fn(),
+                    onSubmitAI: vi.fn(),
+                    suggestionActiveRef: { current: false },
+                    isGenerating: false,
+                }),
+            );
+
+            // Simulate paste event
+            const pasteEvent = new Event('paste', { bubbles: true });
+            act(() => { dom.dispatchEvent(pasteEvent); });
+
+            // Wait for queueMicrotask to process
+            await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+
+            // After paste, draftContent should be updated from getMarkdown()
+            expect(useCanvasStore.getState().draftContent).toBe(
+                'existing text https://pasted.com/page',
+            );
+        });
+
+        it('does not attach paste listener when not editing', () => {
+            const dom = document.createElement('div');
+            const addSpy = vi.spyOn(dom, 'addEventListener');
+            const editorWithDom = {
+                ...mockEditor,
+                view: { dom },
+            };
+
+            renderHook(() =>
+                useNodeInput({
+                    nodeId: NODE_ID,
+                    editor: editorWithDom as never,
+                    getMarkdown: vi.fn(() => ''),
+                    setContent: vi.fn(),
+                    getEditableContent: vi.fn(() => ''),
+                    saveContent: vi.fn(),
+                    onSubmitNote: vi.fn(),
+                    onSubmitAI: vi.fn(),
+                    suggestionActiveRef: { current: false },
+                    isGenerating: false,
+                }),
+            );
+
+            expect(addSpy).not.toHaveBeenCalledWith('paste', expect.any(Function));
+        });
+
+        it('removes paste listener on unmount', () => {
+            useCanvasStore.getState().startEditing(NODE_ID);
+            const dom = document.createElement('div');
+            const removeSpy = vi.spyOn(dom, 'removeEventListener');
+            const editorWithDom = {
+                ...mockEditor,
+                view: { dom },
+            };
+
+            const { unmount } = renderHook(() =>
+                useNodeInput({
+                    nodeId: NODE_ID,
+                    editor: editorWithDom as never,
+                    getMarkdown: vi.fn(() => ''),
+                    setContent: vi.fn(),
+                    getEditableContent: vi.fn(() => ''),
+                    saveContent: vi.fn(),
+                    onSubmitNote: vi.fn(),
+                    onSubmitAI: vi.fn(),
+                    suggestionActiveRef: { current: false },
+                    isGenerating: false,
+                }),
+            );
+
+            unmount();
+            expect(removeSpy).toHaveBeenCalledWith('paste', expect.any(Function));
+        });
+    });
 });
