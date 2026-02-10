@@ -150,7 +150,121 @@ describe('useKeyboardShortcuts', () => {
     });
 
     describe('Input Focus Handling', () => {
-        it('should not trigger shortcuts when typing in input', () => {
+        it('should not trigger shortcuts when store.editingNodeId is set', () => {
+            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+                (selector?: (state: unknown) => unknown) => {
+                    const state = {
+                        selectedNodeIds: new Set<string>(),
+                        deleteNode: mockDeleteNode,
+                        clearSelection: mockClearSelection,
+                        editingNodeId: 'node-42',
+                    };
+                    return selector ? selector(state) : state;
+                }
+            );
+
+            renderHook(() =>
+                useKeyboardShortcuts({ onAddNode: mockOnAddNode })
+            );
+
+            fireKeyDown('n');
+            expect(mockOnAddNode).not.toHaveBeenCalled();
+        });
+
+        it('should not intercept Delete/Backspace when editingNodeId is set', () => {
+            const selectedNodeIds = new Set(['node-1']);
+            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+                (selector?: (state: unknown) => unknown) => {
+                    const state = {
+                        selectedNodeIds,
+                        deleteNode: mockDeleteNode,
+                        clearSelection: mockClearSelection,
+                        editingNodeId: 'node-1',
+                    };
+                    return selector ? selector(state) : state;
+                }
+            );
+
+            renderHook(() => useKeyboardShortcuts({}));
+
+            fireKeyDown('Delete');
+            expect(mockDeleteNode).not.toHaveBeenCalled();
+
+            fireKeyDown('Backspace');
+            expect(mockDeleteNode).not.toHaveBeenCalled();
+        });
+
+        it('should not intercept Escape when editingNodeId is set', () => {
+            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+                (selector?: (state: unknown) => unknown) => {
+                    const state = {
+                        selectedNodeIds: new Set<string>(),
+                        deleteNode: mockDeleteNode,
+                        clearSelection: mockClearSelection,
+                        editingNodeId: 'node-5',
+                    };
+                    return selector ? selector(state) : state;
+                }
+            );
+
+            renderHook(() => useKeyboardShortcuts({}));
+
+            fireKeyDown('Escape');
+            expect(mockClearSelection).not.toHaveBeenCalled();
+        });
+
+        it('should still trigger Cmd+N when editingNodeId is set', () => {
+            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+                (selector?: (state: unknown) => unknown) => {
+                    const state = {
+                        selectedNodeIds: new Set<string>(),
+                        deleteNode: mockDeleteNode,
+                        clearSelection: mockClearSelection,
+                        editingNodeId: 'node-42',
+                    };
+                    return selector ? selector(state) : state;
+                }
+            );
+
+            renderHook(() =>
+                useKeyboardShortcuts({ onQuickCapture: mockOnQuickCapture })
+            );
+
+            fireKeyDown('n', { metaKey: true });
+            expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+        });
+
+        it('should still trigger Cmd+, when editingNodeId is set', () => {
+            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+                (selector?: (state: unknown) => unknown) => {
+                    const state = {
+                        selectedNodeIds: new Set<string>(),
+                        deleteNode: mockDeleteNode,
+                        clearSelection: mockClearSelection,
+                        editingNodeId: 'node-42',
+                    };
+                    return selector ? selector(state) : state;
+                }
+            );
+
+            renderHook(() =>
+                useKeyboardShortcuts({ onOpenSettings: mockOnOpenSettings })
+            );
+
+            fireKeyDown(',', { metaKey: true });
+            expect(mockOnOpenSettings).toHaveBeenCalledTimes(1);
+        });
+
+        it('should fire shortcuts normally when editingNodeId is null', () => {
+            renderHook(() =>
+                useKeyboardShortcuts({ onAddNode: mockOnAddNode })
+            );
+
+            fireKeyDown('n');
+            expect(mockOnAddNode).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not trigger shortcuts when typing in input (legacy DOM guard)', () => {
             renderHook(() =>
                 useKeyboardShortcuts({ onAddNode: mockOnAddNode })
             );

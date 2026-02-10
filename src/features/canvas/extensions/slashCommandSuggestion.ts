@@ -28,7 +28,7 @@ export const SlashCommandSuggestion = Extension.create<SlashCommandSuggestionOpt
         return {
             suggestion: {
                 char: '/',
-                startOfLine: true,
+                startOfLine: false,
                 items: ({ query }) => filterCommands(query),
                 command: ({ editor: ed, range }: { editor: Editor; range: { from: number; to: number } }) => {
                     ed.chain().focus().deleteRange(range).run();

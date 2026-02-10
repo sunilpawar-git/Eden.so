@@ -1,20 +1,24 @@
 /**
  * IdeaCard Style Tests - Verify CSS classes are applied correctly
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { IdeaCard } from '../IdeaCard';
+import { useCanvasStore } from '../../../stores/canvasStore';
 import type { NodeProps } from '@xyflow/react';
 
 // Mock TipTap hooks and extensions
 vi.mock('../../../hooks/useIdeaCardEditor', async () =>
     (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
 );
-vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
-    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+vi.mock('../../../hooks/useNodeInput', async () =>
+    (await import('./helpers/tipTapTestMock')).useNodeInputMock()
 );
+vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
+    useLinkPreviewFetch: vi.fn(),
+}));
 vi.mock('../../../hooks/useTipTapEditor', async () =>
     (await import('./helpers/tipTapTestMock')).hookMock()
 );
@@ -79,6 +83,16 @@ const renderWithProvider = (props: Partial<NodeProps>) => {
 };
 
 describe('IdeaCard styles', () => {
+    beforeEach(async () => {
+        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
+        resetMockState();
+        initNodeInputStore(useCanvasStore);
+        useCanvasStore.setState({
+            nodes: [], edges: [], selectedNodeIds: new Set(),
+            editingNodeId: null, draftContent: null, inputMode: 'note',
+        });
+    });
+
     it('should render TipTap editor in edit mode', () => {
         // Empty node starts in edit mode
         renderWithProvider({

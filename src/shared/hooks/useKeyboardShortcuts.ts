@@ -11,35 +11,42 @@ interface KeyboardShortcutsOptions {
 }
 
 export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
-    const { selectedNodeIds, deleteNode, clearSelection } = useCanvasStore();
+    const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+    const deleteNode = useCanvasStore((s) => s.deleteNode);
+    const clearSelection = useCanvasStore((s) => s.clearSelection);
+    const editingNodeId = useCanvasStore((s) => s.editingNodeId);
     const { onOpenSettings, onAddNode, onQuickCapture } = options;
 
     const handleKeyDown = useCallback(
          
         (e: KeyboardEvent) => {
-            const target = e.target as HTMLElement;
-            const isEditable =
-                target.tagName === 'INPUT' ||
-                target.tagName === 'TEXTAREA' ||
-                target.isContentEditable ||
-                target.contentEditable === 'true';
-
-            // Cmd/Ctrl + N for Quick Capture (works even in input fields)
+            // Cmd/Ctrl + N for Quick Capture (works even during editing)
             if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) {
                 e.preventDefault();
                 onQuickCapture?.();
                 return;
             }
 
-            // Don't handle other shortcuts when typing in inputs
-            if (isEditable) {
-                return;
-            }
-
-            // Cmd/Ctrl + , to open settings
+            // Cmd/Ctrl + , to open settings (works even during editing)
             if ((e.metaKey || e.ctrlKey) && e.key === ',') {
                 e.preventDefault();
                 onOpenSettings?.();
+                return;
+            }
+
+            // Store-based guard: skip non-modifier shortcuts when a node is being edited
+            if (editingNodeId) {
+                return;
+            }
+
+            // Legacy DOM guard: skip when typing in native input/textarea/contenteditable
+            const target = e.target as HTMLElement;
+            const isEditable =
+                target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable ||
+                target.contentEditable === 'true';
+            if (isEditable) {
                 return;
             }
 
@@ -63,7 +70,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
                 clearSelection();
             }
         },
-        [selectedNodeIds, deleteNode, clearSelection, onOpenSettings, onAddNode, onQuickCapture]
+        [selectedNodeIds, deleteNode, clearSelection, editingNodeId, onOpenSettings, onAddNode, onQuickCapture]
     );
 
     useEffect(() => {

@@ -5,7 +5,9 @@
 import React from 'react';
 import type { Editor } from '@tiptap/react';
 import { strings } from '@/shared/localization/strings';
+import type { LinkPreviewMetadata } from '../../types/node';
 import { TipTapEditor } from './TipTapEditor';
+import { LinkPreviewList } from './LinkPreviewCard';
 import styles from './IdeaCard.module.css';
 
 interface EditingContentProps {
@@ -28,7 +30,7 @@ export const GeneratingContent = React.memo(() => (
 interface ViewContentProps {
     editor: Editor | null;
     onDoubleClick: () => void;
-    onKeyDown: (e: React.KeyboardEvent) => void;
+    linkPreviews?: Record<string, LinkPreviewMetadata>;
 }
 
 interface AICardContentProps extends ViewContentProps {
@@ -36,7 +38,7 @@ interface AICardContentProps extends ViewContentProps {
 }
 
 export const AICardContent = React.memo(({
-    prompt, editor, onDoubleClick, onKeyDown,
+    prompt, editor, onDoubleClick, linkPreviews,
 }: AICardContentProps) => (
     <>
         <div
@@ -44,7 +46,6 @@ export const AICardContent = React.memo(({
             onDoubleClick={onDoubleClick}
             role="button"
             tabIndex={0}
-            onKeyDown={onKeyDown}
         >
             {prompt}
         </div>
@@ -54,31 +55,31 @@ export const AICardContent = React.memo(({
             aria-label={strings.ideaCard.aiDividerLabel}
         />
         <TipTapEditor editor={editor} className={styles.outputContent} data-testid="view-editor" />
+        <LinkPreviewList previews={linkPreviews ?? {}} />
     </>
 ));
 
 export const SimpleCardContent = React.memo(({
-    editor, onDoubleClick, onKeyDown,
+    editor, onDoubleClick, linkPreviews,
 }: ViewContentProps) => (
-    <div onDoubleClick={onDoubleClick} role="button" tabIndex={0} onKeyDown={onKeyDown}>
+    <div onDoubleClick={onDoubleClick} role="button" tabIndex={0}>
         <TipTapEditor editor={editor} className={styles.outputContent} data-testid="view-editor" />
+        <LinkPreviewList previews={linkPreviews ?? {}} />
     </div>
 ));
 
 interface PlaceholderContentProps {
     onDoubleClick: () => void;
-    onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 export const PlaceholderContent = React.memo(({
-    onDoubleClick, onKeyDown,
+    onDoubleClick,
 }: PlaceholderContentProps) => (
     <div
         className={styles.placeholder}
         onDoubleClick={onDoubleClick}
         role="button"
         tabIndex={0}
-        onKeyDown={onKeyDown}
     >
         {strings.ideaCard.inputPlaceholder}
     </div>

@@ -23,7 +23,6 @@ const state = {
     placeholder: '',
     domElement: null as HTMLElement | null,
     lastInitialContent: undefined as string | undefined,
-    focusAtEndCallCount: 0,
     insertedChars: [] as string[],
 };
 
@@ -35,13 +34,9 @@ export function resetMockState(): void {
     state.placeholder = '';
     state.domElement = null;
     state.lastInitialContent = undefined;
-    state.focusAtEndCallCount = 0;
     state.insertedChars = [];
-}
-
-/** Get count of focusAtEnd calls since last reset */
-export function getFocusAtEndCallCount(): number {
-    return state.focusAtEndCallCount;
+    _canvasStore = null;
+    _autoEditedNodes.clear();
 }
 
 /** Get characters inserted via insertContent since last reset */
@@ -90,7 +85,6 @@ export function hookMock() {
                 getText: () => state.content,
                 isEmpty: !state.content,
                 setContent: (md: string) => { state.content = md; },
-                focusAtEnd: () => { state.focusAtEndCallCount++; },
             };
         },
     };
@@ -131,48 +125,113 @@ export function useIdeaCardEditorMock() {
                 },
                 getMarkdown: () => state.content,
                 setContent: (md: string) => { state.content = md; },
-                focusAtEnd: () => { state.focusAtEndCallCount++; },
                 suggestionActiveRef: { current: false },
             };
         },
     };
 }
 
-/** useIdeaCardKeyboard mock factory — simulates real behavior via captured callbacks */
-export function useIdeaCardKeyboardMock() {
+/** Store reference for useNodeInput mock — set via initNodeInputStore() */
+let _canvasStore: {
+    (selector: (s: Record<string, unknown>) => unknown): unknown;
+    getState: () => Record<string, unknown>;
+} | null = null;
+
+/** Track nodes that have already auto-entered edit mode (prevents re-entering after blur) */
+const _autoEditedNodes = new Set<string>();
+
+/** Initialize the canvas store reference for useNodeInput mock. Call in beforeEach. */
+export function initNodeInputStore(store: unknown): void {
+    _canvasStore = store as typeof _canvasStore;
+    _autoEditedNodes.clear();
+}
+
+/** useNodeInput mock factory — simulates store-based editing via canvasStore */
+export function useNodeInputMock() {
     return {
-        useIdeaCardKeyboard: (opts: {
-            editor: unknown; isEditing: boolean; isGenerating: boolean;
-            inputMode: string; getMarkdown: () => string;
+        useNodeInput: (opts: {
+            nodeId: string; editor: unknown; getMarkdown: () => string;
             setContent: (md: string) => void; getEditableContent: () => string;
-            suggestionActiveRef: { current: boolean };
-            saveContent: (md: string) => void; onExitEditing: () => void;
-            onEnterEditing: () => void;
+            saveContent: (md: string) => void;
             onSubmitNote: (t: string) => void; onSubmitAI: (t: string) => void;
-        }) => ({
-            handleContentDoubleClick: () => {
-                if (opts.isGenerating) return;
-                opts.setContent(opts.getEditableContent());
-                opts.onEnterEditing();
-            },
-            handleContentKeyDown: (e: { key: string; preventDefault?: () => void;
-                ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }) => {
-                if (opts.isGenerating) return;
-                if (e.key === 'Enter') {
-                    e.preventDefault?.();
+            suggestionActiveRef: { current: boolean }; isGenerating: boolean;
+            isNewEmptyNode: boolean;
+        }) => {
+            if (!_canvasStore) {
+                return {
+                    isEditing: false,
+                    inputMode: 'note' as const,
+                    handleKeyDown: () => undefined,
+                    handleDoubleClick: () => undefined,
+                };
+            }
+            // Auto-enter edit mode for new empty nodes (mirrors real useNodeInput behavior)
+            if (opts.isNewEmptyNode && !_autoEditedNodes.has(opts.nodeId)
+                && !(_canvasStore.getState() as { editingNodeId: string | null }).editingNodeId) {
+                _autoEditedNodes.add(opts.nodeId);
+                (_canvasStore.getState() as { startEditing: (id: string) => void }).startEditing(opts.nodeId);
+            }
+            const isEditing = _canvasStore((s) =>
+                s.editingNodeId === opts.nodeId) as boolean;
+            const inputMode = _canvasStore((s) => s.inputMode) as string;
+            return {
+                isEditing,
+                inputMode,
+                handleKeyDown: (e: KeyboardEvent | { key: string; preventDefault?: () => void;
+                    stopPropagation?: () => void; ctrlKey?: boolean; metaKey?: boolean;
+                    altKey?: boolean; shiftKey?: boolean; nativeEvent?: KeyboardEvent }) => {
+                    const key = e.key;
+                    const ctrl = ('ctrlKey' in e && e.ctrlKey) ?? false;
+                    const meta = ('metaKey' in e && e.metaKey) ?? false;
+                    const alt = ('altKey' in e && e.altKey) ?? false;
+                    const shift = ('shiftKey' in e && e.shiftKey) ?? false;
+                    if (!isEditing) {
+                        if (opts.isGenerating) return;
+                        if (key === 'Enter') {
+                            e.preventDefault?.();
+                            (e as { stopPropagation?: () => void }).stopPropagation?.();
+                            opts.setContent(opts.getEditableContent());
+                            (_canvasStore!.getState() as { startEditing: (id: string) => void }).startEditing(opts.nodeId);
+                            return;
+                        }
+                        const isPrintable = key.length === 1 && !ctrl && !meta && !alt;
+                        if (isPrintable) {
+                            e.preventDefault?.();
+                            (e as { stopPropagation?: () => void }).stopPropagation?.();
+                            opts.setContent(opts.getEditableContent());
+                            (_canvasStore!.getState() as { startEditing: (id: string) => void }).startEditing(opts.nodeId);
+                            const ed = opts.editor as { commands: { insertContent: (t: string) => void } };
+                            ed.commands.insertContent(key);
+                        }
+                    } else {
+                        if (key === 'Escape') {
+                            (e as { stopPropagation?: () => void }).stopPropagation?.();
+                            opts.saveContent(opts.getMarkdown());
+                            (_canvasStore!.getState() as { stopEditing: () => void }).stopEditing();
+                            return;
+                        }
+                        if (key === 'Enter' && !shift && !opts.suggestionActiveRef.current) {
+                            e.preventDefault?.();
+                            (e as { stopPropagation?: () => void }).stopPropagation?.();
+                            const trimmed = opts.getMarkdown().trim();
+                            if (!trimmed) {
+                                (_canvasStore!.getState() as { stopEditing: () => void }).stopEditing();
+                                return;
+                            }
+                            const mode = (_canvasStore!.getState() as { inputMode: string }).inputMode;
+                            if (mode === 'ai') opts.onSubmitAI(trimmed);
+                            else opts.onSubmitNote(trimmed);
+                        }
+                    }
+                },
+                handleDoubleClick: () => {
+                    if (opts.isGenerating) return;
+                    if (!_canvasStore) return;
                     opts.setContent(opts.getEditableContent());
-                    opts.onEnterEditing();
-                    return;
-                }
-                const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
-                if (isPrintable) {
-                    opts.setContent(opts.getEditableContent());
-                    opts.onEnterEditing();
-                    const ed = opts.editor as { commands: { insertContent: (t: string) => void } };
-                    ed.commands.insertContent(e.key);
-                }
-            },
-        }),
+                    (_canvasStore.getState() as { startEditing: (id: string) => void }).startEditing(opts.nodeId);
+                },
+            };
+        },
     };
 }
 

@@ -1,0 +1,136 @@
+/**
+ * LinkPreviewCard Styles
+ * Responsive card layout for rich link previews (OG/Twitter Card metadata)
+ */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+    background: var(--color-surface);
+    position: relative;
+}
+
+.card:hover {
+    box-shadow: 0 2px 8px hsla(220, 13%, 13%, 0.08);
+    border-color: var(--color-primary-light);
+}
+
+/* OG image thumbnail */
+.imageWrapper {
+    width: 100%;
+    max-height: 140px;
+    overflow: hidden;
+    background: var(--color-surface-hover);
+}
+
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Text content area */
+.body {
+    padding: var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    min-width: 0;
+}
+
+/* Domain + favicon row */
+.domainRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--font-size-xxs);
+    color: var(--color-text-muted);
+}
+
+.favicon {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.domain {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Title */
+.title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    line-height: var(--line-height-snug);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Description */
+.description {
+    font-size: var(--font-size-xxs);
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-normal);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Error/unavailable state */
+.errorText {
+    font-size: var(--font-size-xxs);
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+/* Remove button overlay */
+.removeButton {
+    position: absolute;
+    top: var(--space-xs);
+    right: var(--space-xs);
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-elevated);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    box-shadow: 0 1px 3px hsla(220, 13%, 13%, 0.1);
+}
+
+.card:hover .removeButton {
+    opacity: 1;
+}
+
+.removeButton:hover {
+    color: var(--color-error);
+    background: var(--color-surface);
+}
+
+/* List container for multiple previews */
+.previewList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}

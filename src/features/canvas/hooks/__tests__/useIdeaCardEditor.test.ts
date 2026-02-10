@@ -9,7 +9,6 @@ import { useIdeaCardEditor } from '../useIdeaCardEditor';
 // Mock useTipTapEditor
 const mockSetContent = vi.fn();
 const mockGetMarkdown = vi.fn(() => '');
-const mockFocusAtEnd = vi.fn();
 const mockEditor = { view: { dom: document.createElement('div') }, isEmpty: true };
 
 vi.mock('../useTipTapEditor', () => ({
@@ -22,7 +21,6 @@ vi.mock('../useTipTapEditor', () => ({
             getText: vi.fn(() => ''),
             isEmpty: true,
             setContent: mockSetContent,
-            focusAtEnd: mockFocusAtEnd,
         };
     },
 }));
@@ -51,12 +49,12 @@ describe('useIdeaCardEditor', () => {
         latestOnBlur = null;
     });
 
-    it('returns editor, getMarkdown, setContent, focusAtEnd', () => {
+    it('returns editor, getMarkdown, setContent, suggestionActiveRef', () => {
         const { result } = renderHook(() => useIdeaCardEditor(defaultOptions()));
         expect(result.current.editor).toBeDefined();
         expect(result.current.getMarkdown).toBeDefined();
         expect(result.current.setContent).toBeDefined();
-        expect(result.current.focusAtEnd).toBeDefined();
+        expect(result.current.suggestionActiveRef).toBeDefined();
     });
 
     it('returns suggestionActiveRef', () => {

@@ -44,9 +44,12 @@ vi.mock('../../../extensions/slashCommandSuggestion', async () =>
 vi.mock('../../../hooks/useIdeaCardEditor', async () =>
     (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
 );
-vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
-    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+vi.mock('../../../hooks/useNodeInput', async () =>
+    (await import('./helpers/tipTapTestMock')).useNodeInputMock()
 );
+vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
+    useLinkPreviewFetch: vi.fn(),
+}));
 
 describe('IdeaCard Key Handler Regression', () => {
     const defaultData = defaultTestData;
@@ -54,12 +57,16 @@ describe('IdeaCard Key Handler Regression', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { resetMockState } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
+        initNodeInputStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [],
             edges: [],
             selectedNodeIds: new Set(),
+            editingNodeId: null,
+            draftContent: null,
+            inputMode: 'note',
         });
     });
 

@@ -2,7 +2,7 @@
  * useTipTapEditor Hook - Encapsulates TipTap editor setup with markdown I/O
  * Bridges TipTap's document model with the store's string-based contract
  */
-import { useCallback, useEffect } from 'react';
+import { useCallback, useRef } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -24,26 +24,32 @@ interface UseTipTapEditorReturn {
     getText: () => string;
     isEmpty: boolean;
     setContent: (markdown: string) => void;
-    focusAtEnd: () => void;
 }
 
 /** Hook for managing a TipTap editor with markdown serialization */
 export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEditorReturn {
     const { initialContent, placeholder, editable = true, onBlur, onUpdate, extraExtensions = [] } = options;
 
+    // Guard: skip onUpdate during programmatic setContent to avoid writing stale content back
+    const skipNextUpdateRef = useRef(false);
+
+    // Keep the placeholder in a ref so the Placeholder extension's decoration
+    // function always reads the latest value (TipTap only captures options at
+    // creation time, but supports a function callback that is invoked on each
+    // decoration pass).
+    const placeholderRef = useRef(placeholder);
+    placeholderRef.current = placeholder;
+
     const editor = useEditor({
-        extensions: [StarterKit, Placeholder.configure({ placeholder }), ...extraExtensions],
+        extensions: [StarterKit, Placeholder.configure({ placeholder: () => placeholderRef.current }), ...extraExtensions],
         content: initialContent ? markdownToHtml(initialContent) : '',
         editable,
         onBlur: ({ editor: e }) => { onBlur?.(htmlToMarkdown(e.getHTML())); },
-        onUpdate: ({ editor: e }) => { onUpdate?.(htmlToMarkdown(e.getHTML())); },
+        onUpdate: ({ editor: e }) => {
+            if (skipNextUpdateRef.current) { skipNextUpdateRef.current = false; return; }
+            onUpdate?.(htmlToMarkdown(e.getHTML()));
+        },
     });
-
-    // Sync editable state when prop changes (TipTap doesn't auto-react)
-    useEffect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (editor) editor.setEditable(editable);
-    }, [editor, editable]);
 
     const getMarkdown = useCallback((): string => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -58,17 +64,11 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
     const setContent = useCallback((markdown: string): void => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!editor) return;
+        skipNextUpdateRef.current = true;
         if (markdown) { editor.commands.setContent(markdownToHtml(markdown)); }
         else { editor.commands.clearContent(); }
     }, [editor]);
 
-    const focusAtEnd = useCallback((): void => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!editor) return;
-        editor.setEditable(true);
-        editor.commands.focus('end');
-    }, [editor]);
-
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    return { editor, getMarkdown, getText, setContent, focusAtEnd, isEmpty: editor ? editor.isEmpty : true };
+    return { editor, getMarkdown, getText, setContent, isEmpty: editor ? editor.isEmpty : true };
 }

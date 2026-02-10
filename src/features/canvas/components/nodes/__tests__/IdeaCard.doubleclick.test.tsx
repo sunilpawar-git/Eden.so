@@ -43,9 +43,12 @@ vi.mock('../../../extensions/slashCommandSuggestion', async () =>
 vi.mock('../../../hooks/useIdeaCardEditor', async () =>
     (await import('./helpers/tipTapTestMock')).useIdeaCardEditorMock()
 );
-vi.mock('../../../hooks/useIdeaCardKeyboard', async () =>
-    (await import('./helpers/tipTapTestMock')).useIdeaCardKeyboardMock()
+vi.mock('../../../hooks/useNodeInput', async () =>
+    (await import('./helpers/tipTapTestMock')).useNodeInputMock()
 );
+vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
+    useLinkPreviewFetch: vi.fn(),
+}));
 
 describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
     const defaultData = defaultTestData;
@@ -53,12 +56,16 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { resetMockState } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
+        initNodeInputStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [],
             edges: [],
             selectedNodeIds: new Set(),
+            editingNodeId: null,
+            draftContent: null,
+            inputMode: 'note',
         });
     });
 
@@ -139,14 +146,15 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
     it('should support keyboard navigation: Enter on content to edit', () => {
         const propsWithOutput = {
             ...defaultProps,
+            selected: true, // Node must be selected for keyboard input
             data: { ...defaultData, output: 'Keyboard accessible' },
         };
 
         render(<IdeaCard {...propsWithOutput} />);
 
         // Find the clickable content area and trigger Enter
-        const content = screen.getByText('Keyboard accessible');
-        fireEvent.keyDown(content, { key: 'Enter' });
+        const contentArea = screen.getByTestId('content-area');
+        fireEvent.keyDown(contentArea, { key: 'Enter' });
 
         // Should enter edit mode (existing behavior maintained)
         expect(screen.getByRole('textbox')).toBeInTheDocument();
