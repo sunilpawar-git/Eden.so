@@ -75,7 +75,7 @@ describe('NodeUtilsBar', () => {
 
         it('calls onCopyClick when Copy button is clicked', () => {
             const onCopyClick = vi.fn();
-            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} />);
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={true} />);
             fireEvent.click(screen.getByLabelText('Copy'));
             expect(onCopyClick).toHaveBeenCalledTimes(1);
         });
@@ -84,6 +84,25 @@ describe('NodeUtilsBar', () => {
             const onCopyClick = vi.fn();
             render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} disabled={true} />);
             expect(screen.getByLabelText('Copy')).toBeDisabled();
+        });
+
+        it('disables copy button when hasContent is false', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={false} />);
+            expect(screen.getByLabelText('Copy')).toBeDisabled();
+        });
+
+        it('enables copy button when hasContent is true', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={true} />);
+            expect(screen.getByLabelText('Copy')).toBeEnabled();
+        });
+
+        it('does not call onCopyClick when copy button is disabled', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={false} />);
+            fireEvent.click(screen.getByLabelText('Copy'));
+            expect(onCopyClick).not.toHaveBeenCalled();
         });
     });
 });

@@ -1,53 +1,25 @@
-/**
- * IdeaCard Component Tests - TDD: Write tests FIRST
- */
+/** IdeaCard Component Tests - TDD: Write tests FIRST */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
 import type { IdeaNodeData } from '../../../types/node';
-import { toast } from '@/shared/stores/toastStore';
 // Mock ReactFlow hooks and components
 vi.mock('@xyflow/react', async () => {
     const actual = await vi.importActual('@xyflow/react');
     return {
         ...actual,
         Handle: ({ type, position, isConnectable, className }: {
-            type: string;
-            position: string;
-            isConnectable?: boolean;
-            className?: string;
+            type: string; position: string; isConnectable?: boolean; className?: string;
         }) => (
-            <div
-                data-testid={`handle-${type}-${position}`}
-                data-connectable={isConnectable}
-                className={className}
-            />
+            <div data-testid={`handle-${type}-${position}`}
+                data-connectable={isConnectable} className={className} />
         ),
-        Position: {
-            Top: 'top',
-            Bottom: 'bottom',
-        },
+        Position: { Top: 'top', Bottom: 'bottom' },
         NodeResizer: ({ isVisible }: { isVisible?: boolean }) => (
             <div data-testid="node-resizer" data-visible={isVisible} />
         ),
     };
-});
-
-// Mock toast store
-vi.mock('@/shared/stores/toastStore', () => ({
-    toast: {
-        success: vi.fn(),
-        error: vi.fn(),
-    },
-}));
-
-// Mock clipboard API
-const mockWriteText = vi.fn();
-Object.assign(navigator, {
-    clipboard: {
-        writeText: mockWriteText,
-    },
 });
 
 // Mock the generation hook
@@ -186,34 +158,7 @@ describe('IdeaCard', () => {
             expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
         });
 
-        it('copies text and shows success toast when Copy button is clicked', async () => {
-            const aiCard = {
-                ...defaultProps,
-                data: { ...defaultData, prompt: 'AI prompt', output: 'AI response' },
-            };
-            mockWriteText.mockResolvedValue(undefined);
-            render(<IdeaCard {...aiCard} />);
-            const copyButton = screen.getByRole('button', { name: /copy/i });
-            fireEvent.click(copyButton);
-            await vi.waitFor(() => {
-                expect(mockWriteText).toHaveBeenCalledWith('AI prompt');
-                expect(toast.success).toHaveBeenCalledWith('Copied to clipboard');
-            });
-        });
-
-        it('shows error toast when copy fails', async () => {
-            const aiCard = {
-                ...defaultProps,
-                data: { ...defaultData, prompt: 'AI prompt', output: 'AI response' },
-            };
-            mockWriteText.mockRejectedValue(new Error('Clipboard error'));
-            render(<IdeaCard {...aiCard} />);
-            const copyButton = screen.getByRole('button', { name: /copy/i });
-            fireEvent.click(copyButton);
-            await vi.waitFor(() => {
-                expect(toast.error).toHaveBeenCalledWith('Failed to copy');
-            });
-        });
+        // Copy-specific tests are in IdeaCard.copy.test.tsx
     });
 
     describe('AI card divider (prompt !== output)', () => {
@@ -246,7 +191,6 @@ describe('IdeaCard', () => {
     });
 
     // Typography tests are in IdeaCard.style.test.tsx
-
     // Connection handles tests are in IdeaCard.features.test.tsx
 
     describe('Editable content area', () => {
@@ -321,7 +265,7 @@ describe('IdeaCard', () => {
         });
     });
 
-    // Scrollable output tests are in IdeaCard.features.test.tsx
+    // Scrollable output & Resizable tests are in IdeaCard.features.test.tsx
 
     describe('Loading state', () => {
         it('shows generating indicator when isGenerating is true', () => {
@@ -334,8 +278,6 @@ describe('IdeaCard', () => {
             expect(screen.getByText(/generating/i)).toBeInTheDocument();
         });
     });
-
-    // Resizable tests are in IdeaCard.features.test.tsx
 
     describe('Delete action', () => {
         it('clicking delete button calls deleteNode', () => {

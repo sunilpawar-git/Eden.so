@@ -84,7 +84,7 @@ export function NodeUtilsBar({
                 <button
                     className={styles.actionButton}
                     onClick={onCopyClick}
-                    disabled={disabled}
+                    disabled={disabled || !hasContent}
                     aria-label={strings.nodeUtils.copy}
                     data-tooltip={strings.nodeUtils.copy}
                 >
