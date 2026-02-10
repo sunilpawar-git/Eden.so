@@ -60,4 +60,49 @@ describe('NodeUtilsBar', () => {
         expect(screen.getByLabelText('Connect')).toBeDisabled();
         expect(screen.getByLabelText('Delete')).toBeDisabled();
     });
+
+    describe('Copy button', () => {
+        it('renders copy button when onCopyClick is provided', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} />);
+            expect(screen.getByLabelText('Copy')).toBeInTheDocument();
+        });
+
+        it('does not render copy button when onCopyClick is not provided', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            expect(screen.queryByLabelText('Copy')).not.toBeInTheDocument();
+        });
+
+        it('calls onCopyClick when Copy button is clicked', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={true} />);
+            fireEvent.click(screen.getByLabelText('Copy'));
+            expect(onCopyClick).toHaveBeenCalledTimes(1);
+        });
+
+        it('disables copy button when disabled prop is true', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} disabled={true} />);
+            expect(screen.getByLabelText('Copy')).toBeDisabled();
+        });
+
+        it('disables copy button when hasContent is false', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={false} />);
+            expect(screen.getByLabelText('Copy')).toBeDisabled();
+        });
+
+        it('enables copy button when hasContent is true', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={true} />);
+            expect(screen.getByLabelText('Copy')).toBeEnabled();
+        });
+
+        it('does not call onCopyClick when copy button is disabled', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={false} />);
+            fireEvent.click(screen.getByLabelText('Copy'));
+            expect(onCopyClick).not.toHaveBeenCalled();
+        });
+    });
 });

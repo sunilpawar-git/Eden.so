@@ -1,6 +1,4 @@
-/**
- * IdeaCard Component Tests - TDD: Write tests FIRST
- */
+/** IdeaCard Component Tests - TDD: Write tests FIRST */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
@@ -12,21 +10,12 @@ vi.mock('@xyflow/react', async () => {
     return {
         ...actual,
         Handle: ({ type, position, isConnectable, className }: {
-            type: string;
-            position: string;
-            isConnectable?: boolean;
-            className?: string;
+            type: string; position: string; isConnectable?: boolean; className?: string;
         }) => (
-            <div
-                data-testid={`handle-${type}-${position}`}
-                data-connectable={isConnectable}
-                className={className}
-            />
+            <div data-testid={`handle-${type}-${position}`}
+                data-connectable={isConnectable} className={className} />
         ),
-        Position: {
-            Top: 'top',
-            Bottom: 'bottom',
-        },
+        Position: { Top: 'top', Bottom: 'bottom' },
         NodeResizer: ({ isVisible }: { isVisible?: boolean }) => (
             <div data-testid="node-resizer" data-visible={isVisible} />
         ),
@@ -165,8 +154,11 @@ describe('IdeaCard', () => {
             expect(screen.getByRole('button', { name: /tags/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /transform/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
         });
+
+        // Copy-specific tests are in IdeaCard.copy.test.tsx
     });
 
     describe('AI card divider (prompt !== output)', () => {
@@ -199,7 +191,6 @@ describe('IdeaCard', () => {
     });
 
     // Typography tests are in IdeaCard.style.test.tsx
-
     // Connection handles tests are in IdeaCard.features.test.tsx
 
     describe('Editable content area', () => {
@@ -274,7 +265,7 @@ describe('IdeaCard', () => {
         });
     });
 
-    // Scrollable output tests are in IdeaCard.features.test.tsx
+    // Scrollable output & Resizable tests are in IdeaCard.features.test.tsx
 
     describe('Loading state', () => {
         it('shows generating indicator when isGenerating is true', () => {
@@ -287,8 +278,6 @@ describe('IdeaCard', () => {
             expect(screen.getByText(/generating/i)).toBeInTheDocument();
         });
     });
-
-    // Resizable tests are in IdeaCard.features.test.tsx
 
     describe('Delete action', () => {
         it('clicking delete button calls deleteNode', () => {

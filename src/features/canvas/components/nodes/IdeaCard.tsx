@@ -5,6 +5,7 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { strings } from '@/shared/localization/strings';
+import { toast } from '@/shared/stores/toastStore';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useNodeTransformation, type TransformationType } from '@/features/ai/hooks/useNodeTransformation';
@@ -83,6 +84,15 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const handleDelete = useCallback(() => deleteNode(id), [id, deleteNode]);
     const handleRegenerate = useCallback(() => generateFromPrompt(id), [id, generateFromPrompt]);
     const handleConnectClick = useCallback(() => { void branchFromNode(id); }, [id, branchFromNode]);
+    const handleCopy = useCallback(async () => {
+        try {
+            const text = contentRef.current?.innerText ?? getEditableContent();
+            await navigator.clipboard.writeText(text);
+            toast.success(strings.nodeUtils.copySuccess);
+        } catch {
+            toast.error(strings.nodeUtils.copyError);
+        }
+    }, [getEditableContent]);
     const handleTagsChange = useCallback((ids: string[]) => {
         updateNodeTags(id, ids); if (ids.length === 0) setShowTagInput(false);
     }, [id, updateNodeTags]);
@@ -114,8 +124,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     <div className={styles.tagsSection}><TagInput selectedTagIds={tagIds} onChange={handleTagsChange} compact /></div>
                 )}
                 <NodeUtilsBar onTagClick={() => setShowTagInput(true)} onConnectClick={handleConnectClick}
-                    onDelete={handleDelete} onTransform={handleTransform} onRegenerate={handleRegenerate}
-                    hasContent={hasContent} isTransforming={isTransforming}
+                    onCopyClick={handleCopy} onDelete={handleDelete} onTransform={handleTransform}
+                    onRegenerate={handleRegenerate} hasContent={hasContent} isTransforming={isTransforming}
                     disabled={isGenerating ?? false} visible={isHovered} hasTags={tagIds.length > 0 || showTagInput} />
             </div>
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
