@@ -23,7 +23,7 @@ export const LinkPreviewCard = React.memo(({ preview, onRemove }: LinkPreviewCar
         return (
             <div className={styles.card}>
                 <a href={url} target="_blank" rel="noopener noreferrer"
-                    className={styles.body} role="link" aria-label={ariaLabel}>
+                    className={styles.body} aria-label={ariaLabel}>
                     {domain && (
                         <span className={styles.domainRow}>
                             <span className={styles.domain}>{domain}</span>
@@ -47,7 +47,7 @@ export const LinkPreviewCard = React.memo(({ preview, onRemove }: LinkPreviewCar
     return (
         <div className={styles.card}>
             <a href={url} target="_blank" rel="noopener noreferrer"
-                role="link" aria-label={ariaLabel}
+                aria-label={ariaLabel}
                 style={{ textDecoration: 'none', color: 'inherit' }}>
                 {image && (
                     <div className={styles.imageWrapper}>

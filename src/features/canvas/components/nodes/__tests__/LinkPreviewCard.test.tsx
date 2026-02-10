@@ -181,7 +181,10 @@ describe('LinkPreviewList', () => {
         render(<LinkPreviewList previews={previews} onRemove={onRemove} />);
         const removeButtons = screen.getAllByLabelText(strings.linkPreview.removePreview);
         expect(removeButtons).toHaveLength(2);
-        fireEvent.click(removeButtons[0]);
+        const firstButton = removeButtons[0];
+        if (firstButton) {
+            fireEvent.click(firstButton);
+        }
         expect(onRemove).toHaveBeenCalled();
     });
 });

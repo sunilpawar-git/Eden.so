@@ -200,8 +200,8 @@ export function useNodeInputMock() {
                             (e as { stopPropagation?: () => void }).stopPropagation?.();
                             opts.setContent(opts.getEditableContent());
                             (_canvasStore!.getState() as { startEditing: (id: string) => void }).startEditing(opts.nodeId);
-                            const ed = opts.editor as { commands?: { insertContent: (t: string) => void } };
-                            ed?.commands?.insertContent(key);
+                            const ed = opts.editor as { commands: { insertContent: (t: string) => void } };
+                            ed.commands.insertContent(key);
                         }
                     } else {
                         if (key === 'Escape') {

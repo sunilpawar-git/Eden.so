@@ -197,6 +197,7 @@ describe('Markdown round-trip fidelity (real TipTap)', () => {
             }),
         );
         const editor = hookResult.current;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (editor) {
             result = htmlToMarkdown(editor.getHTML());
         }
@@ -250,8 +251,6 @@ describe('Blur guard: re-focus + guard-reset lifecycle', () => {
                 onSlashCommand: vi.fn(),
             }),
         );
-
-        const editor = result.current.editor;
 
         // Simulate: suggestion popup closes → onActiveChange(false)
         // The production code sets slashJustSelectedRef = true unconditionally
@@ -444,7 +443,6 @@ describe('blurRef stale closure prevention', () => {
 
         const saveContent = vi.fn();
         const onExitEditing = vi.fn();
-        const setContentSpy = vi.fn();
 
         const initialProps = {
             isEditing: true,
@@ -700,8 +698,9 @@ describe('Delete node while editing — state cleanup', () => {
             id: 'delete-me',
             type: 'idea',
             position: { x: 0, y: 0 },
-            data: { content: 'to be deleted', type: 'note' },
-        }]);
+            data: { content: 'to be deleted', type: 'note', prompt: '' },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any]);
 
         store().startEditing('delete-me');
         store().setInputMode('ai');
@@ -722,9 +721,10 @@ describe('Delete node while editing — state cleanup', () => {
         const store = useCanvasStore.getState;
 
         store().setNodes([
-            { id: 'editing', type: 'idea', position: { x: 0, y: 0 }, data: { content: 'editing', type: 'note' } },
-            { id: 'other', type: 'idea', position: { x: 100, y: 0 }, data: { content: 'other', type: 'note' } },
-        ]);
+            { id: 'editing', type: 'idea', position: { x: 0, y: 0 }, data: { content: 'editing', type: 'note', prompt: '' } },
+            { id: 'other', type: 'idea', position: { x: 100, y: 0 }, data: { content: 'other', type: 'note', prompt: '' } },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any);
 
         store().startEditing('editing');
         store().updateDraft('my draft');

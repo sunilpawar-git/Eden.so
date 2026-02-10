@@ -235,7 +235,7 @@ describe('useNodeInput', () => {
             const { opts } = renderInEditMode();
             // Enter/Escape are now handled by SubmitKeymap via submitHandlerRef
             expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { opts.submitHandlerRef.current!.onEscape(); });
+            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEscape(); });
             expect(opts.saveContent).toHaveBeenCalledWith('draft content');
             expect(useCanvasStore.getState().editingNodeId).toBeNull();
         });
@@ -244,7 +244,7 @@ describe('useNodeInput', () => {
             const { opts } = renderInEditMode();
             // Enter is handled by SubmitKeymap via submitHandlerRef
             expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { opts.submitHandlerRef.current!.onEnter(); });
+            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
             expect(opts.onSubmitNote).toHaveBeenCalledWith('draft content');
         });
 
@@ -254,7 +254,7 @@ describe('useNodeInput', () => {
             act(() => { useCanvasStore.getState().setInputMode('ai'); });
             // Enter is handled by SubmitKeymap via submitHandlerRef
             expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { opts.submitHandlerRef.current!.onEnter(); });
+            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
             expect(opts.onSubmitAI).toHaveBeenCalledWith('draft content');
         });
 
@@ -264,7 +264,7 @@ describe('useNodeInput', () => {
             });
             // Enter is handled by SubmitKeymap via submitHandlerRef
             expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { opts.submitHandlerRef.current!.onEnter(); });
+            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
             expect(opts.onSubmitNote).not.toHaveBeenCalled();
             expect(useCanvasStore.getState().editingNodeId).toBeNull();
         });
@@ -284,7 +284,7 @@ describe('useNodeInput', () => {
             // When suggestion is active, SubmitKeymap returns false to let
             // the Suggestion plugin handle Enter
             expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { opts.submitHandlerRef.current!.onEnter(); });
+            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
             expect(opts.onSubmitNote).not.toHaveBeenCalled();
         });
     });

@@ -82,7 +82,7 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
         if (slashJustSelectedRef.current) {
             slashJustSelectedRef.current = false;
             // Re-focus the editor so the user stays in edit mode
-            queueMicrotask(() => { editor?.commands.focus(); });
+            queueMicrotask(() => { editor.commands.focus(); });
             return;
         }
         saveContent(markdown);
@@ -98,6 +98,7 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
     // up the new value from the ref-backed callback.
     const prevPlaceholderRef = useRef(placeholder);
     useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!editor || placeholder === prevPlaceholderRef.current) return;
         prevPlaceholderRef.current = placeholder;
         // Dispatch a no-op transaction so ProseMirror recalculates decorations.

@@ -67,6 +67,7 @@ async function processUrls(
 
         // Fetch from network
         const metadata = await fetchLinkPreview(url, signal);
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (signal.aborted) return;
 
         setInCache(url, metadata);

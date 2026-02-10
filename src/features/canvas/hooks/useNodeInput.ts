@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
+import type { SubmitKeymapHandler } from '../extensions/submitKeymap';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useLinkPreviewFetch } from './useLinkPreviewFetch';
 
@@ -29,7 +30,7 @@ export interface UseNodeInputOptions {
     onSubmitAI: (trimmed: string) => void;
     suggestionActiveRef: React.RefObject<boolean>;
     /** Ref for Enter/Escape handlers fed into the SubmitKeymap TipTap extension */
-    submitHandlerRef: React.MutableRefObject<import('../extensions/submitKeymap').SubmitKeymapHandler | null>;
+    submitHandlerRef: React.MutableRefObject<SubmitKeymapHandler | null>;
     isGenerating: boolean;
     /** True when the node is freshly created and empty — auto-enters edit mode */
     isNewEmptyNode: boolean;
@@ -155,7 +156,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         }
     }, [isGenerating, enterEditing, editor]);
 
-    const handleEditModeKey = useCallback((e: KeyboardEvent) => {
+    const handleEditModeKey = useCallback((_e: KeyboardEvent) => {
         // Enter and Escape are handled by the SubmitKeymap TipTap extension
         // at the ProseMirror level (before the event bubbles to this div).
         // We must NOT re-handle them here because by the time the event
