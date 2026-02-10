@@ -8,6 +8,7 @@ import { useAIStore } from '../stores/aiStore';
 import { generateContentWithContext } from '../services/geminiService';
 import { createIdeaNode } from '@/features/canvas/types/node';
 import { strings } from '@/shared/localization/strings';
+import { toast } from '@/shared/stores/toastStore';
 
 const BRANCH_OFFSET_X = 350;
 
@@ -65,6 +66,7 @@ export function useNodeGeneration() {
                 const message = error instanceof Error ? error.message : strings.errors.aiError;
                 useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 setError(message);
+                toast.error(message);
             }
         },
         [startGeneration, completeGeneration, setError]

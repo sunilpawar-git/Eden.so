@@ -24,13 +24,20 @@ const createMockNode = (id: string): CanvasNode => ({
     updatedAt: new Date(),
 });
 
-const createMockEditor = () => ({
-    view: { dom: document.createElement('div') },
-    commands: { insertContent: vi.fn(), focus: vi.fn(), setContent: vi.fn() },
-    setEditable: vi.fn(),
-    getHTML: vi.fn(() => '<p>test</p>'),
-    isEmpty: false,
-});
+const createMockEditor = () => {
+    const mockTr = { insertText: vi.fn().mockReturnThis() };
+    return {
+        view: {
+            dom: document.createElement('div'),
+            state: { selection: { from: 0, to: 0 }, tr: mockTr },
+            dispatch: vi.fn(),
+        },
+        commands: { insertContent: vi.fn(), focus: vi.fn(), setContent: vi.fn() },
+        setEditable: vi.fn(),
+        getHTML: vi.fn(() => '<p>test</p>'),
+        isEmpty: false,
+    };
+};
 
 describe('useNodeInput', () => {
     const NODE_ID = 'node-1';
@@ -61,6 +68,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
             expect(result.current.isEditing).toBe(false);
@@ -80,6 +89,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
             expect(result.current.isEditing).toBe(true);
@@ -99,6 +110,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
             expect(result.current.isEditing).toBe(false);
@@ -118,6 +131,8 @@ describe('useNodeInput', () => {
                 onSubmitAI: vi.fn(),
                 suggestionActiveRef: { current: false },
                 isGenerating: false,
+                submitHandlerRef: { current: null },
+                isNewEmptyNode: false,
                 ...overrides,
             };
             return { ...renderHook(() => useNodeInput(opts)), opts };
@@ -144,7 +159,7 @@ describe('useNodeInput', () => {
             expect(setContent).toHaveBeenCalledWith('existing content');
         });
 
-        it('printable key calls startEditing and defers insertContent', async () => {
+        it('printable key calls startEditing and defers text insertion', async () => {
             const { result } = renderInViewMode();
             const event = new KeyboardEvent('keydown', { key: 'a' });
             Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
@@ -153,9 +168,10 @@ describe('useNodeInput', () => {
             act(() => { result.current.handleKeyDown(event); });
             expect(useCanvasStore.getState().editingNodeId).toBe(NODE_ID);
 
-            // queueMicrotask defers insertContent
+            // queueMicrotask defers text insertion via ProseMirror transaction
             await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
-            expect(mockEditor.commands.insertContent).toHaveBeenCalledWith('a');
+            expect(mockEditor.view.state.tr.insertText).toHaveBeenCalledWith('a', 0, 0);
+            expect(mockEditor.view.dispatch).toHaveBeenCalled();
         });
 
         it('ignores modifier keys (ctrl, meta, alt) in view mode', () => {
@@ -208,74 +224,67 @@ describe('useNodeInput', () => {
                 onSubmitAI: vi.fn(),
                 suggestionActiveRef: { current: false },
                 isGenerating: false,
+                submitHandlerRef: { current: null },
+                isNewEmptyNode: false,
                 ...overrides,
             };
             return { ...renderHook(() => useNodeInput(opts)), opts };
         };
 
         it('Escape saves content and stops editing', () => {
-            const { result, opts } = renderInEditMode();
-            const event = new KeyboardEvent('keydown', { key: 'Escape' });
-            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
-
-            act(() => { result.current.handleKeyDown(event); });
+            const { opts } = renderInEditMode();
+            // Enter/Escape are now handled by SubmitKeymap via submitHandlerRef
+            expect(opts.submitHandlerRef.current).not.toBeNull();
+            act(() => { opts.submitHandlerRef.current!.onEscape(); });
             expect(opts.saveContent).toHaveBeenCalledWith('draft content');
             expect(useCanvasStore.getState().editingNodeId).toBeNull();
         });
 
         it('Enter (no shift, no suggestion) submits note and stops editing', () => {
-            const { result, opts } = renderInEditMode();
-            const event = new KeyboardEvent('keydown', { key: 'Enter' });
-            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
-            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
-
-            act(() => { result.current.handleKeyDown(event); });
+            const { opts } = renderInEditMode();
+            // Enter is handled by SubmitKeymap via submitHandlerRef
+            expect(opts.submitHandlerRef.current).not.toBeNull();
+            act(() => { opts.submitHandlerRef.current!.onEnter(); });
             expect(opts.onSubmitNote).toHaveBeenCalledWith('draft content');
         });
 
         it('Enter in AI mode calls onSubmitAI', () => {
-            const { result, opts } = renderInEditMode();
+            const { opts } = renderInEditMode();
             // Set AI mode after startEditing (which resets to 'note')
             act(() => { useCanvasStore.getState().setInputMode('ai'); });
-            const event = new KeyboardEvent('keydown', { key: 'Enter' });
-            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
-            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
-
-            act(() => { result.current.handleKeyDown(event); });
+            // Enter is handled by SubmitKeymap via submitHandlerRef
+            expect(opts.submitHandlerRef.current).not.toBeNull();
+            act(() => { opts.submitHandlerRef.current!.onEnter(); });
             expect(opts.onSubmitAI).toHaveBeenCalledWith('draft content');
         });
 
         it('Enter with empty content exits editing without submit', () => {
-            const { result, opts } = renderInEditMode({
+            const { opts } = renderInEditMode({
                 getMarkdown: vi.fn(() => '   '),
             });
-            const event = new KeyboardEvent('keydown', { key: 'Enter' });
-            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
-            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
-
-            act(() => { result.current.handleKeyDown(event); });
+            // Enter is handled by SubmitKeymap via submitHandlerRef
+            expect(opts.submitHandlerRef.current).not.toBeNull();
+            act(() => { opts.submitHandlerRef.current!.onEnter(); });
             expect(opts.onSubmitNote).not.toHaveBeenCalled();
             expect(useCanvasStore.getState().editingNodeId).toBeNull();
         });
 
         it('Shift+Enter does not submit (allows newline)', () => {
-            const { result, opts } = renderInEditMode();
-            const event = new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true });
-            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
-
-            act(() => { result.current.handleKeyDown(event); });
+            const { opts } = renderInEditMode();
+            // Shift+Enter is not intercepted by SubmitKeymap (only plain Enter)
+            // so it falls through to StarterKit which creates a hard break
             expect(opts.onSubmitNote).not.toHaveBeenCalled();
             expect(useCanvasStore.getState().editingNodeId).toBe(NODE_ID);
         });
 
         it('does not submit when suggestion is active', () => {
-            const { result, opts } = renderInEditMode({
+            const { opts } = renderInEditMode({
                 suggestionActiveRef: { current: true },
             });
-            const event = new KeyboardEvent('keydown', { key: 'Enter' });
-            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
-
-            act(() => { result.current.handleKeyDown(event); });
+            // When suggestion is active, SubmitKeymap returns false to let
+            // the Suggestion plugin handle Enter
+            expect(opts.submitHandlerRef.current).not.toBeNull();
+            act(() => { opts.submitHandlerRef.current!.onEnter(); });
             expect(opts.onSubmitNote).not.toHaveBeenCalled();
         });
     });
@@ -283,7 +292,8 @@ describe('useNodeInput', () => {
     describe('editor editable state management', () => {
         it('sets editor editable to false on exitEditing (Escape)', () => {
             useCanvasStore.getState().startEditing(NODE_ID);
-            const { result } = renderHook(() =>
+            const submitHandlerRef = { current: null as import('../../extensions/submitKeymap').SubmitKeymapHandler | null };
+            renderHook(() =>
                 useNodeInput({
                     nodeId: NODE_ID,
                     editor: mockEditor as never,
@@ -295,12 +305,14 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef,
+                    isNewEmptyNode: false,
                 }),
             );
 
-            const event = new KeyboardEvent('keydown', { key: 'Escape' });
-            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
-            act(() => { result.current.handleKeyDown(event); });
+            // Escape is handled by SubmitKeymap via submitHandlerRef
+            expect(submitHandlerRef.current).not.toBeNull();
+            act(() => { submitHandlerRef.current!.onEscape(); });
 
             expect(mockEditor.setEditable).toHaveBeenCalledWith(false);
             expect(useCanvasStore.getState().editingNodeId).toBeNull();
@@ -319,6 +331,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
 
@@ -349,6 +363,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
 
@@ -375,6 +391,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
 
@@ -398,6 +416,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
 
@@ -426,6 +446,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
 
@@ -462,6 +484,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
 
@@ -489,6 +513,8 @@ describe('useNodeInput', () => {
                     onSubmitAI: vi.fn(),
                     suggestionActiveRef: { current: false },
                     isGenerating: false,
+                    submitHandlerRef: { current: null },
+                    isNewEmptyNode: false,
                 }),
             );
 

@@ -33,8 +33,15 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
     // Guard: skip onUpdate during programmatic setContent to avoid writing stale content back
     const skipNextUpdateRef = useRef(false);
 
+    // Keep the placeholder in a ref so the Placeholder extension's decoration
+    // function always reads the latest value (TipTap only captures options at
+    // creation time, but supports a function callback that is invoked on each
+    // decoration pass).
+    const placeholderRef = useRef(placeholder);
+    placeholderRef.current = placeholder;
+
     const editor = useEditor({
-        extensions: [StarterKit, Placeholder.configure({ placeholder }), ...extraExtensions],
+        extensions: [StarterKit, Placeholder.configure({ placeholder: () => placeholderRef.current }), ...extraExtensions],
         content: initialContent ? markdownToHtml(initialContent) : '',
         editable,
         onBlur: ({ editor: e }) => { onBlur?.(htmlToMarkdown(e.getHTML())); },

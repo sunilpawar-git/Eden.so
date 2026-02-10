@@ -36,6 +36,7 @@ export function resetMockState(): void {
     state.lastInitialContent = undefined;
     state.insertedChars = [];
     _canvasStore = null;
+    _autoEditedNodes.clear();
 }
 
 /** Get characters inserted via insertContent since last reset */
@@ -136,9 +137,13 @@ let _canvasStore: {
     getState: () => Record<string, unknown>;
 } | null = null;
 
+/** Track nodes that have already auto-entered edit mode (prevents re-entering after blur) */
+const _autoEditedNodes = new Set<string>();
+
 /** Initialize the canvas store reference for useNodeInput mock. Call in beforeEach. */
 export function initNodeInputStore(store: unknown): void {
     _canvasStore = store as typeof _canvasStore;
+    _autoEditedNodes.clear();
 }
 
 /** useNodeInput mock factory — simulates store-based editing via canvasStore */
@@ -150,6 +155,7 @@ export function useNodeInputMock() {
             saveContent: (md: string) => void;
             onSubmitNote: (t: string) => void; onSubmitAI: (t: string) => void;
             suggestionActiveRef: { current: boolean }; isGenerating: boolean;
+            isNewEmptyNode: boolean;
         }) => {
             if (!_canvasStore) {
                 return {
@@ -158,6 +164,12 @@ export function useNodeInputMock() {
                     handleKeyDown: () => undefined,
                     handleDoubleClick: () => undefined,
                 };
+            }
+            // Auto-enter edit mode for new empty nodes (mirrors real useNodeInput behavior)
+            if (opts.isNewEmptyNode && !_autoEditedNodes.has(opts.nodeId)
+                && !(_canvasStore.getState() as { editingNodeId: string | null }).editingNodeId) {
+                _autoEditedNodes.add(opts.nodeId);
+                (_canvasStore.getState() as { startEditing: (id: string) => void }).startEditing(opts.nodeId);
             }
             const isEditing = _canvasStore((s) =>
                 s.editingNodeId === opts.nodeId) as boolean;

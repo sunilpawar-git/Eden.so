@@ -45,7 +45,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     }, [getEditableContent, id, updateNodePrompt, updateNodeOutput]);
     const onExitEditing = useCallback(() => { useCanvasStore.getState().stopEditing(); }, []);
 
-    const { editor, getMarkdown, setContent, suggestionActiveRef } = useIdeaCardEditor({
+    const { editor, getMarkdown, setContent, suggestionActiveRef, submitHandlerRef } = useIdeaCardEditor({
         isEditing: useCanvasStore((s) => s.editingNodeId === id),
         output, getEditableContent, placeholder, saveContent, onExitEditing,
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -54,7 +54,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
         nodeId: id, editor, getMarkdown, setContent, getEditableContent,
-        saveContent, suggestionActiveRef, isGenerating: isGenerating ?? false,
+        saveContent, suggestionActiveRef, submitHandlerRef, isGenerating: isGenerating ?? false,
+        isNewEmptyNode: !prompt && !output,
         onSubmitNote: useCallback((t: string) => { updateNodeOutput(id, t); useCanvasStore.getState().stopEditing(); }, [id, updateNodeOutput]),
         onSubmitAI: useCallback((t: string) => {
             updateNodePrompt(id, t); useCanvasStore.getState().stopEditing(); void generateFromPrompt(id);
@@ -79,17 +80,6 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         return () => window.removeEventListener(FOCUS_NODE_EVENT, h);
     }, [id]);
 
-    // Auto-enter edit mode for empty new cards
-    const autoEditRef = useRef(!prompt && !output);
-    useEffect(() => {
-        if (autoEditRef.current) {
-            autoEditRef.current = false;
-            if (!useCanvasStore.getState().editingNodeId) {
-                useCanvasStore.getState().startEditing(id);
-            }
-        }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
     const handleDelete = useCallback(() => deleteNode(id), [id, deleteNode]);
     const handleRegenerate = useCallback(() => generateFromPrompt(id), [id, generateFromPrompt]);
     const handleConnectClick = useCallback(() => { void branchFromNode(id); }, [id, branchFromNode]);
@@ -112,8 +102,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
             <div className={`${styles.ideaCard} ${isHovered ? styles.ideaCardHovered : ''}`}>
                 <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`}
-                    data-testid="content-area" ref={contentRef} tabIndex={selected ? 0 : -1}
-                    onKeyDown={selected ? onKeyDownReact : undefined}>
+                    data-testid="content-area" ref={contentRef} tabIndex={selected || isEditing ? 0 : -1}
+                    onKeyDown={selected || isEditing ? onKeyDownReact : undefined}>
                     {isEditing ? <EditingContent editor={editor} /> :
                      isGenerating ? <GeneratingContent /> :
                      hasContent && isAICard ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
