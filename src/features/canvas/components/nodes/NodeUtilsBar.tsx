@@ -11,6 +11,7 @@ interface NodeUtilsBarProps {
     onTagClick: () => void;
     onAIClick?: () => void;
     onConnectClick: () => void;
+    onCopyClick?: () => void;
     onDelete: () => void;
     onTransform?: (type: TransformationType) => void;
     onRegenerate?: () => void;
@@ -26,6 +27,7 @@ export function NodeUtilsBar({
     onTagClick,
     onAIClick,
     onConnectClick,
+    onCopyClick,
     onDelete,
     onTransform,
     onRegenerate,
@@ -78,6 +80,17 @@ export function NodeUtilsBar({
             >
                 <span className={styles.icon}>🔗</span>
             </button>
+            {onCopyClick && (
+                <button
+                    className={styles.actionButton}
+                    onClick={onCopyClick}
+                    disabled={disabled}
+                    aria-label={strings.nodeUtils.copy}
+                    data-tooltip={strings.nodeUtils.copy}
+                >
+                    <span className={styles.icon}>📋</span>
+                </button>
+            )}
             <button
                 className={`${styles.actionButton} ${styles.deleteButton}`}
                 onClick={onDelete}

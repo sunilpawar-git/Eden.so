@@ -60,4 +60,30 @@ describe('NodeUtilsBar', () => {
         expect(screen.getByLabelText('Connect')).toBeDisabled();
         expect(screen.getByLabelText('Delete')).toBeDisabled();
     });
+
+    describe('Copy button', () => {
+        it('renders copy button when onCopyClick is provided', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} />);
+            expect(screen.getByLabelText('Copy')).toBeInTheDocument();
+        });
+
+        it('does not render copy button when onCopyClick is not provided', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            expect(screen.queryByLabelText('Copy')).not.toBeInTheDocument();
+        });
+
+        it('calls onCopyClick when Copy button is clicked', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} />);
+            fireEvent.click(screen.getByLabelText('Copy'));
+            expect(onCopyClick).toHaveBeenCalledTimes(1);
+        });
+
+        it('disables copy button when disabled prop is true', () => {
+            const onCopyClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} disabled={true} />);
+            expect(screen.getByLabelText('Copy')).toBeDisabled();
+        });
+    });
 });

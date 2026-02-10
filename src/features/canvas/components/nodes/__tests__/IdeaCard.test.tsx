@@ -6,6 +6,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
 import type { IdeaNodeData } from '../../../types/node';
+import { toast } from '@/shared/stores/toastStore';
 // Mock ReactFlow hooks and components
 vi.mock('@xyflow/react', async () => {
     const actual = await vi.importActual('@xyflow/react');
@@ -31,6 +32,22 @@ vi.mock('@xyflow/react', async () => {
             <div data-testid="node-resizer" data-visible={isVisible} />
         ),
     };
+});
+
+// Mock toast store
+vi.mock('@/shared/stores/toastStore', () => ({
+    toast: {
+        success: vi.fn(),
+        error: vi.fn(),
+    },
+}));
+
+// Mock clipboard API
+const mockWriteText = vi.fn();
+Object.assign(navigator, {
+    clipboard: {
+        writeText: mockWriteText,
+    },
 });
 
 // Mock the generation hook
@@ -165,7 +182,37 @@ describe('IdeaCard', () => {
             expect(screen.getByRole('button', { name: /tags/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /transform/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+        });
+
+        it('copies text and shows success toast when Copy button is clicked', async () => {
+            const aiCard = {
+                ...defaultProps,
+                data: { ...defaultData, prompt: 'AI prompt', output: 'AI response' },
+            };
+            mockWriteText.mockResolvedValue(undefined);
+            render(<IdeaCard {...aiCard} />);
+            const copyButton = screen.getByRole('button', { name: /copy/i });
+            fireEvent.click(copyButton);
+            await vi.waitFor(() => {
+                expect(mockWriteText).toHaveBeenCalledWith('AI prompt');
+                expect(toast.success).toHaveBeenCalledWith('Copied to clipboard');
+            });
+        });
+
+        it('shows error toast when copy fails', async () => {
+            const aiCard = {
+                ...defaultProps,
+                data: { ...defaultData, prompt: 'AI prompt', output: 'AI response' },
+            };
+            mockWriteText.mockRejectedValue(new Error('Clipboard error'));
+            render(<IdeaCard {...aiCard} />);
+            const copyButton = screen.getByRole('button', { name: /copy/i });
+            fireEvent.click(copyButton);
+            await vi.waitFor(() => {
+                expect(toast.error).toHaveBeenCalledWith('Failed to copy');
+            });
         });
     });
 
