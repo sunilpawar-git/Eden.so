@@ -38,13 +38,24 @@ export function useSearch(): UseSearchReturn {
         const lowerQuery = query.toLowerCase();
 
         nodes.forEach((node) => {
+            const heading = node.data.heading;
             const prompt = node.data.prompt;
             const output = node.data.output;
             const workspaceId = node.workspaceId;
             const workspaceName = workspaceMap.get(workspaceId) ?? 'Unknown';
 
-            // Search in prompt (handle empty prompts)
-            if (prompt.trim().length > 0 && prompt.toLowerCase().includes(lowerQuery)) {
+            // Search in heading (SSOT for prompts)
+            if (heading && heading.trim().length > 0 && heading.toLowerCase().includes(lowerQuery)) {
+                searchResults.push({
+                    nodeId: node.id,
+                    workspaceId,
+                    workspaceName,
+                    matchedContent: heading,
+                    matchType: 'heading',
+                    relevance: 1.0,
+                });
+            } else if (prompt && prompt.trim().length > 0 && prompt.toLowerCase().includes(lowerQuery)) {
+                // Legacy fallback: search in prompt for old nodes without heading
                 searchResults.push({
                     nodeId: node.id,
                     workspaceId,

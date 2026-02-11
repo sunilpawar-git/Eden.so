@@ -42,6 +42,10 @@ export const strings = {
         clearConfirm: 'Are you sure you want to clear all nodes?',
     },
     ideaCard: {
+        headingPlaceholder: 'Title',
+        headingAiPlaceholder: 'Ask AI',
+        aiPillLabel: '✨ AI',
+        dividerLabel: 'Separator',
         promptLabel: 'Prompt',
         outputLabel: 'Output',
         regenerate: 'Regenerate',
@@ -52,12 +56,10 @@ export const strings = {
         expandPrompt: 'Expand prompt',
         collapsePrompt: 'Collapse prompt',
         noOutput: 'Type text to save, or / for commands',
-        inputPlaceholder: 'Type a note, or press / for AI commands',
+        inputPlaceholder: 'Type a note...',
         aiDividerLabel: 'AI Response',
         transform: 'Transform',
         transforming: 'Transforming...',
-        aiModePlaceholder: 'Type your AI prompt...',
-        aiModeIndicator: 'AI Mode',
     },
     transformations: {
         refine: 'Refine',
@@ -116,6 +118,7 @@ export const strings = {
         resultsCount: 'results',
         inWorkspace: 'in',
         prompt: 'Prompt',
+        heading: 'Heading',
         output: 'Output',
     },
     tags: {

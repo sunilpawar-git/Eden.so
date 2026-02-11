@@ -8,6 +8,7 @@ import { createIdeaNode } from '../types/node';
 
 describe('IdeaNode actions', () => {
     const mockIdeaNodeData: IdeaNodeData = {
+        heading: '',
         prompt: 'Test prompt',
         output: undefined,
         isGenerating: false,
@@ -46,9 +47,52 @@ describe('IdeaNode actions', () => {
             expect((node.data).isPromptCollapsed).toBe(false);
         });
 
-        it('creates node with empty prompt by default', () => {
+        it('omits prompt when not provided', () => {
             const node = createIdeaNode('idea-test', 'workspace-1', { x: 0, y: 0 });
-            expect((node.data).prompt).toBe('');
+            expect((node.data).prompt).toBeUndefined();
+        });
+
+        it('creates node with empty heading', () => {
+            const node = createIdeaNode('idea-test', 'workspace-1', { x: 0, y: 0 });
+            expect((node.data).heading).toBe('');
+        });
+    });
+
+    describe('updateNodeHeading', () => {
+        it('updates heading field', () => {
+            useCanvasStore.getState().addNode(mockIdeaNode);
+            useCanvasStore.getState().updateNodeHeading('idea-1', 'My Title');
+
+            const node = useCanvasStore.getState().nodes[0];
+            expect((node?.data!).heading).toBe('My Title');
+        });
+
+        it('does not affect other node fields', () => {
+            useCanvasStore.getState().addNode(mockIdeaNode);
+            useCanvasStore.getState().updateNodeHeading('idea-1', 'New Title');
+
+            const node = useCanvasStore.getState().nodes[0];
+            expect((node?.data!).prompt).toBe('Test prompt');
+            expect((node?.data!).output).toBeUndefined();
+            expect((node?.data!).isGenerating).toBe(false);
+        });
+
+        it('updates updatedAt timestamp', () => {
+            useCanvasStore.getState().addNode(mockIdeaNode);
+            const beforeUpdate = new Date();
+            useCanvasStore.getState().updateNodeHeading('idea-1', 'Updated Title');
+
+            const node = useCanvasStore.getState().nodes[0];
+            expect(node!.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime());
+        });
+
+        it('can set heading to empty string', () => {
+            useCanvasStore.getState().addNode(mockIdeaNode);
+            useCanvasStore.getState().updateNodeHeading('idea-1', 'Some Title');
+            useCanvasStore.getState().updateNodeHeading('idea-1', '');
+
+            const node = useCanvasStore.getState().nodes[0];
+            expect((node?.data!).heading).toBe('');
         });
     });
 

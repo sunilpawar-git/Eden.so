@@ -82,6 +82,19 @@ vi.mock('../../../hooks/useNodeInput', async () =>
 vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
+vi.mock('../../../hooks/useIdeaCardActions', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardActionsMock()
+);
+vi.mock('../../../hooks/useIdeaCardState', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardStateMock()
+);
+vi.mock('../NodeHeading', () => ({
+    NodeHeading: ({ heading }: { heading: string }) =>
+        <div data-testid="node-heading">{heading}</div>,
+}));
+vi.mock('../NodeDivider', () => ({
+    NodeDivider: () => <div data-testid="node-divider" />,
+}));
 
 describe('IdeaCard Resize Integration', () => {
     const defaultData: IdeaNodeData = {
@@ -108,9 +121,10 @@ describe('IdeaCard Resize Integration', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore, initStateStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
         initNodeInputStore(useCanvasStore);
+        initStateStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [],
             edges: [],

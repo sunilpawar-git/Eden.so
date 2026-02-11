@@ -22,13 +22,38 @@ vi.mock('@xyflow/react', async () => {
     };
 });
 
-// Mock the generation hook
+// Mock the generation hook (still needed by useNodeInput's onSubmitAI)
 const mockGenerateFromPrompt = vi.fn();
 vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     useNodeGeneration: () => ({
         generateFromPrompt: mockGenerateFromPrompt,
         branchFromNode: vi.fn(),
     }),
+}));
+
+// Mock useIdeaCardActions (extracted action callbacks)
+const mockHandleDelete = vi.fn();
+vi.mock('../../../hooks/useIdeaCardActions', async () => {
+    const mock = (await import('./helpers/tipTapTestMock')).useIdeaCardActionsMock();
+    return {
+        useIdeaCardActions: (opts: unknown) => {
+            const result = mock.useIdeaCardActions(opts as never);
+            return { ...result, handleDelete: mockHandleDelete };
+        },
+    };
+});
+vi.mock('../../../hooks/useIdeaCardState', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardStateMock()
+);
+
+// Mock NodeHeading and NodeDivider (tested separately)
+vi.mock('../NodeHeading', () => ({
+    NodeHeading: ({ heading, onDoubleClick }: { heading: string; onDoubleClick?: () => void }) => (
+        <div data-testid="node-heading" onDoubleClick={onDoubleClick}>{heading}</div>
+    ),
+}));
+vi.mock('../NodeDivider', () => ({
+    NodeDivider: () => <div data-testid="node-divider" />,
 }));
 
 // TipTap mocks — shared state via singleton in helper module
@@ -54,32 +79,20 @@ vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
 
 describe('IdeaCard', () => {
     const defaultData: IdeaNodeData = {
-        prompt: 'Test prompt content',
-        output: undefined,
-        isGenerating: false,
-        isPromptCollapsed: false,
+        prompt: 'Test prompt content', output: undefined, isGenerating: false, isPromptCollapsed: false,
     };
-
     const defaultProps = {
-        id: 'idea-1',
-        data: defaultData,
-        type: 'idea' as const,
-        selected: false,
-        isConnectable: true,
-        positionAbsoluteX: 0,
-        positionAbsoluteY: 0,
-        zIndex: 0,
-        dragging: false,
-        selectable: true,
-        deletable: true,
-        draggable: true,
+        id: 'idea-1', data: defaultData, type: 'idea' as const, selected: false,
+        isConnectable: true, positionAbsoluteX: 0, positionAbsoluteY: 0, zIndex: 0,
+        dragging: false, selectable: true, deletable: true, draggable: true,
     };
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore, initStateStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
         initNodeInputStore(useCanvasStore);
+        initStateStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -107,41 +120,25 @@ describe('IdeaCard', () => {
             };
             render(<IdeaCard {...propsNoOutput} />);
             // Empty cards start in edit mode with TipTap editor
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
         });
 
-        it('renders top handle for target connections', () => {
+        it('renders connection handles (top target + bottom source)', () => {
             render(<IdeaCard {...defaultProps} />);
             expect(screen.getByTestId('handle-target-top')).toBeInTheDocument();
-        });
-
-        it('renders bottom handle for source connections', () => {
-            render(<IdeaCard {...defaultProps} />);
             expect(screen.getByTestId('handle-source-bottom')).toBeInTheDocument();
         });
     });
 
     describe('Unified action bar (all cards get same actions)', () => {
-        it('renders Transform button for note cards (output only)', () => {
+        it('renders Transform, Tags, and Delete buttons for note cards', () => {
             const noteCard = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: '', output: 'My personal note' },
             };
             render(<IdeaCard {...noteCard} />);
             expect(screen.getByRole('button', { name: /transform/i })).toBeInTheDocument();
-        });
-
-        it('renders Tags button for note cards (output only)', () => {
-            const noteCard = {
-                ...defaultProps,
-                data: { ...defaultData, prompt: '', output: 'My personal note' },
-            };
-            render(<IdeaCard {...noteCard} />);
             expect(screen.getByRole('button', { name: /tags/i })).toBeInTheDocument();
-        });
-
-        it('renders Delete button for all cards', () => {
-            render(<IdeaCard {...defaultProps} />);
             expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
         });
 
@@ -162,7 +159,7 @@ describe('IdeaCard', () => {
     });
 
     describe('AI card divider (prompt !== output)', () => {
-        it('shows divider for AI cards where prompt differs from output', () => {
+        it('shows divider for legacy AI cards (prompt field, no heading)', () => {
             const aiCard = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: 'Write a poem', output: 'Roses are red...' },
@@ -171,13 +168,22 @@ describe('IdeaCard', () => {
             expect(screen.getByTestId('ai-divider')).toBeInTheDocument();
         });
 
-        it('shows prompt text above divider for AI cards', () => {
+        it('shows prompt text above divider for legacy AI cards', () => {
             const aiCard = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: 'Write a poem', output: 'Roses are red...' },
             };
             render(<IdeaCard {...aiCard} />);
             expect(screen.getByText('Write a poem')).toBeInTheDocument();
+        });
+
+        it('does NOT show divider when heading is the prompt source', () => {
+            const aiCard = {
+                ...defaultProps,
+                data: { ...defaultData, heading: 'Write a poem', prompt: '', output: 'Roses are red...' },
+            };
+            render(<IdeaCard {...aiCard} />);
+            expect(screen.queryByTestId('ai-divider')).not.toBeInTheDocument();
         });
 
         it('does NOT show divider for note cards (output only)', () => {
@@ -205,7 +211,7 @@ describe('IdeaCard', () => {
             fireEvent.doubleClick(content);
 
             // Should now show a textarea
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
         });
 
         it('empty card shows input textarea by default', () => {
@@ -216,7 +222,7 @@ describe('IdeaCard', () => {
             render(<IdeaCard {...emptyCard} />);
 
             // Empty cards start in edit mode
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
         });
 
         it('Shift+Enter does not trigger save (TipTap handles newline)', () => {
@@ -227,7 +233,7 @@ describe('IdeaCard', () => {
             render(<IdeaCard {...emptyCard} />);
 
             // Editor is present in edit mode
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
             // Shift+Enter is handled by TipTap natively (inserts newline)
             // generateFromPrompt should not be called
             expect(mockGenerateFromPrompt).not.toHaveBeenCalled();
@@ -261,7 +267,7 @@ describe('IdeaCard', () => {
             fireEvent.keyDown(contentArea, { key: 'h' });
 
             // Should enter edit mode and show textarea
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
         });
     });
 
@@ -281,18 +287,10 @@ describe('IdeaCard', () => {
 
     describe('Delete action', () => {
         it('clicking delete button calls deleteNode', () => {
-            const mockDelete = vi.fn();
-            useCanvasStore.setState({
-                nodes: [],
-                edges: [],
-                selectedNodeIds: new Set(),
-                deleteNode: mockDelete,
-            });
-
             render(<IdeaCard {...defaultProps} />);
             fireEvent.click(screen.getByRole('button', { name: /delete/i }));
 
-            expect(mockDelete).toHaveBeenCalledWith('idea-1');
+            expect(mockHandleDelete).toHaveBeenCalled();
         });
     });
 

@@ -64,6 +64,20 @@ vi.mock('../../../hooks/useNodeInput', async () =>
 vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
+// Copy tests use the REAL useIdeaCardActions to test clipboard behavior
+vi.mock('@/features/ai/hooks/useNodeTransformation', () => ({
+    useNodeTransformation: () => ({ transformNodeContent: vi.fn(), isTransforming: false }),
+}));
+vi.mock('../../../hooks/useIdeaCardState', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardStateMock()
+);
+vi.mock('../NodeHeading', () => ({
+    NodeHeading: ({ heading }: { heading: string }) =>
+        <div data-testid="node-heading">{heading}</div>,
+}));
+vi.mock('../NodeDivider', () => ({
+    NodeDivider: () => <div data-testid="node-divider" />,
+}));
 
 describe('IdeaCard Copy', () => {
     const defaultData: IdeaNodeData = {
@@ -90,9 +104,10 @@ describe('IdeaCard Copy', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore, initStateStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
         initNodeInputStore(useCanvasStore);
+        initStateStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [],
             edges: [],

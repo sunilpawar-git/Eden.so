@@ -29,6 +29,21 @@ vi.mock('../../../extensions/slashCommandSuggestion', async () =>
     (await import('./helpers/tipTapTestMock')).extensionMock()
 );
 
+vi.mock('../../../hooks/useIdeaCardActions', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardActionsMock()
+);
+vi.mock('../../../hooks/useIdeaCardState', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardStateMock()
+);
+vi.mock('../NodeHeading', () => ({
+    NodeHeading: ({ heading, onDoubleClick }: { heading: string; onDoubleClick?: () => void }) => (
+        <div data-testid="node-heading" onDoubleClick={onDoubleClick}>{heading}</div>
+    ),
+}));
+vi.mock('../NodeDivider', () => ({
+    NodeDivider: () => <div data-testid="node-divider" />,
+}));
+
 // Mock CSS modules - returns class name as-is for testing
 vi.mock('../IdeaCard.module.css', () => ({
     default: {
@@ -49,6 +64,7 @@ vi.mock('../IdeaCard.module.css', () => ({
         generating: 'generating',
         spinner: 'spinner',
         divider: 'divider',
+        headingSection: 'headingSection',
     },
 }));
 
@@ -84,9 +100,10 @@ const renderWithProvider = (props: Partial<NodeProps>) => {
 
 describe('IdeaCard styles', () => {
     beforeEach(async () => {
-        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore, initStateStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
         initNodeInputStore(useCanvasStore);
+        initStateStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [], edges: [], selectedNodeIds: new Set(),
             editingNodeId: null, draftContent: null, inputMode: 'note',
@@ -123,7 +140,10 @@ describe('IdeaCard styles', () => {
         });
 
         // Card wrapper exists
-        const wrapper = screen.getByTestId('content-area').parentElement;
+        const contentArea = screen.getByTestId('content-area');
+        // Navigate up to the ideaCard container (content-area -> ideaCard)
+        const wrapper = contentArea.closest('.ideaCard');
+        expect(wrapper).not.toBeNull();
         expect(wrapper).toHaveClass('ideaCard');
     });
 

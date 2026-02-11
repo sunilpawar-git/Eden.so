@@ -2,13 +2,15 @@
  * Integration tests for the slash command → AI generation pipeline.
  *
  * These tests exercise the REAL TipTap editor with REAL extensions
- * (SubmitKeymap, SlashCommandSuggestion, Placeholder) to catch
- * cross-layer regressions that unit tests with mocks cannot detect.
+ * (SubmitKeymap, Placeholder) to catch cross-layer regressions that
+ * unit tests with mocks cannot detect.
+ *
+ * Note: Slash commands now live in the heading editor only. Body editor
+ * uses SubmitKeymap for Enter/Escape but has no slash command extension.
  *
  * Regressions these tests prevent:
  * - Enter to select slash command exits editing (duplicate handler race)
  * - SubmitKeymap not intercepting Enter before StarterKit
- * - Placeholder text not updating after inputMode change
  * - suggestionActiveRef timing issues during command selection
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -149,7 +151,7 @@ describe('SubmitKeymap extension (real TipTap)', () => {
     });
 });
 
-describe('SubmitKeymap + suggestion-active guard', () => {
+describe('SubmitKeymap + suggestion-active guard (heading editor pattern)', () => {
     it('onEnter returns false when suggestion is active, allowing Suggestion plugin to handle it', () => {
         const suggestionActiveRef = { current: true };
         const onSubmitNote = vi.fn();
@@ -204,44 +206,6 @@ describe('SubmitKeymap + suggestion-active guard', () => {
     });
 });
 
-describe('Placeholder update after inputMode change', () => {
-    it('placeholder text updates when ref value changes and transaction is dispatched', () => {
-        const placeholderRef = { current: 'Type a note...' };
-        const { result } = renderHook(() =>
-            useEditor({
-                extensions: [
-                    StarterKit,
-                    Placeholder.configure({
-                        placeholder: () => placeholderRef.current,
-                    }),
-                ],
-                content: '',
-            }),
-        );
-
-        const editor = result.current;
-        expect(editor).not.toBeNull();
-
-        // Change placeholder text (simulates inputMode switching to 'ai')
-        act(() => {
-            placeholderRef.current = 'Type your AI prompt...';
-            // Dispatch a no-op transaction to force decoration recalculation
-            editor!.view.dispatch(
-                editor!.state.tr.setMeta('placeholderUpdate', true),
-            );
-        });
-
-        // The Placeholder extension should now use the updated value.
-        // We verify by checking the extension's internal state reads the new value.
-        expect(placeholderRef.current).toBe('Type your AI prompt...');
-        // The decoration function should return the new placeholder when called
-        const placeholderExt = editor!.extensionManager.extensions.find(
-            (e) => e.name === 'placeholder',
-        );
-        expect(placeholderExt).toBeDefined();
-    });
-});
-
 describe('Edit-mode state consistency', () => {
     beforeEach(() => {
         safeClearCanvas();
@@ -269,47 +233,6 @@ describe('Edit-mode state consistency', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Bug 4 regression guard: slashJustSelectedRef blur guard sequence
-// ---------------------------------------------------------------------------
-
-describe('Blur guard after slash command selection (Bug 4 regression)', () => {
-    it('handleBlur skips save/exit and re-focuses when slashJustSelectedRef is true', async () => {
-        // This test exercises the exact mechanism that prevents Bug 4:
-        // When a slash command is selected, onActiveChange(false) sets
-        // slashJustSelectedRef = true. The subsequent blur must skip
-        // saveContent/onExitEditing and re-focus the editor.
-        const saveContent = vi.fn();
-        const onExitEditing = vi.fn();
-        const onSlashCommand = vi.fn();
-
-        const { useIdeaCardEditor } = await import('../hooks/useIdeaCardEditor');
-
-        const { result } = renderHook(() =>
-            useIdeaCardEditor({
-                isEditing: true,
-                output: undefined,
-                getEditableContent: () => '',
-                placeholder: 'Type a note...',
-                saveContent,
-                onExitEditing,
-                onSlashCommand,
-            }),
-        );
-
-        // Simulate: slash command popup closes (onActiveChange(false))
-        // This sets slashJustSelectedRef = true internally.
-        // We verify the effect by triggering a blur — it should NOT exit editing.
-        act(() => {
-            (result.current.suggestionActiveRef as React.MutableRefObject<boolean>).current = false;
-        });
-
-        // The editor should exist and not have called exit
-        expect(saveContent).not.toHaveBeenCalled();
-        expect(onExitEditing).not.toHaveBeenCalled();
-    });
-});
-
-// ---------------------------------------------------------------------------
 // Bug 4 regression guard: handleEditModeKey is a deliberate no-op
 // ---------------------------------------------------------------------------
 
@@ -328,9 +251,7 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
         } as unknown as import('@tiptap/react').Editor;
 
         const onSubmitNote = vi.fn();
-        const onSubmitAI = vi.fn();
         const saveContent = vi.fn();
-        const suggestionActiveRef = { current: false };
         const submitHandlerRef = { current: null as import('../extensions/submitKeymap').SubmitKeymapHandler | null };
 
         safeStartEditing('test-node-noop');
@@ -344,8 +265,6 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
                 getEditableContent: () => 'some content',
                 saveContent,
                 onSubmitNote,
-                onSubmitAI,
-                suggestionActiveRef,
                 submitHandlerRef,
                 isGenerating: false,
                 isNewEmptyNode: false,
@@ -360,7 +279,6 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
 
         // Neither submit nor exit should be called from the React handler
         expect(onSubmitNote).not.toHaveBeenCalled();
-        expect(onSubmitAI).not.toHaveBeenCalled();
         expect(saveContent).not.toHaveBeenCalled();
 
         // Simulate Escape keydown reaching the React handler
@@ -388,7 +306,6 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
         const setEditableSpy = vi.fn();
         const setContent = vi.fn();
         const getEditableContent = vi.fn(() => '');
-        const suggestionActiveRef = { current: false };
         const submitHandlerRef = { current: null as import('../extensions/submitKeymap').SubmitKeymapHandler | null };
 
         // Phase 1: Editor is null (first render from useEditor)
@@ -402,8 +319,6 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
                     getEditableContent,
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef,
                     submitHandlerRef,
                     isGenerating: false,
                     isNewEmptyNode: true,
@@ -470,8 +385,6 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
                 getEditableContent: () => 'existing content',
                 saveContent: vi.fn(),
                 onSubmitNote: vi.fn(),
-                onSubmitAI: vi.fn(),
-                suggestionActiveRef: { current: false },
                 submitHandlerRef: { current: null },
                 isGenerating: false,
                 isNewEmptyNode: false,

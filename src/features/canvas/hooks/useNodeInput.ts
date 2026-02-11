@@ -27,13 +27,13 @@ export interface UseNodeInputOptions {
     getEditableContent: () => string;
     saveContent: (markdown: string) => void;
     onSubmitNote: (trimmed: string) => void;
-    onSubmitAI: (trimmed: string) => void;
-    suggestionActiveRef: React.RefObject<boolean>;
     /** Ref for Enter/Escape handlers fed into the SubmitKeymap TipTap extension */
     submitHandlerRef: React.MutableRefObject<SubmitKeymapHandler | null>;
     isGenerating: boolean;
     /** True when the node is freshly created and empty — auto-enters edit mode */
     isNewEmptyNode: boolean;
+    /** Focus the heading editor instead of body — called for auto-edit of new nodes */
+    focusHeading?: () => void;
 }
 
 export interface UseNodeInputReturn {
@@ -46,8 +46,8 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     const {
         nodeId, editor, getMarkdown, setContent,
         getEditableContent, saveContent,
-        onSubmitNote, onSubmitAI, suggestionActiveRef, submitHandlerRef,
-        isGenerating, isNewEmptyNode,
+        onSubmitNote, submitHandlerRef,
+        isGenerating, isNewEmptyNode, focusHeading,
     } = options;
 
     const isEditing = useCanvasStore((s) => s.editingNodeId === nodeId);
@@ -75,10 +75,11 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
             enterEditing();
             // Defer focus to ensure editor DOM is ready after state update
             queueMicrotask(() => {
-                editor.commands.focus();
+                if (focusHeading) focusHeading();
+                else editor.commands.focus();
             });
         }
-    }, [editor, enterEditing]);
+    }, [editor, enterEditing, focusHeading]);
 
     const exitEditing = useCallback(() => {
         saveContent(getMarkdown());
@@ -89,19 +90,16 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
 
     // Keep the SubmitKeymap extension's handler ref in sync so that Enter
     // and Escape are intercepted at the ProseMirror level (before StarterKit
-    // creates a new paragraph).
+    // creates a new paragraph). Body editor always submits as a note.
     useEffect(() => {
         submitHandlerRef.current = {
             onEnter: () => {
-                if (suggestionActiveRef.current) return false;
                 const trimmed = getMarkdown().trim();
                 if (!trimmed) {
                     useCanvasStore.getState().stopEditing();
                     return true;
                 }
-                const currentMode = useCanvasStore.getState().inputMode;
-                if (currentMode === 'ai') onSubmitAI(trimmed);
-                else onSubmitNote(trimmed);
+                onSubmitNote(trimmed);
                 return true;
             },
             onEscape: () => {
@@ -110,7 +108,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
             },
         };
         return () => { submitHandlerRef.current = null; };
-    }, [submitHandlerRef, suggestionActiveRef, getMarkdown, onSubmitNote, onSubmitAI, exitEditing]);
+    }, [submitHandlerRef, getMarkdown, onSubmitNote, exitEditing]);
 
     // Paste handler: immediately update draft for URL detection (no debounce)
     useEffect(() => {

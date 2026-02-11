@@ -38,6 +38,7 @@ interface CanvasActions {
     deleteNode: (nodeId: string) => void;
 
     // IdeaNode-specific actions
+    updateNodeHeading: (nodeId: string, heading: string) => void;
     updateNodePrompt: (nodeId: string, prompt: string) => void;
     updateNodeOutput: (nodeId: string, output: string) => void;
     updateNodeTags: (nodeId: string, tags: string[]) => void;
@@ -101,6 +102,9 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     updateNodeContent: (nodeId, content) =>
         set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'content', content) })),
+
+    updateNodeHeading: (nodeId, heading) =>
+        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'heading', heading) })),
 
     updateNodePrompt: (nodeId, prompt) =>
         set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'prompt', prompt) })),

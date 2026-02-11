@@ -1,0 +1,50 @@
+/**
+ * NodeHeading Styles - Heading area typography and layout
+ * Uses CSS variables only (no hardcoded values per CLAUDE.md)
+ */
+
+.headingContainer {
+    padding: 0;
+    flex-shrink: 0;
+}
+
+/* View mode heading text */
+.headingView {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-normal);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    min-height: 1.5em;
+    word-break: break-word;
+}
+
+/* Placeholder styling when heading is empty (view mode) */
+.headingPlaceholder {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+/* TipTap editor in heading — larger, bolder text */
+.headingEditor {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    min-height: auto;
+}
+
+.headingEditor :global(.ProseMirror) {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    min-height: 1.5em;
+}
+
+.headingEditor :global(.ProseMirror p) {
+    margin: 0;
+    min-height: 1.5em;
+}
+
+/* Placeholder in heading editor */
+.headingEditor :global(.ProseMirror p.is-editor-empty:first-child::before) {
+    font-weight: var(--font-weight-normal);
+    font-style: italic;
+}

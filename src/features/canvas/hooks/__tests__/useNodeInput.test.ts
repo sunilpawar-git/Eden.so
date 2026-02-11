@@ -65,8 +65,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => 'content'),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -86,8 +84,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => 'content'),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -107,8 +103,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => 'content'),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -128,8 +122,6 @@ describe('useNodeInput', () => {
                 getEditableContent: vi.fn(() => 'existing content'),
                 saveContent: vi.fn(),
                 onSubmitNote: vi.fn(),
-                onSubmitAI: vi.fn(),
-                suggestionActiveRef: { current: false },
                 isGenerating: false,
                 submitHandlerRef: { current: null },
                 isNewEmptyNode: false,
@@ -221,8 +213,6 @@ describe('useNodeInput', () => {
                 getEditableContent: vi.fn(() => 'existing content'),
                 saveContent: vi.fn(),
                 onSubmitNote: vi.fn(),
-                onSubmitAI: vi.fn(),
-                suggestionActiveRef: { current: false },
                 isGenerating: false,
                 submitHandlerRef: { current: null },
                 isNewEmptyNode: false,
@@ -248,14 +238,15 @@ describe('useNodeInput', () => {
             expect(opts.onSubmitNote).toHaveBeenCalledWith('draft content');
         });
 
-        it('Enter in AI mode calls onSubmitAI', () => {
+        it('Enter always submits as note regardless of inputMode', () => {
             const { opts } = renderInEditMode();
             // Set AI mode after startEditing (which resets to 'note')
             act(() => { useCanvasStore.getState().setInputMode('ai'); });
             // Enter is handled by SubmitKeymap via submitHandlerRef
             expect(opts.submitHandlerRef.current).not.toBeNull();
             act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
-            expect(opts.onSubmitAI).toHaveBeenCalledWith('draft content');
+            // Body editor always submits as note, regardless of inputMode
+            expect(opts.onSubmitNote).toHaveBeenCalledWith('draft content');
         });
 
         it('Enter with empty content exits editing without submit', () => {
@@ -277,16 +268,6 @@ describe('useNodeInput', () => {
             expect(useCanvasStore.getState().editingNodeId).toBe(NODE_ID);
         });
 
-        it('does not submit when suggestion is active', () => {
-            const { opts } = renderInEditMode({
-                suggestionActiveRef: { current: true },
-            });
-            // When suggestion is active, SubmitKeymap returns false to let
-            // the Suggestion plugin handle Enter
-            expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
-            expect(opts.onSubmitNote).not.toHaveBeenCalled();
-        });
     });
 
     describe('editor editable state management', () => {
@@ -302,8 +283,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => ''),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef,
                     isNewEmptyNode: false,
@@ -328,8 +307,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => ''),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -360,8 +337,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => ''),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -388,8 +363,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => ''),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -413,8 +386,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => ''),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -443,8 +414,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => ''),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -481,8 +450,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => ''),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
@@ -510,8 +477,6 @@ describe('useNodeInput', () => {
                     getEditableContent: vi.fn(() => ''),
                     saveContent: vi.fn(),
                     onSubmitNote: vi.fn(),
-                    onSubmitAI: vi.fn(),
-                    suggestionActiveRef: { current: false },
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,

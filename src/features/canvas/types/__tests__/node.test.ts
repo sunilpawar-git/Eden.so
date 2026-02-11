@@ -31,10 +31,10 @@ describe('createIdeaNode', () => {
         expect(node.data.prompt).toBe('test prompt');
     });
 
-    it('should set empty prompt when not provided', () => {
+    it('should omit prompt when not provided', () => {
         const node = createIdeaNode(testId, testWorkspaceId, testPosition);
 
-        expect(node.data.prompt).toBe('');
+        expect(node.data.prompt).toBeUndefined();
     });
 
     it('should set createdAt and updatedAt timestamps', () => {

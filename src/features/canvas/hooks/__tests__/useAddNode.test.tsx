@@ -137,7 +137,7 @@ describe('useAddNode', () => {
         const nodes = useCanvasStore.getState().nodes;
         const node = nodes[0];
         expect(node?.data).toEqual({
-            prompt: '',
+            heading: '',
             output: undefined,
             isGenerating: false,
             isPromptCollapsed: false,

@@ -30,6 +30,21 @@ vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     }),
 }));
 
+vi.mock('../../../hooks/useIdeaCardActions', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardActionsMock()
+);
+vi.mock('../../../hooks/useIdeaCardState', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardStateMock()
+);
+vi.mock('../NodeHeading', () => ({
+    NodeHeading: ({ heading, onDoubleClick }: { heading: string; onDoubleClick?: () => void }) => (
+        <div data-testid="node-heading" onDoubleClick={onDoubleClick}>{heading}</div>
+    ),
+}));
+vi.mock('../NodeDivider', () => ({
+    NodeDivider: () => <div data-testid="node-divider" />,
+}));
+
 // TipTap mocks — shared state via singleton in helper module
 vi.mock('../../../hooks/useTipTapEditor', async () =>
     (await import('./helpers/tipTapTestMock')).hookMock()
@@ -57,9 +72,10 @@ describe('IdeaCard Editing', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore, initStateStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
         initNodeInputStore(useCanvasStore);
+        initStateStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -83,7 +99,7 @@ describe('IdeaCard Editing', () => {
 
             render(<IdeaCard {...defaultProps} />);
 
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             fireEvent.change(textarea, { target: { value: 'Content that should be saved' } });
             fireEvent.blur(textarea);
 
@@ -102,7 +118,7 @@ describe('IdeaCard Editing', () => {
 
             render(<IdeaCard {...defaultProps} />);
 
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             fireEvent.change(textarea, { target: { value: '   ' } });
             fireEvent.blur(textarea);
 
@@ -129,7 +145,7 @@ describe('IdeaCard Editing', () => {
             const content = screen.getByText('Existing content');
             fireEvent.doubleClick(content);
 
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             fireEvent.blur(textarea);
             expect(mockUpdateOutput).not.toHaveBeenCalled();
         });
@@ -148,7 +164,7 @@ describe('IdeaCard Editing', () => {
             const content = screen.getByText('My existing note content');
             fireEvent.doubleClick(content);
 
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             expect(textarea).toHaveValue('My existing note content');
         });
 
@@ -168,7 +184,7 @@ describe('IdeaCard Editing', () => {
             const promptText = screen.getByText('Original AI prompt');
             fireEvent.doubleClick(promptText);
 
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             expect(textarea).toHaveValue('Original AI prompt');
         });
 
@@ -193,7 +209,7 @@ describe('IdeaCard Editing', () => {
             fireEvent.doubleClick(content);
 
             // Modify and blur to save
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             fireEvent.change(textarea, { target: { value: 'Modified content' } });
             fireEvent.blur(textarea);
 
@@ -221,7 +237,7 @@ describe('IdeaCard Editing', () => {
             fireEvent.doubleClick(content);
 
             // Modify content partially
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             fireEvent.change(textarea, { target: { value: 'Partially modified' } });
 
             // Blur (click outside)
@@ -244,7 +260,7 @@ describe('IdeaCard Editing', () => {
 
             render(<IdeaCard {...defaultProps} />);
 
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             fireEvent.change(textarea, { target: { value: 'Some content' } });
             fireEvent.blur(textarea);
 
@@ -254,11 +270,11 @@ describe('IdeaCard Editing', () => {
         it('should exit edit mode after blur (textarea disappears)', () => {
             render(<IdeaCard {...defaultProps} />);
 
-            const textarea = screen.getByRole('textbox');
+            const textarea = screen.getByTestId('tiptap-editor');
             fireEvent.change(textarea, { target: { value: 'Saved content' } });
             fireEvent.blur(textarea);
 
-            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('tiptap-editor')).not.toBeInTheDocument();
         });
     });
 });

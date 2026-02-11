@@ -68,7 +68,9 @@ export interface LinkPreviewMetadata {
  * Data structure for IdeaCard nodes (unified prompt + output)
  */
 export interface IdeaNodeData {
-    prompt: string;
+    heading?: string;
+    /** @deprecated Legacy field — heading is SSOT for prompts. Kept for backward compatibility. */
+    prompt?: string;
     output?: string;
     isGenerating?: boolean;
     isPromptCollapsed?: boolean;
@@ -105,7 +107,8 @@ export function createIdeaNode(
         workspaceId,
         type: 'idea',
         data: {
-            prompt,
+            heading: '',
+            ...(prompt ? { prompt } : {}),
             output: undefined,
             isGenerating: false,
             isPromptCollapsed: false,
