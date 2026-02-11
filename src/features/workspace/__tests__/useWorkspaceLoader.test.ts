@@ -67,17 +67,27 @@ describe('useWorkspaceLoader', () => {
         mockLoadEdges.mockResolvedValue([]);
     });
 
-    it('returns isLoading true initially', () => {
+    it('returns isLoading true initially', async () => {
         const { result } = renderHook(() => useWorkspaceLoader('ws-1'));
         expect(result.current.isLoading).toBe(true);
+        
+        // Ensure async load completes to avoid act warnings
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
     });
 
     it('calls loadNodes and loadEdges on mount', async () => {
-        renderHook(() => useWorkspaceLoader('ws-1'));
+        const { result } = renderHook(() => useWorkspaceLoader('ws-1'));
 
         await waitFor(() => {
             expect(mockLoadNodes).toHaveBeenCalledWith('user-1', 'ws-1');
             expect(mockLoadEdges).toHaveBeenCalledWith('user-1', 'ws-1');
+        });
+
+        // Wait for final state update to complete
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
         });
     });
 
@@ -132,12 +142,10 @@ describe('useWorkspaceLoader', () => {
         
         const { result } = renderHook(() => freshHook('ws-1'));
 
-        // Wait a bit to ensure async operations would have completed
-        await new Promise((resolve) => setTimeout(resolve, 50));
-
-        // Should not call load functions when user is null
-        // Note: This test may not work perfectly due to module caching
-        expect(result.current.isLoading).toBe(false);
+        // Use waitFor to handle async state updates
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
     });
 
     describe('cache-first loading', () => {
@@ -180,6 +188,31 @@ describe('useWorkspaceLoader', () => {
             await waitFor(() => {
                 expect(mockLoadNodes).toHaveBeenCalledWith('user-1', 'ws-bg');
             });
+        });
+
+        it('background refresh handles nodes without updatedAt gracefully', async () => {
+            // Cached and fresh nodes may lack updatedAt in some environments/mocks
+            mockCacheGet.mockReturnValue({
+                nodes: [{ id: 'cached-node' }],
+                edges: [],
+                loadedAt: Date.now() - 60000,
+            });
+            mockIsOnline.mockReturnValue(true);
+
+            mockLoadNodes.mockResolvedValue([{ id: 'fresh-node' }]);
+            mockLoadEdges.mockResolvedValue([]);
+
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            renderHook(() => useWorkspaceLoader('ws-bg-safe'));
+
+            // Background refresh should still call Firestore and NOT throw
+            await waitFor(() => {
+                expect(mockLoadNodes).toHaveBeenCalledWith('user-1', 'ws-bg-safe');
+                expect(consoleSpy).not.toHaveBeenCalled();
+            });
+
+            consoleSpy.mockRestore();
         });
 
         it('shows error toast when offline and no cache available', async () => {

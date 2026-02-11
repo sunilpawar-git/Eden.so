@@ -62,14 +62,19 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
 
                         // Check for conflicts before overwriting
                         if (freshNodes.length > 0 && cached.nodes.length > 0) {
+                            // Defensive: some nodes (esp. from mocks) may not have `updatedAt` set.
+                            // Use a safe getter that falls back to 0 if missing.
+                            const safeGetTime = (d: unknown) => (d instanceof Date ? d.getTime() : 0);
+
                             const latestServer = Math.max(
-                                ...freshNodes.map((n) => n.updatedAt.getTime())
+                                ...freshNodes.map((n) => safeGetTime((n as any).updatedAt))
                             );
                             const latestLocal = Math.max(
-                                ...cached.nodes.map((n) => n.updatedAt.getTime())
+                                ...cached.nodes.map((n) => safeGetTime((n as any).updatedAt))
                             );
+
                             const conflict = checkForConflict(latestLocal, latestServer);
-                             
+
                             if (conflict.hasConflict) {
                                 toast.info(strings.offline.conflictDetected);
                             }

@@ -67,7 +67,9 @@ describe('useNodeGeneration', () => {
             const { result } = renderHook(() => useNodeGeneration());
 
             // Update prompt AFTER hook is initialized
-            useCanvasStore.getState().updateNodePrompt('idea-1', 'Updated prompt');
+            act(() => {
+                useCanvasStore.getState().updateNodePrompt('idea-1', 'Updated prompt');
+            });
 
             await act(async () => {
                 await result.current.generateFromPrompt('idea-1');

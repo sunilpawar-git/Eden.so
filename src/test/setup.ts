@@ -5,3 +5,13 @@ import '@testing-library/jest-dom';
 vi.stubEnv('VITE_GEMINI_API_KEY', 'dummy_test_key');
 vi.stubEnv('VITE_FIREBASE_API_KEY', 'dummy_test_key');
 vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'dummy_project_id');
+
+// Fail tests on React act() warnings to prevent recurrence
+const originalError = console.error;
+console.error = (...args: unknown[]) => {
+    const message = String(args[0]);
+    if (message.includes('not wrapped in act(...)')) {
+        throw new Error(`Test failed: React state update not wrapped in act():\n${args.join(' ')}`);
+    }
+    originalError.apply(console, args);
+};

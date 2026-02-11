@@ -116,10 +116,12 @@ describe('Sidebar', () => {
         });
 
         it('should show error toast when creation fails', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
             vi.mocked(createNewWorkspace).mockRejectedValue(new Error('Network error'));
             render(<Sidebar />);
             fireEvent.click(screen.getByText(strings.workspace.newWorkspace));
             await waitFor(() => expect(toast.error).toHaveBeenCalledWith(strings.errors.generic));
+            consoleSpy.mockRestore();
         });
     });
 
@@ -159,11 +161,13 @@ describe('Sidebar', () => {
         });
 
         it('should show error toast when switch fails', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
             mockSwitchWorkspace.mockRejectedValue(new Error('Switch failed'));
             setupWithWorkspaces();
             render(<Sidebar />);
             fireEvent.click(screen.getByText('Project Beta'));
             await waitFor(() => expect(toast.error).toHaveBeenCalledWith(strings.workspace.switchError));
+            consoleSpy.mockRestore();
         });
     });
 

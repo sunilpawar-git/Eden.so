@@ -23,6 +23,11 @@ import { useCanvasStore } from '../stores/canvasStore';
 // Helpers
 // ---------------------------------------------------------------------------
 
+// Safe wrappers to prevent act() warnings when mutating store
+const safeStartEditing = (id: string) => act(() => { useCanvasStore.getState().startEditing(id); });
+const safeStopEditing = () => act(() => { useCanvasStore.getState().stopEditing(); });
+const safeClearCanvas = () => act(() => { useCanvasStore.getState().clearCanvas(); });
+
 /**
  * Create a real TipTap editor with SubmitKeymap + Placeholder, wired to a
  * submitHandlerRef just like the production code does.
@@ -239,26 +244,26 @@ describe('Placeholder update after inputMode change', () => {
 
 describe('Edit-mode state consistency', () => {
     beforeEach(() => {
-        useCanvasStore.getState().clearCanvas();
+        safeClearCanvas();
     });
 
     it('stopEditing resets inputMode to note', () => {
-        useCanvasStore.getState().startEditing('node-1');
-        useCanvasStore.getState().setInputMode('ai');
+        safeStartEditing('node-1');
+        act(() => { useCanvasStore.getState().setInputMode('ai'); });
         expect(useCanvasStore.getState().inputMode).toBe('ai');
 
-        useCanvasStore.getState().stopEditing();
+        safeStopEditing();
         expect(useCanvasStore.getState().editingNodeId).toBeNull();
         expect(useCanvasStore.getState().inputMode).toBe('note');
     });
 
     it('startEditing resets inputMode to note (prevents stale mode from previous edit)', () => {
-        useCanvasStore.getState().startEditing('node-1');
-        useCanvasStore.getState().setInputMode('ai');
-        useCanvasStore.getState().stopEditing();
+        safeStartEditing('node-1');
+        act(() => { useCanvasStore.getState().setInputMode('ai'); });
+        safeStopEditing();
 
         // New edit session should start fresh in note mode
-        useCanvasStore.getState().startEditing('node-2');
+        safeStartEditing('node-2');
         expect(useCanvasStore.getState().inputMode).toBe('note');
     });
 });
@@ -328,7 +333,7 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
         const suggestionActiveRef = { current: false };
         const submitHandlerRef = { current: null as import('../extensions/submitKeymap').SubmitKeymapHandler | null };
 
-        useCanvasStore.getState().startEditing('test-node-noop');
+        safeStartEditing('test-node-noop');
 
         const { result } = renderHook(() =>
             useNodeInput({
@@ -365,7 +370,7 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
         // Still nothing — Escape is also handled only at ProseMirror level
         expect(saveContent).not.toHaveBeenCalled();
 
-        useCanvasStore.getState().stopEditing();
+        safeStopEditing();
     });
 });
 
@@ -377,7 +382,7 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
     it('auto-enters edit mode and focuses when editor becomes available for a new empty node', async () => {
         const { useNodeInput } = await import('../hooks/useNodeInput');
 
-        useCanvasStore.getState().clearCanvas();
+        safeClearCanvas();
 
         const focusSpy = vi.fn();
         const setEditableSpy = vi.fn();
@@ -439,13 +444,13 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
         // autoEditRef should have been set to false — no re-trigger
         expect(setContent).not.toHaveBeenCalled();
 
-        useCanvasStore.getState().stopEditing();
+        safeStopEditing();
     });
 
     it('does NOT auto-edit when isNewEmptyNode is false', async () => {
         const { useNodeInput } = await import('../hooks/useNodeInput');
 
-        useCanvasStore.getState().clearCanvas();
+        safeClearCanvas();
 
         const mockEditor = {
             setEditable: vi.fn(),
