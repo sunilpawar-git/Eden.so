@@ -43,7 +43,7 @@ export function useNodeGeneration() {
 
             // Reverse for chronological order (oldest ancestor first)
             // Filter to include any node with content (heading/prompt OR output)
-            // Prioritize output over heading/prompt for context
+            // When both heading and output exist, combine them for semantic context
             const contextChain: string[] = upstreamNodes
                 .reverse()
                 .filter((n) => {
@@ -52,7 +52,16 @@ export function useNodeGeneration() {
                 })
                 .map((n) => {
                     const d = n.data;
-                    return d.output ?? (d.heading?.trim() ?? d.prompt ?? '');
+                    const heading = d.heading?.trim() || '';
+                    const content = d.output ?? d.prompt ?? '';
+
+                    // When both heading and content exist, combine them with blank line separator
+                    if (heading && content) {
+                        return `${heading}\n\n${content}`;
+                    }
+
+                    // Otherwise, use whichever exists
+                    return content || heading;
                 });
 
             // Set generating state on the node

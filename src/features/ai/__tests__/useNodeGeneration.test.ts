@@ -190,12 +190,12 @@ describe('useNodeGeneration', () => {
         });
 
         it('should prioritize output over prompt for context when both exist', async () => {
-            useCanvasStore.getState().addNode(createTestIdeaNode('parent', 'Parent prompt', 'Parent output'));
+            useCanvasStore.getState().addNode(createTestIdeaNode('parent', 'Parent prompt', 'Parent output', 'Parent Heading'));
             useCanvasStore.getState().addNode(createTestIdeaNode('child', 'Child prompt'));
             addEdge('parent', 'child');
 
             const call = await generateAndGetCall('child');
-            expect(call?.[1]).toEqual(expect.arrayContaining(['Parent output']));
+            expect(call?.[1]).toEqual(expect.arrayContaining(['Parent Heading\n\nParent output']));
         });
 
         it('should preserve chronological order in multi-level chains', async () => {
@@ -218,6 +218,82 @@ describe('useNodeGeneration', () => {
             const call = await generateAndGetCall('idea-target');
             expect(call?.[1]).toContain('Connected prompt');
             expect(call?.[1]).not.toContain('Unconnected prompt');
+        });
+    });
+
+    describe('generateFromPrompt with upstream context - heading inclusion', () => {
+        it('should include heading + output when parent has both', async () => {
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('parent', '', 'Body content', 'Parent Heading')
+            );
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('child', 'Child prompt')
+            );
+            addEdge('parent', 'child');
+
+            const call = await generateAndGetCall('child');
+            expect(call?.[1]).toEqual(['Parent Heading\n\nBody content']);
+        });
+
+        it('should use only heading when no output exists', async () => {
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('parent', '', undefined, 'Just a heading')
+            );
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('child', 'Child prompt')
+            );
+            addEdge('parent', 'child');
+
+            const call = await generateAndGetCall('child');
+            expect(call?.[1]).toEqual(['Just a heading']);
+        });
+
+        it('should use only output when heading is empty', async () => {
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('parent', '', 'Only output', '')
+            );
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('child', 'Child prompt')
+            );
+            addEdge('parent', 'child');
+
+            const call = await generateAndGetCall('child');
+            expect(call?.[1]).toEqual(['Only output']);
+        });
+
+        it('should handle multi-level chain with heading + output combinations', async () => {
+            // Grandparent: heading + output
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('gp', '', 'GP output', 'GP heading')
+            );
+            // Parent: heading only
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('p', '', undefined, 'P heading')
+            );
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('child', 'Child prompt')
+            );
+            addEdge('gp', 'p', 'e1');
+            addEdge('p', 'child', 'e2');
+
+            const call = await generateAndGetCall('child');
+            expect(call?.[1]).toEqual([
+                'GP heading\n\nGP output',
+                'P heading'
+            ]);
+        });
+
+        it('should fall back to prompt when no heading or output', async () => {
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('parent', 'Legacy prompt', undefined, '')
+            );
+            useCanvasStore.getState().addNode(
+                createTestIdeaNode('child', 'Child prompt')
+            );
+            addEdge('parent', 'child');
+
+            const call = await generateAndGetCall('child');
+            expect(call?.[1]).toEqual(['Legacy prompt']);
         });
     });
     // branchFromNode tests are in useNodeGeneration.branch.test.ts
