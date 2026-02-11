@@ -15,7 +15,7 @@ interface UseIdeaCardStateOptions {
     generateFromPrompt?: (nodeId: string) => void;
 }
 
-export function useIdeaCardState({ nodeId, prompt, output, isAICard, generateFromPrompt }: UseIdeaCardStateOptions) {
+export function useIdeaCardState({ nodeId, prompt: _prompt, output, isAICard: _isAICard, generateFromPrompt }: UseIdeaCardStateOptions) {
     const updateNodeOutput = useCanvasStore((s) => s.updateNodeOutput);
     const placeholder = strings.ideaCard.inputPlaceholder;
     // Always edit the output in the body editor. Heading is the SSOT for AI
