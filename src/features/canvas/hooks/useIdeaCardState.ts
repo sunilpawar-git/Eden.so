@@ -18,7 +18,9 @@ interface UseIdeaCardStateOptions {
 export function useIdeaCardState({ nodeId, prompt, output, isAICard, generateFromPrompt }: UseIdeaCardStateOptions) {
     const updateNodeOutput = useCanvasStore((s) => s.updateNodeOutput);
     const placeholder = strings.ideaCard.inputPlaceholder;
-    const getEditableContent = useCallback(() => isAICard ? (prompt ?? '') : (output ?? ''), [isAICard, prompt, output]);
+    // Always edit the output in the body editor. Heading is the SSOT for AI
+    // prompts — the legacy `prompt` field should never be loaded into the body.
+    const getEditableContent = useCallback(() => output ?? '', [output]);
 
     const saveContent = useCallback((md: string) => {
         const t = md.trim();

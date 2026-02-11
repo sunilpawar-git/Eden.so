@@ -78,7 +78,7 @@ export function useIdeaCardStateMock() {
             isAICard: boolean;
             generateFromPrompt?: (nodeId: string) => void;
         }) => {
-            const getEditableContent = () => opts.isAICard ? (opts.prompt ?? '') : (opts.output ?? '');
+            const getEditableContent = () => opts.output ?? '';
             if (!_stateStore) {
                 return {
                     getEditableContent, saveContent: vi.fn(), placeholder: 'Type a note...',

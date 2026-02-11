@@ -118,7 +118,7 @@ describe('IdeaCard Copy', () => {
         });
     });
 
-    it('copies prompt text and shows success toast for AI cards', async () => {
+    it('copies output text and shows success toast for AI cards', async () => {
         const aiCard = {
             ...defaultProps,
             data: { ...defaultData, prompt: 'AI prompt', output: 'AI response' },
@@ -127,7 +127,7 @@ describe('IdeaCard Copy', () => {
         render(<IdeaCard {...aiCard} />);
         fireEvent.click(screen.getByRole('button', { name: /copy/i }));
         await vi.waitFor(() => {
-            expect(mockWriteText).toHaveBeenCalledWith('AI prompt');
+            expect(mockWriteText).toHaveBeenCalledWith('AI response');
             expect(toast.success).toHaveBeenCalledWith('Copied to clipboard');
         });
     });

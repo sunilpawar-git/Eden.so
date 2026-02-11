@@ -168,7 +168,7 @@ describe('IdeaCard Editing', () => {
             expect(textarea).toHaveValue('My existing note content');
         });
 
-        it('should populate textarea with prompt for AI cards when entering edit mode', () => {
+        it('should populate textarea with output for AI cards when entering edit mode', () => {
             const aiCardProps = {
                 ...defaultProps,
                 data: {
@@ -185,7 +185,7 @@ describe('IdeaCard Editing', () => {
             fireEvent.doubleClick(promptText);
 
             const textarea = screen.getByTestId('tiptap-editor');
-            expect(textarea).toHaveValue('Original AI prompt');
+            expect(textarea).toHaveValue('AI generated response');
         });
 
         it('should allow editing and saving modified content via blur', () => {
