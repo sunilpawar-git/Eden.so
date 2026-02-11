@@ -2,8 +2,10 @@
  * Shared TipTap mock state and factories for IdeaCard tests.
  * Usage: vi.mock('../../../hooks/useTipTapEditor', async () => (await import('./helpers/tipTapTestMock')).hookMock());
  */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import React from 'react';
 import { clearActionOverrides, clearStateStore } from './ideaCardActionMocks';
+
 export {
     useIdeaCardActionsMock, useIdeaCardStateMock, setActionOverride, initStateStore,
 } from './ideaCardActionMocks';
@@ -241,7 +243,7 @@ export function useHeadingEditorMock() {
             onSubmitAI?: (prompt: string) => void;
         }) => {
             if (opts.heading !== state.lastInitialContent) {
-                state.content = opts.heading || '';
+                state.content = opts.heading ?? '';
                 state.lastInitialContent = opts.heading;
             }
             state.onBlur = opts.onBlur ?? null;

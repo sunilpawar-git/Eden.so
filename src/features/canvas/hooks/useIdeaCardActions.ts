@@ -2,7 +2,7 @@
  * useIdeaCardActions - Extracted action callbacks for IdeaCard
  * Reduces IdeaCard component size by encapsulating side-effect handlers
  */
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { useCanvasStore } from '../stores/canvasStore';

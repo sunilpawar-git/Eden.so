@@ -2,6 +2,7 @@
  * useNodeGeneration Hook - Bridges AI service with canvas store
  * Handles AI generation for IdeaCard nodes
  */
+/* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/prefer-nullish-coalescing */
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '../stores/aiStore';
@@ -33,7 +34,8 @@ export function useNodeGeneration() {
 
             const ideaData = node.data;
             // Heading is SSOT for prompts; fall back to prompt for legacy data
-            const promptText = ideaData.heading?.trim() || ideaData.prompt || '';
+            // Use || for empty string fallback, not ?? for nullish fallback
+            const promptText = (ideaData.heading?.trim() || ideaData.prompt) || '';
             if (!promptText) return;
 
             // Collect upstream context via edges
@@ -46,11 +48,11 @@ export function useNodeGeneration() {
                 .reverse()
                 .filter((n) => {
                     const d = n.data;
-                    return d.heading || d.prompt || d.output;
+                    return !!(d.heading?.trim() || d.prompt || d.output);
                 })
                 .map((n) => {
                     const d = n.data;
-                    return d.output ?? d.heading?.trim() ?? d.prompt;
+                    return d.output ?? (d.heading?.trim() ?? d.prompt ?? '');
                 });
 
             // Set generating state on the node

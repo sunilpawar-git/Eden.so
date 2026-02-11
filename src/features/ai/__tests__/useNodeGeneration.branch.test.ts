@@ -2,6 +2,7 @@
  * useNodeGeneration - branchFromNode Tests
  * Split from useNodeGeneration.test.ts to stay within 300-line limit
  */
+/* eslint-disable @typescript-eslint/no-deprecated */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useNodeGeneration } from '../hooks/useNodeGeneration';

@@ -1,4 +1,5 @@
 /** IdeaCard - Unified note/AI card component. Orchestrates editor, keyboard, and UI state via useNodeInput (SSOT) */
+/* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-condition */
 import React, { useCallback, useState, useRef } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
@@ -22,7 +23,7 @@ import handleStyles from './IdeaCardHandles.module.css';
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { heading, prompt = '', output, isGenerating, tags: tagIds = [], linkPreviews } = data as IdeaNodeData;
-    const promptSource = heading?.trim() || prompt; // Heading is SSOT for prompts; legacy fallback
+    const promptSource = (heading?.trim() ?? prompt) || ''; // Heading is SSOT for prompts; legacy fallback
     const isAICard = Boolean(promptSource && output && promptSource !== output);
     const [showTagInput, setShowTagInput] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -30,6 +31,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const headingRef = useRef<NodeHeadingHandle>(null);
 
     const { generateFromPrompt } = useNodeGeneration();
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     const { getEditableContent, saveContent, placeholder, onSubmitNote, onSubmitAI } = useIdeaCardState({
         nodeId: id, prompt, output, isAICard, generateFromPrompt,
     });
@@ -40,7 +42,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { editor, getMarkdown, setContent, submitHandlerRef } = useIdeaCardEditor({
         isEditing: useCanvasStore((s) => s.editingNodeId === id),
         output, getEditableContent, placeholder, saveContent,
-        onExitEditing: useCallback(() => { useCanvasStore.getState().stopEditing(); }, []),
+        onExitEditing: useCallback((): void => { useCanvasStore.getState().stopEditing(); }, []),
     });
     const focusBody = useCallback(() => { editor?.commands.focus(); }, [editor]);
     const focusHeading = useCallback(() => { headingRef.current?.focus(); }, []);

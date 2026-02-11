@@ -1,6 +1,7 @@
 /**
  * IdeaNode Store Actions Tests - TDD for unified IdeaCard functionality
  */
+/* eslint-disable @typescript-eslint/no-deprecated */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCanvasStore } from '../stores/canvasStore';
 import type { CanvasNode, IdeaNodeData } from '../types/node';

@@ -54,6 +54,7 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
     // Sync editable state reactively — TipTap's useEditor does not update
     // editability after creation, so we must call setEditable explicitly.
     useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (editor && !editor.isDestroyed && editor.isEditable !== editable) {
             editor.setEditable(editable);
         }

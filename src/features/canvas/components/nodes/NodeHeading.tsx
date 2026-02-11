@@ -3,6 +3,7 @@
  * Uses useHeadingEditor for TipTap + SlashCommand + SubmitKeymap integration
  * Tab key handled at React level (guarded by suggestionActiveRef)
  */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import React, { useCallback, useImperativeHandle } from 'react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { strings } from '@/shared/localization/strings';

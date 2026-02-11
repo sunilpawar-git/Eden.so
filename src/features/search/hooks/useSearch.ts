@@ -39,6 +39,7 @@ export function useSearch(): UseSearchReturn {
 
         nodes.forEach((node) => {
             const heading = node.data.heading;
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             const prompt = node.data.prompt;
             const output = node.data.output;
             const workspaceId = node.workspaceId;

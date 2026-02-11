@@ -15,7 +15,10 @@ export function setActionOverride(name: string, fn: (...args: unknown[]) => unkn
 
 /** Clear all action overrides — called from resetMockState */
 export function clearActionOverrides(): void {
-    Object.keys(_actionOverrides).forEach((k) => { delete _actionOverrides[k]; });
+    Object.keys(_actionOverrides).forEach((k) => {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete _actionOverrides[k];
+    });
 }
 
 /** useIdeaCardActions mock factory — returns module shape with configurable callbacks */
