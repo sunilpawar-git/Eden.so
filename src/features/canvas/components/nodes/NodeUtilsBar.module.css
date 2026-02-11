@@ -5,9 +5,9 @@
 
 .container {
     position: absolute;
-    bottom: 8px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
+    top: 8px;
+    right: 8px;
+    transform: translateX(20px);
     display: flex;
     gap: var(--space-xs);
     padding: var(--space-xs) var(--space-sm);
@@ -25,16 +25,16 @@
     pointer-events: none;
 }
 
-/* Slide up on parent hover */
+/* Slide in from right on parent hover */
 .containerVisible {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(0);
     pointer-events: auto;
 }
 
-.containerWithTags {
-    bottom: 48px;
+.containerWithResizeButtons {
+    right: 40px;
 }
 
 .actionButton {

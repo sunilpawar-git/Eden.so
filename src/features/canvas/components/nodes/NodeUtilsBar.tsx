@@ -19,10 +19,10 @@ interface NodeUtilsBarProps {
     isTransforming?: boolean;
     disabled?: boolean;
     visible?: boolean;
-    hasTags?: boolean;
+    hasResizeButtons?: boolean;
 }
 
- 
+
 export function NodeUtilsBar({
     onTagClick,
     onAIClick,
@@ -35,11 +35,11 @@ export function NodeUtilsBar({
     isTransforming = false,
     disabled = false,
     visible = false,
-    hasTags = false,
+    hasResizeButtons = false,
 }: NodeUtilsBarProps) {
     const containerClasses = [styles.container];
     if (visible) containerClasses.push(styles.containerVisible);
-    if (hasTags) containerClasses.push(styles.containerWithTags);
+    if (hasResizeButtons) containerClasses.push(styles.containerWithResizeButtons);
     const containerClass = containerClasses.join(' ');
 
     return (

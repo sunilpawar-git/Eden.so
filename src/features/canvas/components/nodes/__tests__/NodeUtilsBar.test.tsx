@@ -61,6 +61,24 @@ describe('NodeUtilsBar', () => {
         expect(screen.getByLabelText('Delete')).toBeDisabled();
     });
 
+    describe('Positioning with resize buttons', () => {
+        it('applies resize button clearance class when hasResizeButtons is true', () => {
+            const { container } = render(
+                <NodeUtilsBar {...defaultProps} hasResizeButtons={true} visible={true} />,
+            );
+            const utilsBar = container.querySelector('[class*="container"]');
+            expect(utilsBar?.className).toContain('containerWithResizeButtons');
+        });
+
+        it('does not apply resize button clearance class when hasResizeButtons is false', () => {
+            const { container } = render(
+                <NodeUtilsBar {...defaultProps} hasResizeButtons={false} visible={true} />,
+            );
+            const utilsBar = container.querySelector('[class*="container"]');
+            expect(utilsBar?.className).not.toContain('containerWithResizeButtons');
+        });
+    });
+
     describe('Copy button', () => {
         it('renders copy button when onCopyClick is provided', () => {
             const onCopyClick = vi.fn();
