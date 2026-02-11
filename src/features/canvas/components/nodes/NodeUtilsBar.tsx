@@ -19,7 +19,6 @@ interface NodeUtilsBarProps {
     isTransforming?: boolean;
     disabled?: boolean;
     visible?: boolean;
-    hasResizeButtons?: boolean;
 }
 
 
@@ -35,11 +34,9 @@ export function NodeUtilsBar({
     isTransforming = false,
     disabled = false,
     visible = false,
-    hasResizeButtons = false,
 }: NodeUtilsBarProps) {
     const containerClasses = [styles.container];
     if (visible) containerClasses.push(styles.containerVisible);
-    if (hasResizeButtons) containerClasses.push(styles.containerWithResizeButtons);
     const containerClass = containerClasses.join(' ');
 
     return (

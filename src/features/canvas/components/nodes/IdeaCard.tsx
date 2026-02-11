@@ -92,7 +92,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 <NodeUtilsBar onTagClick={() => setShowTagInput(true)} onConnectClick={handleConnectClick}
                     onCopyClick={handleCopy} onDelete={handleDelete} onTransform={handleTransform}
                     onRegenerate={handleRegenerate} hasContent={hasContent} isTransforming={isTransforming}
-                    disabled={isGenerating ?? false} visible={isHovered} hasResizeButtons={isHovered} />
+                    disabled={isGenerating ?? false} visible={isHovered} />
             </div>
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />
