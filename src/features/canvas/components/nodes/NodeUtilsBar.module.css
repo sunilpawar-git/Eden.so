@@ -6,8 +6,8 @@
 .container {
     position: absolute;
     top: 50%;
-    right: -36px;
-    transform: translateY(-50%) translateX(20px);
+    right: 0;
+    transform: translateY(-50%) translateX(100%);
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -30,7 +30,7 @@
 .containerVisible {
     opacity: 1;
     visibility: visible;
-    transform: translateY(-50%) translateX(0);
+    transform: translateY(-50%) translateX(calc(100% + 8px));
     pointer-events: auto;
 }
 
