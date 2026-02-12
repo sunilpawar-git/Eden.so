@@ -89,11 +89,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 {(showTagInput || tagIds.length > 0) && (
                     <div className={styles.tagsSection}><TagInput selectedTagIds={tagIds} onChange={onTagsChange} compact /></div>
                 )}
-                <NodeUtilsBar onTagClick={() => setShowTagInput(true)} onConnectClick={handleConnectClick}
-                    onCopyClick={handleCopy} onDelete={handleDelete} onTransform={handleTransform}
-                    onRegenerate={handleRegenerate} hasContent={hasContent} isTransforming={isTransforming}
-                    disabled={isGenerating ?? false} visible={isHovered} />
             </div>
+            <NodeUtilsBar onTagClick={() => setShowTagInput(true)} onConnectClick={handleConnectClick}
+                onCopyClick={handleCopy} onDelete={handleDelete} onTransform={handleTransform}
+                onRegenerate={handleRegenerate} hasContent={hasContent} isTransforming={isTransforming}
+                disabled={isGenerating ?? false} visible={isHovered} />
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />
         </div>
