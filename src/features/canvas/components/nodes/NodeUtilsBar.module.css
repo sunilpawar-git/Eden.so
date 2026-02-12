@@ -6,7 +6,7 @@
 .container {
     position: absolute;
     top: 50%;
-    right: -12px;
+    right: -1px;
     transform: translateY(-50%) translateX(20px);
     display: flex;
     flex-direction: column;
