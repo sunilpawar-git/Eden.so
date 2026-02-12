@@ -71,25 +71,27 @@
     line-height: 1;
 }
 
-/* CSS Tooltip on hover */
+/* CSS Tooltip on hover - Vertical pill shape on right edge */
 .actionButton::after {
     content: attr(data-tooltip);
     position: absolute;
-    left: calc(100% + 12px);
+    left: calc(100% + 8px);
     top: 50%;
     transform: translateY(-50%);
-    padding: var(--space-xs) var(--space-sm);
-    background: var(--tooltip-bg);
-    color: var(--tooltip-text);
+    padding: var(--space-sm) var(--space-md);
+    background: linear-gradient(135deg, var(--color-surface-elevated), var(--color-surface));
+    color: var(--color-text-primary);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
     white-space: nowrap;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
     opacity: 0;
     visibility: hidden;
     transition: opacity var(--transition-fast);
     pointer-events: none;
     z-index: var(--z-tooltip);
+    box-shadow: var(--card-shadow);
 }
 
 .actionButton:hover::after {
