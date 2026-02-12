@@ -75,9 +75,9 @@
 .actionButton::after {
     content: attr(data-tooltip);
     position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-4px);
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
     padding: var(--space-xs) var(--space-sm);
     background: var(--tooltip-bg);
     color: var(--tooltip-text);
