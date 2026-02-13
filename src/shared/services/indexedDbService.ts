@@ -19,21 +19,19 @@ type StoreName = (typeof IDB_STORES)[keyof typeof IDB_STORES];
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
 function getDb(): Promise<IDBPDatabase> {
-    if (!dbPromise) {
-        dbPromise = openDB(DB_NAME, DB_VERSION, {
-            upgrade(db) {
-                if (!db.objectStoreNames.contains(IDB_STORES.workspaceData)) {
-                    db.createObjectStore(IDB_STORES.workspaceData);
-                }
-                if (!db.objectStoreNames.contains(IDB_STORES.pinnedWorkspaces)) {
-                    db.createObjectStore(IDB_STORES.pinnedWorkspaces);
-                }
-                if (!db.objectStoreNames.contains(IDB_STORES.metadata)) {
-                    db.createObjectStore(IDB_STORES.metadata);
-                }
-            },
-        });
-    }
+    dbPromise ??= openDB(DB_NAME, DB_VERSION, {
+        upgrade(db) {
+            if (!db.objectStoreNames.contains(IDB_STORES.workspaceData)) {
+                db.createObjectStore(IDB_STORES.workspaceData);
+            }
+            if (!db.objectStoreNames.contains(IDB_STORES.pinnedWorkspaces)) {
+                db.createObjectStore(IDB_STORES.pinnedWorkspaces);
+            }
+            if (!db.objectStoreNames.contains(IDB_STORES.metadata)) {
+                db.createObjectStore(IDB_STORES.metadata);
+            }
+        },
+    });
     return dbPromise;
 }
 
@@ -46,7 +44,7 @@ async function get<T>(store: StoreName, key: string): Promise<T | undefined> {
     }
 }
 
-async function put<T>(store: StoreName, key: string, value: T): Promise<boolean> {
+async function put(store: StoreName, key: string, value: unknown): Promise<boolean> {
     try {
         const db = await getDb();
         await db.put(store, value, key);
