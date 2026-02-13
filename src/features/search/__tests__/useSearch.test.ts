@@ -16,7 +16,7 @@ describe('useSearch', () => {
                     id: 'node-1',
                     workspaceId: 'ws-1',
                     type: 'idea',
-                    data: { prompt: 'React hooks', output: 'Hooks are a way to use state in functional components' },
+                    data: { heading: 'React hooks', prompt: 'React hooks', output: 'Hooks are a way to use state in functional components' },
                     position: { x: 0, y: 0 },
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -25,7 +25,7 @@ describe('useSearch', () => {
                     id: 'node-2',
                     workspaceId: 'ws-1',
                     type: 'idea',
-                    data: { prompt: 'TypeScript basics', output: 'TypeScript adds types to JavaScript' },
+                    data: { heading: 'TypeScript basics', prompt: 'TypeScript basics', output: 'TypeScript adds types to JavaScript' },
                     position: { x: 100, y: 0 },
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -34,7 +34,7 @@ describe('useSearch', () => {
                     id: 'node-3',
                     workspaceId: 'ws-1',
                     type: 'idea',
-                    data: { prompt: 'CSS Grid', output: 'Grid layout for complex layouts' },
+                    data: { heading: 'CSS Grid', prompt: 'CSS Grid', output: 'Grid layout for complex layouts' },
                     position: { x: 200, y: 0 },
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -63,7 +63,7 @@ describe('useSearch', () => {
         expect(result.current.query).toBe('');
     });
 
-    it('should search prompt content', () => {
+    it('should search heading content', () => {
         const { result } = renderHook(() => useSearch());
 
         act(() => {
@@ -72,6 +72,7 @@ describe('useSearch', () => {
 
         expect(result.current.results).toHaveLength(1);
         expect(result.current.results[0]?.nodeId).toBe('node-1');
+        expect(result.current.results[0]?.matchType).toBe('heading');
     });
 
     it('should search output content', () => {
@@ -194,7 +195,61 @@ describe('useSearch', () => {
             result.current.search('Test');
         });
 
-        // Should find match in prompt, not crash on undefined output
+        // Should find match in legacy prompt fallback, not crash on undefined output
+        expect(result.current.results).toHaveLength(1);
+        expect(result.current.results[0]?.matchType).toBe('prompt');
+    });
+
+    it('should search heading before prompt (heading is SSOT)', () => {
+        useCanvasStore.setState({
+            nodes: [
+                {
+                    id: 'node-heading',
+                    workspaceId: 'ws-1',
+                    type: 'idea',
+                    data: { heading: 'My heading', prompt: 'My heading', output: undefined },
+                    position: { x: 0, y: 0 },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ],
+            edges: [],
+            selectedNodeIds: new Set(),
+        });
+
+        const { result } = renderHook(() => useSearch());
+
+        act(() => {
+            result.current.search('heading');
+        });
+
+        expect(result.current.results).toHaveLength(1);
+        expect(result.current.results[0]?.matchType).toBe('heading');
+    });
+
+    it('should fall back to prompt for legacy nodes without heading', () => {
+        useCanvasStore.setState({
+            nodes: [
+                {
+                    id: 'node-legacy',
+                    workspaceId: 'ws-1',
+                    type: 'idea',
+                    data: { prompt: 'Legacy prompt text', output: undefined },
+                    position: { x: 0, y: 0 },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ],
+            edges: [],
+            selectedNodeIds: new Set(),
+        });
+
+        const { result } = renderHook(() => useSearch());
+
+        act(() => {
+            result.current.search('Legacy');
+        });
+
         expect(result.current.results).toHaveLength(1);
         expect(result.current.results[0]?.matchType).toBe('prompt');
     });

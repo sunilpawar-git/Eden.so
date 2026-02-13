@@ -7,7 +7,7 @@ export interface SearchResult {
     workspaceId: string;
     workspaceName: string;
     matchedContent: string;
-    matchType: 'prompt' | 'output';
+    matchType: 'heading' | 'prompt' | 'output';
     relevance: number;
 }
 

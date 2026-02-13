@@ -2,6 +2,7 @@
  * useNodeGeneration Hook - Bridges AI service with canvas store
  * Handles AI generation for IdeaCard nodes
  */
+/* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/prefer-nullish-coalescing */
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '../stores/aiStore';
@@ -32,23 +33,35 @@ export function useNodeGeneration() {
             if (node?.type !== 'idea') return;
 
             const ideaData = node.data;
-            if (!ideaData.prompt) return;
+            // Heading is SSOT for prompts; fall back to prompt for legacy data
+            // Use || for empty string fallback, not ?? for nullish fallback
+            const promptText = (ideaData.heading?.trim() || ideaData.prompt) || '';
+            if (!promptText) return;
 
             // Collect upstream context via edges
             const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
 
             // Reverse for chronological order (oldest ancestor first)
-            // Filter to include any node with content (prompt OR output)
-            // Prioritize output over prompt for context (AI results are more relevant)
+            // Filter to include any node with content (heading/prompt OR output)
+            // When both heading and output exist, combine them for semantic context
             const contextChain: string[] = upstreamNodes
                 .reverse()
                 .filter((n) => {
-                    const data = n.data;
-                    return data.prompt || data.output;
+                    const d = n.data;
+                    return !!(d.heading?.trim() || d.prompt || d.output);
                 })
                 .map((n) => {
-                    const data = n.data;
-                    return data.output ?? data.prompt;
+                    const d = n.data;
+                    const heading = d.heading?.trim() || '';
+                    const content = d.output ?? d.prompt ?? '';
+
+                    // When both heading and content exist, combine them with blank line separator
+                    if (heading && content) {
+                        return `${heading}\n\n${content}`;
+                    }
+
+                    // Otherwise, use whichever exists
+                    return content || heading;
                 });
 
             // Set generating state on the node
@@ -56,7 +69,7 @@ export function useNodeGeneration() {
             startGeneration(nodeId);
 
             try {
-                const content = await generateContentWithContext(ideaData.prompt, contextChain);
+                const content = await generateContentWithContext(promptText, contextChain);
 
                 // Update output in-place (no new node created!)
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);

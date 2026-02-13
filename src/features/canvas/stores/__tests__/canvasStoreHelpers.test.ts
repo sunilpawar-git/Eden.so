@@ -2,6 +2,7 @@
  * Tests for Canvas Store Helpers
  * TDD: Write tests FIRST before refactoring canvasStore.ts
  */
+/* eslint-disable @typescript-eslint/no-deprecated */
 import { describe, it, expect } from 'vitest';
 import {
     updateNodePositionInArray,

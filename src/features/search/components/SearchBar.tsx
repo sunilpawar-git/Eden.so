@@ -83,7 +83,7 @@ export function SearchBar({ onResultClick }: SearchBarProps) {
                         >
                             <span className={styles.resultContent}>{result.matchedContent}</span>
                             <span className={styles.resultMeta}>
-                                {result.matchType === 'prompt' ? strings.search.prompt : strings.search.output}
+                                {result.matchType === 'output' ? strings.search.output : strings.search.heading}
                                 {' · '}
                                 {result.workspaceName}
                             </span>

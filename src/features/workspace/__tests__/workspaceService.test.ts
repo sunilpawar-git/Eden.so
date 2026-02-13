@@ -129,6 +129,7 @@ describe('WorkspaceService', () => {
             const secondNode = result[1]!;
             expect(firstNode.id).toBe('node-1');
             expect(firstNode.type).toBe('idea');
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             expect(firstNode.data.prompt).toBe('Test prompt');
             expect(firstNode.data.output).toBe('Test output');
             expect(firstNode.position).toEqual({ x: 100, y: 200 });

@@ -233,8 +233,8 @@ describe('Markdown round-trip fidelity (real TipTap)', () => {
 // 4. Blur guard re-focus + reset sequence (full lifecycle)
 // ---------------------------------------------------------------------------
 
-describe('Blur guard: re-focus + guard-reset lifecycle', () => {
-    it('slashJustSelected guard: first blur re-focuses, second blur exits normally', async () => {
+describe('Blur guard: body blur exits editing immediately', () => {
+    it('blur saves content and exits editing (no slash guard in body)', async () => {
         const saveContent = vi.fn();
         const onExitEditing = vi.fn();
 
@@ -248,27 +248,15 @@ describe('Blur guard: re-focus + guard-reset lifecycle', () => {
                 placeholder: 'Type...',
                 saveContent,
                 onExitEditing,
-                onSlashCommand: vi.fn(),
             }),
         );
 
-        // Simulate: suggestion popup closes → onActiveChange(false)
-        // The production code sets slashJustSelectedRef = true unconditionally
-        // We can trigger this via the suggestionActiveRef pattern:
-        // First blur should be swallowed (guard active from popup close)
-        // The handleBlur checks slashJustSelectedRef, so we need to trigger
-        // the onActiveChange pathway — but since we can't directly access the
-        // ref, we test the observable behavior through the hook's exports.
-
-        // After a slash command selection, suggestionActiveRef goes false
-        // and slashJustSelectedRef goes true. Verify:
-        // 1) saveContent/onExitEditing not called after the close
+        // Body editor has no slash commands — blur always exits
         expect(saveContent).not.toHaveBeenCalled();
         expect(onExitEditing).not.toHaveBeenCalled();
 
-        // The editor should still be available (not destroyed)
+        // The editor should still be available
         expect(result.current.editor).toBeDefined();
-        expect(result.current.suggestionActiveRef.current).toBe(false);
     });
 });
 
@@ -451,7 +439,6 @@ describe('blurRef stale closure prevention', () => {
             placeholder: 'Type...',
             saveContent,
             onExitEditing,
-            onSlashCommand: vi.fn(),
         };
 
         const { rerender } = renderHook(
@@ -522,7 +509,6 @@ describe('Output sync to editor (real TipTap)', () => {
             placeholder: 'Type...',
             saveContent: vi.fn(),
             onExitEditing: vi.fn(),
-            onSlashCommand: vi.fn(),
         };
 
         const { result, rerender } = renderHook(
@@ -553,7 +539,6 @@ describe('Output sync to editor (real TipTap)', () => {
             placeholder: 'Type...',
             saveContent: vi.fn(),
             onExitEditing: vi.fn(),
-            onSlashCommand: vi.fn(),
         };
 
         const { result, rerender } = renderHook(
@@ -601,8 +586,6 @@ describe('submitHandlerRef cleanup on unmount', () => {
                 getEditableContent: () => '',
                 saveContent: vi.fn(),
                 onSubmitNote: vi.fn(),
-                onSubmitAI: vi.fn(),
-                suggestionActiveRef: { current: false },
                 submitHandlerRef,
                 isGenerating: false,
                 isNewEmptyNode: false,

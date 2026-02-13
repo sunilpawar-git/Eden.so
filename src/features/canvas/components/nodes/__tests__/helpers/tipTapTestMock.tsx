@@ -1,19 +1,14 @@
 /**
  * Shared TipTap mock state and factories for IdeaCard tests.
- * Centralizes duplicated mock boilerplate into a single source of truth.
- *
- * Usage in test files (async vi.mock factories):
- *   vi.mock('../../../hooks/useTipTapEditor', async () =>
- *       (await import('./helpers/tipTapTestMock')).hookMock()
- *   );
- *   vi.mock('../TipTapEditor', async () =>
- *       (await import('./helpers/tipTapTestMock')).componentMock()
- *   );
- *   // In beforeEach:
- *   const { resetMockState } = await import('./helpers/tipTapTestMock');
- *   resetMockState();
+ * Usage: vi.mock('../../../hooks/useTipTapEditor', async () => (await import('./helpers/tipTapTestMock')).hookMock());
  */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import React from 'react';
+import { clearActionOverrides, clearStateStore } from './ideaCardActionMocks';
+
+export {
+    useIdeaCardActionsMock, useIdeaCardStateMock, setActionOverride, initStateStore,
+} from './ideaCardActionMocks';
 
 /** Shared mutable state — singleton across all mock factories in a test file */
 const state = {
@@ -24,6 +19,7 @@ const state = {
     domElement: null as HTMLElement | null,
     lastInitialContent: undefined as string | undefined,
     insertedChars: [] as string[],
+    suggestionActiveRef: null as { current: boolean } | null,
 };
 
 /** Reset mock state to initial values — call in beforeEach */
@@ -35,9 +31,15 @@ export function resetMockState(): void {
     state.domElement = null;
     state.lastInitialContent = undefined;
     state.insertedChars = [];
+    state.suggestionActiveRef = null;
     _canvasStore = null;
     _autoEditedNodes.clear();
+    clearActionOverrides();
+    clearStateStore();
 }
+
+/** Access shared mock state — e.g. for setting suggestionActiveRef in tests */
+export function getMockState() { return state; }
 
 /** Get characters inserted via insertContent since last reset */
 export function getInsertedChars(): string[] {
@@ -100,7 +102,6 @@ export function useIdeaCardEditorMock() {
             placeholder: string;
             saveContent: (md: string) => void;
             onExitEditing: () => void;
-            onSlashCommand: (id: string) => void;
         }) => {
             const display = opts.isEditing ? opts.getEditableContent() : (opts.output ?? '');
             if (display !== state.lastInitialContent) {
@@ -125,7 +126,7 @@ export function useIdeaCardEditorMock() {
                 },
                 getMarkdown: () => state.content,
                 setContent: (md: string) => { state.content = md; },
-                suggestionActiveRef: { current: false },
+                submitHandlerRef: { current: null },
             };
         },
     };
@@ -136,8 +137,6 @@ let _canvasStore: {
     (selector: (s: Record<string, unknown>) => unknown): unknown;
     getState: () => Record<string, unknown>;
 } | null = null;
-
-/** Track nodes that have already auto-entered edit mode (prevents re-entering after blur) */
 const _autoEditedNodes = new Set<string>();
 
 /** Initialize the canvas store reference for useNodeInput mock. Call in beforeEach. */
@@ -153,9 +152,9 @@ export function useNodeInputMock() {
             nodeId: string; editor: unknown; getMarkdown: () => string;
             setContent: (md: string) => void; getEditableContent: () => string;
             saveContent: (md: string) => void;
-            onSubmitNote: (t: string) => void; onSubmitAI: (t: string) => void;
-            suggestionActiveRef: { current: boolean }; isGenerating: boolean;
-            isNewEmptyNode: boolean;
+            onSubmitNote: (t: string) => void;
+            isGenerating: boolean;
+            isNewEmptyNode: boolean; focusHeading?: () => void;
         }) => {
             if (!_canvasStore) {
                 return {
@@ -210,7 +209,7 @@ export function useNodeInputMock() {
                             (_canvasStore!.getState() as { stopEditing: () => void }).stopEditing();
                             return;
                         }
-                        if (key === 'Enter' && !shift && !opts.suggestionActiveRef.current) {
+                        if (key === 'Enter' && !shift) {
                             e.preventDefault?.();
                             (e as { stopPropagation?: () => void }).stopPropagation?.();
                             const trimmed = opts.getMarkdown().trim();
@@ -218,9 +217,8 @@ export function useNodeInputMock() {
                                 (_canvasStore!.getState() as { stopEditing: () => void }).stopEditing();
                                 return;
                             }
-                            const mode = (_canvasStore!.getState() as { inputMode: string }).inputMode;
-                            if (mode === 'ai') opts.onSubmitAI(trimmed);
-                            else opts.onSubmitNote(trimmed);
+                            // Body always submits as note
+                            opts.onSubmitNote(trimmed);
                         }
                     }
                 },
@@ -230,6 +228,36 @@ export function useNodeInputMock() {
                     opts.setContent(opts.getEditableContent());
                     (_canvasStore.getState() as { startEditing: (id: string) => void }).startEditing(opts.nodeId);
                 },
+            };
+        },
+    };
+}
+
+/** useHeadingEditor mock factory — returns module shape with shared state */
+export function useHeadingEditorMock() {
+    return {
+        useHeadingEditor: (opts: {
+            heading: string; placeholder: string; isEditing: boolean;
+            onHeadingChange: (h: string) => void; onBlur?: (h: string) => void;
+            onEnterKey?: () => void; onSlashCommand?: (id: string) => void;
+            onSubmitAI?: (prompt: string) => void;
+        }) => {
+            if (opts.heading !== state.lastInitialContent) {
+                state.content = opts.heading ?? '';
+                state.lastInitialContent = opts.heading;
+            }
+            state.onBlur = opts.onBlur ?? null;
+            state.onUpdate = opts.onHeadingChange ?? null;
+            state.placeholder = opts.placeholder || '';
+            const ref = state.suggestionActiveRef ?? { current: false };
+            state.suggestionActiveRef = ref;
+            return {
+                editor: {
+                    view: { get dom() { return state.domElement ?? document.createElement('div'); } },
+                    isEmpty: !state.content,
+                    commands: { focus: () => undefined, insertContent: (t: string) => { state.content += t; } },
+                },
+                suggestionActiveRef: ref,
             };
         },
     };
@@ -266,3 +294,5 @@ export function componentMock() {
         },
     };
 }
+
+

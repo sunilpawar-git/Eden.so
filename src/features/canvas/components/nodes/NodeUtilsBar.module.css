@@ -5,12 +5,13 @@
 
 .container {
     position: absolute;
-    bottom: 8px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
+    top: 50%;
+    right: -40px;
+    transform: translateY(-50%) translateX(20px);
     display: flex;
+    flex-direction: column;
     gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-sm);
+    padding: var(--space-xs);
     background: var(--color-surface-elevated);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-full);
@@ -25,16 +26,12 @@
     pointer-events: none;
 }
 
-/* Slide up on parent hover */
+/* Slide in from right on parent hover */
 .containerVisible {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(-50%) translateX(0);
     pointer-events: auto;
-}
-
-.containerWithTags {
-    bottom: 48px;
 }
 
 .actionButton {
@@ -74,25 +71,27 @@
     line-height: 1;
 }
 
-/* CSS Tooltip on hover */
+/* CSS Tooltip on hover - Vertical pill shape on right edge */
 .actionButton::after {
     content: attr(data-tooltip);
     position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-4px);
-    padding: var(--space-xs) var(--space-sm);
-    background: var(--tooltip-bg);
-    color: var(--tooltip-text);
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    padding: var(--space-sm) var(--space-md);
+    background: linear-gradient(135deg, var(--color-surface-elevated), var(--color-surface));
+    color: var(--color-text-primary);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
     white-space: nowrap;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
     opacity: 0;
     visibility: hidden;
     transition: opacity var(--transition-fast);
     pointer-events: none;
     z-index: var(--z-tooltip);
+    box-shadow: var(--card-shadow);
 }
 
 .actionButton:hover::after {

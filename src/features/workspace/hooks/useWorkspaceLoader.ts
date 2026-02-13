@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import type { CanvasNode } from '@/features/canvas/types/node';
 import { loadNodes, loadEdges } from '../services/workspaceService';
 import { workspaceCache } from '../services/workspaceCache';
 import { checkForConflict } from '../services/conflictDetector';
@@ -67,10 +68,10 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                             const safeGetTime = (d: unknown) => (d instanceof Date ? d.getTime() : 0);
 
                             const latestServer = Math.max(
-                                ...freshNodes.map((n) => safeGetTime((n as any).updatedAt))
+                                ...freshNodes.map((n: CanvasNode | { updatedAt?: unknown }) => safeGetTime(n.updatedAt))
                             );
                             const latestLocal = Math.max(
-                                ...cached.nodes.map((n) => safeGetTime((n as any).updatedAt))
+                                ...cached.nodes.map((n: CanvasNode | { updatedAt?: unknown }) => safeGetTime(n.updatedAt))
                             );
 
                             const conflict = checkForConflict(latestLocal, latestServer);

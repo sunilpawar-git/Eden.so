@@ -29,6 +29,21 @@ vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     }),
 }));
 
+vi.mock('../../../hooks/useIdeaCardActions', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardActionsMock()
+);
+vi.mock('../../../hooks/useIdeaCardState', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardStateMock()
+);
+vi.mock('../NodeHeading', () => ({
+    NodeHeading: ({ heading, onDoubleClick }: { heading: string; onDoubleClick?: () => void }) => (
+        <div data-testid="node-heading" onDoubleClick={onDoubleClick}>{heading}</div>
+    ),
+}));
+vi.mock('../NodeDivider', () => ({
+    NodeDivider: () => <div data-testid="node-divider" />,
+}));
+
 // TipTap mocks — shared state via singleton in helper module
 vi.mock('../../../hooks/useTipTapEditor', async () =>
     (await import('./helpers/tipTapTestMock')).hookMock()
@@ -56,9 +71,10 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore, initStateStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
         initNodeInputStore(useCanvasStore);
+        initStateStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -78,7 +94,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
         render(<IdeaCard {...propsWithOutput} />);
 
         // Should show content, not textarea initially
-        expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('tiptap-editor')).not.toBeInTheDocument();
         expect(screen.getByText('Existing content')).toBeInTheDocument();
 
         // Double-click to enter edit mode
@@ -86,7 +102,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
         fireEvent.doubleClick(content);
 
         // Should now show textarea
-        expect(screen.getByRole('textbox')).toBeInTheDocument();
+        expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
     });
 
     it('should NOT enter edit mode on single-click (allow selection)', () => {
@@ -102,7 +118,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
         fireEvent.click(content);
 
         // Should still show content, not textarea
-        expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('tiptap-editor')).not.toBeInTheDocument();
         expect(screen.getByText('Clickable content')).toBeInTheDocument();
     });
 
@@ -123,7 +139,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
         fireEvent.doubleClick(promptText);
 
         // Should enter edit mode
-        expect(screen.getByRole('textbox')).toBeInTheDocument();
+        expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
     });
 
     it('should support Enter key to enter edit mode when node is selected', () => {
@@ -140,7 +156,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
         fireEvent.keyDown(contentArea, { key: 'Enter' });
 
         // Should enter edit mode
-        expect(screen.getByRole('textbox')).toBeInTheDocument();
+        expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
     });
 
     it('should support keyboard navigation: Enter on content to edit', () => {
@@ -157,7 +173,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
         fireEvent.keyDown(contentArea, { key: 'Enter' });
 
         // Should enter edit mode (existing behavior maintained)
-        expect(screen.getByRole('textbox')).toBeInTheDocument();
+        expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
     });
 
     it('should NOT enter edit mode on double-click when generating', () => {
@@ -184,7 +200,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
             const content = screen.getByText('Focus test content');
             fireEvent.doubleClick(content);
 
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
         });
 
         it('should enter edit mode on Enter key to ensure immediate typing', () => {
@@ -199,7 +215,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
             const contentArea = screen.getByTestId('content-area');
             fireEvent.keyDown(contentArea, { key: 'Enter' });
 
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
         });
 
         it('should enter edit mode on printable key to ensure immediate typing', () => {
@@ -214,7 +230,7 @@ describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
             const contentArea = screen.getByTestId('content-area');
             fireEvent.keyDown(contentArea, { key: 'a' });
 
-            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.getByTestId('tiptap-editor')).toBeInTheDocument();
         });
 
         it('should insert the triggering character when entering edit mode via key', async () => {

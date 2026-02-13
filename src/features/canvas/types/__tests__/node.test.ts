@@ -28,13 +28,15 @@ describe('createIdeaNode', () => {
         expect(node.workspaceId).toBe(testWorkspaceId);
         expect(node.type).toBe('idea');
         expect(node.position).toEqual(testPosition);
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         expect(node.data.prompt).toBe('test prompt');
     });
 
-    it('should set empty prompt when not provided', () => {
+    it('should omit prompt when not provided', () => {
         const node = createIdeaNode(testId, testWorkspaceId, testPosition);
 
-        expect(node.data.prompt).toBe('');
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        expect(node.data.prompt).toBeUndefined();
     });
 
     it('should set createdAt and updatedAt timestamps', () => {

@@ -1,6 +1,7 @@
 /**
  * useIdeaCardEditor Tests
- * TDD: Validates editor lifecycle, blur guard, and content sync
+ * TDD: Validates editor lifecycle, blur handling, and content sync.
+ * Slash commands live in the heading editor only (useHeadingEditor).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
@@ -25,12 +26,6 @@ vi.mock('../useTipTapEditor', () => ({
     },
 }));
 
-// Mock slash command extension
-vi.mock('../../extensions/slashCommandSuggestion', () => ({
-    SlashCommandSuggestion: { configure: () => ({}) },
-    createSlashSuggestionRender: () => () => ({}),
-}));
-
 let latestOnBlur: ((md: string) => void) | null = null;
 
 const defaultOptions = () => ({
@@ -40,7 +35,6 @@ const defaultOptions = () => ({
     placeholder: 'Type something...',
     saveContent: vi.fn(),
     onExitEditing: vi.fn(),
-    onSlashCommand: vi.fn(),
 });
 
 describe('useIdeaCardEditor', () => {
@@ -49,18 +43,12 @@ describe('useIdeaCardEditor', () => {
         latestOnBlur = null;
     });
 
-    it('returns editor, getMarkdown, setContent, suggestionActiveRef', () => {
+    it('returns editor, getMarkdown, setContent, submitHandlerRef', () => {
         const { result } = renderHook(() => useIdeaCardEditor(defaultOptions()));
         expect(result.current.editor).toBeDefined();
         expect(result.current.getMarkdown).toBeDefined();
         expect(result.current.setContent).toBeDefined();
-        expect(result.current.suggestionActiveRef).toBeDefined();
-    });
-
-    it('returns suggestionActiveRef', () => {
-        const { result } = renderHook(() => useIdeaCardEditor(defaultOptions()));
-        expect(result.current.suggestionActiveRef).toBeDefined();
-        expect(result.current.suggestionActiveRef.current).toBe(false);
+        expect(result.current.submitHandlerRef).toBeDefined();
     });
 
     describe('blur handling', () => {
@@ -71,17 +59,6 @@ describe('useIdeaCardEditor', () => {
             act(() => { latestOnBlur?.('saved text'); });
             expect(opts.saveContent).toHaveBeenCalledWith('saved text');
             expect(opts.onExitEditing).toHaveBeenCalled();
-        });
-
-        it('skips blur when suggestion is active', () => {
-            const opts = defaultOptions();
-            const { result } = renderHook(() => useIdeaCardEditor(opts));
-
-            // Simulate suggestion popup being active
-            (result.current.suggestionActiveRef as { current: boolean }).current = true;
-            act(() => { latestOnBlur?.('should not save'); });
-            expect(opts.saveContent).not.toHaveBeenCalled();
-            expect(opts.onExitEditing).not.toHaveBeenCalled();
         });
     });
 

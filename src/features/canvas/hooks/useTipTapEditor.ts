@@ -2,7 +2,7 @@
  * useTipTapEditor Hook - Encapsulates TipTap editor setup with markdown I/O
  * Bridges TipTap's document model with the store's string-based contract
  */
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -50,6 +50,15 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
             onUpdate?.(htmlToMarkdown(e.getHTML()));
         },
     });
+
+    // Sync editable state reactively — TipTap's useEditor does not update
+    // editability after creation, so we must call setEditable explicitly.
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (editor && !editor.isDestroyed && editor.isEditable !== editable) {
+            editor.setEditable(editable);
+        }
+    }, [editor, editable]);
 
     const getMarkdown = useCallback((): string => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

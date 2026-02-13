@@ -64,6 +64,20 @@ vi.mock('../../../hooks/useNodeInput', async () =>
 vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
+// Copy tests use the REAL useIdeaCardActions to test clipboard behavior
+vi.mock('@/features/ai/hooks/useNodeTransformation', () => ({
+    useNodeTransformation: () => ({ transformNodeContent: vi.fn(), isTransforming: false }),
+}));
+vi.mock('../../../hooks/useIdeaCardState', async () =>
+    (await import('./helpers/tipTapTestMock')).useIdeaCardStateMock()
+);
+vi.mock('../NodeHeading', () => ({
+    NodeHeading: ({ heading }: { heading: string }) =>
+        <div data-testid="node-heading">{heading}</div>,
+}));
+vi.mock('../NodeDivider', () => ({
+    NodeDivider: () => <div data-testid="node-divider" />,
+}));
 
 describe('IdeaCard Copy', () => {
     const defaultData: IdeaNodeData = {
@@ -90,9 +104,10 @@ describe('IdeaCard Copy', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { resetMockState, initNodeInputStore } = await import('./helpers/tipTapTestMock');
+        const { resetMockState, initNodeInputStore, initStateStore } = await import('./helpers/tipTapTestMock');
         resetMockState();
         initNodeInputStore(useCanvasStore);
+        initStateStore(useCanvasStore);
         useCanvasStore.setState({
             nodes: [],
             edges: [],
@@ -103,7 +118,7 @@ describe('IdeaCard Copy', () => {
         });
     });
 
-    it('copies prompt text and shows success toast for AI cards', async () => {
+    it('copies output text and shows success toast for AI cards', async () => {
         const aiCard = {
             ...defaultProps,
             data: { ...defaultData, prompt: 'AI prompt', output: 'AI response' },
@@ -112,7 +127,7 @@ describe('IdeaCard Copy', () => {
         render(<IdeaCard {...aiCard} />);
         fireEvent.click(screen.getByRole('button', { name: /copy/i }));
         await vi.waitFor(() => {
-            expect(mockWriteText).toHaveBeenCalledWith('AI prompt');
+            expect(mockWriteText).toHaveBeenCalledWith('AI response');
             expect(toast.success).toHaveBeenCalledWith('Copied to clipboard');
         });
     });

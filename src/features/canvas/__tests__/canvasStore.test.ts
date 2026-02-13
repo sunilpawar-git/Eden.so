@@ -2,6 +2,7 @@
  * Canvas Store Tests - TDD: Write tests FIRST
  * Note: IdeaNode-specific tests are in ideaNodeActions.test.ts
  */
+/* eslint-disable @typescript-eslint/no-deprecated */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCanvasStore } from '../stores/canvasStore';
 import type { CanvasNode } from '../types/node';
