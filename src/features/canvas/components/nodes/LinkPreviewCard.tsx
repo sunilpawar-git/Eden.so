@@ -1,10 +1,13 @@
 /**
  * LinkPreviewCard - Rich link preview card component
  * Renders Open Graph / Twitter Card metadata as a clickable preview
+ * All images are proxied through Cloud Functions for privacy
  * View-only: zero business logic (MVVM)
  */
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { strings } from '@/shared/localization/strings';
+import { useAuthToken } from '../../hooks/useAuthToken';
+import { buildProxiedImageUrl } from '../../utils/imageProxyUrl';
 import type { LinkPreviewMetadata } from '../../types/node';
 import styles from './LinkPreviewCard.module.css';
 
@@ -18,6 +21,13 @@ export const LinkPreviewCard = React.memo(({ preview, onRemove }: LinkPreviewCar
     const { url, title, description, image, favicon, domain, error } = preview;
     const displayTitle = title ?? domain ?? url;
     const ariaLabel = `${strings.linkPreview.openLink}: ${displayTitle}`;
+    const [imageError, setImageError] = useState(false);
+    const token = useAuthToken();
+
+    const handleImageError = useCallback(() => { setImageError(true); }, []);
+
+    const proxiedImage = buildProxiedImageUrl(image, token);
+    const proxiedFavicon = buildProxiedImageUrl(favicon, token);
 
     if (error) {
         return (
@@ -34,11 +44,7 @@ export const LinkPreviewCard = React.memo(({ preview, onRemove }: LinkPreviewCar
                     </span>
                 </a>
                 {onRemove && (
-                    <button className={styles.removeButton}
-                        aria-label={strings.linkPreview.removePreview}
-                        onClick={(e) => { e.preventDefault(); onRemove(url); }}>
-                        ✕
-                    </button>
+                    <RemoveButton url={url} onRemove={onRemove} />
                 )}
             </div>
         );
@@ -48,18 +54,26 @@ export const LinkPreviewCard = React.memo(({ preview, onRemove }: LinkPreviewCar
         <div className={styles.card}>
             <a href={url} target="_blank" rel="noopener noreferrer"
                 aria-label={ariaLabel}
-                style={{ textDecoration: 'none', color: 'inherit' }}>
-                {image && (
+                className={styles.cardLink}>
+                {proxiedImage && !imageError && (
                     <div className={styles.imageWrapper}>
-                        <img src={image} alt={displayTitle}
-                            className={styles.image} loading="lazy" />
+                        <img src={proxiedImage} alt={displayTitle}
+                            className={styles.image} loading="lazy"
+                            referrerPolicy="no-referrer"
+                            onError={handleImageError} />
                     </div>
+                )}
+                {proxiedImage && imageError && (
+                    <div className={styles.imagePlaceholder}
+                        role="img" aria-label={displayTitle} />
                 )}
                 <div className={styles.body}>
                     <span className={styles.domainRow}>
-                        {favicon && (
-                            <img src={favicon} alt={`${domain ?? ''} favicon`}
-                                className={styles.favicon} />
+                        {proxiedFavicon && (
+                            <img src={proxiedFavicon}
+                                alt={`${domain ?? ''} favicon`}
+                                className={styles.favicon}
+                                referrerPolicy="no-referrer" />
                         )}
                         {domain && <span className={styles.domain}>{domain}</span>}
                     </span>
@@ -70,24 +84,37 @@ export const LinkPreviewCard = React.memo(({ preview, onRemove }: LinkPreviewCar
                 </div>
             </a>
             {onRemove && (
-                <button className={styles.removeButton}
-                    aria-label={strings.linkPreview.removePreview}
-                    onClick={(e) => { e.preventDefault(); onRemove(url); }}>
-                    ✕
-                </button>
+                <RemoveButton url={url} onRemove={onRemove} />
             )}
         </div>
     );
 });
+
+/** Remove button extracted to avoid duplication (DRY) */
+const RemoveButton = React.memo(({ url, onRemove }: {
+    url: string;
+    onRemove: (url: string) => void;
+}) => (
+    <button className={styles.removeButton}
+        aria-label={strings.linkPreview.removePreview}
+        onClick={(e) => { e.preventDefault(); onRemove(url); }}>
+        ✕
+    </button>
+));
 
 interface LinkPreviewListProps {
     previews: Record<string, LinkPreviewMetadata>;
     onRemove?: (url: string) => void;
 }
 
+/** Only render previews whose URL starts with http:// or https:// */
+function isValidPreviewUrl(url: string): boolean {
+    return url.startsWith('http://') || url.startsWith('https://');
+}
+
 /** Renders a list of link preview cards from a previews record */
 export const LinkPreviewList = React.memo(({ previews, onRemove }: LinkPreviewListProps) => {
-    const entries = Object.values(previews);
+    const entries = Object.values(previews).filter((p) => isValidPreviewUrl(p.url));
     if (entries.length === 0) return null;
 
     return (

@@ -1,13 +1,43 @@
 /**
  * Link Preview Service Tests
- * TDD: Validates URL fetching, OG/Twitter meta tag parsing, error handling
+ * TDD: Validates Cloud Function proxy calls, auth token, fallback, error handling
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fetchLinkPreview, parseMetaTags, extractDomain } from '../linkPreviewService';
+import {
+    fetchLinkPreview,
+    extractDomain,
+    type LinkPreviewDeps,
+} from '../linkPreviewService';
+import type { LinkPreviewMetadata } from '../../types/node';
+
+/** Create fresh test deps for each test */
+function createMockDeps(overrides?: Partial<LinkPreviewDeps>): LinkPreviewDeps {
+    return {
+        getToken: vi.fn().mockResolvedValue('mock-firebase-token'),
+        getEndpointUrl: () => 'https://test-functions.net/fetchLinkMeta',
+        checkConfigured: () => true,
+        directFetch: vi.fn().mockResolvedValue({
+            url: 'https://fallback.com',
+            title: 'Fallback Title',
+            domain: 'fallback.com',
+            fetchedAt: Date.now(),
+        } satisfies LinkPreviewMetadata),
+        ...overrides,
+    };
+}
 
 describe('linkPreviewService', () => {
-    beforeEach(() => { vi.useFakeTimers(); });
-    afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
+    let mockDeps: LinkPreviewDeps;
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        mockDeps = createMockDeps();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
 
     describe('extractDomain', () => {
         it('extracts domain from https URL', () => {
@@ -23,163 +53,161 @@ describe('linkPreviewService', () => {
         });
     });
 
-    describe('parseMetaTags', () => {
-        it('parses Open Graph title and description', () => {
-            const html = `
-                <html><head>
-                    <meta property="og:title" content="My Page" />
-                    <meta property="og:description" content="A description" />
-                </head><body></body></html>
-            `;
-            const result = parseMetaTags(html, 'https://example.com');
-            expect(result.title).toBe('My Page');
-            expect(result.description).toBe('A description');
+    describe('fetchLinkPreview - proxy mode', () => {
+        it('calls Cloud Function with URL and auth token', async () => {
+            const metadata = {
+                url: 'https://example.com',
+                title: 'Example',
+                description: 'A site',
+                image: 'https://example.com/img.png',
+                domain: 'example.com',
+                fetchedAt: Date.now(),
+            };
+
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve(metadata),
+            }));
+
+            const result = await fetchLinkPreview(
+                'https://example.com', undefined, mockDeps,
+            );
+            expect(result.title).toBe('Example');
+            expect(result.description).toBe('A site');
+            expect(result.image).toBe('https://example.com/img.png');
+            expect(result.error).toBeUndefined();
+
+            expect(fetch).toHaveBeenCalledWith(
+                'https://test-functions.net/fetchLinkMeta',
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: expect.objectContaining({
+                        'Authorization': 'Bearer mock-firebase-token',
+                        'Content-Type': 'application/json',
+                    }),
+                }),
+            );
         });
 
-        it('parses Open Graph image', () => {
-            const html = `
-                <html><head>
-                    <meta property="og:image" content="https://example.com/og.png" />
-                </head><body></body></html>
-            `;
-            const result = parseMetaTags(html, 'https://example.com');
-            expect(result.image).toBe('https://example.com/og.png');
+        it('sends URL in request body', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({
+                    url: 'https://example.com',
+                    domain: 'example.com',
+                    fetchedAt: Date.now(),
+                }),
+            }));
+
+            await fetchLinkPreview('https://example.com', undefined, mockDeps);
+
+            const fetchCall = vi.mocked(fetch).mock.calls[0];
+            const body = JSON.parse(fetchCall?.[1]?.body as string) as { url: string };
+            expect(body.url).toBe('https://example.com');
         });
 
-        it('prefers og:title over twitter:title', () => {
-            const html = `
-                <html><head>
-                    <meta property="og:title" content="OG Title" />
-                    <meta name="twitter:title" content="Twitter Title" />
-                </head><body></body></html>
-            `;
-            const result = parseMetaTags(html, 'https://example.com');
-            expect(result.title).toBe('OG Title');
-        });
+        it('falls back to directFetch on proxy fetch failure', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockRejectedValue(
+                new Error('Network error'),
+            ));
 
-        it('falls back to twitter:title when og:title is missing', () => {
-            const html = `
-                <html><head>
-                    <meta name="twitter:title" content="Twitter Title" />
-                    <meta name="twitter:description" content="Tweet desc" />
-                </head><body></body></html>
-            `;
-            const result = parseMetaTags(html, 'https://example.com');
-            expect(result.title).toBe('Twitter Title');
-            expect(result.description).toBe('Tweet desc');
-        });
-
-        it('parses twitter:card type', () => {
-            const html = `
-                <html><head>
-                    <meta name="twitter:card" content="summary_large_image" />
-                </head><body></body></html>
-            `;
-            const result = parseMetaTags(html, 'https://example.com');
-            expect(result.cardType).toBe('summary_large_image');
-        });
-
-        it('falls back to <title> tag when no OG/Twitter title', () => {
-            const html = `
-                <html><head>
-                    <title>Fallback Title</title>
-                </head><body></body></html>
-            `;
-            const result = parseMetaTags(html, 'https://example.com');
+            const result = await fetchLinkPreview(
+                'https://fail.com', undefined, mockDeps,
+            );
+            expect(mockDeps.directFetch).toHaveBeenCalledWith(
+                'https://fail.com', undefined,
+            );
             expect(result.title).toBe('Fallback Title');
         });
 
-        it('parses favicon from link[rel="icon"]', () => {
-            const html = `
-                <html><head>
-                    <link rel="icon" href="/favicon.ico" />
-                </head><body></body></html>
-            `;
-            const result = parseMetaTags(html, 'https://example.com');
-            expect(result.favicon).toBe('https://example.com/favicon.ico');
-        });
-
-        it('resolves relative favicon URLs', () => {
-            const html = `
-                <html><head>
-                    <link rel="icon" href="/assets/icon.png" />
-                </head><body></body></html>
-            `;
-            const result = parseMetaTags(html, 'https://cdn.example.com/page');
-            expect(result.favicon).toBe('https://cdn.example.com/assets/icon.png');
-        });
-
-        it('defaults favicon to /favicon.ico when no link tag', () => {
-            const html = '<html><head></head><body></body></html>';
-            const result = parseMetaTags(html, 'https://example.com/page');
-            expect(result.favicon).toBe('https://example.com/favicon.ico');
-        });
-
-        it('sets domain from URL', () => {
-            const html = '<html><head></head><body></body></html>';
-            const result = parseMetaTags(html, 'https://blog.example.com/post/1');
-            expect(result.domain).toBe('blog.example.com');
-        });
-
-        it('returns minimal metadata for empty HTML', () => {
-            const result = parseMetaTags('', 'https://example.com');
-            expect(result.url).toBe('https://example.com');
-            expect(result.domain).toBe('example.com');
-            expect(result.fetchedAt).toBeGreaterThan(0);
-        });
-    });
-
-    describe('fetchLinkPreview', () => {
-        it('fetches and parses a URL into LinkPreviewMetadata', async () => {
-            const html = `
-                <html><head>
-                    <meta property="og:title" content="Example" />
-                    <meta property="og:description" content="Example site" />
-                    <meta property="og:image" content="https://example.com/img.png" />
-                </head><body></body></html>
-            `;
+        it('falls back to directFetch on non-ok response', async () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-                ok: true, text: () => Promise.resolve(html),
+                ok: false,
+                status: 429,
             }));
 
-            const result = await fetchLinkPreview('https://example.com');
-            expect(result.title).toBe('Example');
-            expect(result.description).toBe('Example site');
-            expect(result.image).toBe('https://example.com/img.png');
-            expect(result.error).toBeUndefined();
-        });
-
-        it('returns error metadata on fetch failure', async () => {
-            vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
-
-            const result = await fetchLinkPreview('https://fail.com');
-            expect(result.url).toBe('https://fail.com');
-            expect(result.domain).toBe('fail.com');
-            expect(result.error).toBe(true);
-        });
-
-        it('returns error metadata on non-ok response', async () => {
-            vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-                ok: false, status: 404, text: () => Promise.resolve(''),
-            }));
-
-            const result = await fetchLinkPreview('https://missing.com/page');
-            expect(result.error).toBe(true);
-            expect(result.domain).toBe('missing.com');
+            const result = await fetchLinkPreview(
+                'https://limited.com', undefined, mockDeps,
+            );
+            expect(mockDeps.directFetch).toHaveBeenCalledWith(
+                'https://limited.com', undefined,
+            );
+            expect(result.title).toBe('Fallback Title');
         });
 
         it('passes AbortSignal to fetch', async () => {
             const fetchMock = vi.fn().mockResolvedValue({
-                ok: true, text: () => Promise.resolve('<html></html>'),
+                ok: true,
+                json: () => Promise.resolve({
+                    url: 'https://example.com',
+                    domain: 'example.com',
+                    fetchedAt: Date.now(),
+                }),
             });
             vi.stubGlobal('fetch', fetchMock);
-            const controller = new AbortController();
 
-            await fetchLinkPreview('https://example.com', controller.signal);
+            const controller = new AbortController();
+            await fetchLinkPreview(
+                'https://example.com', controller.signal, mockDeps,
+            );
 
             expect(fetchMock).toHaveBeenCalledWith(
-                'https://example.com',
-                expect.objectContaining({ signal: controller.signal }),
+                expect.any(String),
+                expect.objectContaining({
+                    signal: expect.any(AbortSignal) as AbortSignal,
+                }),
+            );
+        });
+
+        it('preserves domain from server response', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({
+                    url: 'https://example.com',
+                    title: 'Test',
+                    domain: 'example.com',
+                    fetchedAt: Date.now(),
+                }),
+            }));
+
+            const result = await fetchLinkPreview(
+                'https://example.com', undefined, mockDeps,
+            );
+            expect(result.domain).toBe('example.com');
+        });
+    });
+
+    describe('fetchLinkPreview - fallback mode', () => {
+        it('uses directFetch when proxy is not configured', async () => {
+            const deps = createMockDeps({ checkConfigured: () => false });
+
+            const result = await fetchLinkPreview(
+                'https://example.com', undefined, deps,
+            );
+            expect(deps.directFetch).toHaveBeenCalledWith(
+                'https://example.com', undefined,
+            );
+            expect(result.title).toBe('Fallback Title');
+        });
+
+        it('uses directFetch when auth token is unavailable', async () => {
+            const deps = createMockDeps({
+                getToken: vi.fn().mockResolvedValue(null),
+            });
+
+            await fetchLinkPreview('https://example.com', undefined, deps);
+            expect(deps.directFetch).toHaveBeenCalled();
+        });
+
+        it('passes signal to directFetch', async () => {
+            const deps = createMockDeps({ checkConfigured: () => false });
+            const controller = new AbortController();
+
+            await fetchLinkPreview(
+                'https://example.com', controller.signal, deps,
+            );
+            expect(deps.directFetch).toHaveBeenCalledWith(
+                'https://example.com', controller.signal,
             );
         });
     });

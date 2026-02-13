@@ -27,25 +27,41 @@ export function isStale(metadata: LinkPreviewMetadata, ttl = CACHE_TTL_MS): bool
 export function getFromCache(url: string): LinkPreviewMetadata | null {
     // Check memory cache first
     const memEntry = memoryCache.get(url);
-    if (memEntry) return isStale(memEntry) ? null : memEntry;
+    if (memEntry) return isStale(memEntry) || memEntry.error ? null : memEntry;
 
     // Fall back to localStorage
     const stored = loadFromStorage();
     const entry = stored[url];
     if (!entry) return null;
-    if (isStale(entry)) return null;
+    if (isStale(entry) || entry.error) return null;
 
     // Promote to memory cache for faster subsequent reads
     memoryCache.set(url, entry);
     return entry;
 }
 
+/** Debounce timer for localStorage writes */
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Debounce delay for batching localStorage writes (ms) */
+const PERSIST_DEBOUNCE_MS = 1000;
+
 /**
- * Store a preview in both memory and localStorage
+ * Store a preview in memory and schedule debounced localStorage write.
+ * Batches rapid writes to avoid jank and quota pressure.
  */
 export function setInCache(url: string, metadata: LinkPreviewMetadata): void {
     memoryCache.set(url, metadata);
-    persistToStorage();
+    schedulePersist();
+}
+
+/** Schedule a debounced persist to localStorage */
+function schedulePersist(): void {
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(() => {
+        persistTimer = null;
+        persistToStorage();
+    }, PERSIST_DEBOUNCE_MS);
 }
 
 /** Clear all cached entries (memory + localStorage) */

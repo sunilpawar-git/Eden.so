@@ -1,15 +1,42 @@
 /**
- * Link Preview Service - Fetches and parses Open Graph / Twitter Card metadata
+ * Link Preview Service - Fetches link metadata securely
+ * Uses Cloud Function proxy when configured (production),
+ * falls back to direct client-side fetch (development)
  * Pure async service — no React dependencies, no store coupling
  */
 import type { LinkPreviewMetadata } from '../types/node';
+import { getAuthToken } from '@/features/auth/services/authTokenService';
+import { getFetchLinkMetaUrl, isProxyConfigured } from '@/config/linkPreviewConfig';
+import { fetchLinkPreviewDirect } from './linkPreviewFallback';
 
 /** Fetch timeout in milliseconds */
-const FETCH_TIMEOUT_MS = 5000;
+const FETCH_TIMEOUT_MS = 10_000;
+
+/** Service interface for dependency inversion (SOLID: D) */
+export interface LinkPreviewService {
+    fetchLinkPreview: (url: string, signal?: AbortSignal) => Promise<LinkPreviewMetadata>;
+    extractDomain: (url: string) => string;
+}
+
+/** Dependencies that can be injected for testing */
+export interface LinkPreviewDeps {
+    getToken: () => Promise<string | null>;
+    getEndpointUrl: () => string;
+    checkConfigured: () => boolean;
+    directFetch: (url: string, signal?: AbortSignal) => Promise<LinkPreviewMetadata>;
+}
+
+/** Default production dependencies */
+const defaultDeps: LinkPreviewDeps = {
+    getToken: getAuthToken,
+    getEndpointUrl: getFetchLinkMetaUrl,
+    checkConfigured: isProxyConfigured,
+    directFetch: fetchLinkPreviewDirect,
+};
 
 /**
- * Extract hostname from a URL string
- * Returns empty string for invalid URLs
+ * Extract hostname from a URL string.
+ * Returns empty string for invalid URLs.
  */
 export function extractDomain(url: string): string {
     try { return new URL(url).hostname; }
@@ -17,70 +44,62 @@ export function extractDomain(url: string): string {
 }
 
 /**
- * Fetch a URL and parse its OG/Twitter Card meta tags into LinkPreviewMetadata.
- * Returns partial metadata (url + domain + error) on failure.
+ * Fetch link preview metadata.
+ * Strategy: proxy (Cloud Function) when configured, direct fetch otherwise.
+ * Accepts optional deps for testing (DI pattern).
  */
 export async function fetchLinkPreview(
     url: string,
     signal?: AbortSignal,
+    deps: LinkPreviewDeps = defaultDeps,
 ): Promise<LinkPreviewMetadata> {
+    // If proxy is not configured, use direct client-side fetch (dev mode)
+    if (!deps.checkConfigured()) {
+        return deps.directFetch(url, signal);
+    }
+
+    // Proxy path: require auth token
     try {
+        const token = await deps.getToken();
+        if (!token) return await deps.directFetch(url, signal);
+
         const timeoutSignal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
         const combinedSignal = signal
             ? AbortSignal.any([signal, timeoutSignal])
             : timeoutSignal;
 
-        const response = await fetch(url, { signal: combinedSignal });
-        if (!response.ok) return errorMetadata(url);
+        const response = await fetch(deps.getEndpointUrl(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ url }),
+            signal: combinedSignal,
+        });
 
-        const html = await response.text();
-        return parseMetaTags(html, url);
+        if (!response.ok) return await deps.directFetch(url, signal);
+
+        const data = await response.json() as Partial<LinkPreviewMetadata>;
+        const result: LinkPreviewMetadata = {
+            ...data,
+            url,
+            domain: data.domain ?? extractDomain(url),
+            fetchedAt: data.fetchedAt ?? Date.now(),
+        };
+
+        // If proxy returned error metadata, try direct fallback
+        if (result.error) return await deps.directFetch(url, signal);
+
+        return result;
     } catch {
-        return errorMetadata(url);
+        // Proxy failed (network, timeout) — try direct fallback
+        return await deps.directFetch(url, signal);
     }
 }
 
-/** Build minimal error metadata for a failed fetch */
-function errorMetadata(url: string): LinkPreviewMetadata {
-    return { url, domain: extractDomain(url), fetchedAt: Date.now(), error: true };
-}
-
-/**
- * Parse HTML string and extract OG / Twitter Card meta tags.
- * Falls back to <title> tag when no OG/Twitter title is found.
- */
-export function parseMetaTags(html: string, url: string): LinkPreviewMetadata {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-
-    const og = (prop: string) => metaContent(doc, `meta[property="og:${prop}"]`);
-    const tw = (name: string) => metaContent(doc, `meta[name="twitter:${name}"]`);
-
-    const title = og('title') ?? tw('title') ?? doc.querySelector('title')?.textContent ?? undefined;
-    const description = og('description') ?? tw('description') ?? undefined;
-    const image = og('image') ?? tw('image') ?? undefined;
-    const cardType = tw('card') as LinkPreviewMetadata['cardType'] ?? undefined;
-    const favicon = resolveFavicon(doc, url);
-
-    return {
-        url, title, description, image, favicon, cardType,
-        domain: extractDomain(url),
-        fetchedAt: Date.now(),
-    };
-}
-
-/** Read content attribute from a meta selector, or null */
-function metaContent(doc: Document, selector: string): string | undefined {
-    return doc.querySelector(selector)?.getAttribute('content') ?? undefined;
-}
-
-/** Resolve favicon URL — prefer link[rel="icon"], fallback to /favicon.ico */
-function resolveFavicon(doc: Document, pageUrl: string): string {
-    const iconLink = doc.querySelector('link[rel="icon"], link[rel="shortcut icon"]');
-    const href = iconLink?.getAttribute('href');
-    if (href) {
-        try { return new URL(href, pageUrl).href; }
-        catch { /* fall through */ }
-    }
-    try { return new URL('/favicon.ico', pageUrl).href; }
-    catch { return ''; }
-}
+/** Exported service object following project DI pattern */
+export const linkPreviewService: LinkPreviewService = {
+    fetchLinkPreview,
+    extractDomain,
+};

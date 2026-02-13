@@ -2,7 +2,7 @@
  * useLinkPreviewFetch - Debounced link preview fetcher
  * Detects new URLs, checks cache, fetches missing, updates canvasStore
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
 import { fetchLinkPreview } from '../services/linkPreviewService';
 import { getFromCache, setInCache } from '../services/linkPreviewCache';
@@ -20,11 +20,18 @@ export function useLinkPreviewFetch(nodeId: string, urls: string[]): void {
     const abortRef = useRef<AbortController | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Stabilize the urls reference: only change when the sorted set actually differs
+    const stableUrlKey = useMemo(() => [...urls].sort().join('\n'), [urls]);
+    const stableUrls = useMemo(() => urls, [stableUrlKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
     useEffect(() => {
         // Clear previous debounce timer
         if (timerRef.current) clearTimeout(timerRef.current);
 
-        if (urls.length === 0) return;
+        // Prune stale previews whose URLs are no longer in the content
+        pruneStalePreviewsFor(nodeId, stableUrls);
+
+        if (stableUrls.length === 0) return;
 
         timerRef.current = setTimeout(() => {
             // Abort any previous in-flight requests
@@ -32,14 +39,29 @@ export function useLinkPreviewFetch(nodeId: string, urls: string[]): void {
             const controller = new AbortController();
             abortRef.current = controller;
 
-            void processUrls(nodeId, urls, controller.signal);
+            void processUrls(nodeId, stableUrls, controller.signal);
         }, DEBOUNCE_MS);
 
         return () => {
             if (timerRef.current) clearTimeout(timerRef.current);
             abortRef.current?.abort();
         };
-    }, [nodeId, urls]);
+    }, [nodeId, stableUrls]);
+}
+
+/** Remove stored link previews whose URL keys no longer appear in detected URLs */
+function pruneStalePreviewsFor(nodeId: string, currentUrls: string[]): void {
+    const store = useCanvasStore.getState();
+    const node = store.nodes.find((n) => n.id === nodeId);
+    const existing = node?.data.linkPreviews;
+    if (!existing) return;
+
+    const currentSet = new Set(currentUrls);
+    for (const storedUrl of Object.keys(existing)) {
+        if (!currentSet.has(storedUrl)) {
+            useCanvasStore.getState().removeLinkPreview(nodeId, storedUrl);
+        }
+    }
 }
 
 /** Process a batch of URLs: skip known, use cache, fetch rest */
@@ -52,15 +74,15 @@ async function processUrls(
     const node = store.nodes.find((n) => n.id === nodeId);
     const existing = node?.data.linkPreviews ?? {};
 
-    const toFetch = urls.filter((url) => !existing[url]);
+    const toFetch = urls.filter((url) => !existing[url] || existing[url].error);
     if (toFetch.length === 0) return;
 
     const tasks = toFetch.map(async (url) => {
         if (signal.aborted) return;
 
-        // Check cache first
+        // Check cache first (skip cached errors — allow re-fetch)
         const cached = getFromCache(url);
-        if (cached) {
+        if (cached && !cached.error) {
             useCanvasStore.getState().addLinkPreview(nodeId, url, cached);
             return;
         }

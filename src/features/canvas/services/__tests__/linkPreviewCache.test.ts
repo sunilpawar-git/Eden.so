@@ -110,12 +110,21 @@ describe('linkPreviewCache', () => {
     });
 
     describe('localStorage persistence', () => {
-        it('persists cache to localStorage on setInCache', () => {
+        it('persists cache to localStorage after debounce', () => {
+            vi.useFakeTimers();
             setInCache('https://a.com', mockPreview('https://a.com'));
+
+            // Not yet persisted (debounced)
+            expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+            // Advance past debounce delay (1000ms)
+            vi.advanceTimersByTime(1100);
+
             const stored = localStorage.getItem(STORAGE_KEY);
             expect(stored).not.toBeNull();
             const parsed = JSON.parse(stored!) as Record<string, LinkPreviewMetadata>;
             expect(parsed['https://a.com']).toBeDefined();
+            vi.useRealTimers();
         });
 
         it('loads from localStorage on getFromCache when memory is empty', () => {
