@@ -21,6 +21,12 @@
     border-color: var(--color-primary-light);
 }
 
+/* Anchor link inside card — reset default link styles */
+.cardLink {
+    text-decoration: none;
+    color: inherit;
+}
+
 /* OG image thumbnail */
 .imageWrapper {
     width: 100%;
@@ -34,6 +40,16 @@
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+/* Placeholder shown when image fails to load */
+.imagePlaceholder {
+    width: 100%;
+    height: 80px;
+    background: var(--color-surface-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Text content area */

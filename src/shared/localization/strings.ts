@@ -197,6 +197,8 @@ export const strings = {
         removePreview: 'Remove preview',
         refreshPreview: 'Refresh preview',
         fetchError: 'Could not load link preview',
+        proxyError: 'Link preview proxy unavailable',
+        authRequired: 'Sign in to see link previews',
     },
     layout: {
         arrangeNodes: 'Auto Arrange',

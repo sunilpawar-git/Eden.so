@@ -1,12 +1,25 @@
 /**
  * LinkPreviewCard Tests
- * TDD: Validates link preview card rendering, interactions, and accessibility
+ * TDD: Validates link preview card rendering, proxied images, interactions, accessibility
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LinkPreviewCard, LinkPreviewList } from '../LinkPreviewCard';
 import type { LinkPreviewMetadata } from '../../../types/node';
 import { strings } from '@/shared/localization/strings';
+
+// Mock the auth token hook (no Firebase in test environment)
+vi.mock('../../../hooks/useAuthToken', () => ({
+    useAuthToken: () => 'mock-token',
+}));
+
+// Mock the image proxy utility
+vi.mock('../../../utils/imageProxyUrl', () => ({
+    buildProxiedImageUrl: (url: string | undefined) => {
+        if (!url) return '';
+        return `https://proxy.test/proxyImage?url=${encodeURIComponent(url)}`;
+    },
+}));
 
 describe('LinkPreviewCard', () => {
     const fullPreview: LinkPreviewMetadata = {
@@ -49,25 +62,74 @@ describe('LinkPreviewCard', () => {
             expect(screen.getByText('example.com')).toBeInTheDocument();
         });
 
-        it('renders favicon image', () => {
+        it('renders favicon through proxy', () => {
             render(<LinkPreviewCard preview={fullPreview} />);
             const favicon = screen.getByAltText('example.com favicon');
             expect(favicon).toBeInTheDocument();
-            expect(favicon).toHaveAttribute('src', 'https://example.com/favicon.ico');
+            expect(favicon).toHaveAttribute('src',
+                expect.stringContaining('proxy.test/proxyImage'));
         });
 
-        it('renders OG image', () => {
+        it('renders OG image through proxy', () => {
             render(<LinkPreviewCard preview={fullPreview} />);
             const image = screen.getByAltText('Example Article Title');
             expect(image).toBeInTheDocument();
-            expect(image).toHaveAttribute('src', 'https://example.com/og-image.jpg');
+            expect(image).toHaveAttribute('src',
+                expect.stringContaining('proxy.test/proxyImage'));
+        });
+    });
+
+    describe('Image proxying and security', () => {
+        it('uses proxied URL for OG image (not direct external URL)', () => {
+            render(<LinkPreviewCard preview={fullPreview} />);
+            const image = screen.getByAltText('Example Article Title');
+            expect(image.getAttribute('src')).not.toBe(
+                'https://example.com/og-image.jpg',
+            );
+            expect(image.getAttribute('src')).toContain('proxy.test');
+        });
+
+        it('uses proxied URL for favicon', () => {
+            render(<LinkPreviewCard preview={fullPreview} />);
+            const favicon = screen.getByAltText('example.com favicon');
+            expect(favicon.getAttribute('src')).not.toBe(
+                'https://example.com/favicon.ico',
+            );
+            expect(favicon.getAttribute('src')).toContain('proxy.test');
+        });
+
+        it('sets referrerPolicy="no-referrer" on OG image', () => {
+            render(<LinkPreviewCard preview={fullPreview} />);
+            const image = screen.getByAltText('Example Article Title');
+            expect(image).toHaveAttribute('referrerPolicy', 'no-referrer');
+        });
+
+        it('sets referrerPolicy="no-referrer" on favicon', () => {
+            render(<LinkPreviewCard preview={fullPreview} />);
+            const favicon = screen.getByAltText('example.com favicon');
+            expect(favicon).toHaveAttribute('referrerPolicy', 'no-referrer');
+        });
+    });
+
+    describe('Image error handling', () => {
+        it('shows placeholder when image fails to load', () => {
+            render(<LinkPreviewCard preview={fullPreview} />);
+            const image = screen.getByAltText('Example Article Title');
+
+            // Simulate image load error
+            fireEvent.error(image);
+
+            // Image <img> should be removed, placeholder div should appear
+            expect(screen.queryByAltText('Example Article Title'))
+                .not.toBeInTheDocument();
+            expect(screen.getByRole('img', { name: 'Example Article Title' }))
+                .toBeInTheDocument();
         });
     });
 
     describe('Minimal metadata rendering', () => {
         it('renders domain when title is missing', () => {
             render(<LinkPreviewCard preview={minimalPreview} />);
-            // Domain appears in both domain row and as title fallback
             const elements = screen.getAllByText('minimal.org');
             expect(elements.length).toBeGreaterThanOrEqual(1);
         });
@@ -88,7 +150,6 @@ describe('LinkPreviewCard', () => {
 
         it('does not render description when undefined', () => {
             render(<LinkPreviewCard preview={minimalPreview} />);
-            // Domain should be present, no description element
             const elements = screen.getAllByText('minimal.org');
             expect(elements.length).toBeGreaterThanOrEqual(1);
         });
@@ -125,7 +186,8 @@ describe('LinkPreviewCard', () => {
 
         it('does not render remove button when onRemove is not provided', () => {
             render(<LinkPreviewCard preview={fullPreview} />);
-            expect(screen.queryByLabelText(strings.linkPreview.removePreview)).not.toBeInTheDocument();
+            expect(screen.queryByLabelText(strings.linkPreview.removePreview))
+                .not.toBeInTheDocument();
         });
     });
 

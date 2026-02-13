@@ -53,10 +53,14 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     const isEditing = useCanvasStore((s) => s.editingNodeId === nodeId);
     const draftContent = useCanvasStore((s) => s.draftContent);
 
-    // Memoize detected URLs to prevent useLinkPreviewFetch effect re-firing every render
+    // Detect URLs from draft content (editing) or persisted output (view mode)
+    const nodeOutput = useCanvasStore((s) => {
+        const node = s.nodes.find((n) => n.id === nodeId);
+        return node?.data.output;
+    });
     const detectedUrls = useMemo(
-        () => (isEditing ? extractUrls(draftContent) : []),
-        [isEditing, draftContent],
+        () => extractUrls(isEditing ? draftContent : (nodeOutput ?? null)),
+        [isEditing, draftContent, nodeOutput],
     );
     useLinkPreviewFetch(nodeId, detectedUrls);
 

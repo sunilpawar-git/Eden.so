@@ -7,6 +7,7 @@ import { useIdeaCardEditor } from '../../hooks/useIdeaCardEditor';
 import { useNodeInput } from '../../hooks/useNodeInput';
 import { useIdeaCardActions } from '../../hooks/useIdeaCardActions';
 import { useIdeaCardState } from '../../hooks/useIdeaCardState';
+import { useLinkPreviewRetry } from '../../hooks/useLinkPreviewRetry';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { NodeUtilsBar } from './NodeUtilsBar';
 import { NodeResizeButtons } from './NodeResizeButtons';
@@ -56,6 +57,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         handleDelete, handleRegenerate, handleConnectClick, handleTransform,
         handleHeadingChange, handleCopy, handleTagsChange, isTransforming,
     } = useIdeaCardActions({ nodeId: id, getEditableContent, contentRef });
+
+    useLinkPreviewRetry(id, linkPreviews);
 
     const hasContent = Boolean(output);
     const onTagsChange = useCallback((ids: string[]) => { handleTagsChange(ids); if (ids.length === 0) setShowTagInput(false); }, [handleTagsChange]);
