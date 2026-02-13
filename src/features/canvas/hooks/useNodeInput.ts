@@ -26,7 +26,6 @@ export interface UseNodeInputOptions {
     setContent: (markdown: string) => void;
     getEditableContent: () => string;
     saveContent: (markdown: string) => void;
-    onSubmitNote: (trimmed: string) => void;
     /** Ref for Enter/Escape handlers fed into the SubmitKeymap TipTap extension */
     submitHandlerRef: React.MutableRefObject<SubmitKeymapHandler | null>;
     isGenerating: boolean;
@@ -46,7 +45,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     const {
         nodeId, editor, getMarkdown, setContent,
         getEditableContent, saveContent,
-        onSubmitNote, submitHandlerRef,
+        submitHandlerRef,
         isGenerating, isNewEmptyNode, focusHeading,
     } = options;
 
@@ -93,8 +92,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     }, [saveContent, getMarkdown, editor]);
 
     // Keep the SubmitKeymap extension's handler ref in sync so that Enter
-    // and Escape are intercepted at the ProseMirror level (before StarterKit
-    // creates a new paragraph). Body editor always submits as a note.
+    // falls through to StarterKit (notepad behavior) and Escape exits editing.
     useEffect(() => {
         submitHandlerRef.current = {
             onEnter: () => {
@@ -108,7 +106,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
             },
         };
         return () => { submitHandlerRef.current = null; };
-    }, [submitHandlerRef, getMarkdown, onSubmitNote, exitEditing]);
+    }, [submitHandlerRef, exitEditing]);
 
     // Paste handler: immediately update draft for URL detection (no debounce)
     useEffect(() => {

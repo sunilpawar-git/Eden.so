@@ -29,10 +29,6 @@ export function useIdeaCardState({ nodeId, prompt: _prompt, output, isAICard: _i
         }
     }, [getEditableContent, nodeId, updateNodeOutput]);
 
-    const onSubmitNote = useCallback((t: string) => {
-        updateNodeOutput(nodeId, t); useCanvasStore.getState().stopEditing();
-    }, [nodeId, updateNodeOutput]);
-
     const onSubmitAI = useCallback((_t: string) => {
         // Heading is SSOT for prompts — already saved via handleHeadingChange.
         // No updateNodePrompt needed; just trigger generation.
@@ -40,5 +36,5 @@ export function useIdeaCardState({ nodeId, prompt: _prompt, output, isAICard: _i
         generateFromPrompt?.(nodeId);
     }, [nodeId, generateFromPrompt]);
 
-    return { getEditableContent, saveContent, placeholder, onSubmitNote, onSubmitAI };
+    return { getEditableContent, saveContent, placeholder, onSubmitAI };
 }

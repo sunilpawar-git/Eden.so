@@ -250,7 +250,6 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
             view: { dom: document.createElement('div'), state: { selection: { from: 0, to: 0 } } },
         } as unknown as import('@tiptap/react').Editor;
 
-        const onSubmitNote = vi.fn();
         const saveContent = vi.fn();
         const submitHandlerRef = { current: null as import('../extensions/submitKeymap').SubmitKeymapHandler | null };
 
@@ -264,7 +263,6 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
                 setContent: vi.fn(),
                 getEditableContent: () => 'some content',
                 saveContent,
-                onSubmitNote,
                 submitHandlerRef,
                 isGenerating: false,
                 isNewEmptyNode: false,
@@ -277,8 +275,7 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
         const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
         act(() => { result.current.handleKeyDown(enterEvent as unknown as KeyboardEvent); });
 
-        // Neither submit nor exit should be called from the React handler
-        expect(onSubmitNote).not.toHaveBeenCalled();
+        // Neither save nor exit should be called from the React handler
         expect(saveContent).not.toHaveBeenCalled();
 
         // Simulate Escape keydown reaching the React handler
@@ -318,7 +315,6 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
                     setContent,
                     getEditableContent,
                     saveContent: vi.fn(),
-                    onSubmitNote: vi.fn(),
                     submitHandlerRef,
                     isGenerating: false,
                     isNewEmptyNode: true,
@@ -384,7 +380,6 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
                 setContent: vi.fn(),
                 getEditableContent: () => 'existing content',
                 saveContent: vi.fn(),
-                onSubmitNote: vi.fn(),
                 submitHandlerRef: { current: null },
                 isGenerating: false,
                 isNewEmptyNode: false,
