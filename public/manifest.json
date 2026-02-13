@@ -1,0 +1,31 @@
+{
+  "name": "ActionStation - AI-Powered Visual Thinking Canvas",
+  "short_name": "ActionStation",
+  "description": "AI-powered infinite whiteboard for creating, connecting, and synthesizing ideas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3373cc",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"]
+}

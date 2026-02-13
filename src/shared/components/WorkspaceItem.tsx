@@ -3,6 +3,7 @@
  * Extracted from Sidebar.tsx for SRP and file size constraints.
  */
 import { useState } from 'react';
+import { PinWorkspaceButton } from '@/features/workspace/components/PinWorkspaceButton';
 import styles from './Sidebar.module.css';
 
 interface WorkspaceItemProps {
@@ -54,12 +55,15 @@ export function WorkspaceItem({ id, name, isActive, onSelect, onRename }: Worksp
                     autoFocus
                 />
             ) : (
-                <span 
-                    className={styles.workspaceName}
-                    onDoubleClick={handleDoubleClick}
-                >
-                    {name}
-                </span>
+                <>
+                    <span 
+                        className={styles.workspaceName}
+                        onDoubleClick={handleDoubleClick}
+                    >
+                        {name}
+                    </span>
+                    <PinWorkspaceButton workspaceId={id} />
+                </>
             )}
         </div>
     );

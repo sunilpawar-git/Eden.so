@@ -16,7 +16,7 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
-import { persistentCacheService } from '@/features/workspace/services/persistentCacheService';
+import { indexedDbService, IDB_STORES } from '@/shared/services/indexedDbService';
 import { toast } from '@/shared/stores/toastStore';
 import { PlusIcon, SettingsIcon } from '@/shared/components/icons';
 import { WorkspaceItem } from './WorkspaceItem';
@@ -47,17 +47,21 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
         const userId = user.id;
 
         async function loadWorkspaces() {
+            // Hydrate in-memory cache from IDB on startup
+            await workspaceCache.hydrateFromIdb();
+
             try {
                 const loadedWorkspaces = await loadUserWorkspaces(userId);
                 setWorkspaces(loadedWorkspaces);
 
-                // Persist workspace metadata for offline fallback
-                persistentCacheService.setWorkspaceMetadata(
-                    loadedWorkspaces.map((ws) => ({
-                        id: ws.id,
-                        name: ws.name,
-                        updatedAt: Date.now(),
-                    }))
+                // Persist workspace metadata to IDB for offline fallback
+                const metadata = loadedWorkspaces.map((ws) => ({
+                    id: ws.id,
+                    name: ws.name,
+                    updatedAt: Date.now(),
+                }));
+                void indexedDbService.put(
+                    IDB_STORES.metadata, '__workspace_metadata__', metadata
                 );
 
                 // Auto-select first workspace if current doesn't exist in loaded list
@@ -80,9 +84,11 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                 }
             } catch (error) {
                 console.error('[Sidebar] Failed to load workspaces:', error);
-                // Fallback: try loading from persistent cache when offline
-                const cachedMetadata = persistentCacheService.getWorkspaceMetadata();
-                if (cachedMetadata.length > 0) {
+                // Fallback: try loading from IDB metadata when offline
+                const cachedMetadata = await indexedDbService.get<
+                    Array<{ id: string; name: string; updatedAt: number }>
+                >(IDB_STORES.metadata, '__workspace_metadata__');
+                if (cachedMetadata && cachedMetadata.length > 0) {
                     setWorkspaces(
                         cachedMetadata.map((meta) => ({
                             id: meta.id,

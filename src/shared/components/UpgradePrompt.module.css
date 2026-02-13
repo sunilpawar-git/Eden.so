@@ -1,0 +1,72 @@
+/**
+ * UpgradePrompt Styles
+ */
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsla(0, 0%, 0%, 0.4);
+    z-index: var(--z-modal);
+}
+
+.prompt {
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl);
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--shadow-xl);
+    text-align: center;
+}
+
+.title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-sm) 0;
+}
+
+.message {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-relaxed);
+    margin: 0 0 var(--space-lg) 0;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.upgradeButton {
+    background: var(--color-primary);
+    color: var(--header-text);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-lg);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.upgradeButton:hover {
+    background: var(--color-primary-hover);
+}
+
+.dismissButton {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    padding: var(--space-xs);
+}
+
+.dismissButton:hover {
+    color: var(--color-text-primary);
+}

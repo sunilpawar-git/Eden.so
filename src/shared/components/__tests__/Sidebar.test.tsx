@@ -37,9 +37,24 @@ vi.mock('@/features/workspace/hooks/useWorkspaceSwitcher', () => ({
 
 // Mock the workspace cache
 const mockPreload = vi.fn();
+const mockHydrateFromIdb = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/features/workspace/services/workspaceCache', () => ({
     workspaceCache: {
         preload: (...args: unknown[]) => mockPreload(...args),
+        hydrateFromIdb: () => mockHydrateFromIdb(),
+    },
+}));
+
+// Mock indexedDbService (used by Sidebar for metadata persistence)
+vi.mock('@/shared/services/indexedDbService', () => ({
+    indexedDbService: {
+        put: vi.fn().mockResolvedValue(true),
+        get: vi.fn().mockResolvedValue(null),
+    },
+    IDB_STORES: {
+        workspaceData: 'workspace-data',
+        pinnedWorkspaces: 'pinned-workspaces',
+        metadata: 'metadata',
     },
 }));
 

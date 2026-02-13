@@ -7,7 +7,6 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '../stores/workspaceStore';
 import { loadNodes, loadEdges, saveNodes, saveEdges } from '../services/workspaceService';
 import { workspaceCache } from '../services/workspaceCache';
-import { persistentCacheService } from '../services/persistentCacheService';
 import { strings } from '@/shared/localization/strings';
 
 interface UseWorkspaceSwitcherResult {
@@ -73,15 +72,8 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
                     loadNodes(user.id, workspaceId),
                     loadEdges(user.id, workspaceId),
                 ]);
-                // Populate cache for next time (writes through to persistent)
+                // Populate cache for next time (writes through to IDB)
                 workspaceCache.set(workspaceId, { nodes: newNodes, edges: newEdges, loadedAt: Date.now() });
-
-                // Update persistent metadata with this workspace
-                const existingMeta = persistentCacheService.getWorkspaceMetadata();
-                if (!existingMeta.some((m) => m.id === workspaceId)) {
-                    existingMeta.push({ id: workspaceId, name: workspaceId, updatedAt: Date.now() });
-                    persistentCacheService.setWorkspaceMetadata(existingMeta);
-                }
             }
             const loadTime = performance.now() - startTime;
             console.info(`[WorkspaceSwitcher] Switch completed in ${loadTime.toFixed(2)}ms (cache ${cacheHit ? 'HIT' : 'MISS'})`);

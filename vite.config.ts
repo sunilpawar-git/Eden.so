@@ -1,9 +1,54 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        VitePWA({
+            registerType: 'prompt',
+            includeAssets: ['favicon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+            manifest: false, // Using manual manifest.json in public/
+            workbox: {
+                // Precache app shell: HTML, JS, CSS, fonts
+                globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+                // Skip large source maps and dev files
+                globIgnores: ['**/node_modules/**', '**/sw.js', '**/workbox-*.js'],
+                // Clean old caches on new SW activation
+                cleanupOutdatedCaches: true,
+                // Take control immediately on activation
+                clientsClaim: true,
+                // Runtime caching strategies for API calls
+                runtimeCaching: [
+                    {
+                        // Static assets: cache first (images, fonts, SVGs)
+                        urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|woff2?)$/i,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'static-assets',
+                            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                        },
+                    },
+                    {
+                        // Firebase Firestore REST: stale-while-revalidate
+                        urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
+                        handler: 'StaleWhileRevalidate',
+                        options: {
+                            cacheName: 'firestore-api',
+                            expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+                        },
+                    },
+                    // NOTE: Firebase Auth endpoints are intentionally NOT cached.
+                    // Auth tokens must never be stored in the Cache API (security risk
+                    // on shared devices). Firebase SDK handles its own token refresh.
+                ],
+            },
+            devOptions: {
+                enabled: false, // Disable in dev to avoid confusion
+            },
+        }),
+    ],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),

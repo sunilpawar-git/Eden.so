@@ -14,6 +14,23 @@ vi.mock('../services/workspaceService', () => ({
     loadEdges: vi.fn(),
 }));
 
+// Mock idbCacheService to avoid real IDB and serialization errors
+const mockSetWorkspaceData = vi.fn().mockResolvedValue(undefined);
+const mockGetWorkspaceData = vi.fn().mockResolvedValue(null);
+const mockRemoveWorkspaceData = vi.fn().mockResolvedValue(undefined);
+const mockClearIdb = vi.fn().mockResolvedValue(undefined);
+const mockGetLruOrder = vi.fn().mockResolvedValue([]);
+
+vi.mock('../services/idbCacheService', () => ({
+    idbCacheService: {
+        setWorkspaceData: (...args: unknown[]) => mockSetWorkspaceData(...args),
+        getWorkspaceData: (...args: unknown[]) => mockGetWorkspaceData(...args),
+        removeWorkspaceData: (...args: unknown[]) => mockRemoveWorkspaceData(...args),
+        clear: () => mockClearIdb(),
+        getLruOrder: () => mockGetLruOrder(),
+    },
+}));
+
 describe('WorkspaceCache', () => {
     beforeEach(() => {
         workspaceCache.clear();
@@ -138,24 +155,13 @@ describe('WorkspaceCache', () => {
         });
     });
 
-    describe('persistent cache fallthrough', () => {
-        it('falls through to persistent cache on memory miss', async () => {
-            const { persistentCacheService } = await import('../services/persistentCacheService');
-            const testData: WorkspaceData = {
-                nodes: [{ id: 'node-1', createdAt: new Date(), updatedAt: new Date() }] as WorkspaceData['nodes'],
-                edges: [],
-                loadedAt: Date.now(),
-            };
-            // Put data in persistent cache only (not in-memory)
-            persistentCacheService.setWorkspaceData('ws-persist', testData);
-
-            const result = workspaceCache.get('ws-persist');
-            expect(result).not.toBeNull();
-            expect(result!.nodes).toHaveLength(1);
+    describe('IDB write-through', () => {
+        it('returns null for memory miss (get is memory-only)', () => {
+            const result = workspaceCache.get('ws-nonexistent');
+            expect(result).toBeNull();
         });
 
-        it('writes through to persistent on set', async () => {
-            const { persistentCacheService } = await import('../services/persistentCacheService');
+        it('writes through to IDB on set', async () => {
             const testData: WorkspaceData = {
                 nodes: [],
                 edges: [],
@@ -163,13 +169,12 @@ describe('WorkspaceCache', () => {
             };
             workspaceCache.set('ws-through', testData);
 
-            const persisted = persistentCacheService.getWorkspaceData('ws-through');
-            expect(persisted).not.toBeNull();
-            expect(persisted!.loadedAt).toBe(testData.loadedAt);
+            // IDB write is fire-and-forget, give it a tick
+            await new Promise((r) => setTimeout(r, 10));
+            expect(mockSetWorkspaceData).toHaveBeenCalledWith('ws-through', testData);
         });
 
-        it('removes from persistent on invalidate', async () => {
-            const { persistentCacheService } = await import('../services/persistentCacheService');
+        it('removes from IDB on invalidate', async () => {
             const testData: WorkspaceData = {
                 nodes: [],
                 edges: [],
@@ -178,7 +183,29 @@ describe('WorkspaceCache', () => {
             workspaceCache.set('ws-rm', testData);
             workspaceCache.invalidate('ws-rm');
 
-            expect(persistentCacheService.getWorkspaceData('ws-rm')).toBeNull();
+            await new Promise((r) => setTimeout(r, 10));
+            expect(mockRemoveWorkspaceData).toHaveBeenCalledWith('ws-rm');
+        });
+
+        it('hydrates memory from IDB via hydrateFromIdb', async () => {
+            const testData: WorkspaceData = {
+                nodes: [],
+                edges: [],
+                loadedAt: Date.now(),
+            };
+
+            // Simulate IDB returning data for hydration
+            mockGetLruOrder.mockResolvedValue(['ws-hydrate']);
+            mockGetWorkspaceData.mockResolvedValue(testData);
+
+            // Clear memory cache to simulate fresh startup
+            workspaceCache.clear();
+
+            await workspaceCache.hydrateFromIdb();
+
+            const result = workspaceCache.get('ws-hydrate');
+            expect(result).not.toBeNull();
+            expect(result!.loadedAt).toBe(testData.loadedAt);
         });
     });
 
