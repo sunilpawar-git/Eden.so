@@ -27,7 +27,7 @@ export interface UseNodeResizeResult {
 export function useNodeResize(nodeId: string): UseNodeResizeResult {
     const node = useCanvasStore((s) => s.nodes.find((n) => n.id === nodeId));
     const updateNodeDimensions = useCanvasStore((s) => s.updateNodeDimensions);
-    const arrangeNodes = useCanvasStore((s) => s.arrangeNodes);
+    const arrangeAfterResize = useCanvasStore((s) => s.arrangeAfterResize);
 
     const currentWidth = node?.width ?? DEFAULT_NODE_WIDTH;
     const currentHeight = node?.height ?? DEFAULT_NODE_HEIGHT;
@@ -38,16 +38,16 @@ export function useNodeResize(nodeId: string): UseNodeResizeResult {
     const expandWidth = useCallback(() => {
         if (canExpandWidth) {
             updateNodeDimensions(nodeId, currentWidth + RESIZE_INCREMENT_PX, currentHeight);
-            arrangeNodes();
+            arrangeAfterResize(nodeId);
         }
-    }, [nodeId, currentWidth, currentHeight, canExpandWidth, updateNodeDimensions, arrangeNodes]);
+    }, [nodeId, currentWidth, currentHeight, canExpandWidth, updateNodeDimensions, arrangeAfterResize]);
 
     const expandHeight = useCallback(() => {
         if (canExpandHeight) {
             updateNodeDimensions(nodeId, currentWidth, currentHeight + RESIZE_INCREMENT_PX);
-            arrangeNodes();
+            arrangeAfterResize(nodeId);
         }
-    }, [nodeId, currentWidth, currentHeight, canExpandHeight, updateNodeDimensions, arrangeNodes]);
+    }, [nodeId, currentWidth, currentHeight, canExpandHeight, updateNodeDimensions, arrangeAfterResize]);
 
     return { expandWidth, expandHeight, canExpandWidth, canExpandHeight };
 }

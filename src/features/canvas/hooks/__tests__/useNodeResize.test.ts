@@ -176,7 +176,7 @@ describe('useNodeResize', () => {
     });
 
     describe('masonry re-arrangement after resize', () => {
-        it('should trigger arrangeNodes after expandWidth', () => {
+        it('should trigger arrangeAfterResize after expandWidth', () => {
             // Setup: Multiple nodes in grid
             const node1 = createIdeaNode('node-1', TEST_WORKSPACE_ID, { x: 32, y: 32 });
             const node2 = createIdeaNode('node-2', TEST_WORKSPACE_ID, { x: 352, y: 32 });
@@ -199,7 +199,7 @@ describe('useNodeResize', () => {
             expect(updatedNode2?.position.x).toBe(448);
         });
 
-        it('should trigger arrangeNodes after expandHeight', () => {
+        it('should trigger arrangeAfterResize after expandHeight', () => {
             // Setup: Create 2 nodes stacked in column 0
             const node1 = createIdeaNode('node-1', TEST_WORKSPACE_ID, { x: 32, y: 32 });
             const node2 = createIdeaNode('node-2', TEST_WORKSPACE_ID, { x: 32, y: 292 }); // Stacked below node-1

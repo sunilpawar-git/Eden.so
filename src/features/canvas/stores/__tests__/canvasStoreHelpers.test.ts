@@ -13,6 +13,7 @@ import {
     deleteNodeFromArrays,
     getConnectedNodeIds,
     getUpstreamNodesFromArrays,
+    arrangeNodesAfterResize,
 } from '../canvasStoreHelpers';
 import type { CanvasNode } from '../../types/node';
 import type { CanvasEdge } from '../../types/edge';
@@ -221,6 +222,27 @@ describe('canvasStoreHelpers', () => {
 
             // Should terminate and return the connected node
             expect(result.length).toBeLessThanOrEqual(2);
+        });
+    });
+
+    describe('arrangeNodesAfterResize', () => {
+        it('should rearrange nodes after resize', () => {
+            const nodes = [
+                createMockNode('n0', { createdAt: new Date('2024-01-01'), width: 280 }),
+                createMockNode('n1', { createdAt: new Date('2024-01-02'), width: 280 }),
+            ];
+
+            const result = arrangeNodesAfterResize(nodes, 'n0');
+
+            expect(result).toHaveLength(2);
+            // Verify all nodes have positions set
+            expect(result[0]?.position.x).toBeDefined();
+            expect(result[1]?.position.x).toBeDefined();
+        });
+
+        it('should return empty array for empty input', () => {
+            const result = arrangeNodesAfterResize([], 'any-id');
+            expect(result).toHaveLength(0);
         });
     });
 });
