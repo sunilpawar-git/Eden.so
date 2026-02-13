@@ -230,33 +230,54 @@ describe('useNodeInput', () => {
             expect(useCanvasStore.getState().editingNodeId).toBeNull();
         });
 
-        it('Enter (no shift, no suggestion) submits note and stops editing', () => {
+        it('Enter returns false to allow new paragraph creation', () => {
             const { opts } = renderInEditMode();
-            // Enter is handled by SubmitKeymap via submitHandlerRef
             expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
-            expect(opts.onSubmitNote).toHaveBeenCalledWith('draft content');
+            const handler = opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler;
+            let result: boolean;
+            act(() => { result = handler.onEnter(); });
+            // onEnter must return false so StarterKit creates a new paragraph
+            expect(result!).toBe(false);
+            // Must NOT call onSubmitNote — notepad behavior, not submit
+            expect(opts.onSubmitNote).not.toHaveBeenCalled();
+            // Must remain in editing mode
+            expect(useCanvasStore.getState().editingNodeId).toBe(NODE_ID);
         });
 
-        it('Enter always submits as note regardless of inputMode', () => {
+        it('Enter returns false regardless of inputMode', () => {
             const { opts } = renderInEditMode();
-            // Set AI mode after startEditing (which resets to 'note')
             act(() => { useCanvasStore.getState().setInputMode('ai'); });
-            // Enter is handled by SubmitKeymap via submitHandlerRef
             expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
-            // Body editor always submits as note, regardless of inputMode
-            expect(opts.onSubmitNote).toHaveBeenCalledWith('draft content');
+            const handler = opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler;
+            let result: boolean;
+            act(() => { result = handler.onEnter(); });
+            // Body editor Enter always returns false, regardless of inputMode
+            expect(result!).toBe(false);
+            expect(opts.onSubmitNote).not.toHaveBeenCalled();
+            expect(useCanvasStore.getState().editingNodeId).toBe(NODE_ID);
         });
 
-        it('Enter with empty content exits editing without submit', () => {
+        it('Enter with empty content still returns false (allows new paragraph)', () => {
             const { opts } = renderInEditMode({
                 getMarkdown: vi.fn(() => '   '),
             });
-            // Enter is handled by SubmitKeymap via submitHandlerRef
             expect(opts.submitHandlerRef.current).not.toBeNull();
-            act(() => { (opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler).onEnter(); });
+            const handler = opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler;
+            let result: boolean;
+            act(() => { result = handler.onEnter(); });
+            // Even with empty content, Enter returns false (notepad behavior)
+            expect(result!).toBe(false);
             expect(opts.onSubmitNote).not.toHaveBeenCalled();
+            // Must NOT exit editing — empty paragraph is valid notepad state
+            expect(useCanvasStore.getState().editingNodeId).toBe(NODE_ID);
+        });
+
+        it('Escape still saves content and stops editing (notepad exit)', () => {
+            const { opts } = renderInEditMode();
+            expect(opts.submitHandlerRef.current).not.toBeNull();
+            const handler = opts.submitHandlerRef.current as unknown as import('../../../canvas/extensions/submitKeymap').SubmitKeymapHandler;
+            act(() => { handler.onEscape(); });
+            expect(opts.saveContent).toHaveBeenCalledWith('draft content');
             expect(useCanvasStore.getState().editingNodeId).toBeNull();
         });
 

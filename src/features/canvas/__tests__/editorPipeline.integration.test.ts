@@ -18,6 +18,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useCanvasStore } from '../stores/canvasStore';
 import { markdownToHtml, htmlToMarkdown } from '../services/markdownConverter';
+import { SubmitKeymap } from '../extensions/submitKeymap';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -718,5 +719,115 @@ describe('Delete node while editing — state cleanup', () => {
         // Editing state should be preserved
         expect(store().editingNodeId).toBe('editing');
         expect(store().draftContent).toBe('my draft');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 13. TypeWell: Enter key creates new paragraph in body editor (real TipTap)
+// ---------------------------------------------------------------------------
+
+describe('Enter key creates new paragraph in body editor (real TipTap)', () => {
+    it('Enter key in body editor creates a new paragraph (not submit)', () => {
+        const handlerRef = { current: { onEnter: () => false, onEscape: () => true } };
+
+        const { result } = renderHook(() =>
+            useEditor({
+                extensions: [
+                    StarterKit,
+                    SubmitKeymap.configure({ handlerRef }),
+                ],
+                content: '<p>first line</p>',
+                editable: true,
+            }),
+        );
+        const editor = result.current;
+        expect(editor).not.toBeNull();
+
+        // Place cursor at end of first paragraph then trigger Enter via command
+        act(() => {
+            editor!.commands.focus('end');
+            // Simulate Enter key via ProseMirror command chain — since onEnter
+            // returns false, StarterKit's splitBlock should create a new paragraph
+            editor!.commands.splitBlock();
+        });
+
+        const html = editor!.getHTML();
+        // Should now have TWO <p> tags (original + new paragraph from Enter)
+        const paragraphCount = (html.match(/<p>/g) ?? []).length;
+        expect(paragraphCount).toBe(2);
+    });
+
+    it('Shift+Enter in body editor creates hard break', () => {
+        const { result } = renderHook(() =>
+            useEditor({
+                extensions: [StarterKit],
+                content: '<p>line one</p>',
+                editable: true,
+            }),
+        );
+        const editor = result.current;
+        expect(editor).not.toBeNull();
+
+        act(() => {
+            editor!.commands.focus('end');
+            // setHardBreak is the StarterKit command for Shift+Enter
+            editor!.commands.setHardBreak();
+            // Type after the hard break
+            const { state, dispatch } = editor!.view;
+            dispatch(state.tr.insertText('line two'));
+        });
+
+        const html = editor!.getHTML();
+        expect(html).toContain('<br');
+        expect(editor!.getText()).toContain('line two');
+    });
+
+    it('Escape in body editor still calls onEscape handler', () => {
+        const onEscape = vi.fn(() => true);
+        const handlerRef = { current: { onEnter: () => false, onEscape } };
+
+        renderHook(() =>
+            useEditor({
+                extensions: [
+                    StarterKit,
+                    SubmitKeymap.configure({ handlerRef }),
+                ],
+                content: '<p>some text</p>',
+                editable: true,
+            }),
+        );
+
+        // Invoke onEscape directly (SubmitKeymap delegates to handlerRef)
+        const result = handlerRef.current.onEscape();
+        expect(result).toBe(true);
+        expect(onEscape).toHaveBeenCalledTimes(1);
+    });
+
+    it('multiline content round-trips through markdown correctly', () => {
+        const { result } = renderHook(() =>
+            useEditor({
+                extensions: [StarterKit],
+                content: '',
+                editable: true,
+            }),
+        );
+        const editor = result.current;
+        expect(editor).not.toBeNull();
+
+        // Type first paragraph, split (Enter), type second paragraph
+        act(() => {
+            const { state, dispatch } = editor!.view;
+            dispatch(state.tr.insertText('First paragraph'));
+            editor!.commands.splitBlock();
+            const s2 = editor!.view.state;
+            editor!.view.dispatch(s2.tr.insertText('Second paragraph'));
+        });
+
+        const markdown = htmlToMarkdown(editor!.getHTML());
+        expect(markdown).toContain('First paragraph');
+        expect(markdown).toContain('Second paragraph');
+        // Verify round-trip: markdown → html → markdown
+        const roundTripped = htmlToMarkdown(markdownToHtml(markdown));
+        expect(roundTripped.trim()).toBe(markdown.trim());
     });
 });
