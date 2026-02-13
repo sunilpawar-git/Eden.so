@@ -14,13 +14,19 @@ import { KeyboardShortcutsProvider } from '@/features/canvas/components/Keyboard
 import { ToastContainer } from '@/shared/components/Toast';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { LoadingFallback } from '@/shared/components/LoadingFallback';
+import { SwUpdatePrompt } from '@/shared/components/SwUpdatePrompt';
+import { OfflineFallback } from '@/shared/components/OfflineFallback';
 import { useThemeApplicator } from '@/shared/hooks/useThemeApplicator';
 import { useCompactMode } from '@/shared/hooks/useCompactMode';
 import { useNetworkStatus } from '@/shared/hooks/useNetworkStatus';
 import { useQueueDrainer } from '@/shared/hooks/useQueueDrainer';
+import { useSwRegistration } from '@/shared/hooks/useSwRegistration';
 import { useAutosave } from '@/features/workspace/hooks/useAutosave';
 import { useWorkspaceLoader } from '@/features/workspace/hooks/useWorkspaceLoader';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import { usePinnedWorkspaceStore } from '@/features/workspace/stores/pinnedWorkspaceStore';
+import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
+import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { strings } from '@/shared/localization/strings';
 import '@/styles/global.css';
 
@@ -33,8 +39,14 @@ const SettingsPanel = lazy(() =>
 );
 
 function AuthenticatedApp() {
+    const { user } = useAuthStore();
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
-    const { isLoading: initialLoading } = useWorkspaceLoader(currentWorkspaceId ?? '');
+    const isOnline = useNetworkStatusStore((s) => s.isOnline);
+    const {
+        isLoading: initialLoading,
+        error: loadError,
+        hasOfflineData,
+    } = useWorkspaceLoader(currentWorkspaceId ?? '');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     
     useThemeApplicator();
@@ -42,6 +54,24 @@ function AuthenticatedApp() {
     useNetworkStatus();
     useQueueDrainer();
     useAutosave(currentWorkspaceId ?? '');
+
+    // Initialize pinned workspace and subscription stores on login
+    useEffect(() => {
+        if (user) {
+            void usePinnedWorkspaceStore.getState().loadPinnedIds();
+            void useSubscriptionStore.getState().loadSubscription(user.id);
+        }
+    }, [user]);
+
+    // Show offline fallback when offline with a load error and no cached data
+    if (!isOnline && loadError && !hasOfflineData) {
+        return (
+            <OfflineFallback
+                hasOfflineData={false}
+                onRetry={() => window.location.reload()}
+            />
+        );
+    }
 
     // Always keep ReactFlowProvider mounted to prevent blink on workspace switch
     return (
@@ -95,6 +125,8 @@ function AppContent() {
 }
 
 export function App() {
+    const swRegistration = useSwRegistration();
+
     useEffect(() => {
         const unsubscribe = subscribeToAuthState();
         return unsubscribe;
@@ -105,6 +137,7 @@ export function App() {
             <ErrorBoundary>
                 <AppContent />
                 <ToastContainer />
+                <SwUpdatePrompt registration={swRegistration} />
             </ErrorBoundary>
         </QueryClientProvider>
     );

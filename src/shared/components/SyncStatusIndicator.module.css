@@ -40,6 +40,11 @@
     background-color: var(--color-error);
 }
 
+.blue {
+    background-color: var(--color-primary);
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
 .label {
     white-space: nowrap;
     line-height: 1;

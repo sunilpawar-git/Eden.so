@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/config/firebase';
 import { useAuthStore } from '../stores/authStore';
+import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
 import { createUserFromAuth } from '../types/user';
 
 const googleProvider = new GoogleAuthProvider();
@@ -51,6 +52,7 @@ export async function signOut(): Promise<void> {
     try {
         await firebaseSignOut(auth);
         clearUser();
+        useSubscriptionStore.getState().reset();
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Sign out failed';
         setError(message);

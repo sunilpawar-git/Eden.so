@@ -1,5 +1,6 @@
 /**
  * Application Entry Point
+ * Registers PWA service worker for offline-first capability
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

@@ -7,8 +7,9 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import type { CanvasNode } from '@/features/canvas/types/node';
+import type { CanvasEdge } from '@/features/canvas/types/edge';
 import { loadNodes, loadEdges } from '../services/workspaceService';
-import { workspaceCache } from '../services/workspaceCache';
+import { workspaceCache, type WorkspaceData } from '../services/workspaceCache';
 import { checkForConflict } from '../services/conflictDetector';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { toast } from '@/shared/stores/toastStore';
@@ -17,16 +18,76 @@ import { strings } from '@/shared/localization/strings';
 interface UseWorkspaceLoaderResult {
     isLoading: boolean;
     error: string | null;
+    hasOfflineData: boolean;
 }
 
-// eslint-disable-next-line max-lines-per-function -- cache-first loading with background refresh
+type UpdateCallback = (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
+
+/** Detect conflict between cached and fresh server nodes */
+function detectConflict(freshNodes: CanvasNode[], cachedNodes: CanvasNode[]): boolean {
+    if (freshNodes.length === 0 || cachedNodes.length === 0) return false;
+
+    const safeGetTime = (d: unknown) => (d instanceof Date ? d.getTime() : 0);
+    const latestServer = Math.max(
+        ...freshNodes.map((n) => safeGetTime(n.updatedAt))
+    );
+    const latestLocal = Math.max(
+        ...cachedNodes.map((n) => safeGetTime(n.updatedAt))
+    );
+    return checkForConflict(latestLocal, latestServer).hasConflict;
+}
+
+/** Background-refresh from Firestore, merging into cache */
+async function backgroundRefresh(
+    userId: string,
+    workspaceId: string,
+    cached: WorkspaceData,
+    onUpdate: UpdateCallback
+): Promise<void> {
+    if (!useNetworkStatusStore.getState().isOnline) return;
+
+    try {
+        const [freshNodes, freshEdges] = await Promise.all([
+            loadNodes(userId, workspaceId),
+            loadEdges(userId, workspaceId),
+        ]);
+
+        if (detectConflict(freshNodes, cached.nodes)) {
+            toast.info(strings.offline.conflictDetected);
+        }
+
+        onUpdate(freshNodes, freshEdges);
+        workspaceCache.set(workspaceId, {
+            nodes: freshNodes,
+            edges: freshEdges,
+            loadedAt: Date.now(),
+        });
+    } catch (err) {
+        console.warn('[useWorkspaceLoader] Background refresh failed:', err);
+    }
+}
+
+/** Load workspace from Firestore on cache miss */
+async function loadFromFirestore(
+    userId: string,
+    workspaceId: string,
+    onUpdate: UpdateCallback
+): Promise<void> {
+    const [nodes, edges] = await Promise.all([
+        loadNodes(userId, workspaceId),
+        loadEdges(userId, workspaceId),
+    ]);
+    onUpdate(nodes, edges);
+    workspaceCache.set(workspaceId, { nodes, edges, loadedAt: Date.now() });
+}
+
 export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResult {
     const { user } = useAuthStore();
     const { setNodes, setEdges } = useCanvasStore();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [hasOfflineData, setHasOfflineData] = useState(false);
 
-    // eslint-disable-next-line max-lines-per-function -- cache-first with background refresh
     useEffect(() => {
         if (!user || !workspaceId) {
             setIsLoading(false);
@@ -36,83 +97,31 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
         const userId = user.id;
         let mounted = true;
 
-         
+        const applyIfMounted: UpdateCallback = (nodes, edges) => {
+            if (mounted) {
+                setNodes(nodes);
+                setEdges(edges);
+            }
+        };
+
         async function load() {
             setIsLoading(true);
             setError(null);
 
-            // 1. Try cache first (in-memory → persistent localStorage)
+            // 1. Try cache first (in-memory -> IndexedDB)
             const cached = workspaceCache.get(workspaceId);
+            if (mounted) setHasOfflineData(cached != null);
 
             if (cached) {
-                // Cache hit — instant load
-                if (mounted) {
-                    setNodes(cached.nodes);
-                    setEdges(cached.edges);
-                    setIsLoading(false);
-                }
-
-                // Background refresh from Firestore when online
-                const isOnline = useNetworkStatusStore.getState().isOnline;
-                if (isOnline) {
-                    try {
-                        const [freshNodes, freshEdges] = await Promise.all([
-                            loadNodes(userId, workspaceId),
-                            loadEdges(userId, workspaceId),
-                        ]);
-
-                        // Check for conflicts before overwriting
-                        if (freshNodes.length > 0 && cached.nodes.length > 0) {
-                            // Defensive: some nodes (esp. from mocks) may not have `updatedAt` set.
-                            // Use a safe getter that falls back to 0 if missing.
-                            const safeGetTime = (d: unknown) => (d instanceof Date ? d.getTime() : 0);
-
-                            const latestServer = Math.max(
-                                ...freshNodes.map((n: CanvasNode | { updatedAt?: unknown }) => safeGetTime(n.updatedAt))
-                            );
-                            const latestLocal = Math.max(
-                                ...cached.nodes.map((n: CanvasNode | { updatedAt?: unknown }) => safeGetTime(n.updatedAt))
-                            );
-
-                            const conflict = checkForConflict(latestLocal, latestServer);
-
-                            if (conflict.hasConflict) {
-                                toast.info(strings.offline.conflictDetected);
-                            }
-                        }
-
-                        if (mounted) {
-                            setNodes(freshNodes);
-                            setEdges(freshEdges);
-                            workspaceCache.set(workspaceId, {
-                                nodes: freshNodes,
-                                edges: freshEdges,
-                                loadedAt: Date.now(),
-                            });
-                        }
-                    } catch (err) {
-                        // Background refresh failure is non-critical
-                        console.warn('[useWorkspaceLoader] Background refresh failed:', err);
-                    }
-                }
+                applyIfMounted(cached.nodes, cached.edges);
+                if (mounted) setIsLoading(false);
+                await backgroundRefresh(userId, workspaceId, cached, applyIfMounted);
                 return;
             }
 
             // 2. Cache miss — load from Firestore
             try {
-                const [nodes, edges] = await Promise.all([
-                    loadNodes(userId, workspaceId),
-                    loadEdges(userId, workspaceId),
-                ]);
-                if (mounted) {
-                    setNodes(nodes);
-                    setEdges(edges);
-                    workspaceCache.set(workspaceId, {
-                        nodes,
-                        edges,
-                        loadedAt: Date.now(),
-                    });
-                }
+                await loadFromFirestore(userId, workspaceId, applyIfMounted);
             } catch (err) {
                 if (mounted) {
                     const message = err instanceof Error
@@ -122,18 +131,13 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                     console.error('[useWorkspaceLoader]', err);
                 }
             } finally {
-                if (mounted) {
-                    setIsLoading(false);
-                }
+                if (mounted) setIsLoading(false);
             }
         }
 
         void load();
-
-        return () => {
-            mounted = false;
-        };
+        return () => { mounted = false; };
     }, [user, workspaceId, setNodes, setEdges]);
 
-    return { isLoading, error };
+    return { isLoading, error, hasOfflineData };
 }

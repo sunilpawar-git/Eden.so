@@ -210,6 +210,48 @@ export const strings = {
         gridGap: 'Grid gap',
         gridPadding: 'Grid padding',
     },
+    pwa: {
+        updateAvailable: 'A new version is available.',
+        updateNow: 'Update now',
+        dismissUpdate: 'Later',
+        appName: 'ActionStation',
+        appShortName: 'ActionStation',
+        appDescription: 'AI-powered infinite whiteboard for visual thinking.',
+    },
+    pinning: {
+        pin: 'Pin for offline',
+        unpin: 'Unpin',
+        pinTooltip: 'Save this workspace for offline access',
+        unpinTooltip: 'Remove offline access for this workspace',
+        pinned: 'Available offline',
+        unpinned: 'Online only',
+        pinSuccess: 'Workspace pinned for offline use',
+        unpinSuccess: 'Workspace unpinned',
+        storageUsage: 'Storage used',
+    },
+    subscription: {
+        free: 'Free',
+        pro: 'Pro',
+        upgradeTitle: 'Upgrade to Pro',
+        upgradeMessage: 'This feature requires a Pro subscription:',
+        upgradeCta: 'Upgrade now',
+        dismissUpgrade: 'Maybe later',
+        currentPlan: 'Current plan',
+        expiresAt: 'Expires',
+    },
+    backgroundSync: {
+        syncing: 'Syncing in background...',
+        syncComplete: 'Background sync complete',
+        syncFailed: 'Background sync failed. Will retry.',
+        notSupported: 'Background sync not available in this browser.',
+    },
+    offlineFallback: {
+        title: 'You are offline',
+        message: 'Connect to the internet to access your workspaces. Cached workspaces will load automatically.',
+        retryButton: 'Try again',
+        noDataTitle: 'No cached data',
+        noDataMessage: 'Visit your workspaces while online to cache them for offline use.',
+    },
 } as const;
 
 export type StringKeys = typeof strings;
