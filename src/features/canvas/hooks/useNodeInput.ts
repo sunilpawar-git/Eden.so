@@ -98,13 +98,9 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     useEffect(() => {
         submitHandlerRef.current = {
             onEnter: () => {
-                const trimmed = getMarkdown().trim();
-                if (!trimmed) {
-                    useCanvasStore.getState().stopEditing();
-                    return true;
-                }
-                onSubmitNote(trimmed);
-                return true;
+                // Return false: let StarterKit create a new paragraph (notepad behavior).
+                // Content is saved via Escape (onEscape) and blur (useIdeaCardEditor handleBlur).
+                return false;
             },
             onEscape: () => {
                 exitEditing();
