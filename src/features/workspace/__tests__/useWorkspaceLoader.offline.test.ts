@@ -38,10 +38,6 @@ vi.mock('@/shared/stores/networkStatusStore', () => ({
     ),
 }));
 
-vi.mock('@/shared/stores/toastStore', () => ({
-    toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
-}));
-
 vi.mock('@/features/auth/stores/authStore', () => ({
     useAuthStore: () => ({ user: { id: 'user-1', email: 'test@test.com' } }),
 }));

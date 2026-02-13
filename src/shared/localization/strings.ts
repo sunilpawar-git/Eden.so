@@ -164,7 +164,6 @@ export const strings = {
         queuedCount: 'pending changes',
         syncComplete: 'All changes synced',
         syncFailed: 'Sync failed. Will retry.',
-        conflictDetected: 'Conflict detected: server has newer changes',
         offlineBanner: 'You are offline. Changes will be saved locally.',
         reconnected: 'Back online. Syncing changes...',
         retrying: 'Retrying save...',

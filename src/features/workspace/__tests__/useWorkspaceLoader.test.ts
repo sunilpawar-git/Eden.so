@@ -2,6 +2,8 @@
  * useWorkspaceLoader Hook Tests - TDD: Write tests FIRST
  * Tests for loading workspace data from Firestore on mount
  */
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useWorkspaceLoader } from '../hooks/useWorkspaceLoader';
@@ -36,12 +38,6 @@ vi.mock('@/shared/stores/networkStatusStore', () => ({
         vi.fn(() => ({ isOnline: mockIsOnline() })),
         { getState: () => ({ isOnline: mockIsOnline() }) }
     ),
-}));
-
-// Mock toast store
-const mockToastError = vi.fn();
-vi.mock('@/shared/stores/toastStore', () => ({
-    toast: { error: (...args: unknown[]) => mockToastError(...args), success: vi.fn(), info: vi.fn() },
 }));
 
 // Mock auth store
@@ -213,6 +209,17 @@ describe('useWorkspaceLoader', () => {
             });
 
             consoleSpy.mockRestore();
+        });
+
+        it('does not import toast or conflict detector (structural guard)', () => {
+            // Structural regression: ensure conflict detection was fully removed
+            const src = readFileSync(
+                resolve(__dirname, '../hooks/useWorkspaceLoader.ts'),
+                'utf-8'
+            );
+            expect(src).not.toContain('toastStore');
+            expect(src).not.toContain('conflictDetector');
+            expect(src).not.toContain('detectConflict');
         });
 
         it('shows error toast when offline and no cache available', async () => {

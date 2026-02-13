@@ -9,10 +9,8 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import { loadNodes, loadEdges } from '../services/workspaceService';
-import { workspaceCache, type WorkspaceData } from '../services/workspaceCache';
-import { checkForConflict } from '../services/conflictDetector';
+import { workspaceCache } from '../services/workspaceCache';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
-import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 
 interface UseWorkspaceLoaderResult {
@@ -23,25 +21,10 @@ interface UseWorkspaceLoaderResult {
 
 type UpdateCallback = (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
 
-/** Detect conflict between cached and fresh server nodes */
-function detectConflict(freshNodes: CanvasNode[], cachedNodes: CanvasNode[]): boolean {
-    if (freshNodes.length === 0 || cachedNodes.length === 0) return false;
-
-    const safeGetTime = (d: unknown) => (d instanceof Date ? d.getTime() : 0);
-    const latestServer = Math.max(
-        ...freshNodes.map((n) => safeGetTime(n.updatedAt))
-    );
-    const latestLocal = Math.max(
-        ...cachedNodes.map((n) => safeGetTime(n.updatedAt))
-    );
-    return checkForConflict(latestLocal, latestServer).hasConflict;
-}
-
 /** Background-refresh from Firestore, merging into cache */
 async function backgroundRefresh(
     userId: string,
     workspaceId: string,
-    cached: WorkspaceData,
     onUpdate: UpdateCallback
 ): Promise<void> {
     if (!useNetworkStatusStore.getState().isOnline) return;
@@ -51,10 +34,6 @@ async function backgroundRefresh(
             loadNodes(userId, workspaceId),
             loadEdges(userId, workspaceId),
         ]);
-
-        if (detectConflict(freshNodes, cached.nodes)) {
-            toast.info(strings.offline.conflictDetected);
-        }
 
         onUpdate(freshNodes, freshEdges);
         workspaceCache.set(workspaceId, {
@@ -115,7 +94,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
             if (cached) {
                 applyIfMounted(cached.nodes, cached.edges);
                 if (mounted) setIsLoading(false);
-                await backgroundRefresh(userId, workspaceId, cached, applyIfMounted);
+                await backgroundRefresh(userId, workspaceId, applyIfMounted);
                 return;
             }
 
