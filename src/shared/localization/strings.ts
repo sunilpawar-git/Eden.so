@@ -198,6 +198,16 @@ export const strings = {
         refreshPreview: 'Refresh preview',
         fetchError: 'Could not load link preview',
     },
+    layout: {
+        arrangeNodes: 'Auto Arrange',
+        arrangeTooltip: 'Arrange nodes in masonry grid',
+        arrangingNodes: 'Arranging nodes...',
+        neighborAwareLayout: 'Neighbor-aware layout',
+        incrementalRearrange: 'Incremental rearrange',
+        columnCount: 'columns',
+        gridGap: 'Grid gap',
+        gridPadding: 'Grid padding',
+    },
 } as const;
 
 export type StringKeys = typeof strings;

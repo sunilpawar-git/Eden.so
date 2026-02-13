@@ -5,7 +5,11 @@
 import type { CanvasNode, NodePosition } from '../types/node';
 import { clampNodeDimensions } from '../types/node';
 import type { CanvasEdge } from '../types/edge';
-import { arrangeMasonry, calculateMasonryPosition } from '../services/gridLayoutService';
+import {
+    arrangeMasonry,
+    calculateMasonryPosition,
+    rearrangeAfterResize,
+} from '../services/gridLayoutService';
 
 /**
  * Updates a node's position in the nodes array
@@ -179,5 +183,17 @@ export function arrangeNodesInGrid(nodes: CanvasNode[]): CanvasNode[] {
  */
 export function calculateNextNodePosition(nodes: CanvasNode[]): NodePosition {
     return calculateMasonryPosition(nodes);
+}
+
+/**
+ * Incrementally rearranges nodes after a single node resize.
+ * More efficient than full arrangeNodesInGrid - only updates affected neighbors.
+ * Pure function - does not mutate input.
+ */
+export function arrangeNodesAfterResize(
+    nodes: CanvasNode[],
+    resizedNodeId: string
+): CanvasNode[] {
+    return rearrangeAfterResize(nodes, resizedNodeId);
 }
 

@@ -128,24 +128,27 @@ describe('Grid Layout Service (Masonry)', () => {
                 expect(arranged.find(n => n.id === 'n3')!.position.x).toBe(1280);
             });
 
-            it('should use widest node width for column when stacking', () => {
-                // Two nodes in column 0: one default, one wide
+            it('should use neighbor-aware X positioning when stacking', () => {
+                // Two nodes in column 0: one default (row 0), one wide (row 1)
+                // With neighbor-aware layout, n1 (col 1 row 0) does NOT shift
+                // because n4 (col 0 row 1) does not vertically overlap with n1
                 const nodes = [
-                    createMockNode('n0', { width: 280, createdAt: new Date('2024-01-01') }), // Col 0
-                    createMockNode('n1', { width: 280, createdAt: new Date('2024-01-02') }), // Col 1
-                    createMockNode('n2', { width: 280, createdAt: new Date('2024-01-03') }), // Col 2
-                    createMockNode('n3', { width: 280, createdAt: new Date('2024-01-04') }), // Col 3
-                    createMockNode('n4', { width: 472, createdAt: new Date('2024-01-05') }), // Col 0 (stacked), WIDE
+                    createMockNode('n0', { width: 280, createdAt: new Date('2024-01-01') }), // Col 0, y=32
+                    createMockNode('n1', { width: 280, createdAt: new Date('2024-01-02') }), // Col 1, y=32
+                    createMockNode('n2', { width: 280, createdAt: new Date('2024-01-03') }), // Col 2, y=32
+                    createMockNode('n3', { width: 280, createdAt: new Date('2024-01-04') }), // Col 3, y=32
+                    createMockNode('n4', { width: 472, createdAt: new Date('2024-01-05') }), // Col 0, y=292 (stacked), WIDE
                 ];
 
                 const arranged = arrangeMasonry(nodes);
 
-                // n4 is in Col 0, which should now have width 472
+                // n4 is in Col 0 at y=292
                 const n4 = arranged.find(n => n.id === 'n4');
                 expect(n4!.position.x).toBe(32); // Still in col 0
 
-                // n1 (Col 1) should be shifted right: 32 + 472 + 40 = 544
-                expect(arranged.find(n => n.id === 'n1')!.position.x).toBe(544);
+                // n1 (Col 1, y=32) does NOT overlap with n4 (y=292)
+                // So n1 stays at default col 1 X position: 32 + 280 + 40 = 352
+                expect(arranged.find(n => n.id === 'n1')!.position.x).toBe(352);
             });
 
             it('should maintain backward compatibility with default-width-only nodes', () => {

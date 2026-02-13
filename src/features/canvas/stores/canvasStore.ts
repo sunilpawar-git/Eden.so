@@ -16,6 +16,7 @@ import {
     getConnectedNodeIds,
     getUpstreamNodesFromArrays,
     arrangeNodesInGrid,
+    arrangeNodesAfterResize,
 } from './canvasStoreHelpers';
 
 interface CanvasState {
@@ -52,6 +53,7 @@ interface CanvasActions {
 
     // Layout actions
     arrangeNodes: () => void;
+    arrangeAfterResize: (nodeId: string) => void;
 
     // Selection actions (decoupled for performance)
     selectNode: (nodeId: string) => void;
@@ -138,6 +140,9 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
         set((s) => ({ edges: s.edges.filter((e) => e.id !== edgeId) })),
 
     arrangeNodes: () => set((s) => ({ nodes: arrangeNodesInGrid(s.nodes) })),
+
+    arrangeAfterResize: (nodeId) =>
+        set((s) => ({ nodes: arrangeNodesAfterResize(s.nodes, nodeId) })),
 
     selectNode: (nodeId) =>
         set((s) => ({ selectedNodeIds: new Set([...s.selectedNodeIds, nodeId]) })),
