@@ -26,8 +26,11 @@ describe('backgroundSyncService', () => {
         });
 
         it('returns true when SyncManager and serviceWorker are available', () => {
+            // Mock SyncManager as a constructor function
             Object.defineProperty(globalThis, 'SyncManager', {
-                value: class {},
+                value: function SyncManager() {
+                    return this;
+                },
                 configurable: true,
                 writable: true,
             });
@@ -48,8 +51,11 @@ describe('backgroundSyncService', () => {
 
         it('returns true when sync registration succeeds', async () => {
             const mockRegister = vi.fn().mockResolvedValue(undefined);
+            // Mock SyncManager as a constructor function
             Object.defineProperty(globalThis, 'SyncManager', {
-                value: class {},
+                value: function SyncManager() {
+                    return this;
+                },
                 configurable: true,
                 writable: true,
             });
@@ -79,8 +85,11 @@ describe('backgroundSyncService', () => {
 
         it('returns true when sync tag is registered', async () => {
             const mockGetTags = vi.fn().mockResolvedValue(['offline-queue-sync']);
+            // Mock SyncManager as a constructor function
             Object.defineProperty(globalThis, 'SyncManager', {
-                value: class {},
+                value: function SyncManager() {
+                    return this;
+                },
                 configurable: true,
                 writable: true,
             });
