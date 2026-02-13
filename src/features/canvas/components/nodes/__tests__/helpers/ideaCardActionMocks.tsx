@@ -82,7 +82,7 @@ export function useIdeaCardStateMock() {
             if (!_stateStore) {
                 return {
                     getEditableContent, saveContent: vi.fn(), placeholder: 'Type a note...',
-                    onSubmitNote: vi.fn(), onSubmitAI: vi.fn(),
+                    onSubmitAI: vi.fn(),
                 };
             }
             const store = _stateStore;
@@ -97,11 +97,6 @@ export function useIdeaCardStateMock() {
                     }
                 },
                 placeholder,
-                onSubmitNote: (t: string) => {
-                    const st = store.getState() as Record<string, unknown>;
-                    (st.updateNodeOutput as (id: string, o: string) => void)(opts.nodeId, t);
-                    (st.stopEditing as () => void)();
-                },
                 onSubmitAI: (_t: string) => {
                     const st = store.getState() as Record<string, unknown>;
                     // Heading is SSOT — no updateNodePrompt needed

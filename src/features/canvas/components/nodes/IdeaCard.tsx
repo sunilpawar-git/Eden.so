@@ -33,7 +33,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const { generateFromPrompt } = useNodeGeneration();
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    const { getEditableContent, saveContent, placeholder, onSubmitNote, onSubmitAI } = useIdeaCardState({
+    const { getEditableContent, saveContent, placeholder, onSubmitAI } = useIdeaCardState({
         nodeId: id, prompt, output, isAICard, generateFromPrompt,
     });
 
@@ -50,7 +50,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
         nodeId: id, editor, getMarkdown, setContent, getEditableContent, saveContent,
         submitHandlerRef, isGenerating: isGenerating ?? false,
-        isNewEmptyNode: !prompt && !output, onSubmitNote, focusHeading,
+        isNewEmptyNode: !prompt && !output, focusHeading,
     });
 
     const {

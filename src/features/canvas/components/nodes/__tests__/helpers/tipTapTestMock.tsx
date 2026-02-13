@@ -152,7 +152,6 @@ export function useNodeInputMock() {
             nodeId: string; editor: unknown; getMarkdown: () => string;
             setContent: (md: string) => void; getEditableContent: () => string;
             saveContent: (md: string) => void;
-            onSubmitNote: (t: string) => void;
             isGenerating: boolean;
             isNewEmptyNode: boolean; focusHeading?: () => void;
         }) => {
@@ -183,7 +182,6 @@ export function useNodeInputMock() {
                     const ctrl = ('ctrlKey' in e && e.ctrlKey) ?? false;
                     const meta = ('metaKey' in e && e.metaKey) ?? false;
                     const alt = ('altKey' in e && e.altKey) ?? false;
-                    const shift = ('shiftKey' in e && e.shiftKey) ?? false;
                     if (!isEditing) {
                         if (opts.isGenerating) return;
                         if (key === 'Enter') {
@@ -209,17 +207,7 @@ export function useNodeInputMock() {
                             (_canvasStore!.getState() as { stopEditing: () => void }).stopEditing();
                             return;
                         }
-                        if (key === 'Enter' && !shift) {
-                            e.preventDefault?.();
-                            (e as { stopPropagation?: () => void }).stopPropagation?.();
-                            const trimmed = opts.getMarkdown().trim();
-                            if (!trimmed) {
-                                (_canvasStore!.getState() as { stopEditing: () => void }).stopEditing();
-                                return;
-                            }
-                            // Body always submits as note
-                            opts.onSubmitNote(trimmed);
-                        }
+                        // Enter in edit mode: no-op (notepad behavior — StarterKit creates paragraph)
                     }
                 },
                 handleDoubleClick: () => {
