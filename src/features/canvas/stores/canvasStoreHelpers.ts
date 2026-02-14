@@ -197,3 +197,35 @@ export function arrangeNodesAfterResize(
     return rearrangeAfterResize(nodes, resizedNodeId);
 }
 
+/**
+ * Toggles isPinned on a single node. No-op if nodeId not found.
+ */
+export function toggleNodePinnedInArray(
+    nodes: CanvasNode[],
+    nodeId: string
+): CanvasNode[] {
+    const idx = nodes.findIndex((n) => n.id === nodeId);
+    if (idx === -1) return nodes;
+    return nodes.map((node) =>
+        node.id === nodeId
+            ? { ...node, data: { ...node.data, isPinned: !node.data.isPinned }, updatedAt: new Date() }
+            : node
+    );
+}
+
+/**
+ * Toggles isCollapsed on a single node. No-op if nodeId not found.
+ */
+export function toggleNodeCollapsedInArray(
+    nodes: CanvasNode[],
+    nodeId: string
+): CanvasNode[] {
+    const idx = nodes.findIndex((n) => n.id === nodeId);
+    if (idx === -1) return nodes;
+    return nodes.map((node) =>
+        node.id === nodeId
+            ? { ...node, data: { ...node.data, isCollapsed: !node.data.isCollapsed }, updatedAt: new Date() }
+            : node
+    );
+}
+

@@ -149,6 +149,12 @@ export const strings = {
         deleteShortcut: '⌫',
         regenerate: 'Regenerate',
         regenerateShortcut: '',
+        pin: 'Pin',
+        unpin: 'Unpin',
+        pinShortcut: '',
+        collapse: 'Collapse',
+        expand: 'Expand',
+        collapseShortcut: '',
     },
     tooltip: {
         shortcutSeparator: ' ',
