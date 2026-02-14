@@ -255,5 +255,67 @@ describe('useNodeInput', () => {
         });
     });
 
+    describe('shortcuts in view mode', () => {
+        it('fires shortcut handler instead of entering edit mode', () => {
+            const onTag = vi.fn();
+            const { result } = renderHook(() => useNodeInput(baseOpts({
+                shortcuts: { t: onTag },
+            })));
+
+            const event = new KeyboardEvent('keydown', { key: 't' });
+            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
+            act(() => { result.current.handleKeyDown(event); });
+
+            expect(onTag).toHaveBeenCalledTimes(1);
+            // Should NOT enter editing
+            expect(useCanvasStore.getState().editingNodeId).toBeNull();
+        });
+
+        it('is case-insensitive (T maps to t handler)', () => {
+            const onTag = vi.fn();
+            const { result } = renderHook(() => useNodeInput(baseOpts({
+                shortcuts: { t: onTag },
+            })));
+
+            const event = new KeyboardEvent('keydown', { key: 'T' });
+            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
+            act(() => { result.current.handleKeyDown(event); });
+
+            expect(onTag).toHaveBeenCalledTimes(1);
+        });
+
+        it('falls through to edit mode for non-shortcut keys', () => {
+            const onTag = vi.fn();
+            const { result } = renderHook(() => useNodeInput(baseOpts({
+                shortcuts: { t: onTag },
+                getEditableContent: vi.fn(() => ''),
+            })));
+
+            const event = new KeyboardEvent('keydown', { key: 'x' });
+            Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+            Object.defineProperty(event, 'stopPropagation', { value: vi.fn() });
+            act(() => { result.current.handleKeyDown(event); });
+
+            expect(onTag).not.toHaveBeenCalled();
+            // Should enter editing
+            expect(useCanvasStore.getState().editingNodeId).toBe(NODE_ID);
+        });
+
+        it('does not fire shortcuts in edit mode', () => {
+            useCanvasStore.getState().startEditing(NODE_ID);
+            const onTag = vi.fn();
+            const { result } = renderHook(() => useNodeInput(baseOpts({
+                shortcuts: { t: onTag },
+            })));
+
+            const event = new KeyboardEvent('keydown', { key: 't' });
+            act(() => { result.current.handleKeyDown(event); });
+
+            expect(onTag).not.toHaveBeenCalled();
+        });
+    });
+
 });
 

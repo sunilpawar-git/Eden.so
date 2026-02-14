@@ -14,6 +14,8 @@
 }
 
 .ideaCard {
+    position: relative;
+    z-index: 2; /* Above NodeUtilsBar at rest (z-index: -1) */
     min-width: var(--card-min-width);
     max-width: var(--card-max-width);
     min-height: var(--card-min-height);
@@ -190,13 +192,27 @@
     }
 }
 
-/* NodeUtilsBar hover visibility (container with absolute positioning) */
-.cardWrapper:hover>.ideaCard>div[class*="container"] {
-    opacity: 1;
-}
+/* NodeUtilsBar visibility is driven by the visible prop + CSS transition.
+ * The cardWrapper hover state sets isHovered -> visible prop on NodeUtilsBar.
+ * Focus-within ensures keyboard/tab users can also access the bar (a11y). */
 
 /* Tags Section */
 .tagsSection {
     padding: 0 var(--space-sm);
     border-top: 1px solid var(--color-border-subtle);
+}
+
+/* Collapsed state — shows heading only, hides content and tags */
+.collapsed {
+    min-height: auto;
+    height: auto !important; /* Override height: 100% to shrink to heading */
+}
+
+.collapsed .headingSection {
+    padding-bottom: var(--space-sm);
+}
+
+/* Wrapper must also auto-size so ReactFlow container doesn't force full height */
+.cardWrapperCollapsed {
+    height: auto !important;
 }

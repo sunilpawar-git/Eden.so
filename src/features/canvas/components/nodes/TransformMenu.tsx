@@ -6,6 +6,8 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '@/shared/localization/strings';
+import { PortalTooltip } from '@/shared/components/PortalTooltip';
+import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import styles from './TransformMenu.module.css';
 
@@ -14,6 +16,8 @@ interface TransformMenuProps {
     onRegenerate?: () => void;
     disabled?: boolean;
     isTransforming?: boolean;
+    /** Tooltip placement — forwarded from NodeUtilsBar */
+    tooltipPlacement?: PortalTooltipProps['placement'];
 }
 
 /**
@@ -35,8 +39,10 @@ export const TransformMenu = React.memo(({
     onRegenerate,
     disabled = false,
     isTransforming = false,
+    tooltipPlacement,
 }: TransformMenuProps) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
     const buttonRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -141,12 +147,19 @@ export const TransformMenu = React.memo(({
                 aria-label={buttonLabel}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                data-tooltip={buttonLabel}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
             >
                 <span className={styles.icon}>
                     {isTransforming ? '⏳' : '✨'}
                 </span>
             </button>
+            <PortalTooltip
+                text={buttonLabel}
+                targetRef={buttonRef}
+                visible={isHovered && !isOpen && !(disabled || isTransforming)}
+                placement={tooltipPlacement}
+            />
 
             {dropdownMenu && createPortal(dropdownMenu, document.body)}
         </div>

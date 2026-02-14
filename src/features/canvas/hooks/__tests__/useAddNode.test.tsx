@@ -141,6 +141,8 @@ describe('useAddNode', () => {
             output: undefined,
             isGenerating: false,
             isPromptCollapsed: false,
+            isPinned: false,
+            isCollapsed: false,
         });
         expect(node?.width).toBe(280); // DEFAULT_NODE_WIDTH
         expect(node?.height).toBe(220); // DEFAULT_NODE_HEIGHT

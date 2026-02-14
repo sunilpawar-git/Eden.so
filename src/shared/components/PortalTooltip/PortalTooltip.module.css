@@ -1,0 +1,44 @@
+/**
+ * PortalTooltip Styles — Portal-rendered tooltip
+ * Renders via createPortal to document.body, escaping all stacking contexts
+ * Uses design tokens from variables.css — no hardcoded values
+ */
+
+.tooltip {
+    position: fixed;
+    z-index: var(--z-tooltip);
+    padding: var(--space-sm) var(--space-md);
+    background: linear-gradient(135deg, var(--color-surface-elevated), var(--color-surface));
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-family);
+    white-space: nowrap;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--card-shadow);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity var(--transition-fast),
+        visibility var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.tooltipVisible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.label {
+    line-height: 1;
+}
+
+.shortcutHint {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xxs);
+    line-height: 1;
+}

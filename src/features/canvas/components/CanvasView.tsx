@@ -76,6 +76,8 @@ export function CanvasView() {
         position: node.position,
         data: node.data,
         selected: selectedNodeIds.has(node.id),
+        // Pinned nodes cannot be dragged (Phase R: bug fix)
+        draggable: !node.data.isPinned,
         // Use dimensions from store (persisted from Firestore)
         ...(node.width && { width: node.width }),
         ...(node.height && { height: node.height }),

@@ -155,6 +155,12 @@
   --offline-banner-bg: hsl(38, 90%, 95%);
   --offline-banner-text: hsl(38, 80%, 20%);
   --offline-banner-border: hsl(38, 70%, 80%);
+
+  /* NodeUtilsBar positioning */
+  --node-utils-bar-peek: 3px;
+  --node-utils-peek-height: 32px;
+  --node-utils-hover-delay-in: 80ms;
+  --node-utils-hover-delay-out: 150ms;
 }
 
 /* Compact Mode - Reduced spacing and smaller fonts */

@@ -1,11 +1,16 @@
 /**
- * NodeUtilsBar - Floating action bar for node utilities
- * Features: Tags, AI Actions (with TransformMenu), Connector, Delete
+ * NodeUtilsBar — Floating pill action bar tucked behind node
+ * Uses TooltipButton for portal-based tooltips with keyboard shortcut hints.
+ * Memoized per CLAUDE.md performance rules (500+ node canvases).
  */
+import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { TransformMenu } from './TransformMenu';
+import { TooltipButton } from './TooltipButton';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
+import type { BarPlacement } from '../../hooks/useBarPlacement';
 import styles from './NodeUtilsBar.module.css';
+import buttonStyles from './TooltipButton.module.css';
 
 interface NodeUtilsBarProps {
     onTagClick: () => void;
@@ -15,14 +20,21 @@ interface NodeUtilsBarProps {
     onDelete: () => void;
     onTransform?: (type: TransformationType) => void;
     onRegenerate?: () => void;
+    onPinToggle?: () => void;
+    onCollapseToggle?: () => void;
     hasContent?: boolean;
     isTransforming?: boolean;
+    isPinned?: boolean;
+    isCollapsed?: boolean;
     disabled?: boolean;
     visible?: boolean;
+    /** Bar stays visible regardless of hover (right-click/long-press pin) */
+    isPinnedOpen?: boolean;
+    /** Side of the node to show the bar (auto-flips near viewport edge) */
+    placement?: BarPlacement;
 }
 
-
-export function NodeUtilsBar({
+export const NodeUtilsBar = React.memo(function NodeUtilsBar({
     onTagClick,
     onAIClick,
     onConnectClick,
@@ -30,73 +42,110 @@ export function NodeUtilsBar({
     onDelete,
     onTransform,
     onRegenerate,
+    onPinToggle,
+    onCollapseToggle,
     hasContent = false,
     isTransforming = false,
+    isPinned = false,
+    isCollapsed = false,
     disabled = false,
     visible = false,
+    isPinnedOpen = false,
+    placement = 'right',
 }: NodeUtilsBarProps) {
+    const isLeft = placement === 'left';
+    const tooltipSide = placement; // tooltips appear on same side as bar
+    const isShown = visible || isPinnedOpen;
     const containerClasses = [styles.container];
-    if (visible) containerClasses.push(styles.containerVisible);
-    const containerClass = containerClasses.join(' ');
+    if (isLeft) containerClasses.push(styles.containerLeft);
+    if (isPinnedOpen) containerClasses.push(styles.containerPinnedOpen);
+    else if (isShown) containerClasses.push(styles.containerVisible);
+
+    const peekClasses = [styles.peekIndicator];
+    if (isLeft) peekClasses.push(styles.peekIndicatorLeft);
 
     return (
-        <div className={containerClass}>
-            <button
-                className={styles.actionButton}
-                onClick={onTagClick}
-                disabled={disabled}
-                aria-label={strings.nodeUtils.tags}
-                data-tooltip={strings.nodeUtils.tags}
-            >
-                <span className={styles.icon}>🏷️</span>
-            </button>
-            {onTransform ? (
-                <TransformMenu
-                    onTransform={onTransform}
-                    onRegenerate={onRegenerate}
-                    disabled={disabled || !hasContent}
-                    isTransforming={isTransforming}
-                />
-            ) : (
-                <button
-                    className={styles.actionButton}
-                    onClick={onAIClick}
+        <>
+            <div className={containerClasses.join(' ')}>
+                <TooltipButton
+                    label={strings.nodeUtils.tags}
+                    tooltipText={strings.nodeUtils.tags}
+                    shortcut={strings.nodeUtils.tagsShortcut}
+                    icon="🏷️"
+                    onClick={onTagClick}
                     disabled={disabled}
-                    aria-label={strings.nodeUtils.aiActions}
-                    data-tooltip={strings.nodeUtils.aiActions}
-                >
-                    <span className={styles.icon}>✨</span>
-                </button>
-            )}
-            <button
-                className={styles.actionButton}
-                onClick={onConnectClick}
-                disabled={disabled}
-                aria-label={strings.nodeUtils.connect}
-                data-tooltip={strings.nodeUtils.connect}
-            >
-                <span className={styles.icon}>🔗</span>
-            </button>
-            {onCopyClick && (
-                <button
-                    className={styles.actionButton}
-                    onClick={onCopyClick}
-                    disabled={disabled || !hasContent}
-                    aria-label={strings.nodeUtils.copy}
-                    data-tooltip={strings.nodeUtils.copy}
-                >
-                    <span className={styles.icon}>📋</span>
-                </button>
-            )}
-            <button
-                className={`${styles.actionButton} ${styles.deleteButton}`}
-                onClick={onDelete}
-                disabled={disabled}
-                aria-label={strings.nodeUtils.delete}
-                data-tooltip={strings.nodeUtils.delete}
-            >
-                <span className={styles.icon}>🗑️</span>
-            </button>
-        </div>
+                    tooltipPlacement={tooltipSide}
+                />
+                {onTransform ? (
+                    <TransformMenu
+                        onTransform={onTransform}
+                        onRegenerate={onRegenerate}
+                        disabled={disabled || !hasContent}
+                        isTransforming={isTransforming}
+                        tooltipPlacement={tooltipSide}
+                    />
+                ) : (
+                    <TooltipButton
+                        label={strings.nodeUtils.aiActions}
+                        tooltipText={strings.nodeUtils.aiActions}
+                        icon="✨"
+                        onClick={onAIClick ?? (() => undefined)}
+                        disabled={disabled || !onAIClick}
+                        tooltipPlacement={tooltipSide}
+                    />
+                )}
+                <TooltipButton
+                    label={strings.nodeUtils.connect}
+                    tooltipText={strings.nodeUtils.connect}
+                    icon="🔗"
+                    onClick={onConnectClick}
+                    disabled={disabled}
+                    tooltipPlacement={tooltipSide}
+                />
+                {onCopyClick && (
+                    <TooltipButton
+                        label={strings.nodeUtils.copy}
+                        tooltipText={strings.nodeUtils.copy}
+                        shortcut={strings.nodeUtils.copyShortcut}
+                        icon="📋"
+                        onClick={onCopyClick}
+                        disabled={disabled || !hasContent}
+                        tooltipPlacement={tooltipSide}
+                    />
+                )}
+                {onPinToggle && (
+                    <TooltipButton
+                        label={isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
+                        tooltipText={isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
+                        icon={isPinned ? '📍' : '📌'}
+                        onClick={onPinToggle}
+                        disabled={disabled}
+                        tooltipPlacement={tooltipSide}
+                    />
+                )}
+                {onCollapseToggle && (
+                    <TooltipButton
+                        label={isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse}
+                        tooltipText={isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse}
+                        shortcut={strings.nodeUtils.collapseShortcut}
+                        icon={isCollapsed ? '▴' : '▾'}
+                        onClick={onCollapseToggle}
+                        disabled={disabled}
+                        tooltipPlacement={tooltipSide}
+                    />
+                )}
+                <TooltipButton
+                    label={strings.nodeUtils.delete}
+                    tooltipText={strings.nodeUtils.delete}
+                    shortcut={strings.nodeUtils.deleteShortcut}
+                    icon="🗑️"
+                    onClick={onDelete}
+                    disabled={disabled}
+                    className={buttonStyles.deleteButton}
+                    tooltipPlacement={tooltipSide}
+                />
+            </div>
+            <div className={peekClasses.join(' ')} aria-hidden="true" />
+        </>
     );
-}
+});

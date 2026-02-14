@@ -19,6 +19,9 @@ function extractUrls(text: string | null): string[] {
     return matches ? [...new Set(matches)] : [];
 }
 
+/** Map of single-character keys to shortcut callbacks (view mode only) */
+export type NodeShortcutMap = Record<string, () => void>;
+
 export interface UseNodeInputOptions {
     nodeId: string;
     editor: Editor | null;
@@ -33,6 +36,8 @@ export interface UseNodeInputOptions {
     isNewEmptyNode: boolean;
     /** Focus the heading editor instead of body — called for auto-edit of new nodes */
     focusHeading?: () => void;
+    /** Keyboard shortcuts active in view mode (e.g. { t: onTagClick, c: onCollapse }) */
+    shortcuts?: NodeShortcutMap;
 }
 
 export interface UseNodeInputReturn {
@@ -47,6 +52,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         getEditableContent, saveContent,
         submitHandlerRef,
         isGenerating, isNewEmptyNode, focusHeading,
+        shortcuts,
     } = options;
 
     const isEditing = useCanvasStore((s) => s.editingNodeId === nodeId);
@@ -132,7 +138,18 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
             return;
         }
 
+        // Check shortcuts before falling through to "enter edit + insert char"
         const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+        if (isPrintable && shortcuts) {
+            const handler = shortcuts[e.key.toLowerCase()];
+            if (handler) {
+                e.preventDefault();
+                e.stopPropagation();
+                handler();
+                return;
+            }
+        }
+
         if (isPrintable) {
             e.preventDefault();
             e.stopPropagation();
@@ -150,7 +167,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
                 dispatch(tr);
             });
         }
-    }, [isGenerating, enterEditing, editor]);
+    }, [isGenerating, enterEditing, editor, shortcuts]);
 
     const handleEditModeKey = useCallback((_e: KeyboardEvent) => {
         // Enter and Escape are handled by the SubmitKeymap TipTap extension

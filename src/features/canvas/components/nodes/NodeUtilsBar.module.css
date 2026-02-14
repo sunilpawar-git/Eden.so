@@ -1,13 +1,13 @@
 /**
- * NodeUtilsBar Styles - Floating pill action bar
- * Slides up from bottom of node on hover
+ * NodeUtilsBar Styles — Pill bar tucked behind node
+ * Slides out on hover with intent delay; uses design tokens only
  */
 
 .container {
     position: absolute;
     top: 50%;
-    right: -40px;
-    transform: translateY(-50%) translateX(20px);
+    right: 0;
+    transform: translateY(-50%) translateX(calc(100% - var(--node-utils-bar-peek)));
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -18,83 +18,85 @@
     box-shadow: var(--card-shadow);
     opacity: 0;
     visibility: hidden;
-    transition:
-        opacity var(--transition-fast),
-        transform var(--transition-fast),
-        visibility var(--transition-fast);
-    z-index: var(--z-dropdown);
+    z-index: -1;
     pointer-events: none;
+    transition:
+        opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
+        transform 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
+        visibility 0s linear calc(200ms + var(--node-utils-hover-delay-out)),
+        z-index 0s linear calc(200ms + var(--node-utils-hover-delay-out)),
+        box-shadow 200ms ease;
 }
 
-/* Slide in from right on parent hover */
+/* Slide out: full pill visible to the right of the node (micro-bounce) */
 .containerVisible {
     opacity: 1;
     visibility: visible;
-    transform: translateY(-50%) translateX(0);
+    transform: translateY(-50%) translateX(100%);
+    z-index: var(--z-dropdown);
     pointer-events: auto;
+    box-shadow: var(--card-shadow-hover);
+    transition:
+        opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
+        transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--node-utils-hover-delay-in),
+        visibility 0s linear 0s,
+        z-index 0s linear 0s,
+        box-shadow 200ms ease;
 }
 
-.actionButton {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    border-radius: var(--radius-full);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* Left-side variant: slide out to the left when near viewport right edge */
+.containerLeft {
+    right: auto;
+    left: 0;
+    transform: translateY(-50%) translateX(calc(-100% + var(--node-utils-bar-peek)));
 }
 
-.actionButton:hover:not(:disabled) {
-    background: var(--color-primary-light);
-    color: var(--color-primary);
-    transform: scale(1.1);
+.containerLeft.containerVisible {
+    transform: translateY(-50%) translateX(-100%);
 }
 
-.actionButton:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.deleteButton:hover:not(:disabled) {
-    background: hsla(0, 72%, 51%, 0.1);
-    color: var(--color-error);
-}
-
-.icon {
-    font-size: var(--font-size-sm);
-    line-height: 1;
-}
-
-/* CSS Tooltip on hover - Vertical pill shape on right edge */
-.actionButton::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: calc(100% + 8px);
-    top: 50%;
-    transform: translateY(-50%);
-    padding: var(--space-sm) var(--space-md);
-    background: linear-gradient(135deg, var(--color-surface-elevated), var(--color-surface));
-    color: var(--color-text-primary);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    white-space: nowrap;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--color-border);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--transition-fast);
-    pointer-events: none;
-    z-index: var(--z-tooltip);
-    box-shadow: var(--card-shadow);
-}
-
-.actionButton:hover::after {
+/* Pinned-open state: same as visible but no transition delay */
+.containerPinnedOpen {
     opacity: 1;
     visibility: visible;
+    transform: translateY(-50%) translateX(100%);
+    z-index: var(--z-dropdown);
+    pointer-events: auto;
+    box-shadow: var(--card-shadow-hover);
+    transition: none;
 }
+
+.containerLeft.containerPinnedOpen {
+    transform: translateY(-50%) translateX(-100%);
+}
+
+/* Left-side peek indicator */
+.peekIndicatorLeft {
+    right: auto;
+    left: calc(-1 * var(--node-utils-bar-peek));
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+/* Peek indicator — subtle colored sliver on node's right edge */
+.peekIndicator {
+    position: absolute;
+    top: 50%;
+    right: calc(-1 * var(--node-utils-bar-peek));
+    transform: translateY(-50%);
+    width: var(--node-utils-bar-peek);
+    height: var(--node-utils-peek-height);
+    background: var(--color-primary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    opacity: 0.4;
+    transition: opacity var(--transition-normal);
+    z-index: 1;
+    pointer-events: none;
+    animation: peekPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes peekPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+}
+
+/* Button styles (.actionButton, .deleteButton, .icon) are in TooltipButton.module.css */

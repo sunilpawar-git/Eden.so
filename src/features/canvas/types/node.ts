@@ -74,6 +74,10 @@ export interface IdeaNodeData {
     output?: string;
     isGenerating?: boolean;
     isPromptCollapsed?: boolean;
+    /** Prevents drag when true (Phase 5: NodeUX) */
+    isPinned?: boolean;
+    /** Shows only heading when true (Phase 5: NodeUX) */
+    isCollapsed?: boolean;
     tags?: string[]; // Tag IDs for BASB organization
     linkPreviews?: Record<string, LinkPreviewMetadata>; // Keyed by URL
     [key: string]: unknown; // Index signature for ReactFlow compatibility
@@ -112,6 +116,8 @@ export function createIdeaNode(
             output: undefined,
             isGenerating: false,
             isPromptCollapsed: false,
+            isPinned: false,
+            isCollapsed: false,
         },
         position,
         width: DEFAULT_NODE_WIDTH,

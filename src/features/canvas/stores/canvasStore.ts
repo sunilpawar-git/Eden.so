@@ -17,6 +17,8 @@ import {
     getUpstreamNodesFromArrays,
     arrangeNodesInGrid,
     arrangeNodesAfterResize,
+    toggleNodePinnedInArray,
+    toggleNodeCollapsedInArray,
 } from './canvasStoreHelpers';
 
 interface CanvasState {
@@ -46,6 +48,8 @@ interface CanvasActions {
     appendToNodeOutput: (nodeId: string, chunk: string) => void;
     setNodeGenerating: (nodeId: string, isGenerating: boolean) => void;
     togglePromptCollapsed: (nodeId: string) => void;
+    toggleNodePinned: (nodeId: string) => void;
+    toggleNodeCollapsed: (nodeId: string) => void;
 
     // Edge actions
     addEdge: (edge: CanvasEdge) => void;
@@ -125,6 +129,12 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     togglePromptCollapsed: (nodeId) =>
         set((s) => ({ nodes: togglePromptCollapsedInArray(s.nodes, nodeId) })),
+
+    toggleNodePinned: (nodeId) =>
+        set((s) => ({ nodes: toggleNodePinnedInArray(s.nodes, nodeId) })),
+
+    toggleNodeCollapsed: (nodeId) =>
+        set((s) => ({ nodes: toggleNodeCollapsedInArray(s.nodes, nodeId) })),
 
     deleteNode: (nodeId) =>
         set((s) => ({
