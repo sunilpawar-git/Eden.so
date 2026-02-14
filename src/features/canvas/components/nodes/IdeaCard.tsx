@@ -5,6 +5,7 @@ import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useIdeaCardEditor } from '../../hooks/useIdeaCardEditor';
 import { useNodeInput, type NodeShortcutMap } from '../../hooks/useNodeInput';
+import { useNodeShortcuts } from '../../hooks/useNodeShortcuts';
 import { useIdeaCardActions } from '../../hooks/useIdeaCardActions';
 import { useIdeaCardState } from '../../hooks/useIdeaCardState';
 import { useLinkPreviewRetry } from '../../hooks/useLinkPreviewRetry';
@@ -64,11 +65,13 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const focusBody = useCallback(() => { editor?.commands.focus(); }, [editor]);
     const focusHeading = useCallback(() => { headingRef.current?.focus(); }, []);
-    // Keyboard shortcuts map: t = tags, c = collapse/expand (view mode only)
+    // Keyboard shortcuts: t = tags, c = collapse/expand (fires at document level)
     const nodeShortcuts: NodeShortcutMap = useMemo(() => ({
         t: handleTagOpen,
         c: handleCollapseToggle,
     }), [handleTagOpen, handleCollapseToggle]);
+    useNodeShortcuts(id, selected ?? false, nodeShortcuts);
+
     const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
         nodeId: id, editor, getMarkdown, setContent, getEditableContent, saveContent,
         submitHandlerRef, isGenerating: isGenerating ?? false,
