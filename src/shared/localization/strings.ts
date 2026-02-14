@@ -144,6 +144,9 @@ export const strings = {
         delete: 'Delete',
         regenerate: 'Regenerate',
     },
+    tooltip: {
+        shortcutSeparator: ' ',
+    },
     resize: {
         resizeNode: 'Resize node',
         resizeHandle: 'Drag to resize',
