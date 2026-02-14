@@ -4,12 +4,11 @@
 .panel {
     position: fixed;
     top: 0;
-    left: 60px;
-    /* Sidebar width */
+    left: var(--sidebar-width);
     bottom: 0;
     width: 340px;
-    background: var(--surface-primary);
-    border-right: 1px solid var(--border-color);
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
     z-index: 90;
     display: flex;
     flex-direction: column;
@@ -34,14 +33,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
 }
 
 .panelTitle {
     font-size: 15px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     margin: 0;
 }
 
@@ -50,8 +49,8 @@
     height: 28px;
     border-radius: 6px;
     border: none;
-    background: var(--surface-secondary, hsla(220, 13%, 18%, 0.5));
-    color: var(--text-secondary);
+    background: var(--color-surface-elevated);
+    color: var(--color-text-secondary);
     font-size: 18px;
     cursor: pointer;
     display: flex;
@@ -70,8 +69,8 @@
 
 /* ── Entry Card ───────────────────────────────────── */
 .entryCard {
-    background: var(--surface-secondary, hsla(220, 13%, 18%, 0.5));
-    border: 1px solid var(--border-color);
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     padding: 12px;
     transition: opacity 0.15s ease;
@@ -82,7 +81,7 @@
 }
 
 .entryEditing {
-    border-color: var(--color-accent, hsl(217, 91%, 60%));
+    border-color: var(--color-primary);
 }
 
 .entryHeader {
@@ -101,7 +100,7 @@
     flex: 1;
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -109,7 +108,7 @@
 
 .entryPreview {
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
     line-height: 1.4;
     margin: 0 0 8px;
     display: -webkit-box;
@@ -128,19 +127,19 @@
     background: none;
     border: none;
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     cursor: pointer;
     padding: 2px 6px;
     border-radius: 4px;
 }
 
 .actionButton:hover {
-    background: var(--surface-hover, hsla(220, 13%, 22%, 0.6));
-    color: var(--text-secondary);
+    background: var(--color-surface-hover);
+    color: var(--color-text-secondary);
 }
 
 .deleteAction:hover {
-    color: hsl(0, 72%, 60%);
+    color: var(--color-error);
 }
 
 /* ── Toggle Switch ────────────────────────────────── */
@@ -157,11 +156,11 @@
 }
 
 .toggleOn {
-    background: var(--color-accent, hsl(217, 91%, 60%));
+    background: var(--color-primary);
 }
 
 .toggleOff {
-    background: var(--surface-hover, hsla(220, 13%, 30%, 0.6));
+    background: var(--color-surface-hover);
 }
 
 .toggleKnob {
@@ -187,11 +186,11 @@
 .editInput {
     width: 100%;
     height: 32px;
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     padding: 0 8px;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     font-size: 13px;
     margin-bottom: 8px;
     box-sizing: border-box;
@@ -199,17 +198,17 @@
 
 .editInput:focus {
     outline: none;
-    border-color: var(--color-accent, hsl(217, 91%, 60%));
+    border-color: var(--color-primary);
 }
 
 .editTextarea {
     width: 100%;
     height: 100px;
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     padding: 8px;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     font-size: 12px;
     font-family: inherit;
     resize: none;
@@ -219,13 +218,13 @@
 
 .editTextarea:focus {
     outline: none;
-    border-color: var(--color-accent, hsl(217, 91%, 60%));
+    border-color: var(--color-primary);
 }
 
 .editCharCount {
     text-align: right;
     font-size: 10px;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     margin: 4px 0 8px;
 }
 
@@ -236,8 +235,8 @@
 }
 
 .editCancelButton {
-    background: var(--surface-hover, hsla(220, 13%, 22%, 0.6));
-    color: var(--text-secondary);
+    background: var(--color-surface-hover);
+    color: var(--color-text-secondary);
     border: none;
     border-radius: 6px;
     padding: 4px 12px;
@@ -246,7 +245,7 @@
 }
 
 .editSaveButton {
-    background: var(--color-accent, hsl(217, 91%, 60%));
+    background: var(--color-primary);
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -279,13 +278,13 @@
 .emptyText {
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     margin: 0 0 4px;
 }
 
 .emptyHint {
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     margin: 0;
     max-width: 240px;
     line-height: 1.5;

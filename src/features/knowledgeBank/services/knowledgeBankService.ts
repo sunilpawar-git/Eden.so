@@ -65,8 +65,12 @@ export async function addKBEntry(
         updatedAt: now,
     };
 
+    // Strip undefined fields — Firestore rejects undefined values
+    const firestoreData = Object.fromEntries(
+        Object.entries(entry).filter(([, v]) => v !== undefined)
+    );
     await setDoc(getKBDocRef(userId, workspaceId, entryId), {
-        ...entry,
+        ...firestoreData,
         updatedAt: serverTimestamp(),
     });
 
