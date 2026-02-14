@@ -205,8 +205,14 @@
 /* Collapsed state — shows heading only, hides content and tags */
 .collapsed {
     min-height: auto;
+    height: auto !important; /* Override height: 100% to shrink to heading */
 }
 
 .collapsed .headingSection {
     padding-bottom: var(--space-sm);
+}
+
+/* Wrapper must also auto-size so ReactFlow container doesn't force full height */
+.cardWrapperCollapsed {
+    height: auto !important;
 }

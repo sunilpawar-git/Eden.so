@@ -246,6 +246,58 @@ describe('CanvasView', () => {
         });
     });
 
+    describe('Pin prevents drag', () => {
+        it('should set draggable=false when node isPinned', () => {
+            useCanvasStore.setState({
+                nodes: [
+                    {
+                        id: 'pinned-node',
+                        workspaceId: 'workspace-1',
+                        type: 'idea',
+                        data: { prompt: 'Pinned', output: undefined, isGenerating: false, isPromptCollapsed: false, isPinned: true, isCollapsed: false },
+                        position: { x: 50, y: 50 },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                ],
+                edges: [],
+                selectedNodeIds: new Set(),
+            });
+
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+            const nodes = props.nodes ?? [];
+            expect(nodes[0]?.draggable).toBe(false);
+        });
+
+        it('should set draggable=true when node is not pinned', () => {
+            useCanvasStore.setState({
+                nodes: [
+                    {
+                        id: 'free-node',
+                        workspaceId: 'workspace-1',
+                        type: 'idea',
+                        data: { prompt: 'Free', output: undefined, isGenerating: false, isPromptCollapsed: false, isPinned: false, isCollapsed: false },
+                        position: { x: 50, y: 50 },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                ],
+                edges: [],
+                selectedNodeIds: new Set(),
+            });
+
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+            const nodes = props.nodes ?? [];
+            expect(nodes[0]?.draggable).toBe(true);
+        });
+    });
+
     describe('Canvas grid wiring', () => {
         it('should render Background when canvasGrid is true', () => {
             useSettingsStore.setState({ canvasGrid: true });

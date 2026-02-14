@@ -149,6 +149,7 @@ export const strings = {
         pin: 'Pin',
         unpin: 'Unpin',
         collapse: 'Collapse',
+        collapseShortcut: 'C',
         expand: 'Expand',
     },
     tooltip: {

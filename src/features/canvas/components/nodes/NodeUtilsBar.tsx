@@ -82,6 +82,7 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
                         onRegenerate={onRegenerate}
                         disabled={disabled || !hasContent}
                         isTransforming={isTransforming}
+                        tooltipPlacement={tooltipSide}
                     />
                 ) : (
                     <TooltipButton
@@ -126,6 +127,7 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
                     <TooltipButton
                         label={isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse}
                         tooltipText={isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse}
+                        shortcut={strings.nodeUtils.collapseShortcut}
                         icon={isCollapsed ? '▴' : '▾'}
                         onClick={onCollapseToggle}
                         disabled={disabled}

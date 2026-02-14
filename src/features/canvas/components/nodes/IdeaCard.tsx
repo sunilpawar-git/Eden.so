@@ -1,10 +1,10 @@
 /** IdeaCard - Unified note/AI card component. Orchestrates editor, keyboard, and UI state via useNodeInput (SSOT) */
 /* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-condition */
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useIdeaCardEditor } from '../../hooks/useIdeaCardEditor';
-import { useNodeInput } from '../../hooks/useNodeInput';
+import { useNodeInput, type NodeShortcutMap } from '../../hooks/useNodeInput';
 import { useIdeaCardActions } from '../../hooks/useIdeaCardActions';
 import { useIdeaCardState } from '../../hooks/useIdeaCardState';
 import { useLinkPreviewRetry } from '../../hooks/useLinkPreviewRetry';
@@ -50,13 +50,6 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         output, getEditableContent, placeholder, saveContent,
         onExitEditing: useCallback((): void => { useCanvasStore.getState().stopEditing(); }, []),
     });
-    const focusBody = useCallback(() => { editor?.commands.focus(); }, [editor]);
-    const focusHeading = useCallback(() => { headingRef.current?.focus(); }, []);
-    const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
-        nodeId: id, editor, getMarkdown, setContent, getEditableContent, saveContent,
-        submitHandlerRef, isGenerating: isGenerating ?? false,
-        isNewEmptyNode: !prompt && !output, focusHeading,
-    });
 
     const {
         handleDelete, handleRegenerate, handleConnectClick, handleTransform,
@@ -67,18 +60,34 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const handlePinToggle = useCallback(() => { useCanvasStore.getState().toggleNodePinned(id); }, [id]);
     const handleCollapseToggle = useCallback(() => { useCanvasStore.getState().toggleNodeCollapsed(id); }, [id]);
+    const handleTagOpen = useCallback(() => { setShowTagInput(true); }, []);
+
+    const focusBody = useCallback(() => { editor?.commands.focus(); }, [editor]);
+    const focusHeading = useCallback(() => { headingRef.current?.focus(); }, []);
+    // Keyboard shortcuts map: t = tags, c = collapse/expand (view mode only)
+    const nodeShortcuts: NodeShortcutMap = useMemo(() => ({
+        t: handleTagOpen,
+        c: handleCollapseToggle,
+    }), [handleTagOpen, handleCollapseToggle]);
+    const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
+        nodeId: id, editor, getMarkdown, setContent, getEditableContent, saveContent,
+        submitHandlerRef, isGenerating: isGenerating ?? false,
+        isNewEmptyNode: !prompt && !output, focusHeading,
+        shortcuts: nodeShortcuts,
+    });
 
     const hasContent = Boolean(output);
     const onTagsChange = useCallback((ids: string[]) => { handleTagsChange(ids); if (ids.length === 0) setShowTagInput(false); }, [handleTagsChange]);
     const onKeyDownReact = useCallback((e: React.KeyboardEvent) => handleKeyDown(e.nativeEvent), [handleKeyDown]);
 
     return (
-        <div ref={cardWrapperRef} className={`${styles.cardWrapper} ${handleStyles.resizerWrapper}`}
+        <div ref={cardWrapperRef}
+            className={`${styles.cardWrapper} ${handleStyles.resizerWrapper} ${isCollapsed ? styles.cardWrapperCollapsed : ''}`}
             onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
             onContextMenu={pinOpenHandlers.onContextMenu}
             onTouchStart={pinOpenHandlers.onTouchStart} onTouchEnd={pinOpenHandlers.onTouchEnd}>
             <NodeResizer minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}
-                minHeight={MIN_NODE_HEIGHT} maxHeight={MAX_NODE_HEIGHT} isVisible={selected} />
+                minHeight={MIN_NODE_HEIGHT} maxHeight={MAX_NODE_HEIGHT} isVisible={selected && !isCollapsed} />
             <NodeResizeButtons nodeId={id} visible={isHovered} />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
@@ -105,7 +114,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     <div className={styles.tagsSection}><TagInput selectedTagIds={tagIds} onChange={onTagsChange} compact /></div>
                 )}
             </div>
-            <NodeUtilsBar onTagClick={() => setShowTagInput(true)} onConnectClick={handleConnectClick}
+            <NodeUtilsBar onTagClick={handleTagOpen} onConnectClick={handleConnectClick}
                 onCopyClick={handleCopy} onDelete={handleDelete} onTransform={handleTransform}
                 onRegenerate={handleRegenerate} onPinToggle={handlePinToggle}
                 onCollapseToggle={handleCollapseToggle} hasContent={hasContent}
