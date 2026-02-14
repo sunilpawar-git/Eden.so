@@ -172,8 +172,12 @@ export async function loadEdges(userId: string, workspaceId: string): Promise<Ca
     });
 }
 
-/** Delete a workspace and all its contents (nodes, edges) */
+/** Delete a workspace and all its contents (nodes, edges, KB entries) */
 export async function deleteWorkspace(userId: string, workspaceId: string): Promise<void> {
+    // Clean up Knowledge Bank entries first (separate subcollection)
+    const { deleteAllKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');
+    await deleteAllKBEntries(userId, workspaceId);
+
     const batch = writeBatch(db);
 
     // 1. Get all nodes and edges for this workspace

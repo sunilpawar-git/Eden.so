@@ -66,16 +66,18 @@ interface GeminiResponse {
 /**
  * Generate content from a single prompt using Gemini API
  */
-export async function generateContent(prompt: string): Promise<string> {
+export async function generateContent(prompt: string, knowledgeBankContext?: string): Promise<string> {
     if (!GEMINI_API_KEY) {
         throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local');
     }
+
+    const kbSection = knowledgeBankContext ? `\n\n${knowledgeBankContext}\n` : '';
 
     const requestBody = {
         contents: [
             {
                 parts: [
-                    { text: `${SYSTEM_PROMPTS.singleNode}\n\nUser request: ${prompt}` }
+                    { text: `${SYSTEM_PROMPTS.singleNode}${kbSection}\n\nUser request: ${prompt}` }
                 ]
             }
         ],
@@ -118,14 +120,15 @@ export async function generateContent(prompt: string): Promise<string> {
  * Generate content with upstream context from connected nodes
  * Uses edge-aware context for Obsidian-style idea chaining
  */
- 
+
 export async function generateContentWithContext(
     prompt: string,
-    contextChain: string[]
+    contextChain: string[],
+    knowledgeBankContext?: string
 ): Promise<string> {
     // If no context, delegate to simple generation
     if (contextChain.length === 0) {
-        return generateContent(prompt);
+        return generateContent(prompt, knowledgeBankContext);
     }
 
     if (!GEMINI_API_KEY) {
@@ -137,8 +140,10 @@ export async function generateContentWithContext(
         .map((content, i) => `[Connected Idea ${i + 1}]: ${content}`)
         .join('\n\n');
 
-    const fullPrompt = `${SYSTEM_PROMPTS.chainGeneration}
+    const kbSection = knowledgeBankContext ? `\n\nWorkspace context:\n${knowledgeBankContext}\n` : '';
 
+    const fullPrompt = `${SYSTEM_PROMPTS.chainGeneration}
+${kbSection}
 Connected ideas (from edge relationships):
 ${contextSection}
 
@@ -194,14 +199,16 @@ Generate content that synthesizes and builds upon the connected ideas above.`;
  */
 export async function transformContent(
     content: string,
-    type: TransformationType
+    type: TransformationType,
+    knowledgeBankContext?: string
 ): Promise<string> {
     if (!GEMINI_API_KEY) {
         throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local');
     }
 
     const systemPrompt = TRANSFORMATION_PROMPTS[type];
-    const fullPrompt = `${systemPrompt}
+    const kbSection = knowledgeBankContext ? `\n\nWorkspace context for reference:\n${knowledgeBankContext}\n` : '';
+    const fullPrompt = `${systemPrompt}${kbSection}
 
 Text to transform:
 ${content}

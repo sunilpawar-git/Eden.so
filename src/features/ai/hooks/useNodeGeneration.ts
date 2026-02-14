@@ -10,16 +10,18 @@ import { generateContentWithContext } from '../services/geminiService';
 import { createIdeaNode } from '@/features/canvas/types/node';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
+import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
 
 const BRANCH_OFFSET_X = 350;
 
 /**
  * Hook for generating AI content from IdeaCard nodes
  */
- 
+
 export function useNodeGeneration() {
     const { addNode } = useCanvasStore();
     const { startGeneration, completeGeneration, setError } = useAIStore();
+    const { getKBContext } = useKnowledgeBankContext();
 
     /**
      * Generate AI output from an IdeaCard node
@@ -69,7 +71,8 @@ export function useNodeGeneration() {
             startGeneration(nodeId);
 
             try {
-                const content = await generateContentWithContext(promptText, contextChain);
+                const kbContext = getKBContext();
+                const content = await generateContentWithContext(promptText, contextChain, kbContext);
 
                 // Update output in-place (no new node created!)
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);
@@ -82,7 +85,7 @@ export function useNodeGeneration() {
                 toast.error(message);
             }
         },
-        [startGeneration, completeGeneration, setError]
+        [startGeneration, completeGeneration, setError, getKBContext]
     );
 
     /**

@@ -1,0 +1,41 @@
+/**
+ * Knowledge Bank String Resources
+ * Extracted from main strings.ts to respect 300-line file limit
+ */
+export const knowledgeBankStrings = {
+    title: 'Knowledge Bank',
+    addButton: 'Add to Knowledge Bank',
+    uploadFile: 'Upload File',
+    pasteText: 'Paste Text',
+    viewBank: 'View Knowledge Bank',
+    saveEntry: 'Save to Knowledge Bank',
+    toggleEntry: 'Toggle entry enabled',
+    editEntry: 'Edit entry',
+    deleteEntry: 'Delete entry',
+    deleteConfirm: 'Delete?',
+    toggleEnable: 'Enable',
+    toggleDisable: 'Disable',
+    emptyState: 'No entries yet',
+    emptyStateDescription: 'Add text or files to your Knowledge Bank. All AI-generated nodes will use this context automatically.',
+    addFirstEntry: 'Add First Entry',
+    maxEntriesReached: 'Limit reached',
+    maxEntriesDescription: 'Delete an entry to add more',
+    entryCount: 'entries',
+    characterCount: 'characters',
+    titlePlaceholder: 'Entry title',
+    contentPlaceholder: 'Paste your text here...',
+    processingImage: 'Processing image...',
+    compressingImage: 'Compressing image...',
+    describingImage: 'Describing image with AI...',
+    errors: {
+        fileTooLarge: 'File exceeds 5MB limit',
+        unsupportedType: 'Unsupported file type',
+        uploadFailed: 'Failed to upload file',
+        saveFailed: 'Failed to save entry',
+        loadFailed: 'Failed to load Knowledge Bank',
+        deleteFailed: 'Failed to delete entry',
+        maxEntries: 'Maximum of 20 entries reached',
+        contentTooLarge: 'Content exceeds 10,000 character limit',
+        titleRequired: 'Title is required',
+    },
+} as const;

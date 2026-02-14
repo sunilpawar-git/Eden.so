@@ -8,6 +8,8 @@ import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { OfflineBanner } from './OfflineBanner';
 import { SearchBar } from '@/features/search';
 import { WorkspaceControls } from '@/features/workspace/components/WorkspaceControls';
+import { KnowledgeBankAddButton } from '@/features/knowledgeBank/components/KnowledgeBankAddButton';
+import { KnowledgeBankPanel } from '@/features/knowledgeBank/components/KnowledgeBankPanel';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import styles from './Layout.module.css';
@@ -36,8 +38,10 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
     return (
         <div className={styles.layout}>
             <Sidebar onSettingsClick={onSettingsClick} />
+            <KnowledgeBankPanel />
             <div className={styles.mainArea}>
                 <header className={styles.topBar}>
+                    <KnowledgeBankAddButton />
                     <SearchBar onResultClick={handleSearchResultClick} />
                     <WorkspaceControls />
                     <SyncStatusIndicator />

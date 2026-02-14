@@ -13,6 +13,11 @@ vi.mock('../services/geminiService', () => ({
     transformContent: vi.fn(),
 }));
 
+// Mock Knowledge Bank context hook (returns empty string = no context)
+vi.mock('@/features/knowledgeBank/hooks/useKnowledgeBankContext', () => ({
+    useKnowledgeBankContext: () => ({ getKBContext: () => '' }),
+}));
+
 describe('useNodeTransformation - Phase 4', () => {
     const mockTransformContent = vi.mocked(geminiService.transformContent);
 
@@ -50,7 +55,8 @@ describe('useNodeTransformation - Phase 4', () => {
 
         expect(mockTransformContent).toHaveBeenCalledWith(
             'Original content to transform',
-            'refine'
+            'refine',
+            ''
         );
     });
 
@@ -96,7 +102,7 @@ describe('useNodeTransformation - Phase 4', () => {
 
         // isTransforming should be false after error
         expect(result.current.isTransforming).toBe(false);
-        
+
         // Original content should be preserved (mock rejected, so no update called)
         const node = useCanvasStore.getState().nodes.find(n => n.id === 'node-1');
         expect(node?.data.output).toBe('Original content to transform');
