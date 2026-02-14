@@ -1,13 +1,13 @@
 /**
- * NodeUtilsBar Styles - Floating pill action bar
- * Slides up from bottom of node on hover
+ * NodeUtilsBar Styles — Pill bar tucked behind node
+ * Slides out on hover with intent delay; uses design tokens only
  */
 
 .container {
     position: absolute;
     top: 50%;
-    right: -40px;
-    transform: translateY(-50%) translateX(20px);
+    right: 0;
+    transform: translateY(-50%) translateX(calc(100% - var(--node-utils-bar-peek)));
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -18,20 +18,52 @@
     box-shadow: var(--card-shadow);
     opacity: 0;
     visibility: hidden;
-    transition:
-        opacity var(--transition-fast),
-        transform var(--transition-fast),
-        visibility var(--transition-fast);
-    z-index: var(--z-dropdown);
+    z-index: -1;
     pointer-events: none;
+    transition:
+        opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
+        transform 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
+        visibility 0s linear calc(200ms + var(--node-utils-hover-delay-out)),
+        z-index 0s linear calc(200ms + var(--node-utils-hover-delay-out)),
+        box-shadow 200ms ease;
 }
 
-/* Slide in from right on parent hover */
+/* Slide out: full pill visible to the right of the node */
 .containerVisible {
     opacity: 1;
     visibility: visible;
-    transform: translateY(-50%) translateX(0);
+    transform: translateY(-50%) translateX(100%);
+    z-index: var(--z-dropdown);
     pointer-events: auto;
+    box-shadow: var(--card-shadow-hover);
+    transition:
+        opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
+        transform 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
+        visibility 0s linear 0s,
+        z-index 0s linear 0s,
+        box-shadow 200ms ease;
+}
+
+/* Peek indicator — subtle colored sliver on node's right edge */
+.peekIndicator {
+    position: absolute;
+    top: 50%;
+    right: calc(-1 * var(--node-utils-bar-peek));
+    transform: translateY(-50%);
+    width: var(--node-utils-bar-peek);
+    height: 32px;
+    background: var(--color-primary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    opacity: 0.4;
+    transition: opacity var(--transition-normal);
+    z-index: 1;
+    pointer-events: none;
+    animation: peekPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes peekPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
 }
 
 .actionButton {
@@ -71,7 +103,7 @@
     line-height: 1;
 }
 
-/* CSS Tooltip on hover - Vertical pill shape on right edge */
+/* CSS Tooltip on hover — retained until Phase 3 portal migration */
 .actionButton::after {
     content: attr(data-tooltip);
     position: absolute;
