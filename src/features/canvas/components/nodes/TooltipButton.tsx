@@ -3,7 +3,7 @@
  * Wraps a single icon button and manages its own hover state + PortalTooltip.
  * Extracted from NodeUtilsBar to keep each file under SRP.
  */
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useId } from 'react';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
 import styles from './NodeUtilsBar.module.css';
@@ -39,6 +39,8 @@ export function TooltipButton({
 }: TooltipButtonProps) {
     const [hovered, setHovered] = useState(false);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const tooltipId = useId();
+    const isTooltipVisible = hovered && !disabled;
 
     const handleMouseEnter = useCallback(() => setHovered(true), []);
     const handleMouseLeave = useCallback(() => setHovered(false), []);
@@ -55,6 +57,7 @@ export function TooltipButton({
                 onClick={onClick}
                 disabled={disabled}
                 aria-label={label}
+                aria-describedby={isTooltipVisible ? tooltipId : undefined}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
             >
@@ -64,8 +67,9 @@ export function TooltipButton({
                 text={tooltipText}
                 shortcut={shortcut}
                 targetRef={buttonRef}
-                visible={hovered && !disabled}
+                visible={isTooltipVisible}
                 placement={tooltipPlacement}
+                tooltipId={tooltipId}
             />
         </>
     );

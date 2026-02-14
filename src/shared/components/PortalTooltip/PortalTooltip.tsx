@@ -5,7 +5,7 @@
  *
  * @see Phase 1 of NodeUX Hover & Utilities plan
  */
-import { type RefObject } from 'react';
+import { useId, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '@/shared/localization/strings';
 import styles from './PortalTooltip.module.css';
@@ -24,6 +24,8 @@ export interface PortalTooltipProps {
     visible: boolean;
     /** Which side of the target to show the tooltip */
     placement?: 'right' | 'left';
+    /** Stable id for aria-describedby linkage; auto-generated if omitted */
+    tooltipId?: string;
 }
 
 /** Compute tooltip inline position from target bounding rect */
@@ -55,7 +57,11 @@ export function PortalTooltip({
     targetRef,
     visible,
     placement = 'right',
+    tooltipId: externalId,
 }: PortalTooltipProps) {
+    const autoId = useId();
+    const tooltipId = externalId ?? autoId;
+
     if (!visible || !targetRef.current) return null;
 
     const rect = targetRef.current.getBoundingClientRect();
@@ -68,7 +74,13 @@ export function PortalTooltip({
     ].filter(Boolean).join(' ');
 
     const tooltip = (
-        <div className={classNames} style={positionStyle} role="tooltip">
+        <div
+            id={tooltipId}
+            className={classNames}
+            style={positionStyle}
+            role="tooltip"
+            data-testid="portal-tooltip"
+        >
             <span className={styles.label}>{text}</span>
             {shortcut && (
                 <span className={styles.shortcutHint}>

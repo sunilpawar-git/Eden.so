@@ -1,20 +1,23 @@
 /**
- * NodeUtilsBar Positioning Integration Tests — TDD RED phase
- * Validates pill-behind-node positioning, hover reveal, and focus-within accessibility
+ * NodeUtilsBar Positioning Integration Tests
+ * Validates pill-behind-node positioning, left variant, and pinned-open state
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
 
-// Mock CSS module with positioning classes
+// Mock CSS module — complete set of positioning classes
 vi.mock('../NodeUtilsBar.module.css', () => ({
     default: {
         container: 'container',
         containerVisible: 'containerVisible',
+        containerLeft: 'containerLeft',
+        containerPinnedOpen: 'containerPinnedOpen',
         actionButton: 'actionButton',
         deleteButton: 'deleteButton',
         icon: 'icon',
         peekIndicator: 'peekIndicator',
+        peekIndicatorLeft: 'peekIndicatorLeft',
     },
 }));
 
@@ -34,7 +37,7 @@ describe('NodeUtilsBar Positioning', () => {
 
     it('has default (hidden) CSS class when visible is false', () => {
         const { container } = render(<NodeUtilsBar {...defaultProps} visible={false} />);
-        const bar = container.firstChild as HTMLElement;
+        const bar = container.querySelector('[class*="container"]') as HTMLElement;
 
         expect(bar).toHaveClass('container');
         expect(bar).not.toHaveClass('containerVisible');
@@ -42,34 +45,47 @@ describe('NodeUtilsBar Positioning', () => {
 
     it('has visible CSS class when visible is true', () => {
         const { container } = render(<NodeUtilsBar {...defaultProps} visible={true} />);
-        const bar = container.firstChild as HTMLElement;
+        const bar = container.querySelector('[class*="container"]') as HTMLElement;
 
         expect(bar).toHaveClass('container');
         expect(bar).toHaveClass('containerVisible');
     });
 
-    it('renders peek indicator element', () => {
-        const { container } = render(<NodeUtilsBar {...defaultProps} />);
-        const peekEl = container.querySelector('.peekIndicator');
-
-        expect(peekEl).toBeInTheDocument();
-    });
-
-    it('peek indicator is a sibling of the container, not a child', () => {
+    it('renders peek indicator as sibling of container', () => {
         const { container } = render(
-            <div>
-                <NodeUtilsBar {...defaultProps} />
-            </div>
+            <div><NodeUtilsBar {...defaultProps} /></div>
         );
-        // The NodeUtilsBar should render both the container and the peek
-        // as children of a wrapper (or the peek should be outside the container)
         const bar = container.querySelector('.container');
         const peek = container.querySelector('.peekIndicator');
 
         expect(bar).toBeInTheDocument();
         expect(peek).toBeInTheDocument();
-        // Peek should NOT be inside the bar container
         expect(bar?.contains(peek)).toBe(false);
+    });
+
+    it('applies containerLeft class when placement is left', () => {
+        const { container } = render(
+            <NodeUtilsBar {...defaultProps} placement="left" />
+        );
+        const bar = container.querySelector('[class*="container"]') as HTMLElement;
+        expect(bar).toHaveClass('containerLeft');
+    });
+
+    it('applies peekIndicatorLeft class when placement is left', () => {
+        const { container } = render(
+            <NodeUtilsBar {...defaultProps} placement="left" />
+        );
+        const peek = container.querySelector('.peekIndicator');
+        expect(peek).toHaveClass('peekIndicatorLeft');
+    });
+
+    it('applies containerPinnedOpen instead of containerVisible when isPinnedOpen', () => {
+        const { container } = render(
+            <NodeUtilsBar {...defaultProps} isPinnedOpen={true} />
+        );
+        const bar = container.querySelector('[class*="container"]') as HTMLElement;
+        expect(bar).toHaveClass('containerPinnedOpen');
+        expect(bar).not.toHaveClass('containerVisible');
     });
 
     describe('regression: all existing button tests still pass', () => {

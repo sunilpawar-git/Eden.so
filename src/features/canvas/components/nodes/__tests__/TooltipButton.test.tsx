@@ -128,4 +128,16 @@ describe('TooltipButton', () => {
         );
         expect(screen.getByLabelText('Delete')).toHaveClass('deleteButton');
     });
+
+    it('does NOT show tooltip when button is disabled and hovered', () => {
+        render(
+            <TooltipButton
+                label="Tags" tooltipText="Tags" icon="🏷️"
+                onClick={vi.fn()} disabled
+            />
+        );
+
+        fireEvent.mouseEnter(screen.getByLabelText('Tags'));
+        expect(screen.queryByTestId('portal-tooltip')).not.toBeInTheDocument();
+    });
 });
