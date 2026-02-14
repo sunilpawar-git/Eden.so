@@ -1,5 +1,6 @@
 /**
- * Settings Store Tests - TDD: Write tests FIRST
+ * Settings Store Tests - Core settings (non-theme)
+ * Theme tests are in settingsStoreTheme.test.ts
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useSettingsStore } from '../settingsStore';
@@ -17,19 +18,13 @@ const localStorageMock = (() => {
                 Object.entries(store).filter(([k]) => k !== key)
             );
         }),
-        clear: vi.fn(() => {
-            store = {};
-        }),
+        clear: vi.fn(() => { store = {}; }),
     };
 })();
 
-// Mock matchMedia for system theme detection
 const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: query === '(prefers-color-scheme: dark)' ? false : false,
+    matches: false,
     media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
@@ -37,127 +32,80 @@ const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
 
 describe('SettingsStore', () => {
     beforeEach(() => {
-        // Reset mocks
         localStorageMock.clear();
         vi.stubGlobal('localStorage', localStorageMock);
         vi.stubGlobal('matchMedia', mockMatchMedia);
-        
-        // Reset store state before each test
+
         useSettingsStore.setState({
             theme: 'system',
             canvasGrid: true,
             autoSave: true,
             autoSaveInterval: 30,
             compactMode: false,
+            canvasScrollMode: 'zoom',
         });
     });
 
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
+    afterEach(() => { vi.unstubAllGlobals(); });
 
     describe('initial state', () => {
         it('should initialize with default values', () => {
             const state = useSettingsStore.getState();
-            
             expect(state.theme).toBe('system');
             expect(state.canvasGrid).toBe(true);
             expect(state.autoSave).toBe(true);
             expect(state.autoSaveInterval).toBe(30);
             expect(state.compactMode).toBe(false);
-        });
-    });
-
-    describe('theme management', () => {
-        it('should set theme to light', () => {
-            useSettingsStore.getState().setTheme('light');
-            
-            expect(useSettingsStore.getState().theme).toBe('light');
-        });
-
-        it('should set theme to dark', () => {
-            useSettingsStore.getState().setTheme('dark');
-            
-            expect(useSettingsStore.getState().theme).toBe('dark');
-        });
-
-        it('should set theme to system', () => {
-            useSettingsStore.getState().setTheme('light');
-            useSettingsStore.getState().setTheme('system');
-            
-            expect(useSettingsStore.getState().theme).toBe('system');
-        });
-
-        it('should persist theme to localStorage', () => {
-            useSettingsStore.getState().setTheme('dark');
-            
-            expect(localStorageMock.setItem).toHaveBeenCalledWith(
-                'settings-theme',
-                'dark'
-            );
-        });
-
-        it('should resolve system theme to light when system prefers light', () => {
-            mockMatchMedia.mockImplementation((query: string) => ({
-                matches: query === '(prefers-color-scheme: dark)' ? false : true,
-                media: query,
-                addEventListener: vi.fn(),
-                removeEventListener: vi.fn(),
-            }));
-
-            useSettingsStore.setState({ theme: 'system' });
-            const resolved = useSettingsStore.getState().getResolvedTheme();
-            
-            expect(resolved).toBe('light');
-        });
-
-        it('should resolve system theme to dark when system prefers dark', () => {
-            mockMatchMedia.mockImplementation((query: string) => ({
-                matches: query === '(prefers-color-scheme: dark)' ? true : false,
-                media: query,
-                addEventListener: vi.fn(),
-                removeEventListener: vi.fn(),
-            }));
-
-            useSettingsStore.setState({ theme: 'system' });
-            const resolved = useSettingsStore.getState().getResolvedTheme();
-            
-            expect(resolved).toBe('dark');
-        });
-
-        it('should resolve light theme directly', () => {
-            useSettingsStore.setState({ theme: 'light' });
-            const resolved = useSettingsStore.getState().getResolvedTheme();
-            
-            expect(resolved).toBe('light');
-        });
-
-        it('should resolve dark theme directly', () => {
-            useSettingsStore.setState({ theme: 'dark' });
-            const resolved = useSettingsStore.getState().getResolvedTheme();
-            
-            expect(resolved).toBe('dark');
+            expect(state.canvasScrollMode).toBe('zoom');
         });
     });
 
     describe('canvas settings', () => {
         it('should toggle canvasGrid setting', () => {
             expect(useSettingsStore.getState().canvasGrid).toBe(true);
-            
             useSettingsStore.getState().toggleCanvasGrid();
             expect(useSettingsStore.getState().canvasGrid).toBe(false);
-            
             useSettingsStore.getState().toggleCanvasGrid();
             expect(useSettingsStore.getState().canvasGrid).toBe(true);
         });
 
         it('should persist canvasGrid to localStorage', () => {
             useSettingsStore.getState().toggleCanvasGrid();
-            
+            expect(localStorageMock.setItem).toHaveBeenCalledWith('settings-canvasGrid', 'false');
+        });
+    });
+
+    describe('canvas scroll mode', () => {
+        it('should default to zoom mode', () => {
+            expect(useSettingsStore.getState().canvasScrollMode).toBe('zoom');
+        });
+
+        it('should set scroll mode to navigate', () => {
+            useSettingsStore.getState().setCanvasScrollMode('navigate');
+            expect(useSettingsStore.getState().canvasScrollMode).toBe('navigate');
+        });
+
+        it('should set scroll mode back to zoom', () => {
+            useSettingsStore.getState().setCanvasScrollMode('navigate');
+            useSettingsStore.getState().setCanvasScrollMode('zoom');
+            expect(useSettingsStore.getState().canvasScrollMode).toBe('zoom');
+        });
+
+        it('should persist canvasScrollMode to localStorage', () => {
+            useSettingsStore.getState().setCanvasScrollMode('navigate');
             expect(localStorageMock.setItem).toHaveBeenCalledWith(
-                'settings-canvasGrid',
-                'false'
+                'settings-canvasScrollMode',
+                'navigate'
             );
+        });
+
+        it('should load canvasScrollMode from storage', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-canvasScrollMode') return 'navigate';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().canvasScrollMode).toBe('navigate');
         });
     });
 
@@ -165,7 +113,6 @@ describe('SettingsStore', () => {
         it('should set autoSave enabled state', () => {
             useSettingsStore.getState().setAutoSave(false);
             expect(useSettingsStore.getState().autoSave).toBe(false);
-            
             useSettingsStore.getState().setAutoSave(true);
             expect(useSettingsStore.getState().autoSave).toBe(true);
         });
@@ -187,41 +134,27 @@ describe('SettingsStore', () => {
 
         it('should persist autoSave to localStorage', () => {
             useSettingsStore.getState().setAutoSave(false);
-            
-            expect(localStorageMock.setItem).toHaveBeenCalledWith(
-                'settings-autoSave',
-                'false'
-            );
+            expect(localStorageMock.setItem).toHaveBeenCalledWith('settings-autoSave', 'false');
         });
 
         it('should persist autoSaveInterval to localStorage', () => {
             useSettingsStore.getState().setAutoSaveInterval(45);
-            
-            expect(localStorageMock.setItem).toHaveBeenCalledWith(
-                'settings-autoSaveInterval',
-                '45'
-            );
+            expect(localStorageMock.setItem).toHaveBeenCalledWith('settings-autoSaveInterval', '45');
         });
     });
 
     describe('compact mode', () => {
         it('should toggle compactMode setting', () => {
             expect(useSettingsStore.getState().compactMode).toBe(false);
-            
             useSettingsStore.getState().toggleCompactMode();
             expect(useSettingsStore.getState().compactMode).toBe(true);
-            
             useSettingsStore.getState().toggleCompactMode();
             expect(useSettingsStore.getState().compactMode).toBe(false);
         });
 
         it('should persist compactMode to localStorage', () => {
             useSettingsStore.getState().toggleCompactMode();
-            
-            expect(localStorageMock.setItem).toHaveBeenCalledWith(
-                'settings-compactMode',
-                'true'
-            );
+            expect(localStorageMock.setItem).toHaveBeenCalledWith('settings-compactMode', 'true');
         });
     });
 
@@ -231,10 +164,7 @@ describe('SettingsStore', () => {
                 if (key === 'settings-theme') return 'dark';
                 return null;
             });
-
-            // Trigger load
             useSettingsStore.getState().loadFromStorage();
-            
             expect(localStorageMock.getItem).toHaveBeenCalledWith('settings-theme');
         });
     });

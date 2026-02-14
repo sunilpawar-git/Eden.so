@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { CanvasView } from '../CanvasView';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { ReactFlow, ConnectionLineType } from '@xyflow/react';
 
 // Mock ReactFlow component and sub-components
@@ -9,12 +10,12 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     const original = await importOriginal<typeof import('@xyflow/react')>();
     return {
         ...original,
-        ReactFlow: vi.fn(({ nodes }) => (
+        ReactFlow: vi.fn(({ nodes, children }) => (
             <div data-testid="mock-react-flow" data-nodes={JSON.stringify(nodes)}>
-                Mock React Flow
+                {children}
             </div>
         )),
-        Background: () => <div data-testid="mock-background" />,
+        Background: vi.fn(() => <div data-testid="mock-background" />),
         Controls: () => <div data-testid="mock-controls" />,
         useNodesState: (initialNodes: unknown[]) => [initialNodes, vi.fn(), vi.fn()],
         useEdgesState: (initialEdges: unknown[]) => [initialEdges, vi.fn(), vi.fn()],
@@ -220,6 +221,42 @@ describe('CanvasView', () => {
             const nodes = reactFlowProps.nodes ?? [];
 
             expect(nodes[0]?.selected).toBe(false);
+        });
+    });
+
+    describe('Canvas scroll mode', () => {
+        it('should set zoomOnScroll=true when scroll mode is zoom', () => {
+            useSettingsStore.setState({ canvasScrollMode: 'zoom' });
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+            expect(props.zoomOnScroll).toBe(true);
+            expect(props.panOnScroll).toBe(false);
+        });
+
+        it('should set panOnScroll=true when scroll mode is navigate', () => {
+            useSettingsStore.setState({ canvasScrollMode: 'navigate' });
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+            expect(props.zoomOnScroll).toBe(false);
+            expect(props.panOnScroll).toBe(true);
+        });
+    });
+
+    describe('Canvas grid wiring', () => {
+        it('should render Background when canvasGrid is true', () => {
+            useSettingsStore.setState({ canvasGrid: true });
+            render(<CanvasView />);
+            expect(screen.getByTestId('mock-background')).toBeInTheDocument();
+        });
+
+        it('should not render Background when canvasGrid is false', () => {
+            useSettingsStore.setState({ canvasGrid: false });
+            render(<CanvasView />);
+            expect(screen.queryByTestId('mock-background')).not.toBeInTheDocument();
         });
     });
 });

@@ -112,7 +112,7 @@ describe('Theme Token Consistency', () => {
         const variablesPath = path.join(srcDir, 'styles/variables.css');
         const content = fs.readFileSync(variablesPath, 'utf-8');
 
-        // Check each color token exists in both :root and [data-theme="dark"]
+        // Check each color token exists in :root (light theme)
         const criticalTokens = [
             '--color-background',
             '--color-surface',
@@ -122,14 +122,56 @@ describe('Theme Token Consistency', () => {
         ];
 
         for (const token of criticalTokens) {
-            // Check light theme (:root)
             const lightPattern = new RegExp(`:root[^}]*${token}:`, 's');
             expect(content).toMatch(lightPattern);
-
-            // Check dark theme
-            const darkPattern = new RegExp(`\\[data-theme="dark"\\][^}]*${token}:`, 's');
-            expect(content).toMatch(darkPattern);
         }
+
+        // Check dark theme (may be in separate file)
+        const darkThemePath = path.join(srcDir, 'styles/themes/dark.css');
+        const darkContent = fs.existsSync(darkThemePath)
+            ? fs.readFileSync(darkThemePath, 'utf-8')
+            : content;
+
+        for (const token of criticalTokens) {
+            const darkPattern = new RegExp(`\\[data-theme="dark"\\][^}]*${token}:`, 's');
+            expect(darkContent).toMatch(darkPattern);
+        }
+    });
+
+    it('should have critical tokens in all extended themes', () => {
+        const criticalTokens = [
+            '--color-background',
+            '--color-surface',
+            '--color-text-primary',
+            '--color-primary',
+            '--color-border',
+            '--canvas-background',
+        ];
+
+        const themeFiles = [
+            { name: 'sepia', selector: '[data-theme="sepia"]' },
+            { name: 'grey', selector: '[data-theme="grey"]' },
+            { name: 'darkBlack', selector: '[data-theme="darkBlack"]' },
+        ];
+
+        for (const theme of themeFiles) {
+            const themePath = path.join(srcDir, `styles/themes/${theme.name}.css`);
+            expect(fs.existsSync(themePath)).toBe(true);
+
+            const content = fs.readFileSync(themePath, 'utf-8');
+            for (const token of criticalTokens) {
+                const pattern = new RegExp(
+                    `\\[data-theme="${theme.name}"\\][^}]*${token}:`,
+                    's'
+                );
+                expect(content).toMatch(pattern);
+            }
+        }
+    });
+
+    it('should have dark theme in separate file', () => {
+        const darkPath = path.join(srcDir, 'styles/themes/dark.css');
+        expect(fs.existsSync(darkPath)).toBe(true);
     });
 
     it('should export valid token lists for reference', () => {

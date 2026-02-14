@@ -1,0 +1,51 @@
+/**
+ * Sepia Theme - Warm paper-like reading tones
+ * Optimized for reduced eye strain during extended use
+ */
+[data-theme="sepia"] {
+  --color-primary: hsl(28, 55%, 45%);
+  --color-primary-hover: hsl(28, 55%, 38%);
+  --color-primary-light: hsl(36, 40%, 90%);
+
+  --color-secondary: hsl(28, 50%, 38%);
+  --color-secondary-hover: hsl(28, 50%, 32%);
+
+  --color-background: hsl(36, 40%, 95%);
+  --color-surface: hsl(36, 35%, 92%);
+  --color-surface-elevated: hsl(36, 38%, 96%);
+  --color-surface-hover: hsl(36, 30%, 88%);
+
+  --color-text-primary: hsl(28, 20%, 20%);
+  --color-text-secondary: hsl(28, 12%, 42%);
+  --color-text-muted: hsl(28, 10%, 50%);
+
+  --color-border: hsl(36, 20%, 82%);
+
+  --canvas-background: hsl(36, 35%, 93%);
+  --canvas-grid-color: hsl(36, 18%, 84%);
+
+  --node-prompt-bg: hsl(36, 38%, 96%);
+  --node-ai-bg: hsl(36, 30%, 94%);
+  --node-derived-bg: hsl(36, 25%, 93%);
+  --node-border: hsl(36, 18%, 80%);
+  --node-shadow: 0 2px 8px hsla(28, 20%, 20%, 0.06);
+
+  --glass-bg: hsla(36, 40%, 95%, 0.7);
+  --glass-border: 1px solid hsla(36, 30%, 80%, 0.3);
+
+  --header-gradient-start: hsl(28, 50%, 50%);
+  --header-gradient-end: hsl(28, 55%, 38%);
+  --output-bg: hsl(36, 30%, 93%);
+  --card-shadow: 0 1px 3px hsla(28, 20%, 20%, 0.06);
+  --card-shadow-hover: 0 4px 12px hsla(28, 20%, 20%, 0.1);
+  --tooltip-bg: hsl(28, 20%, 22%);
+  --tooltip-text: hsl(36, 40%, 96%);
+
+  --color-hover: hsla(28, 20%, 20%, 0.05);
+  --color-text: var(--color-text-primary);
+  --shadow-dropdown: 0 4px 12px hsla(28, 20%, 20%, 0.12);
+
+  --offline-banner-bg: hsl(38, 50%, 90%);
+  --offline-banner-text: hsl(38, 40%, 22%);
+  --offline-banner-border: hsl(38, 30%, 78%);
+}
