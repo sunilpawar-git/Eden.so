@@ -21,15 +21,23 @@ vi.mock('@/shared/components/PortalTooltip', () => ({
     ),
 }));
 
-// Mock CSS module
+// Mock CSS modules
 vi.mock('../NodeUtilsBar.module.css', () => ({
     default: {
         container: 'container',
         containerVisible: 'containerVisible',
+        containerLeft: 'containerLeft',
+        containerPinnedOpen: 'containerPinnedOpen',
+        peekIndicator: 'peekIndicator',
+        peekIndicatorLeft: 'peekIndicatorLeft',
+    },
+}));
+
+vi.mock('../TooltipButton.module.css', () => ({
+    default: {
         actionButton: 'actionButton',
         deleteButton: 'deleteButton',
         icon: 'icon',
-        peekIndicator: 'peekIndicator',
     },
 }));
 

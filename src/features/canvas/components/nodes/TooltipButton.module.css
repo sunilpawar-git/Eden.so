@@ -1,0 +1,41 @@
+/**
+ * TooltipButton Styles — Shared action button used in NodeUtilsBar
+ * Extracted from NodeUtilsBar.module.css to decouple button styles (SRP)
+ */
+
+.actionButton {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-full);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.actionButton:hover:not(:disabled) {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    transform: scale(1.1);
+}
+
+.actionButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.deleteButton:hover:not(:disabled) {
+    background: hsla(0, 72%, 51%, 0.1);
+    color: var(--color-error);
+}
+
+.icon {
+    font-size: var(--font-size-sm);
+    line-height: 1;
+}

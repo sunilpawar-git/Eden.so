@@ -6,18 +6,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
 
-// Mock CSS module — complete set of positioning classes
+// Mock CSS modules — complete set of positioning + button classes
 vi.mock('../NodeUtilsBar.module.css', () => ({
     default: {
         container: 'container',
         containerVisible: 'containerVisible',
         containerLeft: 'containerLeft',
         containerPinnedOpen: 'containerPinnedOpen',
+        peekIndicator: 'peekIndicator',
+        peekIndicatorLeft: 'peekIndicatorLeft',
+    },
+}));
+
+vi.mock('../TooltipButton.module.css', () => ({
+    default: {
         actionButton: 'actionButton',
         deleteButton: 'deleteButton',
         icon: 'icon',
-        peekIndicator: 'peekIndicator',
-        peekIndicatorLeft: 'peekIndicatorLeft',
     },
 }));
 

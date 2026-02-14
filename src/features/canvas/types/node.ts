@@ -116,6 +116,8 @@ export function createIdeaNode(
             output: undefined,
             isGenerating: false,
             isPromptCollapsed: false,
+            isPinned: false,
+            isCollapsed: false,
         },
         position,
         width: DEFAULT_NODE_WIDTH,

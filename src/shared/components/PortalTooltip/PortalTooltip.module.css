@@ -33,11 +33,6 @@
     visibility: visible;
 }
 
-/* Position tooltip to left of target instead of right */
-.tooltipLeft {
-    /* Applied via inline style transform; class is for identification */
-}
-
 .label {
     line-height: 1;
 }

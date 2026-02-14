@@ -70,8 +70,7 @@ export function PortalTooltip({
     const classNames = [
         styles.tooltip,
         styles.tooltipVisible,
-        placement === 'left' ? styles.tooltipLeft : '',
-    ].filter(Boolean).join(' ');
+    ].join(' ');
 
     const tooltip = (
         <div

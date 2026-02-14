@@ -1,14 +1,16 @@
 /**
  * NodeUtilsBar — Floating pill action bar tucked behind node
  * Uses TooltipButton for portal-based tooltips with keyboard shortcut hints.
- * Features: Tags, AI Actions (with TransformMenu), Connect, Copy, Delete
+ * Memoized per CLAUDE.md performance rules (500+ node canvases).
  */
+import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { TransformMenu } from './TransformMenu';
 import { TooltipButton } from './TooltipButton';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import type { BarPlacement } from '../../hooks/useBarPlacement';
 import styles from './NodeUtilsBar.module.css';
+import buttonStyles from './TooltipButton.module.css';
 
 interface NodeUtilsBarProps {
     onTagClick: () => void;
@@ -32,7 +34,7 @@ interface NodeUtilsBarProps {
     placement?: BarPlacement;
 }
 
-export function NodeUtilsBar({
+export const NodeUtilsBar = React.memo(function NodeUtilsBar({
     onTagClick,
     onAIClick,
     onConnectClick,
@@ -137,11 +139,11 @@ export function NodeUtilsBar({
                     icon="🗑️"
                     onClick={onDelete}
                     disabled={disabled}
-                    className={styles.deleteButton}
+                    className={buttonStyles.deleteButton}
                     tooltipPlacement={tooltipSide}
                 />
             </div>
             <div className={peekClasses.join(' ')} aria-hidden="true" />
         </>
     );
-}
+});

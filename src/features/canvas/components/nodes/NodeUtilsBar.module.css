@@ -84,7 +84,7 @@
     right: calc(-1 * var(--node-utils-bar-peek));
     transform: translateY(-50%);
     width: var(--node-utils-bar-peek);
-    height: 32px;
+    height: var(--node-utils-peek-height);
     background: var(--color-primary);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     opacity: 0.4;
@@ -99,43 +99,4 @@
     50% { opacity: 0.6; }
 }
 
-.actionButton {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    border-radius: var(--radius-full);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.actionButton:hover:not(:disabled) {
-    background: var(--color-primary-light);
-    color: var(--color-primary);
-    transform: scale(1.1);
-}
-
-.actionButton:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.deleteButton:hover:not(:disabled) {
-    background: hsla(0, 72%, 51%, 0.1);
-    color: var(--color-error);
-}
-
-.icon {
-    font-size: var(--font-size-sm);
-    line-height: 1;
-}
-
-/* Tooltips are now portal-based via PortalTooltip (Phase 3 migration).
- * The CSS ::after pseudo-element tooltips have been removed.
- * See: src/shared/components/PortalTooltip/ */
+/* Button styles (.actionButton, .deleteButton, .icon) are in TooltipButton.module.css */

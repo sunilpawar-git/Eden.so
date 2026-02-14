@@ -12,7 +12,6 @@ vi.mock('../PortalTooltip.module.css', () => ({
     default: {
         tooltip: 'tooltip',
         tooltipVisible: 'tooltipVisible',
-        tooltipLeft: 'tooltipLeft',
         label: 'label',
         shortcutHint: 'shortcutHint',
     },
@@ -147,7 +146,7 @@ describe('PortalTooltip', () => {
         expect(document.body.querySelector('.shortcutHint')).toBeNull();
     });
 
-    it('supports placement left (positions to left of target)', () => {
+    it('supports placement left (positions to left of target via inline style)', () => {
         render(
             <PortalTooltip
                 text="Tags"
@@ -157,11 +156,13 @@ describe('PortalTooltip', () => {
             />
         );
 
-        const tooltip = document.body.querySelector('.tooltip');
-        expect(tooltip).toHaveClass('tooltipLeft');
+        const tooltip = document.body.querySelector('.tooltip') as HTMLElement;
+        expect(tooltip).toBeInTheDocument();
+        // Left placement uses translateX(-100%) in inline style
+        expect(tooltip.style.transform).toContain('translateX(-100%)');
     });
 
-    it('defaults to placement right when not specified', () => {
+    it('defaults to placement right (no translateX(-100%)) when not specified', () => {
         render(
             <PortalTooltip
                 text="Tags"
@@ -170,8 +171,9 @@ describe('PortalTooltip', () => {
             />
         );
 
-        const tooltip = document.body.querySelector('.tooltip');
-        expect(tooltip).not.toHaveClass('tooltipLeft');
+        const tooltip = document.body.querySelector('.tooltip') as HTMLElement;
+        expect(tooltip).toBeInTheDocument();
+        expect(tooltip.style.transform).not.toContain('translateX(-100%)');
     });
 
     it('does not render when targetRef.current is null', () => {

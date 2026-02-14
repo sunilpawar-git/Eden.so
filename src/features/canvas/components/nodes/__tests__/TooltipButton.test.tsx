@@ -21,7 +21,7 @@ vi.mock('@/shared/components/PortalTooltip', () => ({
 }));
 
 // Mock CSS module
-vi.mock('../NodeUtilsBar.module.css', () => ({
+vi.mock('../TooltipButton.module.css', () => ({
     default: {
         actionButton: 'actionButton',
         deleteButton: 'deleteButton',

@@ -6,7 +6,7 @@
 import { useState, useRef, useCallback, useId } from 'react';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
-import styles from './NodeUtilsBar.module.css';
+import styles from './TooltipButton.module.css';
 
 export interface TooltipButtonProps {
     /** Accessible label (aria-label) */

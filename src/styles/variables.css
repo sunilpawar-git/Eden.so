@@ -158,6 +158,7 @@
 
   /* NodeUtilsBar positioning */
   --node-utils-bar-peek: 3px;
+  --node-utils-peek-height: 32px;
   --node-utils-hover-delay-in: 80ms;
   --node-utils-hover-delay-out: 150ms;
 }
