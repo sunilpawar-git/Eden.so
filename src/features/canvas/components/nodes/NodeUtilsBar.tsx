@@ -1,10 +1,11 @@
 /**
  * NodeUtilsBar — Floating pill action bar tucked behind node
- * Slides out on hover via CSS transition; peek indicator signals presence.
+ * Uses TooltipButton for portal-based tooltips with keyboard shortcut hints.
  * Features: Tags, AI Actions (with TransformMenu), Connect, Copy, Delete
  */
 import { strings } from '@/shared/localization/strings';
 import { TransformMenu } from './TransformMenu';
+import { TooltipButton } from './TooltipButton';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import styles from './NodeUtilsBar.module.css';
 
@@ -41,15 +42,14 @@ export function NodeUtilsBar({
     return (
         <>
             <div className={containerClasses.join(' ')}>
-                <button
-                    className={styles.actionButton}
+                <TooltipButton
+                    label={strings.nodeUtils.tags}
+                    tooltipText={strings.nodeUtils.tags}
+                    shortcut={strings.nodeUtils.tagsShortcut}
+                    icon="🏷️"
                     onClick={onTagClick}
                     disabled={disabled}
-                    aria-label={strings.nodeUtils.tags}
-                    data-tooltip={strings.nodeUtils.tags}
-                >
-                    <span className={styles.icon}>🏷️</span>
-                </button>
+                />
                 {onTransform ? (
                     <TransformMenu
                         onTransform={onTransform}
@@ -58,45 +58,40 @@ export function NodeUtilsBar({
                         isTransforming={isTransforming}
                     />
                 ) : (
-                    <button
-                        className={styles.actionButton}
-                        onClick={onAIClick}
+                    <TooltipButton
+                        label={strings.nodeUtils.aiActions}
+                        tooltipText={strings.nodeUtils.aiActions}
+                        icon="✨"
+                        onClick={onAIClick ?? (() => undefined)}
                         disabled={disabled}
-                        aria-label={strings.nodeUtils.aiActions}
-                        data-tooltip={strings.nodeUtils.aiActions}
-                    >
-                        <span className={styles.icon}>✨</span>
-                    </button>
+                    />
                 )}
-                <button
-                    className={styles.actionButton}
+                <TooltipButton
+                    label={strings.nodeUtils.connect}
+                    tooltipText={strings.nodeUtils.connect}
+                    icon="🔗"
                     onClick={onConnectClick}
                     disabled={disabled}
-                    aria-label={strings.nodeUtils.connect}
-                    data-tooltip={strings.nodeUtils.connect}
-                >
-                    <span className={styles.icon}>🔗</span>
-                </button>
+                />
                 {onCopyClick && (
-                    <button
-                        className={styles.actionButton}
+                    <TooltipButton
+                        label={strings.nodeUtils.copy}
+                        tooltipText={strings.nodeUtils.copy}
+                        shortcut={strings.nodeUtils.copyShortcut}
+                        icon="📋"
                         onClick={onCopyClick}
                         disabled={disabled || !hasContent}
-                        aria-label={strings.nodeUtils.copy}
-                        data-tooltip={strings.nodeUtils.copy}
-                    >
-                        <span className={styles.icon}>📋</span>
-                    </button>
+                    />
                 )}
-                <button
-                    className={`${styles.actionButton} ${styles.deleteButton}`}
+                <TooltipButton
+                    label={strings.nodeUtils.delete}
+                    tooltipText={strings.nodeUtils.delete}
+                    shortcut={strings.nodeUtils.deleteShortcut}
+                    icon="🗑️"
                     onClick={onDelete}
                     disabled={disabled}
-                    aria-label={strings.nodeUtils.delete}
-                    data-tooltip={strings.nodeUtils.delete}
-                >
-                    <span className={styles.icon}>🗑️</span>
-                </button>
+                    className={styles.deleteButton}
+                />
             </div>
             <div className={styles.peekIndicator} aria-hidden="true" />
         </>

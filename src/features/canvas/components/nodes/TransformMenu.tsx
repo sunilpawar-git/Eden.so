@@ -141,7 +141,6 @@ export const TransformMenu = React.memo(({
                 aria-label={buttonLabel}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                data-tooltip={buttonLabel}
             >
                 <span className={styles.icon}>
                     {isTransforming ? '⏳' : '✨'}
