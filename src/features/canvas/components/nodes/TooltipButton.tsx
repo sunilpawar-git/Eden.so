@@ -5,6 +5,7 @@
  */
 import { useState, useRef, useCallback } from 'react';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
+import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
 import styles from './NodeUtilsBar.module.css';
 
 export interface TooltipButtonProps {
@@ -22,6 +23,8 @@ export interface TooltipButtonProps {
     disabled?: boolean;
     /** Additional CSS class (e.g. deleteButton) */
     className?: string;
+    /** Tooltip placement — forwarded to PortalTooltip */
+    tooltipPlacement?: PortalTooltipProps['placement'];
 }
 
 export function TooltipButton({
@@ -32,6 +35,7 @@ export function TooltipButton({
     onClick,
     disabled = false,
     className,
+    tooltipPlacement,
 }: TooltipButtonProps) {
     const [hovered, setHovered] = useState(false);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -61,6 +65,7 @@ export function TooltipButton({
                 shortcut={shortcut}
                 targetRef={buttonRef}
                 visible={hovered && !disabled}
+                placement={tooltipPlacement}
             />
         </>
     );

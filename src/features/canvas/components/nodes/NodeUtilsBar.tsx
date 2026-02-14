@@ -52,6 +52,7 @@ export function NodeUtilsBar({
     placement = 'right',
 }: NodeUtilsBarProps) {
     const isLeft = placement === 'left';
+    const tooltipSide = placement; // tooltips appear on same side as bar
     const isShown = visible || isPinnedOpen;
     const containerClasses = [styles.container];
     if (isLeft) containerClasses.push(styles.containerLeft);
@@ -71,6 +72,7 @@ export function NodeUtilsBar({
                     icon="🏷️"
                     onClick={onTagClick}
                     disabled={disabled}
+                    tooltipPlacement={tooltipSide}
                 />
                 {onTransform ? (
                     <TransformMenu
@@ -85,7 +87,8 @@ export function NodeUtilsBar({
                         tooltipText={strings.nodeUtils.aiActions}
                         icon="✨"
                         onClick={onAIClick ?? (() => undefined)}
-                        disabled={disabled}
+                        disabled={disabled || !onAIClick}
+                        tooltipPlacement={tooltipSide}
                     />
                 )}
                 <TooltipButton
@@ -94,6 +97,7 @@ export function NodeUtilsBar({
                     icon="🔗"
                     onClick={onConnectClick}
                     disabled={disabled}
+                    tooltipPlacement={tooltipSide}
                 />
                 {onCopyClick && (
                     <TooltipButton
@@ -103,15 +107,17 @@ export function NodeUtilsBar({
                         icon="📋"
                         onClick={onCopyClick}
                         disabled={disabled || !hasContent}
+                        tooltipPlacement={tooltipSide}
                     />
                 )}
                 {onPinToggle && (
                     <TooltipButton
                         label={isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
                         tooltipText={isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
-                        icon={isPinned ? '📌' : '📌'}
+                        icon={isPinned ? '📍' : '📌'}
                         onClick={onPinToggle}
                         disabled={disabled}
+                        tooltipPlacement={tooltipSide}
                     />
                 )}
                 {onCollapseToggle && (
@@ -121,6 +127,7 @@ export function NodeUtilsBar({
                         icon={isCollapsed ? '▴' : '▾'}
                         onClick={onCollapseToggle}
                         disabled={disabled}
+                        tooltipPlacement={tooltipSide}
                     />
                 )}
                 <TooltipButton
@@ -131,6 +138,7 @@ export function NodeUtilsBar({
                     onClick={onDelete}
                     disabled={disabled}
                     className={styles.deleteButton}
+                    tooltipPlacement={tooltipSide}
                 />
             </div>
             <div className={peekClasses.join(' ')} aria-hidden="true" />

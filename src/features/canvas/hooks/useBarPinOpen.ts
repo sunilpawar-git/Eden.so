@@ -1,7 +1,7 @@
 /**
  * useBarPinOpen — Pin the NodeUtilsBar open via right-click or long-press
  * Right-click (contextmenu) toggles; long-press (400ms touch) toggles.
- * Dismiss via onDismiss handler or Escape key.
+ * Escape key dismisses the pinned state.
  */
 import { useState, useCallback, useRef, useEffect, type MouseEvent } from 'react';
 
@@ -12,7 +12,6 @@ interface BarPinOpenHandlers {
     onContextMenu: (e: MouseEvent) => void;
     onTouchStart: () => void;
     onTouchEnd: () => void;
-    onDismiss: () => void;
 }
 
 interface UseBarPinOpenResult {
@@ -30,6 +29,8 @@ export function useBarPinOpen(): UseBarPinOpenResult {
     }, []);
 
     const onTouchStart = useCallback(() => {
+        // Clear any existing timer to prevent double-toggle on rapid touch
+        if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
         touchTimerRef.current = setTimeout(() => {
             setIsPinnedOpen((prev) => !prev);
             touchTimerRef.current = null;
@@ -41,10 +42,6 @@ export function useBarPinOpen(): UseBarPinOpenResult {
             clearTimeout(touchTimerRef.current);
             touchTimerRef.current = null;
         }
-    }, []);
-
-    const onDismiss = useCallback(() => {
-        setIsPinnedOpen(false);
     }, []);
 
     // Escape key dismisses
@@ -64,6 +61,6 @@ export function useBarPinOpen(): UseBarPinOpenResult {
 
     return {
         isPinnedOpen,
-        handlers: { onContextMenu, onTouchStart, onTouchEnd, onDismiss },
+        handlers: { onContextMenu, onTouchStart, onTouchEnd },
     };
 }
