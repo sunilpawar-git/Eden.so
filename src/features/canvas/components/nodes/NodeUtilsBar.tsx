@@ -26,6 +26,8 @@ interface NodeUtilsBarProps {
     isCollapsed?: boolean;
     disabled?: boolean;
     visible?: boolean;
+    /** Bar stays visible regardless of hover (right-click/long-press pin) */
+    isPinnedOpen?: boolean;
     /** Side of the node to show the bar (auto-flips near viewport edge) */
     placement?: BarPlacement;
 }
@@ -46,12 +48,15 @@ export function NodeUtilsBar({
     isCollapsed = false,
     disabled = false,
     visible = false,
+    isPinnedOpen = false,
     placement = 'right',
 }: NodeUtilsBarProps) {
     const isLeft = placement === 'left';
+    const isShown = visible || isPinnedOpen;
     const containerClasses = [styles.container];
     if (isLeft) containerClasses.push(styles.containerLeft);
-    if (visible) containerClasses.push(styles.containerVisible);
+    if (isPinnedOpen) containerClasses.push(styles.containerPinnedOpen);
+    else if (isShown) containerClasses.push(styles.containerVisible);
 
     const peekClasses = [styles.peekIndicator];
     if (isLeft) peekClasses.push(styles.peekIndicatorLeft);

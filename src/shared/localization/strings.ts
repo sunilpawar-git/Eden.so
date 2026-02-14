@@ -155,6 +155,8 @@ export const strings = {
         collapse: 'Collapse',
         expand: 'Expand',
         collapseShortcut: '',
+        pinBarOpen: 'Keep open',
+        unpinBarOpen: 'Auto-hide',
     },
     tooltip: {
         shortcutSeparator: ' ',

@@ -9,6 +9,7 @@ import { useIdeaCardActions } from '../../hooks/useIdeaCardActions';
 import { useIdeaCardState } from '../../hooks/useIdeaCardState';
 import { useLinkPreviewRetry } from '../../hooks/useLinkPreviewRetry';
 import { useBarPlacement } from '../../hooks/useBarPlacement';
+import { useBarPinOpen } from '../../hooks/useBarPinOpen';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { NodeUtilsBar } from './NodeUtilsBar';
 import { NodeResizeButtons } from './NodeResizeButtons';
@@ -33,6 +34,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const cardWrapperRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<NodeHeadingHandle>(null);
     const barPlacement = useBarPlacement(cardWrapperRef);
+    const { isPinnedOpen, handlers: pinOpenHandlers } = useBarPinOpen();
 
     const { generateFromPrompt } = useNodeGeneration();
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -72,7 +74,9 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     return (
         <div ref={cardWrapperRef} className={`${styles.cardWrapper} ${handleStyles.resizerWrapper}`}
-            onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+            onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); if (!isPinnedOpen) return; }}
+            onContextMenu={pinOpenHandlers.onContextMenu}
+            onTouchStart={pinOpenHandlers.onTouchStart} onTouchEnd={pinOpenHandlers.onTouchEnd}>
             <NodeResizer minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}
                 minHeight={MIN_NODE_HEIGHT} maxHeight={MAX_NODE_HEIGHT} isVisible={selected} />
             <NodeResizeButtons nodeId={id} visible={isHovered} />
@@ -107,7 +111,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 onCollapseToggle={handleCollapseToggle} hasContent={hasContent}
                 isTransforming={isTransforming} isPinned={isPinned ?? false}
                 isCollapsed={isCollapsed ?? false} disabled={isGenerating ?? false}
-                visible={isHovered} placement={barPlacement} />
+                visible={isHovered} isPinnedOpen={isPinnedOpen}
+                placement={barPlacement} />
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />
         </div>

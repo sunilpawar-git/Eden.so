@@ -55,6 +55,21 @@
     transform: translateY(-50%) translateX(-100%);
 }
 
+/* Pinned-open state: same as visible but no transition delay */
+.containerPinnedOpen {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(100%);
+    z-index: var(--z-dropdown);
+    pointer-events: auto;
+    box-shadow: var(--card-shadow-hover);
+    transition: none;
+}
+
+.containerLeft.containerPinnedOpen {
+    transform: translateY(-50%) translateX(-100%);
+}
+
 /* Left-side peek indicator */
 .peekIndicatorLeft {
     right: auto;
