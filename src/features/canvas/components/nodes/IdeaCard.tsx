@@ -33,7 +33,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const cardWrapperRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<NodeHeadingHandle>(null);
-    const barPlacement = useBarPlacement(cardWrapperRef);
+    const barPlacement = useBarPlacement(cardWrapperRef, isHovered);
     const { isPinnedOpen, handlers: pinOpenHandlers } = useBarPinOpen();
 
     const { generateFromPrompt } = useNodeGeneration();
@@ -74,7 +74,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     return (
         <div ref={cardWrapperRef} className={`${styles.cardWrapper} ${handleStyles.resizerWrapper}`}
-            onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => { setIsHovered(false); if (!isPinnedOpen) return; }}
+            onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
             onContextMenu={pinOpenHandlers.onContextMenu}
             onTouchStart={pinOpenHandlers.onTouchStart} onTouchEnd={pinOpenHandlers.onTouchEnd}>
             <NodeResizer minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}

@@ -1,5 +1,5 @@
 /**
- * useBarPlacement Tests — TDD RED phase
+ * useBarPlacement Tests
  * Determines whether NodeUtilsBar should appear on right or left side
  * based on the node's proximity to the viewport edge.
  */
@@ -37,7 +37,7 @@ describe('useBarPlacement', () => {
     });
 
     it('returns right when card is far from viewport edge', () => {
-        const { ref, cleanup } = createMockRef(500); // 524px from right edge
+        const { ref, cleanup } = createMockRef(500);
         const { result } = renderHook(() => useBarPlacement(ref));
 
         expect(result.current).toBe('right');
@@ -45,7 +45,7 @@ describe('useBarPlacement', () => {
     });
 
     it('returns left when card right edge is within threshold of viewport', () => {
-        const { ref, cleanup } = createMockRef(VIEWPORT_WIDTH - 40); // 40px from edge
+        const { ref, cleanup } = createMockRef(VIEWPORT_WIDTH - 40);
         const { result } = renderHook(() => useBarPlacement(ref));
 
         expect(result.current).toBe('left');
@@ -53,11 +53,9 @@ describe('useBarPlacement', () => {
     });
 
     it('returns right when card is exactly at threshold boundary', () => {
-        // Default threshold is 60px, so card at 964px (60px from 1024) = boundary
         const { ref, cleanup } = createMockRef(VIEWPORT_WIDTH - 60);
         const { result } = renderHook(() => useBarPlacement(ref));
 
-        // At exact boundary, should stay right (not flip)
         expect(result.current).toBe('right');
         cleanup();
     });
@@ -68,7 +66,6 @@ describe('useBarPlacement', () => {
 
         expect(result.current).toBe('left');
 
-        // Expand viewport so card is no longer near edge
         act(() => {
             Object.defineProperty(window, 'innerWidth', {
                 writable: true, configurable: true, value: 2000,
@@ -85,5 +82,32 @@ describe('useBarPlacement', () => {
         const { result } = renderHook(() => useBarPlacement(nullRef));
 
         expect(result.current).toBe('right');
+    });
+
+    it('recalculates when isVisible changes (covers canvas pan)', () => {
+        const div = document.createElement('div');
+        let mockRight = VIEWPORT_WIDTH - 40; // starts near edge
+        div.getBoundingClientRect = vi.fn(() => ({
+            top: 100, left: 100, right: mockRight, bottom: 300,
+            width: mockRight - 100, height: 200, x: 100, y: 100,
+            toJSON: vi.fn(),
+        }));
+        document.body.appendChild(div);
+        const ref = createRef<HTMLDivElement>();
+        Object.defineProperty(ref, 'current', { value: div, writable: false });
+
+        const { result, rerender } = renderHook(
+            ({ visible }) => useBarPlacement(ref, visible),
+            { initialProps: { visible: false } }
+        );
+
+        expect(result.current).toBe('left'); // near edge at initial calc
+
+        // Simulate: user panned canvas so node is now far from edge
+        mockRight = 500;
+        rerender({ visible: true }); // hover triggers recalculation
+
+        expect(result.current).toBe('right');
+        div.remove();
     });
 });
