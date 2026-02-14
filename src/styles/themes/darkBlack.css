@@ -1,0 +1,60 @@
+/**
+ * Dark Black Theme - True AMOLED black
+ * Maximum contrast, ideal for OLED displays and dark environments
+ */
+[data-theme="darkBlack"] {
+  --color-primary: hsl(220, 75%, 62%);
+  --color-primary-hover: hsl(220, 75%, 54%);
+  --color-primary-light: hsl(220, 40%, 15%);
+
+  --color-secondary: hsl(220, 65%, 52%);
+  --color-secondary-hover: hsl(220, 65%, 46%);
+
+  --color-background: hsl(0, 0%, 0%);
+  --color-surface: hsl(0, 0%, 5%);
+  --color-surface-elevated: hsl(0, 0%, 8%);
+  --color-surface-hover: hsl(0, 0%, 12%);
+
+  --color-text-primary: hsl(0, 0%, 96%);
+  --color-text-secondary: hsl(0, 0%, 68%);
+  --color-text-muted: hsl(0, 0%, 50%);
+
+  --color-border: hsl(0, 0%, 16%);
+
+  --canvas-background: hsl(0, 0%, 0%);
+  --canvas-grid-color: hsl(0, 0%, 10%);
+
+  --node-prompt-bg: hsl(0, 0%, 8%);
+  --node-ai-bg: hsl(220, 15%, 9%);
+  --node-derived-bg: hsl(0, 0%, 6%);
+  --node-border: hsl(0, 0%, 18%);
+  --node-shadow: 0 2px 8px hsla(0, 0%, 0%, 0.5);
+
+  --glass-bg: hsla(0, 0%, 5%, 0.9);
+  --glass-border: 1px solid hsla(0, 0%, 100%, 0.06);
+
+  --header-gradient-start: hsl(220, 65%, 52%);
+  --header-gradient-end: hsl(220, 70%, 38%);
+  --output-bg: hsl(0, 0%, 4%);
+  --card-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.4);
+  --card-shadow-hover: 0 4px 12px hsla(0, 0%, 0%, 0.5);
+  --tooltip-bg: hsl(0, 0%, 18%);
+  --tooltip-text: hsl(0, 0%, 96%);
+
+  --color-success-bg: hsl(145, 45%, 32%);
+  --color-success-text: hsl(145, 50%, 95%);
+  --color-error-bg: hsl(0, 55%, 42%);
+  --color-error-text: hsl(0, 60%, 95%);
+  --color-warning-bg: hsl(38, 70%, 42%);
+  --color-warning-text: hsl(38, 90%, 10%);
+  --color-info-bg: var(--color-primary);
+  --color-info-text: hsl(0, 0%, 100%);
+
+  --color-hover: hsla(0, 0%, 100%, 0.06);
+  --color-text: var(--color-text-primary);
+  --shadow-dropdown: 0 4px 12px hsla(0, 0%, 0%, 0.6);
+
+  --offline-banner-bg: hsl(38, 30%, 10%);
+  --offline-banner-text: hsl(38, 50%, 75%);
+  --offline-banner-border: hsl(38, 20%, 20%);
+}

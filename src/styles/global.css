@@ -3,6 +3,10 @@
  */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import './variables.css';
+@import './themes/dark.css';
+@import './themes/sepia.css';
+@import './themes/grey.css';
+@import './themes/darkBlack.css';
 
 *,
 *::before,

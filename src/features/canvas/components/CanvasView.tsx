@@ -11,6 +11,7 @@ import {
     ConnectionLineType,
     MarkerType,
     SelectionMode,
+    PanOnScrollMode,
     type Node,
     type Edge,
     type OnNodesChange,
@@ -24,6 +25,7 @@ import '@xyflow/react/dist/style.css';
 
 import { useCanvasStore } from '../stores/canvasStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { IdeaCard } from './nodes/IdeaCard';
 import styles from './CanvasView.module.css';
 
@@ -50,6 +52,9 @@ export function CanvasView() {
     const clearSelection = useCanvasStore((s) => s.clearSelection);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
+    const canvasGrid = useSettingsStore((s) => s.canvasGrid);
+    const canvasScrollMode = useSettingsStore((s) => s.canvasScrollMode);
+    const isNavigateMode = canvasScrollMode === 'navigate';
 
     // RAF throttling for resize events (performance optimization)
     const pendingResize = useRef<{ id: string; width: number; height: number } | null>(null);
@@ -206,10 +211,13 @@ export function CanvasView() {
                 snapGrid={[16, 16]}
                 minZoom={0.1}
                 maxZoom={2}
+                zoomOnScroll={!isNavigateMode}
+                panOnScroll={isNavigateMode}
+                {...(isNavigateMode && { panOnScrollMode: PanOnScrollMode.Free })}
                 selectionOnDrag
                 selectionMode={SelectionMode.Partial}
             >
-                <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+                {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1} />}
                 <Controls />
             </ReactFlow>
         </div>

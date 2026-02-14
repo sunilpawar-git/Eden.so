@@ -6,6 +6,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsPanel } from '../SettingsPanel';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
+import { createMockSettingsState } from '@/shared/__tests__/helpers/mockSettingsState';
 
 // Mock the settings store
 vi.mock('@/shared/stores/settingsStore', () => ({
@@ -21,20 +22,12 @@ describe('SettingsPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(useSettingsStore).mockImplementation((selector) => {
-            const state = {
-                theme: 'system' as const,
-                canvasGrid: true,
-                autoSave: true,
-                autoSaveInterval: 30,
-                compactMode: false,
+            const state = createMockSettingsState({
                 setTheme: mockSetTheme,
                 toggleCanvasGrid: mockToggleCanvasGrid,
                 setAutoSave: mockSetAutoSave,
-                setAutoSaveInterval: vi.fn(),
                 toggleCompactMode: mockToggleCompactMode,
-                getResolvedTheme: () => 'light' as const,
-                loadFromStorage: vi.fn(),
-            };
+            });
             return typeof selector === 'function' ? selector(state) : state;
         });
     });
@@ -109,21 +102,54 @@ describe('SettingsPanel', () => {
     });
 
     describe('theme selection', () => {
-        it('should display current theme selection', () => {
+        it('should display all six theme swatches', () => {
             render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
-            
-            // System should be selected by default based on mock
+
+            expect(screen.getByLabelText(strings.settings.themeLight)).toBeInTheDocument();
+            expect(screen.getByLabelText(strings.settings.themeDark)).toBeInTheDocument();
+            expect(screen.getByLabelText(strings.settings.themeSystem)).toBeInTheDocument();
+            expect(screen.getByLabelText(strings.settings.themeSepia)).toBeInTheDocument();
+            expect(screen.getByLabelText(strings.settings.themeGrey)).toBeInTheDocument();
+            expect(screen.getByLabelText(strings.settings.themeDarkBlack)).toBeInTheDocument();
+        });
+
+        it('should mark the active theme swatch', () => {
+            render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
+
             const systemOption = screen.getByLabelText(strings.settings.themeSystem);
             expect(systemOption).toBeChecked();
         });
 
-        it('should call setTheme when theme option is selected', () => {
+        it('should call setTheme when a theme swatch is selected', () => {
             render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
             
             const darkOption = screen.getByLabelText(strings.settings.themeDark);
             fireEvent.click(darkOption);
-            
             expect(mockSetTheme).toHaveBeenCalledWith('dark');
+        });
+
+        it('should call setTheme with sepia when sepia swatch is selected', () => {
+            render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
+
+            const sepiaOption = screen.getByLabelText(strings.settings.themeSepia);
+            fireEvent.click(sepiaOption);
+            expect(mockSetTheme).toHaveBeenCalledWith('sepia');
+        });
+
+        it('should call setTheme with grey when grey swatch is selected', () => {
+            render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
+
+            const greyOption = screen.getByLabelText(strings.settings.themeGrey);
+            fireEvent.click(greyOption);
+            expect(mockSetTheme).toHaveBeenCalledWith('grey');
+        });
+
+        it('should call setTheme with darkBlack when dark black swatch is selected', () => {
+            render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
+
+            const darkBlackOption = screen.getByLabelText(strings.settings.themeDarkBlack);
+            fireEvent.click(darkBlackOption);
+            expect(mockSetTheme).toHaveBeenCalledWith('darkBlack');
         });
     });
 });

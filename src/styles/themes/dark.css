@@ -1,0 +1,67 @@
+/**
+ * Dark Theme - Deep blue-grey palette
+ * Overrides :root light theme tokens
+ */
+[data-theme="dark"] {
+  --color-primary: hsl(220, 70%, 60%);
+  --color-primary-hover: hsl(220, 70%, 52%);
+  --color-primary-light: hsl(220, 40%, 20%);
+
+  --color-secondary: hsl(220, 60%, 50%);
+  --color-secondary-hover: hsl(220, 60%, 45%);
+
+  --color-background: hsl(220, 13%, 9%);
+  --color-surface: hsl(220, 13%, 12%);
+  --color-surface-elevated: hsl(220, 13%, 15%);
+  --color-surface-hover: hsl(220, 13%, 18%);
+
+  --color-text-primary: hsl(0, 0%, 95%);
+  --color-text-secondary: hsl(220, 9%, 65%);
+  --color-text-muted: hsl(220, 9%, 50%);
+
+  --color-border: hsl(220, 13%, 22%);
+
+  --canvas-background: hsl(220, 13%, 7%);
+  --canvas-grid-color: hsl(220, 13%, 15%);
+
+  --node-prompt-bg: hsl(220, 13%, 15%);
+  --node-ai-bg: hsl(220, 25%, 16%);
+  --node-derived-bg: hsl(220, 20%, 14%);
+  --node-border: hsl(220, 13%, 24%);
+  --node-shadow: 0 2px 8px hsla(0, 0%, 0%, 0.25);
+
+  --glass-bg: hsla(220, 13%, 12%, 0.8);
+  --glass-border: 1px solid hsla(0, 0%, 100%, 0.08);
+
+  /* IdeaCard Design Tokens - Dark (single accent) */
+  --header-gradient-start: hsl(220, 60%, 50%);
+  --header-gradient-end: hsl(220, 65%, 38%);
+  --output-bg: hsl(220, 13%, 13%);
+  --card-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.2);
+  --card-shadow-hover: 0 4px 12px hsla(0, 0%, 0%, 0.3);
+  --tooltip-bg: hsl(220, 13%, 25%);
+
+  /* Toast notification colors - Dark */
+  --color-success-bg: hsl(145, 50%, 35%);
+  --color-success-text: hsl(145, 50%, 95%);
+  --color-error-bg: hsl(0, 60%, 45%);
+  --color-error-text: hsl(0, 60%, 95%);
+  --color-warning-bg: hsl(38, 75%, 45%);
+  --color-warning-text: hsl(38, 90%, 10%);
+  --color-info-bg: var(--color-primary);
+  --color-info-text: hsl(0, 0%, 100%);
+
+  /* Dropdown/menu shadows - Dark */
+  --shadow-dropdown: 0 4px 12px hsla(0, 0%, 0%, 0.4);
+
+  /* Hover state for menus - Dark */
+  --color-hover: hsla(0, 0%, 100%, 0.08);
+
+  /* Text alias - Dark */
+  --color-text: var(--color-text-primary);
+
+  /* Offline Banner - Dark */
+  --offline-banner-bg: hsl(38, 40%, 18%);
+  --offline-banner-text: hsl(38, 60%, 80%);
+  --offline-banner-border: hsl(38, 30%, 28%);
+}

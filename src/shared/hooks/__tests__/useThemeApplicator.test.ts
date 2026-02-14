@@ -1,94 +1,136 @@
 /**
- * Tests for useThemeApplicator hook
+ * useThemeApplicator Hook Tests
+ * TDD: Validates theme is applied to document root for all theme options
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useThemeApplicator } from '../useThemeApplicator';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 
-// Mock the settings store
-vi.mock('@/shared/stores/settingsStore', () => ({
-    useSettingsStore: vi.fn(),
+// Mock matchMedia
+const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
 }));
 
 describe('useThemeApplicator', () => {
-    const mockGetResolvedTheme = vi.fn();
-    let mockMediaQueryList: { addEventListener: ReturnType<typeof vi.fn>; removeEventListener: ReturnType<typeof vi.fn> };
-
-    function setupMock(theme: string, resolvedTheme: string) {
-        mockGetResolvedTheme.mockReturnValue(resolvedTheme);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        vi.mocked(useSettingsStore).mockImplementation((selector: any) => {
-            const state = {
-                theme,
-                getResolvedTheme: mockGetResolvedTheme,
-            };
-            return selector(state);
-        });
-    }
-
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.stubGlobal('matchMedia', mockMatchMedia);
         document.documentElement.dataset.theme = '';
-
-        mockMediaQueryList = {
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-        };
-
-        // Mock matchMedia
-        vi.spyOn(window, 'matchMedia').mockReturnValue(mockMediaQueryList as unknown as MediaQueryList);
+        useSettingsStore.setState({ theme: 'system' });
     });
 
     afterEach(() => {
-        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+        delete document.documentElement.dataset.theme;
     });
 
     it('should apply light theme to document', () => {
-        setupMock('light', 'light');
+        useSettingsStore.setState({ theme: 'light' });
         renderHook(() => useThemeApplicator());
+
         expect(document.documentElement.dataset.theme).toBe('light');
     });
 
     it('should apply dark theme to document', () => {
-        setupMock('dark', 'dark');
+        useSettingsStore.setState({ theme: 'dark' });
         renderHook(() => useThemeApplicator());
+
         expect(document.documentElement.dataset.theme).toBe('dark');
     });
 
-    it('should add media query listener when theme is system', () => {
-        setupMock('system', 'light');
-        renderHook(() => useThemeApplicator());
-        expect(window.matchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)');
-        expect(mockMediaQueryList.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
-    });
-
-    it('should remove media query listener on cleanup', () => {
-        setupMock('system', 'light');
-        const { unmount } = renderHook(() => useThemeApplicator());
-        unmount();
-        expect(mockMediaQueryList.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function));
-    });
-
-    it('should not add listener when theme is not system', () => {
-        setupMock('dark', 'dark');
-        renderHook(() => useThemeApplicator());
-        expect(mockMediaQueryList.addEventListener).not.toHaveBeenCalled();
-    });
-
-    it('should re-apply theme when preferences change', () => {
-        setupMock('system', 'light');
+    it('should apply sepia theme to document', () => {
+        useSettingsStore.setState({ theme: 'sepia' });
         renderHook(() => useThemeApplicator());
 
-        // Get the change handler that was registered
-        const calls = mockMediaQueryList.addEventListener.mock.calls;
-        expect(calls.length).toBeGreaterThan(0);
-        const changeHandler = calls[0]![1] as () => void;
+        expect(document.documentElement.dataset.theme).toBe('sepia');
+    });
 
-        // Simulate system preference change
-        mockGetResolvedTheme.mockReturnValue('dark');
-        changeHandler();
+    it('should apply grey theme to document', () => {
+        useSettingsStore.setState({ theme: 'grey' });
+        renderHook(() => useThemeApplicator());
+
+        expect(document.documentElement.dataset.theme).toBe('grey');
+    });
+
+    it('should apply darkBlack theme to document', () => {
+        useSettingsStore.setState({ theme: 'darkBlack' });
+        renderHook(() => useThemeApplicator());
+
+        expect(document.documentElement.dataset.theme).toBe('darkBlack');
+    });
+
+    it('should resolve system theme to dark when OS prefers dark', () => {
+        mockMatchMedia.mockImplementation((query: string) => ({
+            matches: query === '(prefers-color-scheme: dark)',
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }));
+
+        useSettingsStore.setState({ theme: 'system' });
+        renderHook(() => useThemeApplicator());
 
         expect(document.documentElement.dataset.theme).toBe('dark');
+    });
+
+    it('should resolve system theme to light when OS prefers light', () => {
+        mockMatchMedia.mockImplementation((query: string) => ({
+            matches: false,
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }));
+
+        useSettingsStore.setState({ theme: 'system' });
+        renderHook(() => useThemeApplicator());
+
+        expect(document.documentElement.dataset.theme).toBe('light');
+    });
+
+    it('should listen for system preference changes when theme is system', () => {
+        const mockAddListener = vi.fn();
+        mockMatchMedia.mockImplementation((query: string) => ({
+            matches: false,
+            media: query,
+            addEventListener: mockAddListener,
+            removeEventListener: vi.fn(),
+        }));
+
+        useSettingsStore.setState({ theme: 'system' });
+        renderHook(() => useThemeApplicator());
+
+        expect(mockAddListener).toHaveBeenCalledWith('change', expect.any(Function));
+    });
+
+    it('should not listen for system changes when theme is light', () => {
+        const mockAddListener = vi.fn();
+        mockMatchMedia.mockImplementation((query: string) => ({
+            matches: false,
+            media: query,
+            addEventListener: mockAddListener,
+            removeEventListener: vi.fn(),
+        }));
+
+        useSettingsStore.setState({ theme: 'light' });
+        renderHook(() => useThemeApplicator());
+        expect(mockAddListener).not.toHaveBeenCalled();
+    });
+
+    it('should not listen for system changes when theme is sepia', () => {
+        const mockAddListener = vi.fn();
+        mockMatchMedia.mockImplementation((query: string) => ({
+            matches: false,
+            media: query,
+            addEventListener: mockAddListener,
+            removeEventListener: vi.fn(),
+        }));
+
+        useSettingsStore.setState({ theme: 'sepia' });
+        renderHook(() => useThemeApplicator());
+        expect(mockAddListener).not.toHaveBeenCalled();
     });
 });

@@ -1,0 +1,61 @@
+/**
+ * Grey Theme - Neutral desaturated palette
+ * Clean, distraction-free workspace
+ */
+[data-theme="grey"] {
+  --color-primary: hsl(210, 15%, 45%);
+  --color-primary-hover: hsl(210, 15%, 38%);
+  --color-primary-light: hsl(210, 10%, 90%);
+
+  --color-secondary: hsl(210, 12%, 38%);
+  --color-secondary-hover: hsl(210, 12%, 32%);
+
+  --color-background: hsl(0, 0%, 92%);
+  --color-surface: hsl(0, 0%, 89%);
+  --color-surface-elevated: hsl(0, 0%, 94%);
+  --color-surface-hover: hsl(0, 0%, 85%);
+
+  --color-text-primary: hsl(0, 0%, 15%);
+  --color-text-secondary: hsl(0, 0%, 40%);
+  --color-text-muted: hsl(0, 0%, 50%);
+
+  --color-border: hsl(0, 0%, 80%);
+
+  --canvas-background: hsl(0, 0%, 90%);
+  --canvas-grid-color: hsl(0, 0%, 82%);
+
+  --node-prompt-bg: hsl(0, 0%, 94%);
+  --node-ai-bg: hsl(210, 5%, 93%);
+  --node-derived-bg: hsl(0, 0%, 92%);
+  --node-border: hsl(0, 0%, 78%);
+  --node-shadow: 0 2px 8px hsla(0, 0%, 0%, 0.06);
+
+  --glass-bg: hsla(0, 0%, 92%, 0.7);
+  --glass-border: 1px solid hsla(0, 0%, 80%, 0.3);
+
+  --header-gradient-start: hsl(210, 12%, 48%);
+  --header-gradient-end: hsl(210, 15%, 36%);
+  --output-bg: hsl(0, 0%, 90%);
+  --card-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.06);
+  --card-shadow-hover: 0 4px 12px hsla(0, 0%, 0%, 0.1);
+  --tooltip-bg: hsl(0, 0%, 18%);
+  --tooltip-text: hsl(0, 0%, 96%);
+
+  /* Toast notification colors - Grey */
+  --color-success-bg: hsl(145, 45%, 40%);
+  --color-success-text: hsl(0, 0%, 100%);
+  --color-error-bg: hsl(0, 55%, 48%);
+  --color-error-text: hsl(0, 0%, 100%);
+  --color-warning-bg: hsl(38, 75%, 48%);
+  --color-warning-text: hsl(38, 80%, 10%);
+  --color-info-bg: var(--color-primary);
+  --color-info-text: hsl(0, 0%, 100%);
+
+  --color-hover: hsla(0, 0%, 0%, 0.05);
+  --color-text: var(--color-text-primary);
+  --shadow-dropdown: 0 4px 12px hsla(0, 0%, 0%, 0.12);
+
+  --offline-banner-bg: hsl(38, 30%, 90%);
+  --offline-banner-text: hsl(38, 20%, 25%);
+  --offline-banner-border: hsl(38, 20%, 78%);
+}

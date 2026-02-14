@@ -1,15 +1,27 @@
 /**
- * Canvas Section - Canvas-related settings
+ * Canvas Section - Canvas grid, auto-save, and scroll mode settings
  */
 import { strings } from '@/shared/localization/strings';
-import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { useSettingsStore, type CanvasScrollMode } from '@/shared/stores/settingsStore';
 import styles from '../SettingsPanel.module.css';
+
+interface ScrollModeOption {
+    value: CanvasScrollMode;
+    label: string;
+}
+
+const SCROLL_MODE_OPTIONS: readonly ScrollModeOption[] = [
+    { value: 'zoom', label: strings.settings.canvasScrollZoom },
+    { value: 'navigate', label: strings.settings.canvasScrollNavigate },
+];
 
 export function CanvasSection() {
     const canvasGrid = useSettingsStore((state) => state.canvasGrid);
     const toggleCanvasGrid = useSettingsStore((state) => state.toggleCanvasGrid);
     const autoSave = useSettingsStore((state) => state.autoSave);
     const setAutoSave = useSettingsStore((state) => state.setAutoSave);
+    const canvasScrollMode = useSettingsStore((state) => state.canvasScrollMode);
+    const setCanvasScrollMode = useSettingsStore((state) => state.setCanvasScrollMode);
 
     return (
         <div className={styles.section}>
@@ -22,6 +34,23 @@ export function CanvasSection() {
                 />
                 <span>{strings.settings.canvasGrid}</span>
             </label>
+
+            <h3 className={styles.sectionTitle}>{strings.settings.canvasScrollMode}</h3>
+            <div className={styles.optionGroup}>
+                {SCROLL_MODE_OPTIONS.map((option) => (
+                    <label key={option.value} className={styles.radioLabel}>
+                        <input
+                            type="radio"
+                            name="canvasScrollMode"
+                            value={option.value}
+                            checked={canvasScrollMode === option.value}
+                            onChange={() => setCanvasScrollMode(option.value)}
+                            aria-label={option.label}
+                        />
+                        <span>{option.label}</span>
+                    </label>
+                ))}
+            </div>
 
             <h3 className={styles.sectionTitle}>{strings.settings.autoSave}</h3>
             <label className={styles.toggleLabel}>
