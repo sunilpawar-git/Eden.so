@@ -213,7 +213,7 @@ export function CanvasView() {
                 maxZoom={2}
                 zoomOnScroll={!isNavigateMode}
                 panOnScroll={isNavigateMode}
-                panOnScrollMode={PanOnScrollMode.Free}
+                {...(isNavigateMode && { panOnScrollMode: PanOnScrollMode.Free })}
                 selectionOnDrag
                 selectionMode={SelectionMode.Partial}
             >

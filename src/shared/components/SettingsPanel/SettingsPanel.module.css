@@ -144,67 +144,6 @@
     accent-color: var(--color-primary);
 }
 
-/* Theme Swatch Grid */
-.themeSwatchGrid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-sm);
-}
-
-.themeSwatch {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-xs);
-    cursor: pointer;
-    padding: var(--space-sm);
-    border-radius: var(--radius-md);
-    border: 2px solid transparent;
-    transition: all var(--transition-fast);
-}
-
-.themeSwatch:hover {
-    background: var(--color-surface-hover);
-}
-
-.themeSwatchActive {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
-}
-
-.themeSwatchInput {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-}
-
-.themeSwatchPreview {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    padding: var(--space-xs);
-    overflow: hidden;
-}
-
-.themeSwatchAccent {
-    width: 12px;
-    height: 12px;
-    border-radius: var(--radius-full);
-}
-
-.themeSwatchLabel {
-    font-size: var(--font-size-xs);
-    color: var(--color-text-secondary);
-    text-align: center;
-}
-
 /* Account Section */
 .accountInfo {
     display: flex;

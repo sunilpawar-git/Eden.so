@@ -4,46 +4,21 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useSettingsStore } from '../settingsStore';
+import {
+    createLocalStorageMock,
+    createMockMatchMedia,
+    resetSettingsState,
+} from './helpers/settingsTestSetup';
 
-// Mock localStorage
-const localStorageMock = (() => {
-    let store: Record<string, string> = {};
-    return {
-        getItem: vi.fn((key: string) => store[key] || null),
-        setItem: vi.fn((key: string, value: string) => {
-            store[key] = value;
-        }),
-        removeItem: vi.fn((key: string) => {
-            store = Object.fromEntries(
-                Object.entries(store).filter(([k]) => k !== key)
-            );
-        }),
-        clear: vi.fn(() => { store = {}; }),
-    };
-})();
-
-const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-}));
+const localStorageMock = createLocalStorageMock();
+const mockMatchMedia = createMockMatchMedia();
 
 describe('SettingsStore', () => {
     beforeEach(() => {
         localStorageMock.clear();
         vi.stubGlobal('localStorage', localStorageMock);
         vi.stubGlobal('matchMedia', mockMatchMedia);
-
-        useSettingsStore.setState({
-            theme: 'system',
-            canvasGrid: true,
-            autoSave: true,
-            autoSaveInterval: 30,
-            compactMode: false,
-            canvasScrollMode: 'zoom',
-        });
+        resetSettingsState();
     });
 
     afterEach(() => { vi.unstubAllGlobals(); });
@@ -159,13 +134,52 @@ describe('SettingsStore', () => {
     });
 
     describe('localStorage persistence', () => {
-        it('should load theme from localStorage on init', () => {
+        it('should load theme from localStorage via loadFromStorage', () => {
             localStorageMock.getItem.mockImplementation((key: string) => {
                 if (key === 'settings-theme') return 'dark';
                 return null;
             });
             useSettingsStore.getState().loadFromStorage();
             expect(localStorageMock.getItem).toHaveBeenCalledWith('settings-theme');
+            expect(useSettingsStore.getState().theme).toBe('dark');
+        });
+    });
+
+    describe('invalid localStorage values (defense-in-depth)', () => {
+        it('should fall back to default theme for invalid stored value', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-theme') return 'hackedTheme';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().theme).toBe('system');
+        });
+
+        it('should fall back to default theme for empty string', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-theme') return '';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().theme).toBe('system');
+        });
+
+        it('should fall back to default scroll mode for invalid stored value', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-canvasScrollMode') return 'fly';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().canvasScrollMode).toBe('zoom');
+        });
+
+        it('should reject XSS payload in theme value', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-theme') return '<script>alert(1)</script>';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().theme).toBe('system');
         });
     });
 });

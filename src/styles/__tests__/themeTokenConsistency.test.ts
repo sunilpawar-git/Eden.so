@@ -119,6 +119,14 @@ describe('Theme Token Consistency', () => {
             '--color-text-primary',
             '--color-primary',
             '--color-border',
+            '--color-success-bg',
+            '--color-success-text',
+            '--color-error-bg',
+            '--color-error-text',
+            '--color-warning-bg',
+            '--color-warning-text',
+            '--color-info-bg',
+            '--color-info-text',
         ];
 
         for (const token of criticalTokens) {
@@ -146,6 +154,14 @@ describe('Theme Token Consistency', () => {
             '--color-primary',
             '--color-border',
             '--canvas-background',
+            '--color-success-bg',
+            '--color-success-text',
+            '--color-error-bg',
+            '--color-error-text',
+            '--color-warning-bg',
+            '--color-warning-text',
+            '--color-info-bg',
+            '--color-info-text',
         ];
 
         const themeFiles = [

@@ -31,6 +31,21 @@ export function setStorageItem(key: string, value: string | number | boolean): v
     }
 }
 
+/** Safely read a string value from localStorage, validated against an allow-list */
+export function getValidatedStorageItem<T extends string>(
+    key: string,
+    defaultValue: T,
+    validValues: readonly T[],
+): T {
+    try {
+        const item = localStorage.getItem(key);
+        if (item === null) return defaultValue;
+        return validValues.includes(item as T) ? (item as T) : defaultValue;
+    } catch {
+        return defaultValue;
+    }
+}
+
 /** Safely read a JSON-parsed value from localStorage */
 export function getStorageJson<T>(key: string, defaultValue: T): T {
     try {

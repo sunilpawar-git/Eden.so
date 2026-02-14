@@ -4,38 +4,21 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useSettingsStore } from '../settingsStore';
+import {
+    createLocalStorageMock,
+    createMockMatchMedia,
+    resetSettingsState,
+} from './helpers/settingsTestSetup';
 
-// Mock localStorage
-const localStorageMock = (() => {
-    let store: Record<string, string> = {};
-    return {
-        getItem: vi.fn((key: string) => store[key] || null),
-        setItem: vi.fn((key: string, value: string) => {
-            store[key] = value;
-        }),
-        removeItem: vi.fn((key: string) => {
-            store = Object.fromEntries(
-                Object.entries(store).filter(([k]) => k !== key)
-            );
-        }),
-        clear: vi.fn(() => { store = {}; }),
-    };
-})();
-
-const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: query === '(prefers-color-scheme: dark)' ? false : false,
-    media: query,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-}));
+const localStorageMock = createLocalStorageMock();
+const mockMatchMedia = createMockMatchMedia();
 
 describe('SettingsStore - Theme', () => {
     beforeEach(() => {
         localStorageMock.clear();
         vi.stubGlobal('localStorage', localStorageMock);
         vi.stubGlobal('matchMedia', mockMatchMedia);
-        useSettingsStore.setState({ theme: 'system' });
+        resetSettingsState();
     });
 
     afterEach(() => { vi.unstubAllGlobals(); });

@@ -6,6 +6,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { CanvasSection } from '../CanvasSection';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
+import { createMockSettingsState } from '@/shared/__tests__/helpers/mockSettingsState';
 
 vi.mock('@/shared/stores/settingsStore', () => ({
     useSettingsStore: vi.fn(),
@@ -19,22 +20,11 @@ describe('CanvasSection', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(useSettingsStore).mockImplementation((selector) => {
-            const state = {
-                theme: 'system' as const,
-                canvasGrid: true,
-                autoSave: true,
-                autoSaveInterval: 30,
-                compactMode: false,
-                canvasScrollMode: 'zoom' as const,
-                setTheme: vi.fn(),
+            const state = createMockSettingsState({
                 toggleCanvasGrid: mockToggleCanvasGrid,
                 setAutoSave: mockSetAutoSave,
-                setAutoSaveInterval: vi.fn(),
-                toggleCompactMode: vi.fn(),
                 setCanvasScrollMode: mockSetCanvasScrollMode,
-                getResolvedTheme: () => 'light' as const,
-                loadFromStorage: vi.fn(),
-            };
+            });
             return typeof selector === 'function' ? selector(state) : state;
         });
     });
@@ -75,22 +65,12 @@ describe('CanvasSection', () => {
 
     it('should call setCanvasScrollMode when zoom is selected', () => {
         vi.mocked(useSettingsStore).mockImplementation((selector) => {
-            const state = {
-                theme: 'system' as const,
-                canvasGrid: true,
-                autoSave: true,
-                autoSaveInterval: 30,
-                compactMode: false,
+            const state = createMockSettingsState({
                 canvasScrollMode: 'navigate' as const,
-                setTheme: vi.fn(),
                 toggleCanvasGrid: mockToggleCanvasGrid,
                 setAutoSave: mockSetAutoSave,
-                setAutoSaveInterval: vi.fn(),
-                toggleCompactMode: vi.fn(),
                 setCanvasScrollMode: mockSetCanvasScrollMode,
-                getResolvedTheme: () => 'light' as const,
-                loadFromStorage: vi.fn(),
-            };
+            });
             return typeof selector === 'function' ? selector(state) : state;
         });
 

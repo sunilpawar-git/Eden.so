@@ -2,7 +2,13 @@
  * Storage Utility Tests
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getStorageItem, setStorageItem, getStorageJson, setStorageJson } from '../storage';
+import {
+    getStorageItem,
+    getValidatedStorageItem,
+    setStorageItem,
+    getStorageJson,
+    setStorageJson,
+} from '../storage';
 
 describe('Storage Utilities', () => {
     beforeEach(() => {
@@ -42,6 +48,42 @@ describe('Storage Utilities', () => {
             });
             expect(getStorageItem('any-key', 'fallback')).toBe('fallback');
             spy.mockRestore();
+        });
+    });
+
+    describe('getValidatedStorageItem', () => {
+        const validOptions = ['alpha', 'beta', 'gamma'] as const;
+
+        it('should return default when key is missing', () => {
+            expect(getValidatedStorageItem('missing', 'alpha', validOptions)).toBe('alpha');
+        });
+
+        it('should return stored value when it is in the allow-list', () => {
+            localStorage.setItem('valid-key', 'beta');
+            expect(getValidatedStorageItem('valid-key', 'alpha', validOptions)).toBe('beta');
+        });
+
+        it('should return default when stored value is not in the allow-list', () => {
+            localStorage.setItem('invalid-key', 'invalid');
+            expect(getValidatedStorageItem('invalid-key', 'alpha', validOptions)).toBe('alpha');
+        });
+
+        it('should return default for empty string not in allow-list', () => {
+            localStorage.setItem('empty-key', '');
+            expect(getValidatedStorageItem('empty-key', 'alpha', validOptions)).toBe('alpha');
+        });
+
+        it('should return default when localStorage throws', () => {
+            const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+                throw new Error('Storage unavailable');
+            });
+            expect(getValidatedStorageItem('any', 'alpha', validOptions)).toBe('alpha');
+            spy.mockRestore();
+        });
+
+        it('should reject XSS payloads not in allow-list', () => {
+            localStorage.setItem('xss-key', '<script>alert(1)</script>');
+            expect(getValidatedStorageItem('xss-key', 'alpha', validOptions)).toBe('alpha');
         });
     });
 

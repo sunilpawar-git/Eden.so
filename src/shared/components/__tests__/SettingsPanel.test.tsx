@@ -6,6 +6,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsPanel } from '../SettingsPanel';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
+import { createMockSettingsState } from '@/shared/__tests__/helpers/mockSettingsState';
 
 // Mock the settings store
 vi.mock('@/shared/stores/settingsStore', () => ({
@@ -21,22 +22,12 @@ describe('SettingsPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(useSettingsStore).mockImplementation((selector) => {
-            const state = {
-                theme: 'system' as const,
-                canvasGrid: true,
-                autoSave: true,
-                autoSaveInterval: 30,
-                compactMode: false,
-                canvasScrollMode: 'zoom' as const,
+            const state = createMockSettingsState({
                 setTheme: mockSetTheme,
                 toggleCanvasGrid: mockToggleCanvasGrid,
                 setAutoSave: mockSetAutoSave,
-                setAutoSaveInterval: vi.fn(),
                 toggleCompactMode: mockToggleCompactMode,
-                setCanvasScrollMode: vi.fn(),
-                getResolvedTheme: () => 'light' as const,
-                loadFromStorage: vi.fn(),
-            };
+            });
             return typeof selector === 'function' ? selector(state) : state;
         });
     });

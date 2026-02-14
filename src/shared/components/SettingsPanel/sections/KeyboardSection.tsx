@@ -10,24 +10,22 @@ interface ShortcutItem {
     keys: string;
 }
 
-function buildShortcuts(): ShortcutItem[] {
-    return [
-        { action: strings.shortcuts.openSettings, keys: formatShortcut(',') },
-        { action: strings.shortcuts.addNode, keys: 'N' },
-        { action: strings.shortcuts.quickCapture, keys: formatShortcut('N') },
-        { action: strings.shortcuts.deleteNode, keys: 'Delete / Backspace' },
-        { action: strings.shortcuts.clearSelection, keys: 'Escape' },
-    ];
-}
+/** Static shortcut list — built once at module load (platform never changes mid-session) */
+const SHORTCUTS: readonly ShortcutItem[] = [
+    { action: strings.shortcuts.openSettings, keys: formatShortcut(',') },
+    { action: strings.shortcuts.addNode, keys: 'N' },
+    { action: strings.shortcuts.quickCapture, keys: formatShortcut('N') },
+    { action: strings.shortcuts.deleteNode, keys: 'Delete / Backspace' },
+    { action: strings.shortcuts.clearSelection, keys: 'Escape' },
+];
 
 export function KeyboardSection() {
-    const shortcuts = buildShortcuts();
 
     return (
         <div className={styles.section}>
             <h3 className={styles.sectionTitle}>{strings.settings.keyboard}</h3>
             <div className={styles.shortcutList}>
-                {shortcuts.map((shortcut) => (
+                {SHORTCUTS.map((shortcut) => (
                     <div key={shortcut.action} className={styles.shortcutItem}>
                         <span className={styles.shortcutAction}>{shortcut.action}</span>
                         <kbd className={styles.shortcutKeys}>{shortcut.keys}</kbd>

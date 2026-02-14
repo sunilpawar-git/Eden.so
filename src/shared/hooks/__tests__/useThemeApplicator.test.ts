@@ -9,7 +9,7 @@ import { useSettingsStore } from '@/shared/stores/settingsStore';
 
 // Mock matchMedia
 const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: query === '(prefers-color-scheme: dark)' ? false : false,
+    matches: false,
     media: query,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
@@ -63,7 +63,7 @@ describe('useThemeApplicator', () => {
         expect(document.documentElement.dataset.theme).toBe('darkBlack');
     });
 
-    it('should resolve system theme based on OS preference', () => {
+    it('should resolve system theme to dark when OS prefers dark', () => {
         mockMatchMedia.mockImplementation((query: string) => ({
             matches: query === '(prefers-color-scheme: dark)',
             media: query,
@@ -75,6 +75,20 @@ describe('useThemeApplicator', () => {
         renderHook(() => useThemeApplicator());
 
         expect(document.documentElement.dataset.theme).toBe('dark');
+    });
+
+    it('should resolve system theme to light when OS prefers light', () => {
+        mockMatchMedia.mockImplementation((query: string) => ({
+            matches: false,
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }));
+
+        useSettingsStore.setState({ theme: 'system' });
+        renderHook(() => useThemeApplicator());
+
+        expect(document.documentElement.dataset.theme).toBe('light');
     });
 
     it('should listen for system preference changes when theme is system', () => {

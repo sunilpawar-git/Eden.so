@@ -38,7 +38,6 @@ describe('Canvas Scroll Mode Integration', () => {
     });
 
     it('should pass zoom props when store has zoom mode', () => {
-        useSettingsStore.setState({ canvasScrollMode: 'zoom' });
         render(<CanvasView />);
 
         const props = vi.mocked(ReactFlow).mock.calls[0]?.[0] ?? {};

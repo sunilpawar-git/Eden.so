@@ -41,6 +41,16 @@
   --tooltip-bg: hsl(0, 0%, 18%);
   --tooltip-text: hsl(0, 0%, 96%);
 
+  /* Toast notification colors - Grey */
+  --color-success-bg: hsl(145, 45%, 40%);
+  --color-success-text: hsl(0, 0%, 100%);
+  --color-error-bg: hsl(0, 55%, 48%);
+  --color-error-text: hsl(0, 0%, 100%);
+  --color-warning-bg: hsl(38, 75%, 48%);
+  --color-warning-text: hsl(38, 80%, 10%);
+  --color-info-bg: var(--color-primary);
+  --color-info-text: hsl(0, 0%, 100%);
+
   --color-hover: hsla(0, 0%, 0%, 0.05);
   --color-text: var(--color-text-primary);
   --shadow-dropdown: 0 4px 12px hsla(0, 0%, 0%, 0.12);
