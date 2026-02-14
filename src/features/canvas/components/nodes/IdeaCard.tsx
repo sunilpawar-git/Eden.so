@@ -8,6 +8,7 @@ import { useNodeInput } from '../../hooks/useNodeInput';
 import { useIdeaCardActions } from '../../hooks/useIdeaCardActions';
 import { useIdeaCardState } from '../../hooks/useIdeaCardState';
 import { useLinkPreviewRetry } from '../../hooks/useLinkPreviewRetry';
+import { useBarPlacement } from '../../hooks/useBarPlacement';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { NodeUtilsBar } from './NodeUtilsBar';
 import { NodeResizeButtons } from './NodeResizeButtons';
@@ -29,7 +30,9 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const [showTagInput, setShowTagInput] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
+    const cardWrapperRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<NodeHeadingHandle>(null);
+    const barPlacement = useBarPlacement(cardWrapperRef);
 
     const { generateFromPrompt } = useNodeGeneration();
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -65,7 +68,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const onKeyDownReact = useCallback((e: React.KeyboardEvent) => handleKeyDown(e.nativeEvent), [handleKeyDown]);
 
     return (
-        <div className={`${styles.cardWrapper} ${handleStyles.resizerWrapper}`}
+        <div ref={cardWrapperRef} className={`${styles.cardWrapper} ${handleStyles.resizerWrapper}`}
             onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
             <NodeResizer minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}
                 minHeight={MIN_NODE_HEIGHT} maxHeight={MAX_NODE_HEIGHT} isVisible={selected} />
@@ -96,7 +99,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
             <NodeUtilsBar onTagClick={() => setShowTagInput(true)} onConnectClick={handleConnectClick}
                 onCopyClick={handleCopy} onDelete={handleDelete} onTransform={handleTransform}
                 onRegenerate={handleRegenerate} hasContent={hasContent} isTransforming={isTransforming}
-                disabled={isGenerating ?? false} visible={isHovered} />
+                disabled={isGenerating ?? false} visible={isHovered} placement={barPlacement} />
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />
         </div>

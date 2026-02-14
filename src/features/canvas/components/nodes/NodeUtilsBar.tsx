@@ -7,6 +7,7 @@ import { strings } from '@/shared/localization/strings';
 import { TransformMenu } from './TransformMenu';
 import { TooltipButton } from './TooltipButton';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
+import type { BarPlacement } from '../../hooks/useBarPlacement';
 import styles from './NodeUtilsBar.module.css';
 
 interface NodeUtilsBarProps {
@@ -21,6 +22,8 @@ interface NodeUtilsBarProps {
     isTransforming?: boolean;
     disabled?: boolean;
     visible?: boolean;
+    /** Side of the node to show the bar (auto-flips near viewport edge) */
+    placement?: BarPlacement;
 }
 
 export function NodeUtilsBar({
@@ -35,9 +38,15 @@ export function NodeUtilsBar({
     isTransforming = false,
     disabled = false,
     visible = false,
+    placement = 'right',
 }: NodeUtilsBarProps) {
+    const isLeft = placement === 'left';
     const containerClasses = [styles.container];
+    if (isLeft) containerClasses.push(styles.containerLeft);
     if (visible) containerClasses.push(styles.containerVisible);
+
+    const peekClasses = [styles.peekIndicator];
+    if (isLeft) peekClasses.push(styles.peekIndicatorLeft);
 
     return (
         <>
@@ -93,7 +102,7 @@ export function NodeUtilsBar({
                     className={styles.deleteButton}
                 />
             </div>
-            <div className={styles.peekIndicator} aria-hidden="true" />
+            <div className={peekClasses.join(' ')} aria-hidden="true" />
         </>
     );
 }

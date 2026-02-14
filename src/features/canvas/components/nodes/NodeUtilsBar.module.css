@@ -28,7 +28,7 @@
         box-shadow 200ms ease;
 }
 
-/* Slide out: full pill visible to the right of the node */
+/* Slide out: full pill visible to the right of the node (micro-bounce) */
 .containerVisible {
     opacity: 1;
     visibility: visible;
@@ -38,10 +38,28 @@
     box-shadow: var(--card-shadow-hover);
     transition:
         opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
-        transform 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
+        transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--node-utils-hover-delay-in),
         visibility 0s linear 0s,
         z-index 0s linear 0s,
         box-shadow 200ms ease;
+}
+
+/* Left-side variant: slide out to the left when near viewport right edge */
+.containerLeft {
+    right: auto;
+    left: 0;
+    transform: translateY(-50%) translateX(calc(-100% + var(--node-utils-bar-peek)));
+}
+
+.containerLeft.containerVisible {
+    transform: translateY(-50%) translateX(-100%);
+}
+
+/* Left-side peek indicator */
+.peekIndicatorLeft {
+    right: auto;
+    left: calc(-1 * var(--node-utils-bar-peek));
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 
 /* Peek indicator — subtle colored sliver on node's right edge */
