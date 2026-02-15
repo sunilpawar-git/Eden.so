@@ -4,12 +4,33 @@
  */
 import {
     doc, setDoc, getDocs, deleteDoc, collection, serverTimestamp,
+    getCountFromServer,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import type { KnowledgeBankEntry, KnowledgeBankEntryInput } from '../types/knowledgeBank';
-import { KB_MAX_ENTRIES, KB_MAX_CONTENT_SIZE } from '../types/knowledgeBank';
+import {
+    KB_MAX_ENTRIES, KB_MAX_CONTENT_SIZE,
+    KB_MAX_TAGS_PER_ENTRY, KB_MAX_TAG_LENGTH, KB_MAX_TITLE_LENGTH,
+} from '../types/knowledgeBank';
 import { strings } from '@/shared/localization/strings';
 import { sanitizeContent } from '../utils/sanitizer';
+
+// ── Tag Sanitization ───────────────────────────────────
+
+/** Sanitize, validate, and deduplicate an array of tags */
+function sanitizeTags(tags: string[] | undefined): string[] | undefined {
+    if (!tags) return undefined;
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const raw of tags) {
+        const tag = sanitizeContent(raw.trim().toLowerCase()).slice(0, KB_MAX_TAG_LENGTH);
+        if (tag.length > 0 && !seen.has(tag) && result.length < KB_MAX_TAGS_PER_ENTRY) {
+            seen.add(tag);
+            result.push(tag);
+        }
+    }
+    return result;
+}
 
 // ── Firestore Paths ────────────────────────────────────
 
@@ -25,9 +46,24 @@ function validateEntry(input: KnowledgeBankEntryInput): void {
     if (!input.title.trim()) {
         throw new Error(strings.knowledgeBank.errors.titleRequired);
     }
+    if (input.title.length > KB_MAX_TITLE_LENGTH) {
+        input.title = input.title.slice(0, KB_MAX_TITLE_LENGTH);
+    }
     if (input.content.length > KB_MAX_CONTENT_SIZE) {
         throw new Error(strings.knowledgeBank.errors.contentTooLarge);
     }
+}
+
+// ── Server-Side Count ───────────────────────────────────
+
+/** Get the current entry count from Firestore server (not local cache) */
+export async function getServerEntryCount(
+    userId: string,
+    workspaceId: string
+): Promise<number> {
+    const colRef = getKBCollectionRef(userId, workspaceId);
+    const snapshot = await getCountFromServer(colRef);
+    return snapshot.data().count;
 }
 
 // ── CRUD Operations ────────────────────────────────────
@@ -42,8 +78,8 @@ export async function addKBEntry(
 ): Promise<KnowledgeBankEntry> {
     validateEntry(input);
 
-    // Use caller-provided count when available (avoids N+1 Firestore read)
-    const count = currentCount ?? (await loadKBEntries(userId, workspaceId)).length;
+    // Use caller-provided count for batch ops; otherwise validate via server
+    const count = currentCount ?? await getServerEntryCount(userId, workspaceId);
     if (count >= KB_MAX_ENTRIES) {
         throw new Error(strings.knowledgeBank.errors.maxEntries);
     }
@@ -57,9 +93,11 @@ export async function addKBEntry(
         type: input.type,
         title: sanitizeContent(input.title.trim()),
         content: sanitizeContent(input.content),
+        tags: sanitizeTags(input.tags),
         originalFileName: input.originalFileName,
         storageUrl: input.storageUrl,
         mimeType: input.mimeType,
+        parentEntryId: input.parentEntryId,
         enabled: true,
         createdAt: now,
         updatedAt: now,
@@ -82,7 +120,7 @@ export async function updateKBEntry(
     userId: string,
     workspaceId: string,
     entryId: string,
-    updates: Partial<Pick<KnowledgeBankEntry, 'title' | 'content' | 'enabled'>>
+    updates: Partial<Pick<KnowledgeBankEntry, 'title' | 'content' | 'enabled' | 'summary' | 'tags'>>
 ): Promise<void> {
     if (updates.title !== undefined && !updates.title.trim()) {
         throw new Error(strings.knowledgeBank.errors.titleRequired);
@@ -95,6 +133,8 @@ export async function updateKBEntry(
     if (updates.title !== undefined) sanitizedUpdates.title = sanitizeContent(updates.title.trim());
     if (updates.content !== undefined) sanitizedUpdates.content = sanitizeContent(updates.content);
     if (updates.enabled !== undefined) sanitizedUpdates.enabled = updates.enabled;
+    if (updates.summary !== undefined) sanitizedUpdates.summary = sanitizeContent(updates.summary);
+    if (updates.tags !== undefined) sanitizedUpdates.tags = sanitizeTags(updates.tags);
 
     await setDoc(getKBDocRef(userId, workspaceId, entryId), sanitizedUpdates, { merge: true });
 }
@@ -123,9 +163,12 @@ export async function loadKBEntries(
             type: data.type,
             title: data.title,
             content: data.content,
+            summary: data.summary,
+            tags: data.tags,
             originalFileName: data.originalFileName,
             storageUrl: data.storageUrl,
             mimeType: data.mimeType,
+            parentEntryId: data.parentEntryId,
             enabled: data.enabled ?? true,
             createdAt: data.createdAt?.toDate?.() ?? new Date(),
             updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
@@ -142,13 +185,11 @@ export async function deleteAllKBEntries(
     const snapshot = await getDocs(getKBCollectionRef(userId, workspaceId));
     const deletions = snapshot.docs.map(async (d) => {
         // Clean up Storage files for image entries
-        /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- Firestore DocumentData */
         const data = d.data();
         if (data.originalFileName && data.type === 'image') {
             const { deleteKBFile } = await import('./storageService');
             await deleteKBFile(userId, workspaceId, d.id, data.originalFileName as string);
         }
-        /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
         await deleteDoc(d.ref);
     });
     await Promise.all(deletions);

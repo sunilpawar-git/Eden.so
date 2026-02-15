@@ -16,16 +16,17 @@ vi.mock('firebase/firestore', () => ({
     getDocs: vi.fn().mockResolvedValue({ docs: [] }),
     deleteDoc: vi.fn().mockResolvedValue(undefined),
     serverTimestamp: vi.fn(() => new Date()),
+    getCountFromServer: vi.fn().mockResolvedValue({ data: () => ({ count: 0 }) }),
 }));
 
 vi.mock('../utils/sanitizer', () => ({
-    sanitizeContent: (s: string) => s, // pass-through in tests
+    sanitizeContent: (s: string) => s.replace(/<[^>]*>/g, ''), // basic strip for tests
 }));
 
 // eslint-disable-next-line import-x/first -- Must import after vi.mock
-import { addKBEntry, updateKBEntry, deleteKBEntry, loadKBEntries } from '../services/knowledgeBankService';
+import { addKBEntry, updateKBEntry, deleteKBEntry, loadKBEntries, getServerEntryCount } from '../services/knowledgeBankService';
 // eslint-disable-next-line import-x/first
-import { setDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { setDoc, getDocs, deleteDoc, getCountFromServer } from 'firebase/firestore';
 // eslint-disable-next-line import-x/first
 import type { KnowledgeBankEntryInput } from '../types/knowledgeBank';
 
@@ -64,16 +65,28 @@ describe('knowledgeBankService', () => {
             ).rejects.toThrow();
         });
 
-        it('rejects when max entries reached', async () => {
-            // Mock 20 existing entries
-            const mockDocs = Array.from({ length: 20 }, (_, i) => ({
-                data: () => ({ id: `kb-${i}`, type: 'text', title: `E${i}`, content: '', enabled: true }),
-            }));
-            vi.mocked(getDocs).mockResolvedValueOnce({ docs: mockDocs } as never);
+        it('rejects when max entries reached (server count)', async () => {
+            vi.mocked(getCountFromServer).mockResolvedValueOnce(
+                { data: () => ({ count: 50 }) } as never
+            );
 
             await expect(
                 addKBEntry('user-1', 'ws-1', validInput)
             ).rejects.toThrow();
+        });
+
+        it('uses getCountFromServer when currentCount is not provided', async () => {
+            vi.mocked(getCountFromServer).mockResolvedValueOnce(
+                { data: () => ({ count: 5 }) } as never
+            );
+
+            await addKBEntry('user-1', 'ws-1', validInput);
+            expect(getCountFromServer).toHaveBeenCalledTimes(1);
+        });
+
+        it('skips server count when currentCount is provided', async () => {
+            await addKBEntry('user-1', 'ws-1', validInput, undefined, 5);
+            expect(getCountFromServer).not.toHaveBeenCalled();
         });
     });
 
@@ -95,12 +108,66 @@ describe('knowledgeBankService', () => {
                 updateKBEntry('user-1', 'ws-1', 'kb-1', { content: bigContent })
             ).rejects.toThrow();
         });
+
+        it('sanitizes tags by stripping HTML', async () => {
+            await updateKBEntry('user-1', 'ws-1', 'kb-1', {
+                tags: ['<b>evil</b>', 'clean'],
+            });
+            expect(setDoc).toHaveBeenCalledTimes(1);
+            const passedData = vi.mocked(setDoc).mock.calls[0]![1] as Record<string, unknown>;
+            const tags = passedData.tags as string[];
+            expect(tags[0]).not.toContain('<b>');
+        });
+
+        it('enforces max tags per entry', async () => {
+            const tooManyTags = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+            await updateKBEntry('user-1', 'ws-1', 'kb-1', { tags: tooManyTags });
+            const passedData = vi.mocked(setDoc).mock.calls[0]![1] as Record<string, unknown>;
+            const tags = passedData.tags as string[];
+            expect(tags.length).toBeLessThanOrEqual(5);
+        });
+
+        it('enforces max tag length', async () => {
+            const longTag = 'a'.repeat(50);
+            await updateKBEntry('user-1', 'ws-1', 'kb-1', { tags: [longTag] });
+            const passedData = vi.mocked(setDoc).mock.calls[0]![1] as Record<string, unknown>;
+            const tags = passedData.tags as string[];
+            expect(tags[0]!.length).toBeLessThanOrEqual(30);
+        });
+
+        it('deduplicates tags', async () => {
+            await updateKBEntry('user-1', 'ws-1', 'kb-1', {
+                tags: ['alpha', 'Alpha', 'ALPHA'],
+            });
+            const passedData = vi.mocked(setDoc).mock.calls[0]![1] as Record<string, unknown>;
+            const tags = passedData.tags as string[];
+            expect(tags).toEqual(['alpha']);
+        });
     });
 
     describe('deleteKBEntry', () => {
         it('calls deleteDoc', async () => {
             await deleteKBEntry('user-1', 'ws-1', 'kb-1');
             expect(deleteDoc).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getServerEntryCount', () => {
+        it('returns server-side count via getCountFromServer', async () => {
+            vi.mocked(getCountFromServer).mockResolvedValueOnce(
+                { data: () => ({ count: 12 }) } as never
+            );
+            const count = await getServerEntryCount('user-1', 'ws-1');
+            expect(count).toBe(12);
+            expect(getCountFromServer).toHaveBeenCalledTimes(1);
+        });
+
+        it('returns zero when collection is empty', async () => {
+            vi.mocked(getCountFromServer).mockResolvedValueOnce(
+                { data: () => ({ count: 0 }) } as never
+            );
+            const count = await getServerEntryCount('user-1', 'ws-1');
+            expect(count).toBe(0);
         });
     });
 

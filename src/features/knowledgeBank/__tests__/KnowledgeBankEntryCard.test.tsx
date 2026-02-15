@@ -109,4 +109,47 @@ describe('KnowledgeBankEntryCard', () => {
         expect(screen.getByLabelText('Delete entry')).toBeDefined();
         expect(onDelete).not.toHaveBeenCalled();
     });
+
+    it('applies entryDisabled class when entry is disabled', () => {
+        const disabledEntry = { ...mockEntry, enabled: false };
+        const { container } = render(
+            <KnowledgeBankEntryCard {...defaultProps} entry={disabledEntry} />
+        );
+        const card = container.firstChild as HTMLElement;
+        expect(card.className).toContain('entryDisabled');
+    });
+
+    it('does not apply entryDisabled class when entry is enabled', () => {
+        const { container } = render(<KnowledgeBankEntryCard {...defaultProps} />);
+        const card = container.firstChild as HTMLElement;
+        expect(card.className).not.toContain('entryDisabled');
+    });
+
+    it('renders tags when present', () => {
+        const tagEntry = { ...mockEntry, tags: ['react', 'typescript'] };
+        render(<KnowledgeBankEntryCard {...defaultProps} entry={tagEntry} />);
+        expect(screen.getByText('react')).toBeDefined();
+        expect(screen.getByText('typescript')).toBeDefined();
+    });
+
+    it('renders chunk badge for child entries', () => {
+        const chunkEntry = { ...mockEntry, parentEntryId: 'kb-parent' };
+        render(<KnowledgeBankEntryCard {...defaultProps} entry={chunkEntry} />);
+        expect(screen.getByText('chunk')).toBeDefined();
+    });
+
+    it('shows summarizing badge when isSummarizing is true', () => {
+        render(<KnowledgeBankEntryCard {...defaultProps} isSummarizing={true} />);
+        expect(screen.getByText('Generating summary...')).toBeDefined();
+    });
+
+    it('does not show summarizing badge when isSummarizing is false', () => {
+        render(<KnowledgeBankEntryCard {...defaultProps} isSummarizing={false} />);
+        expect(screen.queryByText('Generating summary...')).toBeNull();
+    });
+
+    it('does not show summarizing badge when isSummarizing is undefined', () => {
+        render(<KnowledgeBankEntryCard {...defaultProps} />);
+        expect(screen.queryByText('Generating summary...')).toBeNull();
+    });
 });

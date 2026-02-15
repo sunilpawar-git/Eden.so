@@ -6,11 +6,25 @@ import { storage } from '@/config/firebase';
 import { KB_MAX_FILE_SIZE, KB_ACCEPTED_MIME_TYPES } from '../types/knowledgeBank';
 import { strings } from '@/shared/localization/strings';
 
+/**
+ * Sanitize a filename to prevent path traversal and special character exploits.
+ * Strips directory separators, "..", and non-printable characters.
+ */
+export function sanitizeFilename(raw: string): string {
+    // Remove path separators and parent directory traversal
+    const stripped = raw.replace(/[/\\]/g, '_').replace(/\.\./g, '_');
+    // Remove non-printable and control characters
+    // eslint-disable-next-line no-control-regex
+    const cleaned = stripped.replace(/[\x00-\x1F\x7F]/g, '');
+    return cleaned || 'unnamed';
+}
+
 /** Build storage path for a KB file */
 function getStoragePath(
     userId: string, workspaceId: string, entryId: string, filename: string
 ): string {
-    return `users/${userId}/workspaces/${workspaceId}/knowledge-bank/${entryId}/${filename}`;
+    const safeName = sanitizeFilename(filename);
+    return `users/${userId}/workspaces/${workspaceId}/knowledge-bank/${entryId}/${safeName}`;
 }
 
 /** Validate file before upload. overrideMimeType bypasses auto-detection for compressed blobs. */

@@ -1,5 +1,5 @@
 /**
- * KnowledgeBankPanel Tests — Panel rendering and state
+ * KnowledgeBankPanel Tests — Panel rendering, search, and state
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -36,11 +36,17 @@ const mockEntry: KnowledgeBankEntry = {
     updatedAt: new Date(),
 };
 
-describe('KnowledgeBankPanel', () => {
-    beforeEach(() => {
-        useKnowledgeBankStore.getState().clearEntries();
-        useKnowledgeBankStore.getState().setPanelOpen(false);
+function resetStore() {
+    useKnowledgeBankStore.setState({
+        entries: [],
+        isPanelOpen: false,
+        searchQuery: '',
+        typeFilter: 'all',
     });
+}
+
+describe('KnowledgeBankPanel', () => {
+    beforeEach(resetStore);
 
     it('renders nothing when panel is closed', () => {
         const { container } = render(<KnowledgeBankPanel />);
@@ -97,5 +103,26 @@ describe('KnowledgeBankPanel', () => {
         render(<KnowledgeBankPanel />);
         expect(screen.getByText('Test Entry')).toBeDefined();
         expect(screen.getByText('Second Entry')).toBeDefined();
+    });
+
+    it('shows search bar when entries exist', () => {
+        useKnowledgeBankStore.getState().setPanelOpen(true);
+        useKnowledgeBankStore.getState().addEntry(mockEntry);
+        render(<KnowledgeBankPanel />);
+        expect(screen.getByPlaceholderText('Search entries...')).toBeDefined();
+    });
+
+    it('hides search bar when no entries', () => {
+        useKnowledgeBankStore.getState().setPanelOpen(true);
+        render(<KnowledgeBankPanel />);
+        expect(screen.queryByPlaceholderText('Search entries...')).toBeNull();
+    });
+
+    it('shows no results message when search has no matches', () => {
+        useKnowledgeBankStore.getState().setPanelOpen(true);
+        useKnowledgeBankStore.getState().addEntry(mockEntry);
+        useKnowledgeBankStore.getState().setSearchQuery('zzzzz');
+        render(<KnowledgeBankPanel />);
+        expect(screen.getByText('No matching entries')).toBeDefined();
     });
 });

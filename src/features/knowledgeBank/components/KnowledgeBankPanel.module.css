@@ -84,11 +84,19 @@
     border-color: var(--color-primary);
 }
 
-.entryHeader {
+.cardHeader {
+    margin-bottom: 6px;
+}
+
+.entryTitleRow {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 6px;
+}
+
+.checkbox {
+    flex-shrink: 0;
+    cursor: pointer;
 }
 
 .typeIcon {
@@ -140,46 +148,6 @@
 
 .deleteAction:hover {
     color: var(--color-error);
-}
-
-/* ── Toggle Switch ────────────────────────────────── */
-.toggle {
-    width: 36px;
-    height: 20px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    position: relative;
-    padding: 0;
-    flex-shrink: 0;
-    transition: background 0.2s ease;
-}
-
-.toggleOn {
-    background: var(--color-primary);
-}
-
-.toggleOff {
-    background: var(--color-surface-hover);
-}
-
-.toggleKnob {
-    display: block;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    position: absolute;
-    top: 2px;
-    transition: left 0.2s ease;
-}
-
-.toggleOn .toggleKnob {
-    left: 18px;
-}
-
-.toggleOff .toggleKnob {
-    left: 2px;
 }
 
 /* ── Edit Mode ────────────────────────────────────── */
@@ -246,7 +214,7 @@
 
 .editSaveButton {
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-text-on-primary);
     border: none;
     border-radius: 6px;
     padding: 4px 12px;
@@ -288,4 +256,25 @@
     margin: 0;
     max-width: 240px;
     line-height: 1.5;
+}
+
+.chunkBadge {
+    font-size: var(--font-size-xs, 10px);
+    color: var(--color-text-muted);
+    background: var(--color-surface-hover);
+    border-radius: var(--radius-sm, 4px);
+    padding: 1px 4px;
+    margin-left: 4px;
+}
+
+.summarizingBadge {
+    font-size: var(--font-size-xs, 10px);
+    color: var(--color-primary);
+    margin: 0 0 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }

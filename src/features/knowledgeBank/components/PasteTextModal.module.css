@@ -124,7 +124,7 @@
 
 .saveButton {
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-text-on-primary);
     border: none;
     border-radius: var(--radius-md, 8px);
     padding: 6px 16px;

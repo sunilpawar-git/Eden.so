@@ -1,0 +1,113 @@
+/**
+ * Gemini Client — SSOT for all Gemini API communication
+ * Routes through Cloud Function proxy when configured (production),
+ * falls back to direct API key in development only.
+ */
+import { getAuthToken } from '@/features/auth/services/authTokenService';
+
+// ── URL Configuration ───────────────────────────────────
+
+const DIRECT_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+/** Read Cloud Functions URL at call time (testable) */
+function getCloudFunctionsUrl(): string {
+    return ((import.meta.env.VITE_CLOUD_FUNCTIONS_URL as string | undefined) ?? '').trim();
+}
+
+/** Read direct API key at call time (testable) */
+function getDirectApiKey(): string {
+    return (import.meta.env.VITE_GEMINI_API_KEY as string | undefined) ?? '';
+}
+
+/** Check if the Cloud Function proxy is configured */
+export function isProxyConfigured(): boolean {
+    return getCloudFunctionsUrl().length > 0;
+}
+
+/** Check if any Gemini endpoint is available (proxy or direct key) */
+export function isGeminiAvailable(): boolean {
+    return isProxyConfigured() || Boolean(getDirectApiKey());
+}
+
+// ── Response Types ──────────────────────────────────────
+
+/** Standard Gemini API response shape */
+export interface GeminiResponse {
+    candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+    }>;
+    error?: { message: string; code: number };
+}
+
+/** Result of a callGemini invocation */
+export interface GeminiCallResult {
+    ok: boolean;
+    status: number;
+    data: GeminiResponse | null;
+}
+
+/** Request body accepted by the Gemini API / proxy */
+export interface GeminiRequestBody {
+    contents: Array<{ parts: Array<Record<string, unknown>> }>;
+    generationConfig?: {
+        temperature?: number;
+        maxOutputTokens?: number;
+    };
+}
+
+// ── Core Call ────────────────────────────────────────────
+
+/**
+ * Call the Gemini API — proxy preferred, direct fallback.
+ * Never throws; returns { ok, status, data }.
+ */
+export async function callGemini(body: GeminiRequestBody): Promise<GeminiCallResult> {
+    if (isProxyConfigured()) {
+        return callViaProxy(body);
+    }
+    if (getDirectApiKey()) {
+        return callDirect(body);
+    }
+    return { ok: false, status: 0, data: null };
+}
+
+/** Call via Cloud Function proxy (production path) */
+async function callViaProxy(body: GeminiRequestBody): Promise<GeminiCallResult> {
+    const token = await getAuthToken();
+    if (!token) return { ok: false, status: 401, data: null };
+
+    const url = `${getCloudFunctionsUrl()}/geminiProxy`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+    });
+
+    const data = await response.json() as GeminiResponse;
+    return { ok: response.ok, status: response.status, data };
+}
+
+/** Call Gemini API directly with API key (development fallback) */
+async function callDirect(body: GeminiRequestBody): Promise<GeminiCallResult> {
+    const url = `${DIRECT_API_BASE}/gemini-2.0-flash:generateContent?key=${getDirectApiKey()}`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+
+    const data = await response.json() as GeminiResponse;
+    return { ok: response.ok, status: response.status, data };
+}
+
+// ── Response Helpers ────────────────────────────────────
+
+/** Extract the first text result from a Gemini response */
+export function extractGeminiText(data: GeminiResponse | null): string | null {
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = raw?.trim();
+    return (text != null && text.length > 0) ? text : null;
+}

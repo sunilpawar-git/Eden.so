@@ -71,7 +71,7 @@ export function useNodeGeneration() {
             startGeneration(nodeId);
 
             try {
-                const kbContext = getKBContext();
+                const kbContext = getKBContext(promptText);
                 const content = await generateContentWithContext(promptText, contextChain, kbContext);
 
                 // Update output in-place (no new node created!)

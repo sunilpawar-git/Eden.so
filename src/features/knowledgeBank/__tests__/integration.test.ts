@@ -97,8 +97,8 @@ describe('Knowledge Bank Integration', () => {
             expect(useKnowledgeBankStore.getState().getEntryCount()).toBe(5);
         });
 
-        it('KB_MAX_ENTRIES constant is 20', () => {
-            expect(KB_MAX_ENTRIES).toBe(20);
+        it('KB_MAX_ENTRIES constant is 50', () => {
+            expect(KB_MAX_ENTRIES).toBe(50);
         });
 
         it('KB_MAX_CONTENT_SIZE constant is 10000', () => {

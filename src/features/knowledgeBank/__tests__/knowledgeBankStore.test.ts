@@ -23,6 +23,8 @@ describe('knowledgeBankStore', () => {
         useKnowledgeBankStore.setState({
             entries: [],
             isPanelOpen: false,
+            searchQuery: '',
+            typeFilter: 'all',
         });
     });
 
@@ -137,6 +139,35 @@ describe('knowledgeBankStore', () => {
             ]);
             useKnowledgeBankStore.getState().clearEntries();
             expect(useKnowledgeBankStore.getState().entries).toHaveLength(0);
+        });
+    });
+
+    describe('summarizingEntryIds', () => {
+        it('starts empty', () => {
+            expect(useKnowledgeBankStore.getState().summarizingEntryIds).toEqual([]);
+        });
+
+        it('setSummarizingEntryIds sets the IDs', () => {
+            useKnowledgeBankStore.getState().setSummarizingEntryIds(['kb-1', 'kb-2']);
+            expect(useKnowledgeBankStore.getState().summarizingEntryIds).toEqual(['kb-1', 'kb-2']);
+        });
+
+        it('removeSummarizingEntryId removes a single ID', () => {
+            useKnowledgeBankStore.getState().setSummarizingEntryIds(['kb-1', 'kb-2', 'kb-3']);
+            useKnowledgeBankStore.getState().removeSummarizingEntryId('kb-2');
+            expect(useKnowledgeBankStore.getState().summarizingEntryIds).toEqual(['kb-1', 'kb-3']);
+        });
+
+        it('removeSummarizingEntryId is safe when ID is not present', () => {
+            useKnowledgeBankStore.getState().setSummarizingEntryIds(['kb-1']);
+            useKnowledgeBankStore.getState().removeSummarizingEntryId('kb-99');
+            expect(useKnowledgeBankStore.getState().summarizingEntryIds).toEqual(['kb-1']);
+        });
+
+        it('setSummarizingEntryIds with empty array clears all', () => {
+            useKnowledgeBankStore.getState().setSummarizingEntryIds(['kb-1', 'kb-2']);
+            useKnowledgeBankStore.getState().setSummarizingEntryIds([]);
+            expect(useKnowledgeBankStore.getState().summarizingEntryIds).toEqual([]);
         });
     });
 });

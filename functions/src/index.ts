@@ -9,3 +9,4 @@ initializeApp();
 
 export { fetchLinkMeta } from './fetchLinkMeta.js';
 export { proxyImage } from './proxyImage.js';
+export { geminiProxy } from './geminiProxy.js';

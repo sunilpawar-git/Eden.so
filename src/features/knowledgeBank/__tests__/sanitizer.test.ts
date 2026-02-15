@@ -42,4 +42,22 @@ describe('sanitizeContent', () => {
     it('preserves markdown formatting', () => {
         expect(sanitizeContent('# Heading\n- list item')).toBe('# Heading\n- list item');
     });
+
+    it('strips vbscript: protocol', () => {
+        expect(sanitizeContent('vbscript:MsgBox("xss")')).toBe('MsgBox("xss")');
+    });
+
+    it('strips vbscript: protocol case-insensitively', () => {
+        expect(sanitizeContent('VbScript:alert')).toBe('alert');
+    });
+
+    it('strips data:text/html protocol', () => {
+        const result = sanitizeContent('data:text/html:<h1>evil</h1>');
+        expect(result).not.toContain('data:text/html');
+    });
+
+    it('strips data:text/html with spaces in protocol', () => {
+        const result = sanitizeContent('data :text/html:payload');
+        expect(result).not.toContain('data');
+    });
 });

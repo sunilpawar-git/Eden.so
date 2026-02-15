@@ -31,7 +31,7 @@ export function useNodeTransformation() {
             setIsTransforming(true);
 
             try {
-                const kbContext = getKBContext();
+                const kbContext = getKBContext(content);
                 const transformedContent = await transformContent(content, type, kbContext);
                 updateNodeOutput(nodeId, transformedContent);
             } catch {

@@ -1,20 +1,18 @@
 /**
- * Gemini Service - AI content generation
- * Updated to use direct Gemini API with API key
+ * Gemini Service — AI content generation and transformation
+ * Routes all API calls through geminiClient SSOT (proxy or direct)
  */
 import { strings } from '@/shared/localization/strings';
+import {
+    callGemini, isGeminiAvailable, extractGeminiText,
+} from '@/features/knowledgeBank/services/geminiClient';
+import type { GeminiRequestBody } from '@/features/knowledgeBank/services/geminiClient';
 
-const GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string | undefined) ?? '';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-/**
- * Transformation types for AI-based text transformations (SSOT)
- */
+/** Transformation types for AI-based text transformations (SSOT) */
 export type TransformationType = 'refine' | 'shorten' | 'lengthen' | 'proofread';
 
-/**
- * System prompts for AI generation
- */
+// ── System Prompts ──────────────────────────────────────
+
 const SYSTEM_PROMPTS = {
     singleNode: `You are a concise content generator.
 Generate high-quality output based on the user prompt.
@@ -28,9 +26,8 @@ Show clear progression and synthesis from the context provided.
 Keep it concise and actionable.`,
 };
 
-/**
- * Transformation prompts - preserve original meaning while transforming
- */
+// ── Transformation Prompts ──────────────────────────────
+
 const TRANSFORMATION_PROMPTS: Record<TransformationType, string> = {
     refine: `Refine and improve the following text while preserving its original meaning and intent.
 Make it clearer, more polished, and better structured.
@@ -49,98 +46,71 @@ Preserve the original meaning and intent exactly.
 Only fix errors, do not change the style or content.`,
 };
 
-interface GeminiResponse {
-    candidates?: Array<{
-        content?: {
-            parts?: Array<{
-                text?: string;
-            }>;
-        };
-    }>;
-    error?: {
-        message: string;
-        code: number;
-    };
-}
+// ── Response Handler ────────────────────────────────────
 
-/**
- * Generate content from a single prompt using Gemini API
- */
-export async function generateContent(prompt: string, knowledgeBankContext?: string): Promise<string> {
-    if (!GEMINI_API_KEY) {
-        throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local');
-    }
+/** Extract text from a Gemini call result, throwing on errors */
+async function callAndExtract(body: GeminiRequestBody): Promise<string> {
+    const result = await callGemini(body);
 
-    const kbSection = knowledgeBankContext ? `\n\n${knowledgeBankContext}\n` : '';
-
-    const requestBody = {
-        contents: [
-            {
-                parts: [
-                    { text: `${SYSTEM_PROMPTS.singleNode}${kbSection}\n\nUser request: ${prompt}` }
-                ]
-            }
-        ],
-        generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-        },
-    };
-
-    const response = await fetch(GEMINI_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-        if (response.status === 429) {
+    if (!result.ok) {
+        if (result.status === 429) {
             throw new Error(strings.errors.quotaExceeded);
         }
         throw new Error(strings.errors.aiError);
     }
 
-    const data = await response.json() as GeminiResponse;
-
-    if (data.error) {
-        throw new Error(data.error.message || strings.errors.aiError);
+    if (result.data?.error) {
+        throw new Error(result.data.error.message || strings.errors.aiError);
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-        throw new Error(strings.errors.aiError);
-    }
-
+    const text = extractGeminiText(result.data);
+    if (!text) throw new Error(strings.errors.aiError);
     return text;
 }
 
-/**
- * Generate content with upstream context from connected nodes
- * Uses edge-aware context for Obsidian-style idea chaining
- */
+// ── Public API ──────────────────────────────────────────
 
+/** Generate content from a single prompt */
+export async function generateContent(
+    prompt: string,
+    knowledgeBankContext?: string
+): Promise<string> {
+    if (!isGeminiAvailable()) {
+        throw new Error(strings.errors.aiError);
+    }
+
+    const kbSection = knowledgeBankContext ? `\n\n${knowledgeBankContext}\n` : '';
+    const body: GeminiRequestBody = {
+        contents: [{
+            parts: [{ text: `${SYSTEM_PROMPTS.singleNode}${kbSection}\n\nUser request: ${prompt}` }],
+        }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+    };
+
+    return callAndExtract(body);
+}
+
+/** Generate content with upstream context from connected nodes */
 export async function generateContentWithContext(
     prompt: string,
     contextChain: string[],
     knowledgeBankContext?: string
 ): Promise<string> {
-    // If no context, delegate to simple generation
     if (contextChain.length === 0) {
         return generateContent(prompt, knowledgeBankContext);
     }
 
-    if (!GEMINI_API_KEY) {
-        throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local');
+    if (!isGeminiAvailable()) {
+        throw new Error(strings.errors.aiError);
     }
 
-    // Build context section from connected nodes
     const contextSection = contextChain
         .map((content, i) => `[Connected Idea ${i + 1}]: ${content}`)
         .join('\n\n');
 
-    const kbSection = knowledgeBankContext ? `\n\nWorkspace context:\n${knowledgeBankContext}\n` : '';
+    const kbSection = knowledgeBankContext
+        ? `\n\nWorkspace context:\n${knowledgeBankContext}\n`
+        : '';
 
     const fullPrompt = `${SYSTEM_PROMPTS.chainGeneration}
 ${kbSection}
@@ -151,63 +121,29 @@ User's prompt: ${prompt}
 
 Generate content that synthesizes and builds upon the connected ideas above.`;
 
-    const requestBody = {
-        contents: [
-            {
-                parts: [{ text: fullPrompt }],
-            },
-        ],
-        generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-        },
+    const body: GeminiRequestBody = {
+        contents: [{ parts: [{ text: fullPrompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
     };
 
-    const response = await fetch(GEMINI_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-        if (response.status === 429) {
-            throw new Error(strings.errors.quotaExceeded);
-        }
-        throw new Error(strings.errors.aiError);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- typed as GeminiResponse
-    const data: GeminiResponse = await response.json();
-
-    if (data.error) {
-        throw new Error(data.error.message);
-    }
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-        throw new Error(strings.errors.aiError);
-    }
-
-    return text;
+    return callAndExtract(body);
 }
 
-/**
- * Transform existing content using AI (refine, shorten, lengthen, proofread)
- * Preserves original meaning while applying the transformation
- */
+/** Transform content using AI (refine, shorten, lengthen, proofread) */
 export async function transformContent(
     content: string,
     type: TransformationType,
     knowledgeBankContext?: string
 ): Promise<string> {
-    if (!GEMINI_API_KEY) {
-        throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local');
+    if (!isGeminiAvailable()) {
+        throw new Error(strings.errors.aiError);
     }
 
     const systemPrompt = TRANSFORMATION_PROMPTS[type];
-    const kbSection = knowledgeBankContext ? `\n\nWorkspace context for reference:\n${knowledgeBankContext}\n` : '';
+    const kbSection = knowledgeBankContext
+        ? `\n\nWorkspace context for reference:\n${knowledgeBankContext}\n`
+        : '';
+
     const fullPrompt = `${systemPrompt}${kbSection}
 
 Text to transform:
@@ -215,44 +151,10 @@ ${content}
 
 Transformed text:`;
 
-    const requestBody = {
-        contents: [
-            {
-                parts: [{ text: fullPrompt }],
-            },
-        ],
-        generationConfig: {
-            temperature: 0.5, // Lower temperature for more consistent transformations
-            maxOutputTokens: 1024,
-        },
+    const body: GeminiRequestBody = {
+        contents: [{ parts: [{ text: fullPrompt }] }],
+        generationConfig: { temperature: 0.5, maxOutputTokens: 1024 },
     };
 
-    const response = await fetch(GEMINI_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-        if (response.status === 429) {
-            throw new Error(strings.errors.quotaExceeded);
-        }
-        throw new Error(strings.errors.aiError);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- typed as GeminiResponse
-    const data: GeminiResponse = await response.json();
-
-    if (data.error) {
-        throw new Error(data.error.message);
-    }
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-        throw new Error(strings.errors.aiError);
-    }
-
-    return text;
+    return callAndExtract(body);
 }

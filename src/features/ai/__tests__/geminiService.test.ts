@@ -1,293 +1,168 @@
 /**
- * Gemini Service Tests - TDD: Write tests FIRST
+ * Gemini Service Tests — AI content generation and transformation
+ * Tests use mocked geminiClient SSOT
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { 
-    generateContent, 
+
+// Mock geminiClient
+vi.mock('@/features/knowledgeBank/services/geminiClient', () => ({
+    isGeminiAvailable: vi.fn().mockReturnValue(true),
+    callGemini: vi.fn().mockResolvedValue({ ok: true, status: 200, data: { candidates: [] } }),
+    extractGeminiText: vi.fn().mockReturnValue(null),
+}));
+
+// eslint-disable-next-line import-x/first -- Must import after vi.mock
+import {
+    generateContent,
     generateContentWithContext,
     transformContent,
 } from '../services/geminiService';
+// eslint-disable-next-line import-x/first
+import { callGemini, extractGeminiText, isGeminiAvailable } from '@/features/knowledgeBank/services/geminiClient';
 
-// Mock fetch for API calls
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+function mockSuccess(text: string) {
+    vi.mocked(callGemini).mockResolvedValue({
+        ok: true, status: 200,
+        data: { candidates: [{ content: { parts: [{ text }] } }] },
+    });
+    vi.mocked(extractGeminiText).mockReturnValue(text);
+}
+
+function mockError(status: number) {
+    vi.mocked(callGemini).mockResolvedValue({
+        ok: false, status, data: null,
+    });
+}
 
 describe('GeminiService', () => {
     beforeEach(() => {
-        mockFetch.mockReset();
+        vi.clearAllMocks();
+        vi.mocked(isGeminiAvailable).mockReturnValue(true);
     });
 
     describe('generateContent', () => {
-        it('should call API with correct prompt', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Generated response' }]
-                        }
-                    }]
-                }),
-            });
-
+        it('should return generated text on success', async () => {
+            mockSuccess('Generated response');
             const result = await generateContent('Create a LinkedIn post');
-
-            expect(mockFetch).toHaveBeenCalledTimes(1);
+            expect(callGemini).toHaveBeenCalledTimes(1);
             expect(result).toBe('Generated response');
         });
 
         it('should throw error on API failure', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 500,
-            });
-
+            mockError(500);
             await expect(generateContent('Test')).rejects.toThrow('AI generation failed');
         });
 
         it('should throw error on quota exceeded', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 429,
-            });
-
+            mockError(429);
             await expect(generateContent('Test')).rejects.toThrow('quota exceeded');
         });
     });
 
     describe('generateContentWithContext', () => {
         it('should call generateContent directly when context is empty', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Direct response' }]
-                        }
-                    }]
-                }),
-            });
-
+            mockSuccess('Direct response');
             const result = await generateContentWithContext('Create something', []);
-
-            expect(mockFetch).toHaveBeenCalledTimes(1);
+            expect(callGemini).toHaveBeenCalledTimes(1);
             expect(result).toBe('Direct response');
         });
 
-        it('should include all context items in API request', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Context-aware response' }]
-                        }
-                    }]
-                }),
-            });
-
+        it('should include all context items in request', async () => {
+            mockSuccess('Context-aware response');
             const contextChain = ['New York info', 'Washington info'];
             const result = await generateContentWithContext('Tell me about US cities', contextChain);
-
-            expect(mockFetch).toHaveBeenCalledTimes(1);
             expect(result).toBe('Context-aware response');
 
-            // Verify the request body includes context
-            const callArgs = mockFetch.mock.calls[0] as [string, { body: string }] | undefined;
-            expect(callArgs).toBeDefined();
-            const requestBody = JSON.parse(callArgs![1].body);
-            const promptText = requestBody.contents[0].parts[0].text;
-
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const promptText = body.contents[0]!.parts[0]!.text as string;
             expect(promptText).toContain('New York info');
             expect(promptText).toContain('Washington info');
             expect(promptText).toContain('Tell me about US cities');
         });
 
-        it('should use chainGeneration system prompt when context provided', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Chain response' }]
-                        }
-                    }]
-                }),
-            });
-
+        it('should use chain generation system prompt', async () => {
+            mockSuccess('Chain response');
             await generateContentWithContext('Build on this', ['Previous idea']);
 
-            const callArgs = mockFetch.mock.calls[0] as [string, { body: string }] | undefined;
-            expect(callArgs).toBeDefined();
-            const requestBody = JSON.parse(callArgs![1].body);
-            const promptText = requestBody.contents[0].parts[0].text;
-
-            // Should contain chain-specific language
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const promptText = body.contents[0]!.parts[0]!.text as string;
             expect(promptText).toContain('idea evolution');
         });
 
         it('should handle API errors correctly', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 500,
-            });
-
+            mockError(500);
             await expect(
                 generateContentWithContext('Test', ['Context'])
             ).rejects.toThrow('AI generation failed');
         });
 
         it('should handle quota exceeded errors', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 429,
-            });
-
+            mockError(429);
             await expect(
                 generateContentWithContext('Test', ['Context'])
             ).rejects.toThrow('quota exceeded');
         });
     });
 
-    describe('transformContent - Phase 3', () => {
-        it('should call API with refine transformation prompt', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Refined content here' }]
-                        }
-                    }]
-                }),
-            });
-
+    describe('transformContent', () => {
+        it('should transform with refine prompt', async () => {
+            mockSuccess('Refined content here');
             const result = await transformContent('Original text to improve', 'refine');
-
-            expect(mockFetch).toHaveBeenCalledTimes(1);
             expect(result).toBe('Refined content here');
 
-            // Verify transformation prompt includes refine instruction
-            const callArgs = mockFetch.mock.calls[0] as [string, { body: string }] | undefined;
-            expect(callArgs).toBeDefined();
-            const requestBody = JSON.parse(callArgs![1].body);
-            const promptText = requestBody.contents[0].parts[0].text;
-
-            expect(promptText).toContain('Original text to improve');
-            expect(promptText.toLowerCase()).toMatch(/refine|improve|enhance/);
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const text = body.contents[0]!.parts[0]!.text as string;
+            expect(text).toContain('Original text to improve');
+            expect(text.toLowerCase()).toMatch(/refine|improve|enhance/);
         });
 
-        it('should call API with shorten transformation prompt', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Shorter version' }]
-                        }
-                    }]
-                }),
-            });
-
-            const result = await transformContent('Long text that needs to be shortened', 'shorten');
-
+        it('should transform with shorten prompt', async () => {
+            mockSuccess('Shorter version');
+            const result = await transformContent('Long text that needs shortening', 'shorten');
             expect(result).toBe('Shorter version');
 
-            const callArgs = mockFetch.mock.calls[0] as [string, { body: string }] | undefined;
-            const requestBody = JSON.parse(callArgs![1].body);
-            const promptText = requestBody.contents[0].parts[0].text;
-
-            expect(promptText.toLowerCase()).toMatch(/shorten|concise|brief/);
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const text = body.contents[0]!.parts[0]!.text as string;
+            expect(text.toLowerCase()).toMatch(/shorten|concise|brief/);
         });
 
-        it('should call API with lengthen transformation prompt', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Expanded and detailed content with more information' }]
-                        }
-                    }]
-                }),
-            });
-
+        it('should transform with lengthen prompt', async () => {
+            mockSuccess('Expanded content');
             const result = await transformContent('Brief note', 'lengthen');
+            expect(result).toBe('Expanded content');
 
-            expect(result).toBe('Expanded and detailed content with more information');
-
-            const callArgs = mockFetch.mock.calls[0] as [string, { body: string }] | undefined;
-            const requestBody = JSON.parse(callArgs![1].body);
-            const promptText = requestBody.contents[0].parts[0].text;
-
-            expect(promptText.toLowerCase()).toMatch(/expand|lengthen|elaborate|detail/);
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const text = body.contents[0]!.parts[0]!.text as string;
+            expect(text.toLowerCase()).toMatch(/expand|lengthen|elaborate|detail/);
         });
 
-        it('should call API with proofread transformation prompt', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Proofread and corrected text' }]
-                        }
-                    }]
-                }),
-            });
-
+        it('should transform with proofread prompt', async () => {
+            mockSuccess('Proofread text');
             const result = await transformContent('Text with erors', 'proofread');
+            expect(result).toBe('Proofread text');
 
-            expect(result).toBe('Proofread and corrected text');
-
-            const callArgs = mockFetch.mock.calls[0] as [string, { body: string }] | undefined;
-            const requestBody = JSON.parse(callArgs![1].body);
-            const promptText = requestBody.contents[0].parts[0].text;
-
-            expect(promptText.toLowerCase()).toMatch(/proofread|grammar|spelling|correct/);
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const text = body.contents[0]!.parts[0]!.text as string;
+            expect(text.toLowerCase()).toMatch(/proofread|grammar|spelling|correct/);
         });
 
         it('should handle API errors correctly', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 500,
-            });
-
-            await expect(
-                transformContent('Some text', 'refine')
-            ).rejects.toThrow('AI generation failed');
+            mockError(500);
+            await expect(transformContent('Some text', 'refine')).rejects.toThrow('AI generation failed');
         });
 
         it('should handle quota exceeded errors', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 429,
-            });
-
-            await expect(
-                transformContent('Some text', 'shorten')
-            ).rejects.toThrow('quota exceeded');
+            mockError(429);
+            await expect(transformContent('Some text', 'shorten')).rejects.toThrow('quota exceeded');
         });
 
-        it('should preserve original meaning while transforming', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ text: 'Transformed while preserving meaning' }]
-                        }
-                    }]
-                }),
-            });
-
+        it('should include preserve meaning instructions', async () => {
+            mockSuccess('Transformed');
             await transformContent('Important meeting notes', 'refine');
 
-            const callArgs = mockFetch.mock.calls[0] as [string, { body: string }] | undefined;
-            const requestBody = JSON.parse(callArgs![1].body);
-            const promptText = requestBody.contents[0].parts[0].text;
-
-            // System prompt should instruct to preserve meaning
-            expect(promptText.toLowerCase()).toMatch(/preserve|maintain|keep.*meaning|original.*intent/);
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const text = body.contents[0]!.parts[0]!.text as string;
+            expect(text.toLowerCase()).toMatch(/preserve|maintain|keep.*meaning|original.*intent/);
         });
     });
 });
