@@ -122,6 +122,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                 const { loadKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');
                 const { useKnowledgeBankStore } = await import('@/features/knowledgeBank/stores/knowledgeBankStore');
                 const kbEntries = await loadKBEntries(userId, workspaceId);
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 if (mounted) {
                     useKnowledgeBankStore.getState().setEntries(kbEntries);
                 }
