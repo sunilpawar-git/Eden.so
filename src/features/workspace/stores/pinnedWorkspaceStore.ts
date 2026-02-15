@@ -37,15 +37,29 @@ export const usePinnedWorkspaceStore = create<PinnedWorkspaceStore>()((set, get)
 
     pinWorkspace: async (workspaceId: string) => {
         const success = await workspacePinService.pin(workspaceId);
-        if (success) {
-            // Cache workspace data in IDB for offline use
-            const cached = workspaceCache.get(workspaceId);
-            if (cached) {
-                await idbCacheService.setWorkspaceData(workspaceId, cached);
-            }
-            set({ pinnedIds: [...get().pinnedIds, workspaceId] });
+        if (!success) {
+            return false;
         }
-        return success;
+
+        // Cache workspace data in IDB for offline use
+        const cached = workspaceCache.get(workspaceId);
+        if (cached) {
+            try {
+                await idbCacheService.setWorkspaceData(workspaceId, cached);
+            } catch (err) {
+                // Storage quota exceeded or IDB error
+                // Rollback: remove from pinned list
+                await workspacePinService.unpin(workspaceId);
+                throw new Error(
+                    err instanceof Error && err.message.includes('Quota')
+                        ? 'Storage quota exceeded. Cannot pin workspace.'
+                        : 'Failed to cache workspace data.'
+                );
+            }
+        }
+
+        set({ pinnedIds: [...get().pinnedIds, workspaceId] });
+        return true;
     },
 
     unpinWorkspace: async (workspaceId: string) => {

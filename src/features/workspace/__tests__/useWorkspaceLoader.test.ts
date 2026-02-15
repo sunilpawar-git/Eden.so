@@ -73,6 +73,8 @@ describe('useWorkspaceLoader', () => {
         vi.clearAllMocks();
         mockLoadNodes.mockResolvedValue([]);
         mockLoadEdges.mockResolvedValue([]);
+        mockCacheGet.mockReturnValue(null); // Reset cache to empty
+        mockIsOnline.mockReturnValue(true); // Reset to online
     });
 
     it('returns isLoading true initially', async () => {
