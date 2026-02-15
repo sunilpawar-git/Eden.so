@@ -59,11 +59,20 @@ export interface GeminiRequestBody {
 
 /**
  * Call the Gemini API — proxy preferred, direct fallback.
- * Never throws; returns { ok, status, data }.
+ * If proxy is configured but unreachable (e.g. emulator not running),
+ * automatically falls back to direct key. Never throws; returns { ok, status, data }.
  */
 export async function callGemini(body: GeminiRequestBody): Promise<GeminiCallResult> {
     if (isProxyConfigured()) {
-        return callViaProxy(body);
+        try {
+            return await callViaProxy(body);
+        } catch {
+            // Proxy unreachable (emulator down / network error) — try direct
+            if (getDirectApiKey()) {
+                return callDirect(body);
+            }
+            return { ok: false, status: 0, data: null };
+        }
     }
     if (getDirectApiKey()) {
         return callDirect(body);
