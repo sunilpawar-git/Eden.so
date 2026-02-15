@@ -8,6 +8,28 @@ import {
 } from '@/features/knowledgeBank/services/geminiClient';
 import type { GeminiRequestBody } from '@/features/knowledgeBank/services/geminiClient';
 
+// ── System Instruction Helpers ───────────────────────────
+
+/** Build system instruction text: base prompt + optional KB guidance */
+function buildSystemText(
+    basePrompt: string,
+    knowledgeBankContext: string | undefined,
+    guidanceString: string
+): string {
+    if (!knowledgeBankContext) return basePrompt;
+    return `${basePrompt}\n\n${guidanceString}\n\n${knowledgeBankContext}`;
+}
+
+/** Build the systemInstruction field for Gemini API */
+function buildSystemInstruction(
+    basePrompt: string,
+    knowledgeBankContext: string | undefined,
+    guidanceString: string
+): { parts: Array<{ text: string }> } {
+    const text = buildSystemText(basePrompt, knowledgeBankContext, guidanceString);
+    return { parts: [{ text }] };
+}
+
 /** Transformation types for AI-based text transformations (SSOT) */
 export type TransformationType = 'refine' | 'shorten' | 'lengthen' | 'proofread';
 
@@ -79,12 +101,14 @@ export async function generateContent(
         throw new Error(strings.errors.aiError);
     }
 
-    const kbSection = knowledgeBankContext ? `\n\n${knowledgeBankContext}\n` : '';
     const body: GeminiRequestBody = {
-        contents: [{
-            parts: [{ text: `${SYSTEM_PROMPTS.singleNode}${kbSection}\n\nUser request: ${prompt}` }],
-        }],
+        contents: [{ parts: [{ text: `User request: ${prompt}` }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        systemInstruction: buildSystemInstruction(
+            SYSTEM_PROMPTS.singleNode,
+            knowledgeBankContext,
+            strings.knowledgeBank.ai.kbUsageGuidance
+        ),
     };
 
     return callAndExtract(body);
@@ -108,13 +132,7 @@ export async function generateContentWithContext(
         .map((content, i) => `[Connected Idea ${i + 1}]: ${content}`)
         .join('\n\n');
 
-    const kbSection = knowledgeBankContext
-        ? `\n\nWorkspace context:\n${knowledgeBankContext}\n`
-        : '';
-
-    const fullPrompt = `${SYSTEM_PROMPTS.chainGeneration}
-${kbSection}
-Connected ideas (from edge relationships):
+    const userPrompt = `Connected ideas (from edge relationships):
 ${contextSection}
 
 User's prompt: ${prompt}
@@ -122,8 +140,13 @@ User's prompt: ${prompt}
 Generate content that synthesizes and builds upon the connected ideas above.`;
 
     const body: GeminiRequestBody = {
-        contents: [{ parts: [{ text: fullPrompt }] }],
+        contents: [{ parts: [{ text: userPrompt }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        systemInstruction: buildSystemInstruction(
+            SYSTEM_PROMPTS.chainGeneration,
+            knowledgeBankContext,
+            strings.knowledgeBank.ai.kbUsageGuidance
+        ),
     };
 
     return callAndExtract(body);
@@ -139,21 +162,19 @@ export async function transformContent(
         throw new Error(strings.errors.aiError);
     }
 
-    const systemPrompt = TRANSFORMATION_PROMPTS[type];
-    const kbSection = knowledgeBankContext
-        ? `\n\nWorkspace context for reference:\n${knowledgeBankContext}\n`
-        : '';
-
-    const fullPrompt = `${systemPrompt}${kbSection}
-
-Text to transform:
+    const userPrompt = `Text to transform:
 ${content}
 
 Transformed text:`;
 
     const body: GeminiRequestBody = {
-        contents: [{ parts: [{ text: fullPrompt }] }],
+        contents: [{ parts: [{ text: userPrompt }] }],
         generationConfig: { temperature: 0.5, maxOutputTokens: 1024 },
+        systemInstruction: buildSystemInstruction(
+            TRANSFORMATION_PROMPTS[type],
+            knowledgeBankContext,
+            strings.knowledgeBank.ai.kbTransformGuidance
+        ),
     };
 
     return callAndExtract(body);

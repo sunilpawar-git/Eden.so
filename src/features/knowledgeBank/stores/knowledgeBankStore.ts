@@ -54,6 +54,26 @@ export const useKnowledgeBankStore = create<KnowledgeBankStore>()((set, get) => 
         }));
     },
 
+    pinEntry: (entryId: string) => {
+        set((state) => ({
+            entries: state.entries.map((e) =>
+                e.id === entryId ? { ...e, pinned: true, updatedAt: new Date() } : e
+            ),
+        }));
+    },
+
+    unpinEntry: (entryId: string) => {
+        set((state) => ({
+            entries: state.entries.map((e) =>
+                e.id === entryId ? { ...e, pinned: false, updatedAt: new Date() } : e
+            ),
+        }));
+    },
+
+    getPinnedEntries: () => {
+        return get().entries.filter((e) => e.enabled && e.pinned === true);
+    },
+
     clearEntries: () => {
         set({ entries: [] });
     },

@@ -56,8 +56,21 @@ describe('imageDescriptionService', () => {
 
             expect(callGemini).toHaveBeenCalledOnce();
             const body = vi.mocked(callGemini).mock.calls[0]![0];
-            expect(body.contents[0]!.parts).toHaveLength(2);
+            // Image data only in contents; prompt in systemInstruction
+            expect(body.contents[0]!.parts).toHaveLength(1);
             expect(body.generationConfig?.maxOutputTokens).toBe(512);
+        });
+
+        it('sends prompt in systemInstruction, not in contents', async () => {
+            vi.mocked(callGemini).mockResolvedValue({ ok: true, status: 200, data: { candidates: [] } });
+            vi.mocked(extractGeminiText).mockReturnValue('desc');
+
+            const blob = new Blob(['image-data'], { type: 'image/jpeg' });
+            await describeImageWithAI(blob, 'test.jpg');
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText).toContain('Describe this image');
         });
 
         it('returns fallback description when Gemini is unavailable', async () => {

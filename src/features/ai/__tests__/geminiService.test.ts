@@ -19,6 +19,8 @@ import {
 } from '../services/geminiService';
 // eslint-disable-next-line import-x/first
 import { callGemini, extractGeminiText, isGeminiAvailable } from '@/features/knowledgeBank/services/geminiClient';
+// eslint-disable-next-line import-x/first
+import { strings } from '@/shared/localization/strings';
 
 function mockSuccess(text: string) {
     vi.mocked(callGemini).mockResolvedValue({
@@ -57,6 +59,26 @@ describe('GeminiService', () => {
             mockError(429);
             await expect(generateContent('Test')).rejects.toThrow('quota exceeded');
         });
+
+        it('should include KB usage guidance in systemInstruction when KB context provided', async () => {
+            mockSuccess('KB response');
+            const kbContext = '--- Workspace Knowledge Bank ---\n[Knowledge: Style]\nUse formal tone.\n--- End Knowledge Bank ---';
+            await generateContent('Write a post', kbContext);
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText).toContain(strings.knowledgeBank.ai.kbUsageGuidance);
+            expect(sysText).toContain(kbContext);
+        });
+
+        it('should NOT include KB usage guidance in systemInstruction when no KB context', async () => {
+            mockSuccess('Response');
+            await generateContent('Write a post');
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText).not.toContain('Knowledge Bank reference material');
+        });
     });
 
     describe('generateContentWithContext', () => {
@@ -80,13 +102,33 @@ describe('GeminiService', () => {
             expect(promptText).toContain('Tell me about US cities');
         });
 
-        it('should use chain generation system prompt', async () => {
+        it('should use chain generation system prompt in systemInstruction', async () => {
             mockSuccess('Chain response');
             await generateContentWithContext('Build on this', ['Previous idea']);
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
-            const promptText = body.contents[0]!.parts[0]!.text as string;
-            expect(promptText).toContain('idea evolution');
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText).toContain('idea evolution');
+        });
+
+        it('should include KB usage guidance in systemInstruction when KB context provided', async () => {
+            mockSuccess('KB-aware response');
+            const kbContext = '--- Workspace Knowledge Bank ---\n[Knowledge: Brand]\nUse formal tone.\n--- End Knowledge Bank ---';
+            await generateContentWithContext('Write a post', ['Idea 1'], kbContext);
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText).toContain(strings.knowledgeBank.ai.kbUsageGuidance);
+            expect(sysText).toContain(kbContext);
+        });
+
+        it('should NOT include KB usage guidance in systemInstruction when no KB context', async () => {
+            mockSuccess('Response');
+            await generateContentWithContext('Write a post', ['Idea 1']);
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText).not.toContain('Knowledge Bank reference material');
         });
 
         it('should handle API errors correctly', async () => {
@@ -111,9 +153,10 @@ describe('GeminiService', () => {
             expect(result).toBe('Refined content here');
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
-            const text = body.contents[0]!.parts[0]!.text as string;
-            expect(text).toContain('Original text to improve');
-            expect(text.toLowerCase()).toMatch(/refine|improve|enhance/);
+            const userText = body.contents[0]!.parts[0]!.text as string;
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(userText).toContain('Original text to improve');
+            expect(sysText.toLowerCase()).toMatch(/refine|improve|enhance/);
         });
 
         it('should transform with shorten prompt', async () => {
@@ -122,8 +165,8 @@ describe('GeminiService', () => {
             expect(result).toBe('Shorter version');
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
-            const text = body.contents[0]!.parts[0]!.text as string;
-            expect(text.toLowerCase()).toMatch(/shorten|concise|brief/);
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText.toLowerCase()).toMatch(/shorten|concise|brief/);
         });
 
         it('should transform with lengthen prompt', async () => {
@@ -132,8 +175,8 @@ describe('GeminiService', () => {
             expect(result).toBe('Expanded content');
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
-            const text = body.contents[0]!.parts[0]!.text as string;
-            expect(text.toLowerCase()).toMatch(/expand|lengthen|elaborate|detail/);
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText.toLowerCase()).toMatch(/expand|lengthen|elaborate|detail/);
         });
 
         it('should transform with proofread prompt', async () => {
@@ -142,8 +185,8 @@ describe('GeminiService', () => {
             expect(result).toBe('Proofread text');
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
-            const text = body.contents[0]!.parts[0]!.text as string;
-            expect(text.toLowerCase()).toMatch(/proofread|grammar|spelling|correct/);
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText.toLowerCase()).toMatch(/proofread|grammar|spelling|correct/);
         });
 
         it('should handle API errors correctly', async () => {
@@ -156,13 +199,78 @@ describe('GeminiService', () => {
             await expect(transformContent('Some text', 'shorten')).rejects.toThrow('quota exceeded');
         });
 
-        it('should include preserve meaning instructions', async () => {
+        it('should include preserve meaning instructions in systemInstruction', async () => {
             mockSuccess('Transformed');
             await transformContent('Important meeting notes', 'refine');
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
-            const text = body.contents[0]!.parts[0]!.text as string;
-            expect(text.toLowerCase()).toMatch(/preserve|maintain|keep.*meaning|original.*intent/);
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText.toLowerCase()).toMatch(/preserve|maintain|keep.*meaning|original.*intent/);
+        });
+
+        it('should include KB transform guidance in systemInstruction when KB context provided', async () => {
+            mockSuccess('Transformed');
+            const kbContext = '--- Workspace Knowledge Bank ---\n[Knowledge: Tone]\nAlways formal.\n--- End Knowledge Bank ---';
+            await transformContent('Draft text', 'refine', kbContext);
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText).toContain(strings.knowledgeBank.ai.kbTransformGuidance);
+            expect(sysText).toContain(kbContext);
+        });
+
+        it('should NOT include KB transform guidance in systemInstruction when no KB context', async () => {
+            mockSuccess('Transformed');
+            await transformContent('Draft text', 'refine');
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            expect(sysText).not.toContain('Knowledge Bank material');
+        });
+    });
+
+    describe('systemInstruction separation', () => {
+        it('generateContent sends system prompt in systemInstruction, user prompt in contents', async () => {
+            mockSuccess('Response');
+            await generateContent('Write a blog post');
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            const userText = body.contents[0]!.parts[0]!.text as string;
+            expect(sysText).toContain('concise content generator');
+            expect(userText).toContain('Write a blog post');
+            expect(userText).not.toContain('concise content generator');
+        });
+
+        it('generateContentWithContext sends system + KB in systemInstruction', async () => {
+            mockSuccess('Response');
+            const kbContext = '--- KB ---\nBrand voice: formal\n--- End KB ---';
+            await generateContentWithContext('Write post', ['Idea 1'], kbContext);
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            const userText = body.contents[0]!.parts[0]!.text as string;
+            expect(sysText).toContain('idea evolution');
+            expect(sysText).toContain(strings.knowledgeBank.ai.kbUsageGuidance);
+            expect(sysText).toContain(kbContext);
+            expect(userText).toContain('Idea 1');
+            expect(userText).toContain('Write post');
+            expect(userText).not.toContain('idea evolution');
+        });
+
+        it('transformContent sends transform prompt in systemInstruction', async () => {
+            mockSuccess('Refined');
+            const kbContext = '--- KB ---\nTone: casual\n--- End KB ---';
+            await transformContent('Draft text', 'refine', kbContext);
+
+            const body = vi.mocked(callGemini).mock.calls[0]![0];
+            const sysText = body.systemInstruction?.parts[0]?.text as string;
+            const userText = body.contents[0]!.parts[0]!.text as string;
+            expect(sysText).toContain('Refine and improve');
+            expect(sysText).toContain(strings.knowledgeBank.ai.kbTransformGuidance);
+            expect(sysText).toContain(kbContext);
+            expect(userText).toContain('Draft text');
+            expect(userText).not.toContain('Refine and improve');
         });
     });
 });

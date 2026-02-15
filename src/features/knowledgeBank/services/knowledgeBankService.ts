@@ -42,12 +42,9 @@ const getKBDocRef = (userId: string, workspaceId: string, entryId: string) =>
 
 // ── Validation ─────────────────────────────────────────
 
-function validateEntry(input: KnowledgeBankEntryInput): void {
+function validateEntry(input: Readonly<KnowledgeBankEntryInput>): void {
     if (!input.title.trim()) {
         throw new Error(strings.knowledgeBank.errors.titleRequired);
-    }
-    if (input.title.length > KB_MAX_TITLE_LENGTH) {
-        input.title = input.title.slice(0, KB_MAX_TITLE_LENGTH);
     }
     if (input.content.length > KB_MAX_CONTENT_SIZE) {
         throw new Error(strings.knowledgeBank.errors.contentTooLarge);
@@ -91,13 +88,14 @@ export async function addKBEntry(
         id: entryId,
         workspaceId,
         type: input.type,
-        title: sanitizeContent(input.title.trim()),
+        title: sanitizeContent(input.title.trim().slice(0, KB_MAX_TITLE_LENGTH)),
         content: sanitizeContent(input.content),
         tags: sanitizeTags(input.tags),
         originalFileName: input.originalFileName,
         storageUrl: input.storageUrl,
         mimeType: input.mimeType,
         parentEntryId: input.parentEntryId,
+        pinned: false,
         enabled: true,
         createdAt: now,
         updatedAt: now,
@@ -120,7 +118,7 @@ export async function updateKBEntry(
     userId: string,
     workspaceId: string,
     entryId: string,
-    updates: Partial<Pick<KnowledgeBankEntry, 'title' | 'content' | 'enabled' | 'summary' | 'tags'>>
+    updates: Partial<Pick<KnowledgeBankEntry, 'title' | 'content' | 'enabled' | 'summary' | 'tags' | 'pinned'>>
 ): Promise<void> {
     if (updates.title !== undefined && !updates.title.trim()) {
         throw new Error(strings.knowledgeBank.errors.titleRequired);
@@ -135,6 +133,7 @@ export async function updateKBEntry(
     if (updates.enabled !== undefined) sanitizedUpdates.enabled = updates.enabled;
     if (updates.summary !== undefined) sanitizedUpdates.summary = sanitizeContent(updates.summary);
     if (updates.tags !== undefined) sanitizedUpdates.tags = sanitizeTags(updates.tags);
+    if (updates.pinned !== undefined) sanitizedUpdates.pinned = updates.pinned;
 
     await setDoc(getKBDocRef(userId, workspaceId, entryId), sanitizedUpdates, { merge: true });
 }
@@ -169,6 +168,7 @@ export async function loadKBEntries(
             storageUrl: data.storageUrl,
             mimeType: data.mimeType,
             parentEntryId: data.parentEntryId,
+            pinned: data.pinned ?? false,
             enabled: data.enabled ?? true,
             createdAt: data.createdAt?.toDate?.() ?? new Date(),
             updatedAt: data.updatedAt?.toDate?.() ?? new Date(),

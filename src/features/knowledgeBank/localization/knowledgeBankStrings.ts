@@ -15,6 +15,9 @@ export const knowledgeBankStrings = {
     deleteConfirm: 'Delete?',
     toggleEnable: 'Enable',
     toggleDisable: 'Disable',
+    pinEntry: 'Pin to always include in AI context',
+    unpinEntry: 'Unpin entry',
+    pinnedBadge: 'Pinned',
     emptyState: 'No entries yet',
     emptyStateDescription: 'Add text, images, PDFs, or Word documents to your Knowledge Bank. All AI-generated nodes will use this context automatically.',
     addFirstEntry: 'Add First Entry',
@@ -38,7 +41,9 @@ export const knowledgeBankStrings = {
     chunkBadge: 'chunk',
     summarizing: 'Generating summary...',
     summarized: 'Summary generated',
-    summaryPrompt: 'Summarize the following text in 2-3 concise sentences for use as reference context in a knowledge base. Capture the key points, main ideas, and any critical details. Be factual and concise.',
+    summaryPromptBrief: 'Summarize the following text in 1 concise sentence for use as reference context. Capture only the single most important point.',
+    summaryPromptStandard: 'Summarize the following text in 2-3 concise sentences for use as reference context in a knowledge base. Capture the key points, main ideas, and any critical details. Be factual and concise.',
+    summaryPromptDetailed: 'Provide a detailed summary (4-6 sentences) of the following text for use as reference context in a knowledge base. Cover all major themes, supporting details, and conclusions. Preserve important specifics, names, and data points.',
     summaryLabel: 'Summary',
     tags: {
         label: 'Tags',
@@ -59,6 +64,10 @@ export const knowledgeBankStrings = {
         filterText: 'Text',
         filterImage: 'Image',
         filterDocument: 'Document',
+    },
+    ai: {
+        kbUsageGuidance: 'Use the following Knowledge Bank reference material to ground your response in accurate, workspace-specific context. Prioritize Knowledge Bank facts over general knowledge when they are relevant to the request.',
+        kbTransformGuidance: 'Reference the following Knowledge Bank material to maintain factual accuracy and consistency during transformation.',
     },
     errors: {
         fileTooLarge: 'File exceeds 10MB limit',

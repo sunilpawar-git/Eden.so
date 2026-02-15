@@ -2,7 +2,6 @@
  * useNodeGeneration Hook - Bridges AI service with canvas store
  * Handles AI generation for IdeaCard nodes
  */
-/* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/prefer-nullish-coalescing */
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '../stores/aiStore';
@@ -36,7 +35,7 @@ export function useNodeGeneration() {
 
             const ideaData = node.data;
             // Heading is SSOT for prompts; fall back to prompt for legacy data
-            // Use || for empty string fallback, not ?? for nullish fallback
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field access
             const promptText = (ideaData.heading?.trim() || ideaData.prompt) || '';
             if (!promptText) return;
 
@@ -50,11 +49,14 @@ export function useNodeGeneration() {
                 .reverse()
                 .filter((n) => {
                     const d = n.data;
+                    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field
                     return !!(d.heading?.trim() || d.prompt || d.output);
                 })
                 .map((n) => {
                     const d = n.data;
+                    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- intentional: empty string fallback
                     const heading = d.heading?.trim() || '';
+                    // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field access for backward compat
                     const content = d.output ?? d.prompt ?? '';
 
                     // When both heading and content exist, combine them with blank line separator
@@ -71,7 +73,8 @@ export function useNodeGeneration() {
             startGeneration(nodeId);
 
             try {
-                const kbContext = getKBContext(promptText);
+                const generationType = contextChain.length > 0 ? 'chain' as const : 'single' as const;
+                const kbContext = getKBContext(promptText, generationType);
                 const content = await generateContentWithContext(promptText, contextChain, kbContext);
 
                 // Update output in-place (no new node created!)

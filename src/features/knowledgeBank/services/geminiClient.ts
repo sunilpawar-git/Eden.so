@@ -53,6 +53,17 @@ export interface GeminiRequestBody {
         temperature?: number;
         maxOutputTokens?: number;
     };
+    /** System-level instructions (Gemini API uses snake_case: system_instruction) */
+    systemInstruction?: { parts: Array<{ text: string }> };
+}
+
+// ── Serialization ────────────────────────────────────────
+
+/** Serialize request body, mapping camelCase systemInstruction → snake_case system_instruction */
+function serializeBody(body: GeminiRequestBody): string {
+    const { systemInstruction, ...rest } = body;
+    if (!systemInstruction) return JSON.stringify(rest);
+    return JSON.stringify({ ...rest, system_instruction: systemInstruction });
 }
 
 // ── Core Call ────────────────────────────────────────────
@@ -92,7 +103,7 @@ async function callViaProxy(body: GeminiRequestBody): Promise<GeminiCallResult> 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: serializeBody(body),
     });
 
     const data = await response.json() as GeminiResponse;
@@ -105,7 +116,7 @@ async function callDirect(body: GeminiRequestBody): Promise<GeminiCallResult> {
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: serializeBody(body),
     });
 
     const data = await response.json() as GeminiResponse;
