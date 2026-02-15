@@ -11,8 +11,10 @@
     cursor: pointer;
     padding: var(--space-xs);
     border-radius: var(--radius-sm);
-    transition: color var(--transition-fast), background var(--transition-fast);
+    transition: color var(--transition-fast), background var(--transition-fast), opacity var(--transition-fast);
     opacity: 0;
+    margin-left: var(--space-xs);
+    flex-shrink: 0;
 }
 
 .pinButton:hover {

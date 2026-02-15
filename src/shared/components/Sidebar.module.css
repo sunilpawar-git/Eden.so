@@ -72,6 +72,11 @@
     background-color: var(--color-primary-light);
 }
 
+/* Show pin button when hovering workspace item */
+.workspaceItem:hover button {
+    opacity: 1;
+}
+
 .workspaceItem.active {
     background-color: var(--color-primary-light);
 }
@@ -88,6 +93,7 @@
 }
 
 .workspaceName {
+    flex: 1;
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);
     white-space: nowrap;
