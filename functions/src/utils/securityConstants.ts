@@ -41,6 +41,21 @@ export const ALLOWED_IMAGE_TYPES = [
     'image/webp',
 ] as const;
 
+/** Rate limit: max Gemini proxy requests per window per user */
+export const GEMINI_RATE_LIMIT = 30;
+
+/** Maximum request body size for Gemini proxy (100 KB) */
+export const GEMINI_MAX_BODY_BYTES = 102_400;
+
+/** Maximum output tokens the client may request */
+export const GEMINI_MAX_OUTPUT_TOKENS = 2048;
+
+/** Gemini API base URL */
+export const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+/** Default Gemini model */
+export const GEMINI_MODEL = 'gemini-2.0-flash';
+
 /** Error messages returned to clients */
 export const errorMessages = {
     authRequired: 'Authentication required',
@@ -53,4 +68,8 @@ export const errorMessages = {
     responseTooLarge: 'Response exceeds size limit',
     invalidContentType: 'Response is not a valid image type',
     methodNotAllowed: 'Method not allowed',
+    geminiKeyMissing: 'Gemini API key is not configured on the server',
+    geminiInvalidBody: 'Invalid request body: contents array is required',
+    geminiBodyTooLarge: 'Request body exceeds maximum size',
+    geminiUpstreamError: 'Gemini API returned an error',
 } as const;

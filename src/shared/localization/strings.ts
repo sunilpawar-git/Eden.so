@@ -2,6 +2,8 @@
  * String Resources - Single Source of Truth for all UI text
  * NO hardcoded strings allowed in components
  */
+import { knowledgeBankStrings } from '@/features/knowledgeBank/localization/knowledgeBankStrings';
+
 export const strings = {
     app: {
         name: 'ActionStation',
@@ -78,6 +80,7 @@ export const strings = {
         quotaExceeded: 'API quota exceeded. Please try again later.',
     },
     common: {
+        confirm: 'Confirm',
         submit: 'Submit',
         cancel: 'Cancel',
         save: 'Save',
@@ -269,6 +272,7 @@ export const strings = {
         noDataTitle: 'No cached data',
         noDataMessage: 'Visit your workspaces while online to cache them for offline use.',
     },
+    knowledgeBank: knowledgeBankStrings,
 } as const;
 
 export type StringKeys = typeof strings;

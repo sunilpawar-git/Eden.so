@@ -9,9 +9,19 @@ import { strings } from '@/shared/localization/strings';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 
-/** Remove undefined values from an object (Firebase doesn't accept undefined) */
+/** Remove undefined values recursively (Firebase rejects undefined at any depth) */
 function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
-    return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+    return Object.fromEntries(
+        Object.entries(obj)
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => [
+                k,
+                // Recursively clean nested plain objects (skip arrays, Dates, primitives)
+                typeof v === 'object' && v && !Array.isArray(v) && !(v instanceof Date)
+                    ? removeUndefined(v as Record<string, unknown>)
+                    : v,
+            ])
+    ) as T;
 }
 
 /** Get Firestore path for workspace subcollection */
@@ -172,8 +182,12 @@ export async function loadEdges(userId: string, workspaceId: string): Promise<Ca
     });
 }
 
-/** Delete a workspace and all its contents (nodes, edges) */
+/** Delete a workspace and all its contents (nodes, edges, KB entries) */
 export async function deleteWorkspace(userId: string, workspaceId: string): Promise<void> {
+    // Clean up Knowledge Bank entries first (separate subcollection)
+    const { deleteAllKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');
+    await deleteAllKBEntries(userId, workspaceId);
+
     const batch = writeBatch(db);
 
     // 1. Get all nodes and edges for this workspace

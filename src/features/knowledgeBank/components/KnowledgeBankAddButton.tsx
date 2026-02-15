@@ -1,0 +1,143 @@
+/**
+ * KnowledgeBankAddButton — Toolbar button with dropdown menu
+ * Positioned left of SearchBar in top toolbar
+ */
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
+import { useFileProcessor } from '../hooks/useFileProcessor';
+import { usePasteTextHandler } from '../hooks/usePasteTextHandler';
+import { PasteTextModal } from './PasteTextModal';
+import { KB_MAX_ENTRIES } from '../types/knowledgeBank';
+import { kbParserRegistry } from '../parsers/parserRegistry';
+import { strings } from '@/shared/localization/strings';
+import styles from './KnowledgeBankAddButton.module.css';
+
+const ACCEPTED_EXTENSIONS = kbParserRegistry.getSupportedExtensions().join(',');
+
+export function KnowledgeBankAddButton() {
+    const [isDropdownOpen, setDropdownOpen] = useState(false);
+    const [isModalOpen, setModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const entryCount = useKnowledgeBankStore((s) => s.entries.length);
+    const setPanelOpen = useKnowledgeBankStore((s) => s.setPanelOpen);
+    const { processFile, isProcessing } = useFileProcessor();
+    const handlePasteSave = usePasteTextHandler(useCallback(() => setModalOpen(false), []));
+
+    const isMaxReached = entryCount >= KB_MAX_ENTRIES;
+    const kb = strings.knowledgeBank;
+
+    useOutsideClick(containerRef, isDropdownOpen, () => setDropdownOpen(false));
+
+    const handleUploadClick = useCallback(() => {
+        setDropdownOpen(false);
+        fileInputRef.current?.click();
+    }, []);
+
+    const handleFileChange = useCallback(
+        async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (file) await processFile(file);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        },
+        [processFile]
+    );
+
+    const handlePasteClick = useCallback(() => {
+        setDropdownOpen(false);
+        setModalOpen(true);
+    }, []);
+
+    const handleViewClick = useCallback(() => {
+        setDropdownOpen(false);
+        setPanelOpen(true);
+    }, [setPanelOpen]);
+
+    return (
+        <>
+            <div className={styles.container} ref={containerRef}>
+                <button
+                    className={styles.addButton}
+                    onClick={() => setDropdownOpen(!isDropdownOpen)}
+                    title={kb.addButton}
+                    disabled={isProcessing}
+                >
+                    <span className={styles.icon}>📎</span>
+                    {entryCount > 0 && <span className={styles.badge}>{entryCount}</span>}
+                </button>
+                {isDropdownOpen && (
+                    <DropdownMenu
+                        isMaxReached={isMaxReached}
+                        entryCount={entryCount}
+                        onUpload={handleUploadClick}
+                        onPaste={handlePasteClick}
+                        onView={handleViewClick}
+                    />
+                )}
+            </div>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_EXTENSIONS}
+                onChange={handleFileChange}
+                className={styles.hiddenInput}
+            />
+            <PasteTextModal
+                isOpen={isModalOpen}
+                onClose={() => setModalOpen(false)}
+                onSave={handlePasteSave}
+            />
+        </>
+    );
+}
+
+/** Hook: close element on outside click */
+function useOutsideClick(
+    ref: React.RefObject<HTMLDivElement | null>,
+    active: boolean,
+    onClose: () => void
+) {
+    useEffect(() => {
+        if (!active) return;
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [active, ref, onClose]);
+}
+
+/** Sub-component: dropdown menu */
+function DropdownMenu({ isMaxReached, entryCount, onUpload, onPaste, onView }: {
+    isMaxReached: boolean; entryCount: number;
+    onUpload: () => void; onPaste: () => void; onView: () => void;
+}) {
+    const kb = strings.knowledgeBank;
+    return (
+        <div className={styles.dropdown}>
+            {isMaxReached ? (
+                <div className={styles.maxReached}>
+                    <span className={styles.dropdownIcon}>⚠️</span>
+                    <div>
+                        <div className={styles.dropdownLabel}>{kb.maxEntriesReached}</div>
+                        <div className={styles.dropdownHint}>{kb.maxEntriesDescription}</div>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <button className={styles.dropdownItem} onClick={onUpload}>
+                        <span className={styles.dropdownIcon}>📄</span> {kb.uploadFile}
+                    </button>
+                    <button className={styles.dropdownItem} onClick={onPaste}>
+                        <span className={styles.dropdownIcon}>📝</span> {kb.pasteText}
+                    </button>
+                </>
+            )}
+            <div className={styles.divider} />
+            <button className={styles.dropdownItem} onClick={onView}>
+                <span className={styles.dropdownIcon}>📚</span>
+                {kb.viewBank} ({entryCount})
+            </button>
+        </div>
+    );
+}

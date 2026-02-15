@@ -15,7 +15,7 @@ interface UseWorkspaceSwitcherResult {
     switchWorkspace: (workspaceId: string) => Promise<void>;
 }
 
- 
+
 export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
     const { user } = useAuthStore();
     const { setNodes, setEdges } = useCanvasStore();
@@ -23,11 +23,11 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
     const setCurrentWorkspaceId = useWorkspaceStore((s) => s.setCurrentWorkspaceId);
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
     const setSwitching = useWorkspaceStore((s) => s.setSwitching);
-    
+
     const [error, setError] = useState<string | null>(null);
     const switchingRef = useRef(false);
 
-     
+
     const switchWorkspace = useCallback(async (workspaceId: string): Promise<void> => {
         // Guard: same workspace or no user
         if (workspaceId === currentWorkspaceId || !user) {
@@ -84,6 +84,18 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
 
             // 4. Update workspace ID last
             setCurrentWorkspaceId(workspaceId);
+
+            // 5. Load Knowledge Bank entries for new workspace (non-blocking)
+            void (async () => {
+                try {
+                    const { loadKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');
+                    const { useKnowledgeBankStore } = await import('@/features/knowledgeBank/stores/knowledgeBankStore');
+                    const kbEntries = await loadKBEntries(user.id, workspaceId);
+                    useKnowledgeBankStore.getState().setEntries(kbEntries);
+                } catch (err: unknown) {
+                    console.error('[useWorkspaceSwitcher] KB load failed:', err);
+                }
+            })();
         } catch (err) {
             const message = err instanceof Error ? err.message : strings.workspace.switchError;
             setError(message);

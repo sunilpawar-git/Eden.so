@@ -5,6 +5,7 @@
 import { useCallback, useState } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { transformContent, type TransformationType } from '../services/geminiService';
+import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
 
 /**
  * Hook for transforming node content using AI
@@ -13,6 +14,7 @@ import { transformContent, type TransformationType } from '../services/geminiSer
 export function useNodeTransformation() {
     const [isTransforming, setIsTransforming] = useState(false);
     const { updateNodeOutput } = useCanvasStore();
+    const { getKBContext } = useKnowledgeBankContext();
 
     /**
      * Transform node content using the specified transformation type
@@ -29,7 +31,8 @@ export function useNodeTransformation() {
             setIsTransforming(true);
 
             try {
-                const transformedContent = await transformContent(content, type);
+                const kbContext = getKBContext(content);
+                const transformedContent = await transformContent(content, type, kbContext);
                 updateNodeOutput(nodeId, transformedContent);
             } catch {
                 // Error handling - preserve original content
@@ -38,7 +41,7 @@ export function useNodeTransformation() {
                 setIsTransforming(false);
             }
         },
-        [updateNodeOutput]
+        [updateNodeOutput, getKBContext]
     );
 
     return {

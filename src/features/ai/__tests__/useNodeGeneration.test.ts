@@ -14,6 +14,12 @@ vi.mock('../services/geminiService', () => ({
     generateContentWithContext: vi.fn(),
 }));
 
+// Mock KB context hook
+const mockGetKBContext = vi.fn(() => '');
+vi.mock('@/features/knowledgeBank/hooks/useKnowledgeBankContext', () => ({
+    useKnowledgeBankContext: () => ({ getKBContext: mockGetKBContext }),
+}));
+
 // Helper to create IdeaCard node
 const createTestIdeaNode = (id: string, prompt: string, output?: string, heading?: string) => ({
     id,
@@ -91,7 +97,8 @@ describe('useNodeGeneration', () => {
             // Should use 'Updated prompt', NOT 'Initial prompt'
             expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
                 'Updated prompt',
-                []
+                [],
+                ''
             );
         });
 
@@ -112,6 +119,7 @@ describe('useNodeGeneration', () => {
             expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
                 'Heading prompt',
                 [],
+                ''
             );
         });
 
@@ -131,6 +139,7 @@ describe('useNodeGeneration', () => {
             expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
                 'Legacy prompt',
                 [],
+                ''
             );
         });
 
@@ -296,5 +305,44 @@ describe('useNodeGeneration', () => {
             expect(call?.[1]).toEqual(['Legacy prompt']);
         });
     });
+    describe('generateFromPrompt with Knowledge Bank context', () => {
+        it('should pass KB context to generateContentWithContext', async () => {
+            const kbBlock = '--- Workspace Knowledge Bank ---\n[Knowledge: Brand Voice]\nAlways use CAPITAL TEXT.\n--- End Knowledge Bank ---';
+            mockGetKBContext.mockReturnValue(kbBlock);
+
+            useCanvasStore.getState().addNode(createTestIdeaNode('idea-1', 'Test prompt'));
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('RESPONSE');
+
+            const { result } = renderHook(() => useNodeGeneration());
+            await act(async () => {
+                await result.current.generateFromPrompt('idea-1');
+            });
+
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'Test prompt',
+                [],
+                kbBlock
+            );
+        });
+
+        it('should pass empty string when no KB entries are enabled', async () => {
+            mockGetKBContext.mockReturnValue('');
+
+            useCanvasStore.getState().addNode(createTestIdeaNode('idea-1', 'Test prompt'));
+            vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Response');
+
+            const { result } = renderHook(() => useNodeGeneration());
+            await act(async () => {
+                await result.current.generateFromPrompt('idea-1');
+            });
+
+            expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
+                'Test prompt',
+                [],
+                ''
+            );
+        });
+    });
+
     // branchFromNode tests are in useNodeGeneration.branch.test.ts
 });

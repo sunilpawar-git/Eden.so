@@ -115,6 +115,22 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
         }
 
         void load();
+
+        // Load Knowledge Bank entries (non-blocking, mirrors useWorkspaceSwitcher pattern)
+        void (async () => {
+            try {
+                const { loadKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');
+                const { useKnowledgeBankStore } = await import('@/features/knowledgeBank/stores/knowledgeBankStore');
+                const kbEntries = await loadKBEntries(userId, workspaceId);
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                if (mounted) {
+                    useKnowledgeBankStore.getState().setEntries(kbEntries);
+                }
+            } catch (err: unknown) {
+                console.error('[useWorkspaceLoader] KB load failed:', err);
+            }
+        })();
+
         return () => { mounted = false; };
     }, [user, workspaceId, setNodes, setEdges]);
 

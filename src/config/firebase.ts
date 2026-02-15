@@ -6,6 +6,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 // These values should come from environment variables in production
 const firebaseConfig = {
@@ -34,3 +35,5 @@ export const db = initializeFirestore(app, {
         tabManager: persistentSingleTabManager(undefined),
     }),
 });
+
+export const storage = getStorage(app);

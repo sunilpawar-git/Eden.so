@@ -104,3 +104,61 @@ jobs:
             exit 1
           fi
           echo "No sensitive .env files found."
+
+  api-key-isolation:
+    name: API Key Isolation Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Gemini API key isolation (SSOT enforcement)
+        run: |
+          echo "=== Gate: Gemini API key must only appear in geminiClient.ts ==="
+          SSOT_FILE="src/features/knowledgeBank/services/geminiClient.ts"
+          VIOLATIONS=$(grep -rl "VITE_GEMINI_API_KEY" src/ \
+            --include="*.ts" --include="*.tsx" \
+            | grep -v "__tests__" \
+            | grep -v "test/" \
+            | grep -v "$SSOT_FILE" \
+            || true)
+          if [ ! -z "$VIOLATIONS" ]; then
+            echo "SECURITY VIOLATION: VITE_GEMINI_API_KEY found outside SSOT!"
+            echo "Only $SSOT_FILE may reference the direct API key."
+            echo "Violating files:"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "PASS: API key referenced only in SSOT."
+
+      - name: Verify no direct Gemini API URLs outside SSOT
+        run: |
+          echo "=== Gate: Direct Gemini API URL must only appear in geminiClient.ts ==="
+          SSOT_FILE="src/features/knowledgeBank/services/geminiClient.ts"
+          VIOLATIONS=$(grep -rl "generativelanguage.googleapis.com" src/ \
+            --include="*.ts" --include="*.tsx" \
+            | grep -v "__tests__" \
+            | grep -v "test/" \
+            | grep -v "$SSOT_FILE" \
+            || true)
+          if [ ! -z "$VIOLATIONS" ]; then
+            echo "SECURITY VIOLATION: Direct Gemini API URL found outside SSOT!"
+            echo "All Gemini calls must go through geminiClient.ts."
+            echo "Violating files:"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "PASS: No direct Gemini URLs outside SSOT."
+
+      - name: Verify no hardcoded Google API keys in source
+        run: |
+          echo "=== Gate: No hardcoded Google API keys (AIza...) ==="
+          VIOLATIONS=$(grep -rn "AIza[0-9A-Za-z_-]\{35\}" src/ \
+            --include="*.ts" --include="*.tsx" --include="*.js" \
+            | grep -v "__tests__" \
+            | grep -v "test/" \
+            || true)
+          if [ ! -z "$VIOLATIONS" ]; then
+            echo "CRITICAL: Hardcoded Google API key detected in source!"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "PASS: No hardcoded API keys found."

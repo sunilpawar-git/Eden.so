@@ -40,6 +40,18 @@ vi.mock('@/shared/stores/networkStatusStore', () => ({
     ),
 }));
 
+// Mock Knowledge Bank service + store (dynamic imports)
+const mockLoadKBEntries = vi.fn().mockResolvedValue([]);
+const mockSetKBEntries = vi.fn();
+vi.mock('@/features/knowledgeBank/services/knowledgeBankService', () => ({
+    loadKBEntries: (...args: unknown[]) => mockLoadKBEntries(...args),
+}));
+vi.mock('@/features/knowledgeBank/stores/knowledgeBankStore', () => ({
+    useKnowledgeBankStore: Object.assign(vi.fn(), {
+        getState: () => ({ setEntries: mockSetKBEntries }),
+    }),
+}));
+
 // Mock auth store
 const mockUser = { id: 'user-1', email: 'test@example.com' };
 vi.mock('@/features/auth/stores/authStore', () => ({
@@ -234,6 +246,40 @@ describe('useWorkspaceLoader', () => {
             await waitFor(() => {
                 expect(result.current.isLoading).toBe(false);
                 expect(result.current.error).toBeTruthy();
+            });
+
+            consoleSpy.mockRestore();
+        });
+    });
+
+    describe('Knowledge Bank loading (regression)', () => {
+        it('loads KB entries on initial workspace load', async () => {
+            const mockKBEntries = [
+                { id: 'kb-1', title: 'Note', content: 'Hello', type: 'text', enabled: true },
+            ];
+            mockLoadKBEntries.mockResolvedValue(mockKBEntries);
+
+            const { result } = renderHook(() => useWorkspaceLoader('ws-1'));
+
+            await waitFor(() => {
+                expect(result.current.isLoading).toBe(false);
+            });
+
+            await waitFor(() => {
+                expect(mockLoadKBEntries).toHaveBeenCalledWith('user-1', 'ws-1');
+                expect(mockSetKBEntries).toHaveBeenCalledWith(mockKBEntries);
+            });
+        });
+
+        it('does not block workspace load when KB load fails', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            mockLoadKBEntries.mockRejectedValue(new Error('KB permission denied'));
+
+            const { result } = renderHook(() => useWorkspaceLoader('ws-1'));
+
+            await waitFor(() => {
+                expect(result.current.isLoading).toBe(false);
+                expect(result.current.error).toBeNull();
             });
 
             consoleSpy.mockRestore();
