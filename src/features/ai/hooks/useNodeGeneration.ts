@@ -17,7 +17,7 @@ const BRANCH_OFFSET_X = 350;
 /**
  * Hook for generating AI content from IdeaCard nodes
  */
-
+ 
 export function useNodeGeneration() {
     const { addNode } = useCanvasStore();
     const { startGeneration, completeGeneration, setError } = useAIStore();
