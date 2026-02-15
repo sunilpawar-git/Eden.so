@@ -28,13 +28,13 @@ function extractWorkspaceSubcollections(source: string): string[] {
     const directRegex = /(?:collection|doc)\(\s*db\s*,\s*'users'\s*,\s*\w+\s*,\s*'workspaces'\s*,\s*\w+\s*,\s*'(\w+)'/g;
     let match;
     while ((match = directRegex.exec(source)) !== null) {
-        subcollections.add(match[1]);
+        if (match[1]) subcollections.add(match[1]);
     }
 
     // Pattern 2: Helper function calls like getSubcollectionRef(userId, wsId, 'nodes')
     const helperRegex = /getSubcollection(?:Ref|DocRef)\(\s*\w+\s*,\s*\w+\s*,\s*'(\w+)'/g;
     while ((match = helperRegex.exec(source)) !== null) {
-        subcollections.add(match[1]);
+        if (match[1]) subcollections.add(match[1]);
     }
 
     return [...subcollections];
@@ -49,7 +49,7 @@ function extractRuleMatches(rulesSource: string): string[] {
     const matches = new Set<string>();
     let match;
     while ((match = regex.exec(rulesSource)) !== null) {
-        matches.add(match[1]);
+        if (match[1]) matches.add(match[1]);
     }
     return [...matches];
 }

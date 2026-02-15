@@ -16,7 +16,8 @@ function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
             .filter(([, v]) => v !== undefined)
             .map(([k, v]) => [
                 k,
-                v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date)
+                // Recursively clean nested plain objects (skip arrays, Dates, primitives)
+                typeof v === 'object' && v && !Array.isArray(v) && !(v instanceof Date)
                     ? removeUndefined(v as Record<string, unknown>)
                     : v,
             ])
