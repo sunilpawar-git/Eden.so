@@ -117,6 +117,52 @@ describe('WorkspaceService Save with Delete Sync', () => {
             expect(savedData.id).toBe('node-1');
         });
 
+        // REGRESSION: Link preview nodes fail to save due to nested undefined values
+        it('should strip undefined values from nested linkPreviews (deep sanitization)', async () => {
+            mockGetDocs.mockResolvedValue({ docs: [] });
+
+            const nodeWithLinkPreview = createMockNode('node-link', {
+                data: {
+                    prompt: 'Check this link',
+                    output: 'https://x.com/example/status/123',
+                    linkPreviews: {
+                        'https://x.com/example/status/123': {
+                            url: 'https://x.com/example/status/123',
+                            title: undefined,
+                            description: undefined,
+                            image: undefined,
+                            favicon: undefined,
+                            domain: 'x.com',
+                            cardType: undefined,
+                            fetchedAt: 1700000000000,
+                            error: undefined,
+                        },
+                    },
+                },
+            });
+
+            await saveNodes('user-1', 'ws-1', [nodeWithLinkPreview]);
+
+            expect(mockBatchSet).toHaveBeenCalledTimes(1);
+            const savedData = mockBatchSet.mock.calls[0]?.[1] as Record<string, unknown>;
+            const savedNodeData = savedData.data as Record<string, unknown>;
+            const savedPreviews = savedNodeData.linkPreviews as Record<string, Record<string, unknown>>;
+            const preview = savedPreviews['https://x.com/example/status/123']!;
+
+            // Defined values must be preserved
+            expect(preview.url).toBe('https://x.com/example/status/123');
+            expect(preview.domain).toBe('x.com');
+            expect(preview.fetchedAt).toBe(1700000000000);
+
+            // Undefined values must be stripped (Firestore rejects undefined at any depth)
+            expect(preview).not.toHaveProperty('title');
+            expect(preview).not.toHaveProperty('description');
+            expect(preview).not.toHaveProperty('image');
+            expect(preview).not.toHaveProperty('favicon');
+            expect(preview).not.toHaveProperty('cardType');
+            expect(preview).not.toHaveProperty('error');
+        });
+
         it('should preserve defined width/height when present', async () => {
             mockGetDocs.mockResolvedValue({ docs: [] });
 

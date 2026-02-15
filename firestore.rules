@@ -30,6 +30,11 @@ service cloud.firestore {
         match /edges/{edgeId} {
           allow read, write: if request.auth != null && request.auth.uid == userId;
         }
+
+        // Knowledge Bank entries within workspace
+        match /knowledgeBank/{entryId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
       }
     }
   }
