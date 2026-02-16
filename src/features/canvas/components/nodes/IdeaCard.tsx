@@ -34,6 +34,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const isAICard = Boolean(promptSource && output && promptSource !== output);
     const [showTagInput, setShowTagInput] = useState(false);
     const [isNearEdge, setIsNearEdge] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
     const cardWrapperRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<NodeHeadingHandle>(null);
@@ -87,6 +88,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const onKeyDownReact = useCallback((e: React.KeyboardEvent) => handleKeyDown(e.nativeEvent), [handleKeyDown]);
 
     // Proximity-based hover: Show utils bar only when cursor is near edge
+    // Resize buttons: Show when hovered anywhere on the node
+    const handleMouseEnter = useCallback(() => {
+        setIsHovered(true);
+    }, []);
+
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const wrapper = cardWrapperRef.current;
         if (!wrapper) return;
@@ -104,18 +110,20 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const handleMouseLeave = useCallback(() => {
         setIsNearEdge(false);
+        setIsHovered(false);
     }, []);
 
     return (
         <div ref={cardWrapperRef}
             className={`${styles.cardWrapper} ${handleStyles.resizerWrapper} ${isCollapsed ? styles.cardWrapperCollapsed : ''}`}
+            onMouseEnter={handleMouseEnter}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onContextMenu={pinOpenHandlers.onContextMenu}
             onTouchStart={pinOpenHandlers.onTouchStart} onTouchEnd={pinOpenHandlers.onTouchEnd}>
             <NodeResizer minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}
                 minHeight={MIN_NODE_HEIGHT} maxHeight={MAX_NODE_HEIGHT} isVisible={selected && !isCollapsed} />
-            <NodeResizeButtons nodeId={id} visible={isNearEdge} />
+            <NodeResizeButtons nodeId={id} visible={isHovered} />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
             <div className={`${styles.ideaCard} ${isNearEdge ? styles.ideaCardHovered : ''} ${isCollapsed ? styles.collapsed : ''}`}>
@@ -131,10 +139,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                         data-testid="content-area" ref={contentRef} tabIndex={selected || isEditing ? 0 : -1}
                         onKeyDown={selected || isEditing ? onKeyDownReact : undefined}>
                         {isEditing ? <EditingContent editor={editor} /> :
-                         isGenerating ? <GeneratingContent /> :
-                         hasContent && isAICard && !heading?.trim() ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
-                         hasContent ? <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
-                         <PlaceholderContent onDoubleClick={handleDoubleClick} />}
+                            isGenerating ? <GeneratingContent /> :
+                                hasContent && isAICard && !heading?.trim() ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
+                                    hasContent ? <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
+                                        <PlaceholderContent onDoubleClick={handleDoubleClick} />}
                     </div>
                 )}
                 {!isCollapsed && (showTagInput || tagIds.length > 0) && (

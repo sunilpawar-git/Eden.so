@@ -4,8 +4,39 @@
  * Positioned at corners, visible on hover
  */
 
-.resizeButton {
+.resizeButtonsContainer {
     position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.widthControls {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.heightControls {
+    position: absolute;
+    bottom: -12px;
+    left: -12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.resizeButton {
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -15,19 +46,18 @@
     font-size: 14px;
     cursor: pointer;
     opacity: 0;
-    pointer-events: none;
+    pointer-events: auto;
     transition: opacity var(--transition-fast), transform var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
     padding: 0;
     line-height: 1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .resizeButton.visible {
-    opacity: 0.6;
-    pointer-events: auto;
+    opacity: 0.8;
 }
 
 .resizeButton.visible:hover {
@@ -35,21 +65,11 @@
     transform: scale(1.1);
     background: var(--color-surface-hover);
     color: var(--color-text-primary);
+    border-color: var(--color-border-hover);
+    z-index: 11;
 }
 
 .resizeButton:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
-}
-
-/* Right arrow - positioned at top-right corner */
-.expandWidth {
-    top: -8px;
-    right: -8px;
-}
-
-/* Down arrow - positioned at bottom-left corner */
-.expandHeight {
-    bottom: -8px;
-    left: -8px;
 }

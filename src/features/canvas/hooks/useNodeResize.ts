@@ -15,8 +15,12 @@ import {
 export interface UseNodeResizeResult {
     expandWidth: () => void;
     expandHeight: () => void;
+    shrinkWidth: () => void;
+    shrinkHeight: () => void;
     canExpandWidth: boolean;
     canExpandHeight: boolean;
+    canShrinkWidth: boolean;
+    canShrinkHeight: boolean;
 }
 
 /**
@@ -34,6 +38,8 @@ export function useNodeResize(nodeId: string): UseNodeResizeResult {
 
     const canExpandWidth = currentWidth < MAX_NODE_WIDTH;
     const canExpandHeight = currentHeight < MAX_NODE_HEIGHT;
+    const canShrinkWidth = currentWidth > DEFAULT_NODE_WIDTH;
+    const canShrinkHeight = currentHeight > DEFAULT_NODE_HEIGHT;
 
     const expandWidth = useCallback(() => {
         if (canExpandWidth) {
@@ -49,5 +55,19 @@ export function useNodeResize(nodeId: string): UseNodeResizeResult {
         }
     }, [nodeId, currentWidth, currentHeight, canExpandHeight, updateNodeDimensions, arrangeAfterResize]);
 
-    return { expandWidth, expandHeight, canExpandWidth, canExpandHeight };
+    const shrinkWidth = useCallback(() => {
+        if (canShrinkWidth) {
+            updateNodeDimensions(nodeId, currentWidth - RESIZE_INCREMENT_PX, currentHeight);
+            arrangeAfterResize(nodeId);
+        }
+    }, [nodeId, currentWidth, currentHeight, canShrinkWidth, updateNodeDimensions, arrangeAfterResize]);
+
+    const shrinkHeight = useCallback(() => {
+        if (canShrinkHeight) {
+            updateNodeDimensions(nodeId, currentWidth, currentHeight - RESIZE_INCREMENT_PX);
+            arrangeAfterResize(nodeId);
+        }
+    }, [nodeId, currentWidth, currentHeight, canShrinkHeight, updateNodeDimensions, arrangeAfterResize]);
+
+    return { expandWidth, expandHeight, shrinkWidth, shrinkHeight, canExpandWidth, canExpandHeight, canShrinkWidth, canShrinkHeight };
 }
