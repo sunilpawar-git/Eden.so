@@ -161,6 +161,7 @@
   --node-utils-peek-height: 32px;
   --node-utils-hover-delay-in: 80ms;
   --node-utils-hover-delay-out: 150ms;
+  --node-utils-proximity-threshold: 80px;
 }
 
 /* Compact Mode - Reduced spacing and smaller fonts */
