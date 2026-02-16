@@ -4,17 +4,19 @@
  */
 import React, { useState, useCallback } from 'react';
 import { strings } from '@/shared/localization/strings';
-import { EditIcon, TrashIcon } from '@/shared/components/icons';
+import { EditIcon, TrashIcon, PinIcon } from '@/shared/components/icons';
 import styles from './KnowledgeBankPanel.module.css';
 
 interface EntryCardActionsProps {
     entryId: string;
+    isPinned: boolean;
+    onPin: (entryId: string) => void;
     onEdit: () => void;
     onDelete: (entryId: string) => void;
 }
 
 export const EntryCardActions = React.memo(function EntryCardActions({
-    entryId, onEdit, onDelete,
+    entryId, isPinned, onPin, onEdit, onDelete,
 }: EntryCardActionsProps) {
     const [isDeleting, setIsDeleting] = useState(false);
     const kb = strings.knowledgeBank;
@@ -50,6 +52,13 @@ export const EntryCardActions = React.memo(function EntryCardActions({
 
     return (
         <div className={styles.entryActions}>
+            <button
+                className={`${styles.actionButton} ${isPinned ? styles.pinAction : ''}`}
+                onClick={() => onPin(entryId)}
+                aria-label={isPinned ? kb.unpinEntry : kb.pinEntry}
+            >
+                <PinIcon size={16} filled={isPinned} />
+            </button>
             <button
                 className={styles.actionButton}
                 onClick={onEdit}

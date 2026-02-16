@@ -16,12 +16,13 @@ interface KnowledgeBankEntryCardProps {
     entry: KnowledgeBankEntry;
     isSummarizing?: boolean;
     onToggle: (entryId: string) => void;
+    onPin: (entryId: string) => void;
     onUpdate: (entryId: string, u: { title: string; content: string; tags: string[] }) => void;
     onDelete: (entryId: string) => void;
 }
 
 export const KnowledgeBankEntryCard = React.memo(function KnowledgeBankEntryCard({
-    entry, isSummarizing, onToggle, onUpdate, onDelete,
+    entry, isSummarizing, onToggle, onPin, onUpdate, onDelete,
 }: KnowledgeBankEntryCardProps) {
     const [isEditing, setIsEditing] = useState(false);
     const kb = strings.knowledgeBank;
@@ -62,6 +63,9 @@ export const KnowledgeBankEntryCard = React.memo(function KnowledgeBankEntryCard
                     {entry.parentEntryId && (
                         <span className={styles.chunkBadge}>{kb.chunkBadge}</span>
                     )}
+                    {entry.pinned && (
+                        <span className={styles.pinnedBadge}>{kb.pinnedBadge}</span>
+                    )}
                     <h4 className={styles.entryTitle} title={entry.title}>
                         {entry.title}
                     </h4>
@@ -80,6 +84,8 @@ export const KnowledgeBankEntryCard = React.memo(function KnowledgeBankEntryCard
             )}
             <EntryCardActions
                 entryId={entry.id}
+                isPinned={entry.pinned ?? false}
+                onPin={onPin}
                 onEdit={() => setIsEditing(true)}
                 onDelete={onDelete}
             />

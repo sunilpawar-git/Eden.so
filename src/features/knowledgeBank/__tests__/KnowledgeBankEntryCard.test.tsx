@@ -12,6 +12,7 @@ vi.mock('@/shared/components/icons', () => ({
     ImageIcon: () => <div data-testid="icon-image">ImageIcon</div>,
     EditIcon: () => <div data-testid="icon-edit">EditIcon</div>,
     TrashIcon: () => <div data-testid="icon-trash">TrashIcon</div>,
+    PinIcon: () => <div data-testid="icon-pin">PinIcon</div>,
 }));
 
 const mockEntry: KnowledgeBankEntry = {
@@ -31,6 +32,7 @@ describe('KnowledgeBankEntryCard', () => {
         onToggle: vi.fn(),
         onUpdate: vi.fn(),
         onDelete: vi.fn(),
+        onPin: vi.fn(),
     };
 
     it('renders entry title', () => {
@@ -151,5 +153,35 @@ describe('KnowledgeBankEntryCard', () => {
     it('does not show summarizing badge when isSummarizing is undefined', () => {
         render(<KnowledgeBankEntryCard {...defaultProps} />);
         expect(screen.queryByText('Generating summary...')).toBeNull();
+    });
+
+    // ── Pin feature tests ──────────────────────────────
+    it('shows pin button with correct aria-label when unpinned', () => {
+        render(<KnowledgeBankEntryCard {...defaultProps} />);
+        expect(screen.getByLabelText('Pin to always include in AI context')).toBeDefined();
+    });
+
+    it('shows unpin aria-label when entry is pinned', () => {
+        const pinnedEntry = { ...mockEntry, pinned: true };
+        render(<KnowledgeBankEntryCard {...defaultProps} entry={pinnedEntry} />);
+        expect(screen.getByLabelText('Unpin entry')).toBeDefined();
+    });
+
+    it('calls onPin when pin button is clicked', () => {
+        const onPin = vi.fn();
+        render(<KnowledgeBankEntryCard {...defaultProps} onPin={onPin} />);
+        fireEvent.click(screen.getByLabelText('Pin to always include in AI context'));
+        expect(onPin).toHaveBeenCalledWith('kb-1');
+    });
+
+    it('renders pinned badge when entry is pinned', () => {
+        const pinnedEntry = { ...mockEntry, pinned: true };
+        render(<KnowledgeBankEntryCard {...defaultProps} entry={pinnedEntry} />);
+        expect(screen.getByText('Pinned')).toBeDefined();
+    });
+
+    it('does not render pinned badge when entry is not pinned', () => {
+        render(<KnowledgeBankEntryCard {...defaultProps} />);
+        expect(screen.queryByText('Pinned')).toBeNull();
     });
 });

@@ -150,6 +150,23 @@
     color: var(--color-error);
 }
 
+.pinAction {
+    color: var(--color-primary);
+}
+
+.pinAction:hover {
+    color: var(--color-primary);
+}
+
+.pinnedBadge {
+    font-size: var(--font-size-xs, 10px);
+    color: var(--color-primary);
+    background: var(--color-surface-hover);
+    border-radius: var(--radius-sm, 4px);
+    padding: 1px 4px;
+    margin-left: 4px;
+}
+
 /* ── Edit Mode ────────────────────────────────────── */
 .editInput {
     width: 100%;
