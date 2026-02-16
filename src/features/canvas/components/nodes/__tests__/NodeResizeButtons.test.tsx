@@ -12,13 +12,19 @@ vi.mock('../../../hooks/useNodeResize');
 
 const mockExpandWidth = vi.fn();
 const mockExpandHeight = vi.fn();
+const mockShrinkWidth = vi.fn();
+const mockShrinkHeight = vi.fn();
 
 function setupMock(overrides: Partial<useNodeResizeModule.UseNodeResizeResult> = {}) {
     vi.mocked(useNodeResizeModule.useNodeResize).mockReturnValue({
         expandWidth: mockExpandWidth,
         expandHeight: mockExpandHeight,
+        shrinkWidth: mockShrinkWidth,
+        shrinkHeight: mockShrinkHeight,
         canExpandWidth: true,
         canExpandHeight: true,
+        canShrinkWidth: false,
+        canShrinkHeight: false,
         ...overrides,
     });
 }
@@ -130,6 +136,34 @@ describe('NodeResizeButtons', () => {
             render(<NodeResizeButtons nodeId={TEST_NODE_ID} visible={true} />);
             const heightButton = screen.getByRole('button', { name: /expand height/i });
             expect(heightButton.textContent).toContain('↓');
+        });
+    });
+
+    describe('shrink functionality', () => {
+        it('should render shrink width button when canShrinkWidth is true', () => {
+            setupMock({ canShrinkWidth: true });
+            render(<NodeResizeButtons nodeId={TEST_NODE_ID} visible={true} />);
+            expect(screen.getByRole('button', { name: /reduce width/i })).toBeInTheDocument();
+        });
+
+        it('should render shrink height button when canShrinkHeight is true', () => {
+            setupMock({ canShrinkHeight: true });
+            render(<NodeResizeButtons nodeId={TEST_NODE_ID} visible={true} />);
+            expect(screen.getByRole('button', { name: /reduce height/i })).toBeInTheDocument();
+        });
+
+        it('should call shrinkWidth when shrink width button is clicked', () => {
+            setupMock({ canShrinkWidth: true });
+            render(<NodeResizeButtons nodeId={TEST_NODE_ID} visible={true} />);
+            fireEvent.click(screen.getByRole('button', { name: /reduce width/i }));
+            expect(mockShrinkWidth).toHaveBeenCalledTimes(1);
+        });
+
+        it('should call shrinkHeight when shrink height button is clicked', () => {
+            setupMock({ canShrinkHeight: true });
+            render(<NodeResizeButtons nodeId={TEST_NODE_ID} visible={true} />);
+            fireEvent.click(screen.getByRole('button', { name: /reduce height/i }));
+            expect(mockShrinkHeight).toHaveBeenCalledTimes(1);
         });
     });
 });

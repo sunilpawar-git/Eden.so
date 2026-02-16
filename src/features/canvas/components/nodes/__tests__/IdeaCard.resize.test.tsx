@@ -368,10 +368,7 @@ describe('IdeaCard Resize Integration', () => {
             fireEvent.mouseMove(cardWrapper, { clientX: 300, clientY: 200 });
 
             const widthButton = screen.getByRole('button', { name: /expand width/i });
-            // We expect this to have 'visible' class in new implementation
-            // The class name check is brittle as class names are hashed modules
-            // We rely on the button being present and having the correct role/label
-            expect(widthButton).toBeTruthy();
+            expect(widthButton.className).toContain('visible');
         });
 
         it('resize buttons have visible class when near right edge', () => {
@@ -399,12 +396,10 @@ describe('IdeaCard Resize Integration', () => {
             fireEvent.mouseMove(cardWrapper, { clientX: 450, clientY: 200 });
 
             const widthButton = screen.getByRole('button', { name: /expand width/i });
-            // Check if button is visible (opacity > 0, ptr-events auto)
-            // Note: JSDOM handles opacity for toBeVisible
-            expect(widthButton).toBeVisible();
+            expect(widthButton.className).toContain('visible');
         });
 
-        it('resize buttons become invisible when leaving proximity', () => {
+        it('resize buttons lose visible class when leaving proximity', () => {
             render(<IdeaCard {...defaultProps} />);
 
             const contentArea = screen.getByTestId('content-area');
@@ -421,7 +416,7 @@ describe('IdeaCard Resize Integration', () => {
             fireEvent.mouseLeave(cardWrapper);
 
             const widthButton = screen.getByRole('button', { name: /expand width/i });
-            expect(widthButton).not.toBeVisible();
+            expect(widthButton.className).not.toContain('visible');
         });
 
         it('clicking expand width button increases node width in store', () => {
