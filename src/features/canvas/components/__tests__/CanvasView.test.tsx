@@ -107,17 +107,26 @@ describe('CanvasView', () => {
             });
         });
 
-        it('should use bezier edge type for smooth curves', () => {
+        it('should use deletable custom edge type', () => {
             render(<CanvasView />);
 
             const mockCalls = vi.mocked(ReactFlow).mock.calls;
             const reactFlowProps = mockCalls[0]?.[0] ?? {};
             const edges = reactFlowProps.edges ?? [];
 
-            // Edges should have bezier type
             expect(edges[0]).toMatchObject({
-                type: 'bezier',
+                type: 'deletable',
             });
+        });
+
+        it('should register DeletableEdge as custom edge type', () => {
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const reactFlowProps = mockCalls[0]?.[0] ?? {};
+
+            expect(reactFlowProps.edgeTypes).toBeDefined();
+            expect(reactFlowProps.edgeTypes).toHaveProperty('deletable');
         });
 
         it('should use Bezier connection line type', () => {
@@ -129,14 +138,14 @@ describe('CanvasView', () => {
             expect(reactFlowProps.connectionLineType).toBe(ConnectionLineType.Bezier);
         });
 
-        it('should configure default edge options with bezier type', () => {
+        it('should configure default edge options with deletable type', () => {
             render(<CanvasView />);
 
             const mockCalls = vi.mocked(ReactFlow).mock.calls;
             const reactFlowProps = mockCalls[0]?.[0] ?? {};
 
             expect(reactFlowProps.defaultEdgeOptions).toMatchObject({
-                type: 'bezier',
+                type: 'deletable',
             });
         });
 

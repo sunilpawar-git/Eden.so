@@ -158,6 +158,9 @@ export const strings = {
     tooltip: {
         shortcutSeparator: ' ',
     },
+    edge: {
+        deleteConnection: 'Delete connection',
+    },
     resize: {
         resizeNode: 'Resize node',
         resizeHandle: 'Drag to resize',

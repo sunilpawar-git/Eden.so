@@ -27,6 +27,7 @@ import { useCanvasStore } from '../stores/canvasStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { IdeaCard } from './nodes/IdeaCard';
+import { DeletableEdge } from './edges/DeletableEdge';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
@@ -38,6 +39,11 @@ function getContainerClassName(isSwitching: boolean): string {
 // Memoized node types for performance
 const nodeTypes = {
     idea: IdeaCard,
+};
+
+// Memoized edge types for performance (custom edges with delete button)
+const edgeTypes = {
+    deletable: DeletableEdge,
 };
 
 // eslint-disable-next-line max-lines-per-function -- main ReactFlow integration component
@@ -90,7 +96,7 @@ export function CanvasView() {
         target: edge.targetNodeId,
         sourceHandle: `${edge.sourceNodeId}-source`,
         targetHandle: `${edge.targetNodeId}-target`,
-        type: 'bezier',
+        type: 'deletable',
         animated: edge.relationshipType === 'derived',
     }));
 
@@ -203,9 +209,10 @@ export function CanvasView() {
                 onConnect={onConnect}
                 onSelectionChange={onSelectionChange}
                 nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
                 connectionLineType={ConnectionLineType.Bezier}
                 defaultEdgeOptions={{
-                    type: 'bezier',
+                    type: 'deletable',
                     markerEnd: { type: MarkerType.ArrowClosed },
                 }}
                 defaultViewport={{ x: 32, y: 32, zoom: 1 }}
