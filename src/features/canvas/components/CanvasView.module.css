@@ -64,24 +64,6 @@
     stroke-width: 2px !important;
 }
 
-.canvasContainer :global(.react-flow__controls) {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    border: var(--glass-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-}
-
-.canvasContainer :global(.react-flow__controls-button) {
-    background: transparent;
-    border: none;
-    color: var(--color-text-primary);
-}
-
-.canvasContainer :global(.react-flow__controls-button:hover) {
-    background: var(--color-primary-light);
-}
-
 /* ReactFlow attribution link - WCAG AA contrast fix */
 .canvasContainer :global(.react-flow__attribution) {
     color: var(--color-text-secondary);

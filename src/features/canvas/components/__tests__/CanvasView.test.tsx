@@ -16,13 +16,16 @@ vi.mock('@xyflow/react', async (importOriginal) => {
             </div>
         )),
         Background: vi.fn(() => <div data-testid="mock-background" />),
-        Controls: () => <div data-testid="mock-controls" />,
+        ZoomControls: () => <div data-testid="mock-zoom-controls" />,
         useNodesState: (initialNodes: unknown[]) => [initialNodes, vi.fn(), vi.fn()],
         useEdgesState: (initialEdges: unknown[]) => [initialEdges, vi.fn(), vi.fn()],
     };
 });
 
-
+// Mock ZoomControls import
+vi.mock('../ZoomControls', () => ({
+    ZoomControls: () => <div data-testid="mock-zoom-controls" />,
+}));
 
 describe('CanvasView', () => {
     beforeEach(() => {
@@ -42,6 +45,10 @@ describe('CanvasView', () => {
             ],
             edges: [],
             selectedNodeIds: new Set(),
+        });
+        useSettingsStore.setState({
+            isCanvasLocked: false,
+            canvasScrollMode: 'zoom'
         });
     });
 
@@ -318,6 +325,57 @@ describe('CanvasView', () => {
             useSettingsStore.setState({ canvasGrid: false });
             render(<CanvasView />);
             expect(screen.queryByTestId('mock-background')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Locked Canvas', () => {
+        beforeEach(() => {
+            useSettingsStore.setState({ isCanvasLocked: true });
+        });
+
+        it('should disable interactions when locked', () => {
+            render(<CanvasView />);
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+
+            expect(props.nodesDraggable).toBe(false);
+            expect(props.elementsSelectable).toBe(false);
+            expect(props.nodesConnectable).toBe(false);
+            expect(props.panOnDrag).toBe(false);
+            // Both zoom and pan should be disabled
+            expect(props.zoomOnScroll).toBe(false);
+            expect(props.panOnScroll).toBe(false);
+        });
+
+        it('should set all nodes to draggable=false when locked', () => {
+            useCanvasStore.setState({
+                nodes: [
+                    {
+                        id: 'free-node',
+                        workspaceId: 'workspace-1',
+                        type: 'idea',
+                        data: { prompt: 'Free', output: undefined, isGenerating: false, isPromptCollapsed: false, isPinned: false, isCollapsed: false },
+                        position: { x: 50, y: 50 },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                ],
+                edges: [],
+                selectedNodeIds: new Set(),
+            });
+
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+            const nodes = props.nodes ?? [];
+
+            expect(nodes[0]?.draggable).toBe(false);
+        });
+
+        it('should render ZoomControls', () => {
+            render(<CanvasView />);
+            expect(screen.getByTestId('mock-zoom-controls')).toBeInTheDocument();
         });
     });
 });

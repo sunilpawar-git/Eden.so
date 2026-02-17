@@ -25,6 +25,7 @@ const STORAGE_KEYS = {
     autoSaveInterval: 'settings-autoSaveInterval',
     compactMode: 'settings-compactMode',
     canvasScrollMode: 'settings-canvasScrollMode',
+    isCanvasLocked: 'settings-isCanvasLocked',
 } as const;
 
 // Constants
@@ -39,12 +40,14 @@ interface SettingsState {
     autoSaveInterval: number;
     compactMode: boolean;
     canvasScrollMode: CanvasScrollMode;
+    isCanvasLocked: boolean;
     setTheme: (theme: ThemeOption) => void;
     toggleCanvasGrid: () => void;
     setAutoSave: (enabled: boolean) => void;
     setAutoSaveInterval: (seconds: number) => void;
     toggleCompactMode: () => void;
     setCanvasScrollMode: (mode: CanvasScrollMode) => void;
+    toggleCanvasLocked: () => void;
     getResolvedTheme: () => ResolvedTheme;
     loadFromStorage: () => void;
 }
@@ -60,6 +63,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     autoSaveInterval: getStorageItem<number>(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT),
     compactMode: getStorageItem<boolean>(STORAGE_KEYS.compactMode, false),
     canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
+    isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
 
     setTheme: (theme: ThemeOption) => {
         set({ theme });
@@ -94,6 +98,12 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
         setStorageItem(STORAGE_KEYS.canvasScrollMode, mode);
     },
 
+    toggleCanvasLocked: () => {
+        const newValue = !get().isCanvasLocked;
+        set({ isCanvasLocked: newValue });
+        setStorageItem(STORAGE_KEYS.isCanvasLocked, newValue);
+    },
+
     getResolvedTheme: (): ResolvedTheme => {
         const { theme } = get();
         if (DIRECT_THEMES.has(theme)) return theme as ResolvedTheme;
@@ -112,6 +122,8 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
             autoSaveInterval: getStorageItem<number>(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT),
             compactMode: getStorageItem<boolean>(STORAGE_KEYS.compactMode, false),
             canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
+            isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
         });
     },
+
 }));
