@@ -16,7 +16,6 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: margin-left var(--sidebar-transition);
 }
 
 /* Unpinned idle: mainArea shifts left, topbar gets nearly full width */
@@ -27,6 +26,7 @@
 
 .layout[data-sidebar-pinned="false"] .mainArea {
     margin-left: var(--sidebar-hover-trigger-width);
+    transition: margin-left var(--sidebar-transition);
 }
 
 /* Unpinned + hover open: mainArea shifts right, topbar shrinks smoothly */
