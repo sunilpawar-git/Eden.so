@@ -17,6 +17,7 @@
 .topBar {
     display: flex;
     align-items: center;
+    gap: 0.5cm;
     padding: var(--space-sm) var(--space-md);
     background: var(--surface-primary);
     border-bottom: 1px solid var(--border-color);

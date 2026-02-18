@@ -1,8 +1,10 @@
 /**
- * RelevanceScorer — Lightweight keyword-based relevance scoring
+ * RelevanceScorer — Keyword + TF-IDF relevance scoring
  * Ranks KB entries by similarity to the user prompt for smart context injection.
+ * Combines field-weighted keyword matching with TF-IDF rare-term boosting.
  * Pure functions, no side effects, no API calls.
  */
+import { buildCorpusIDF, tfidfScore } from './tfidfScorer';
 
 /** Common English stop words excluded from scoring */
 const STOP_WORDS = new Set([
@@ -30,16 +32,25 @@ const CONTENT_WEIGHT = 1;
 const TAG_WEIGHT = 2;
 
 /**
- * Tokenize a string into deduplicated lowercase keyword tokens.
+ * Tokenize a string into lowercase keyword tokens, preserving duplicates.
+ * Used by TF-IDF where term frequency (count) matters.
  * Removes punctuation, stop words, and short words.
  */
-export function tokenize(text: string): string[] {
-    const words = text
+export function tokenizeRaw(text: string): string[] {
+    return text
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, '')
         .split(/\s+/)
         .filter((w) => w.length >= MIN_TOKEN_LENGTH && !STOP_WORDS.has(w));
-    return [...new Set(words)];
+}
+
+/**
+ * Tokenize a string into deduplicated lowercase keyword tokens.
+ * Used by keyword scoring where presence (not count) matters.
+ * Removes punctuation, stop words, and short words.
+ */
+export function tokenize(text: string): string[] {
+    return [...new Set(tokenizeRaw(text))];
 }
 
 /** Shape of an entry accepted by the scorer */
@@ -81,7 +92,19 @@ export function scoreEntry(
 }
 
 /**
+ * Build a combined text representation of an entry for TF-IDF tokenization.
+ * Concatenates title, content, summary, and tags into a single tokenizable string.
+ */
+function entryToText(entry: ScoredEntryInput): string {
+    const parts = [entry.title, entry.content];
+    if (entry.summary) parts.push(entry.summary);
+    if (entry.tags?.length) parts.push(entry.tags.join(' '));
+    return parts.join(' ');
+}
+
+/**
  * Rank entries by relevance to a prompt string.
+ * Combines field-weighted keyword scoring with TF-IDF rare-term boosting.
  * Returns a new array sorted by descending relevance.
  * Entries with equal scores retain their original order (stable sort).
  * If prompt is empty or has no meaningful keywords, original order is preserved.
@@ -93,11 +116,15 @@ export function rankEntries<T extends ScoredEntryInput>(
     const keywords = tokenize(prompt);
     if (keywords.length === 0) return [...entries];
 
-    const scored = entries.map((entry, index) => ({
-        entry,
-        score: scoreEntry(entry, keywords),
-        index,
-    }));
+    // Build TF-IDF corpus preserving duplicates (term frequency matters)
+    const corpus = entries.map((e) => tokenizeRaw(entryToText(e)));
+    const idfMap = buildCorpusIDF(corpus);
+
+    const scored = entries.map((entry, index) => {
+        const keywordScore = scoreEntry(entry, keywords);
+        const tfidf = tfidfScore(corpus[index]!, keywords, idfMap);
+        return { entry, score: keywordScore + tfidf, index };
+    });
 
     scored.sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;

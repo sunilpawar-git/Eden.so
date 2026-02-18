@@ -1,0 +1,60 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    /* Could use var(--radius-md) if consistent, but kept 8px for now or use var(--radius-md) */
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    padding: 4px;
+    gap: 4px;
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 5;
+}
+
+/* Dark mode handling is now automatic via variables, remove explicit .dark overrides if variables handle it */
+/* But if variables.css handles .dark via :root or body class, we just use variables. */
+
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 6px;
+}
+
+.button:hover {
+    background-color: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.button:active {
+    background-color: var(--color-border);
+}
+
+.button.active {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* Dark mode specific overrides might not be needed if variables are set correctly,
+   but let's double check variables.css.
+   variables.css define colors for :root.
+   Themes (dark.css) likely override these variables.
+   So using variables is enough.
+*/
+
+.button svg {
+    width: 100%;
+    height: 100%;
+}

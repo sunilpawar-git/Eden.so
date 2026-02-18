@@ -180,6 +180,67 @@ describe('geminiClient', () => {
         });
     });
 
+    // ── systemInstruction serialization ────────────────────
+
+    describe('systemInstruction serialization', () => {
+        const bodyWithSystem: GeminiRequestBody = {
+            contents: [{ parts: [{ text: 'User prompt' }] }],
+            generationConfig: { temperature: 0.7 },
+            systemInstruction: { parts: [{ text: 'You are a helpful assistant.' }] },
+        };
+
+        it('serializes systemInstruction as system_instruction (snake_case) in direct path', async () => {
+            vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
+            vi.mocked(fetch).mockResolvedValue({
+                ok: true, status: 200,
+                json: () => Promise.resolve(geminiJsonResponse('ok')),
+            } as Response);
+
+            await callGemini(bodyWithSystem);
+
+            const fetchBody = JSON.parse(
+                vi.mocked(fetch).mock.calls[0]![1]!.body as string
+            ) as Record<string, unknown>;
+            expect(fetchBody).toHaveProperty('system_instruction');
+            expect(fetchBody).not.toHaveProperty('systemInstruction');
+            expect(fetchBody.system_instruction).toEqual({
+                parts: [{ text: 'You are a helpful assistant.' }],
+            });
+        });
+
+        it('serializes systemInstruction as system_instruction (snake_case) in proxy path', async () => {
+            vi.stubEnv('VITE_CLOUD_FUNCTIONS_URL', 'https://fn.example.com');
+            vi.mocked(fetch).mockResolvedValue({
+                ok: true, status: 200,
+                json: () => Promise.resolve(geminiJsonResponse('ok')),
+            } as Response);
+
+            await callGemini(bodyWithSystem);
+
+            const fetchBody = JSON.parse(
+                vi.mocked(fetch).mock.calls[0]![1]!.body as string
+            ) as Record<string, unknown>;
+            expect(fetchBody).toHaveProperty('system_instruction');
+            expect(fetchBody).not.toHaveProperty('systemInstruction');
+        });
+
+        it('omits system_instruction when systemInstruction is not provided', async () => {
+            vi.stubEnv('VITE_GEMINI_API_KEY', 'test-key');
+            vi.mocked(fetch).mockResolvedValue({
+                ok: true, status: 200,
+                json: () => Promise.resolve(geminiJsonResponse('ok')),
+            } as Response);
+
+            await callGemini(TEST_BODY);
+
+            const fetchBody = JSON.parse(
+                vi.mocked(fetch).mock.calls[0]![1]!.body as string
+            ) as Record<string, unknown>;
+            expect(fetchBody).not.toHaveProperty('system_instruction');
+            expect(fetchBody).not.toHaveProperty('systemInstruction');
+        });
+    });
+
     // ── extractGeminiText ───────────────────────────────────
 
     describe('extractGeminiText', () => {

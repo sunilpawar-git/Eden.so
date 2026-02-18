@@ -6,6 +6,8 @@ import { useCallback, useState } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { transformContent, type TransformationType } from '../services/geminiService';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
+import { strings } from '@/shared/localization/strings';
+import { toast } from '@/shared/stores/toastStore';
 
 /**
  * Hook for transforming node content using AI
@@ -31,12 +33,12 @@ export function useNodeTransformation() {
             setIsTransforming(true);
 
             try {
-                const kbContext = getKBContext(content);
+                const kbContext = getKBContext(content, 'transform');
                 const transformedContent = await transformContent(content, type, kbContext);
                 updateNodeOutput(nodeId, transformedContent);
-            } catch {
-                // Error handling - preserve original content
-                // Could integrate with error store in the future
+            } catch (error) {
+                const message = error instanceof Error ? error.message : strings.errors.aiError;
+                toast.error(message);
             } finally {
                 setIsTransforming(false);
             }

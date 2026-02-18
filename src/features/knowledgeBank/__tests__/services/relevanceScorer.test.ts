@@ -7,6 +7,7 @@ import {
     scoreEntry,
     rankEntries,
     tokenize,
+    tokenizeRaw,
 } from '../../services/relevanceScorer';
 
 describe('tokenize', () => {
@@ -38,6 +39,20 @@ describe('tokenize', () => {
     it('deduplicates tokens', () => {
         const tokens = tokenize('test test test');
         expect(tokens).toEqual(['test']);
+    });
+});
+
+describe('tokenizeRaw', () => {
+    it('preserves duplicate tokens for TF-IDF frequency', () => {
+        const tokens = tokenizeRaw('test test test');
+        expect(tokens).toEqual(['test', 'test', 'test']);
+    });
+
+    it('applies same stop-word and length filters as tokenize', () => {
+        const tokens = tokenizeRaw('the quick brown fox is a test');
+        expect(tokens).not.toContain('the');
+        expect(tokens).not.toContain('is');
+        expect(tokens).toContain('quick');
     });
 });
 
@@ -139,5 +154,27 @@ describe('rankEntries', () => {
         ];
         const ranked = rankEntries(mixed, 'finance');
         expect(ranked[0]!.title).toBe('Finance Overview');
+    });
+
+    it('ranks entries with rare matching terms higher than common terms', () => {
+        // "quantum" only in entry C; "machine" + "learning" in both A and B
+        // Searching "quantum machine" should rank C higher due to rare "quantum"
+        const entries = [
+            { title: 'ML Basics', content: 'Machine learning fundamentals and basics.' },
+            { title: 'ML Advanced', content: 'Machine learning advanced techniques.' },
+            { title: 'Quantum Computing', content: 'Quantum machine computing research.' },
+        ];
+        const ranked = rankEntries(entries, 'quantum machine');
+        expect(ranked[0]!.title).toBe('Quantum Computing');
+    });
+
+    it('existing relative ordering is preserved after TF-IDF integration', () => {
+        const entries = [
+            { title: 'Cooking Recipes', content: 'How to make pasta.' },
+            { title: 'Machine Learning', content: 'Neural networks overview.' },
+            { title: 'Budget Report', content: 'Q4 financial data.' },
+        ];
+        const ranked = rankEntries(entries, 'neural network machine learning');
+        expect(ranked[0]!.title).toBe('Machine Learning');
     });
 });

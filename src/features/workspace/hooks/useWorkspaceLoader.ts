@@ -98,7 +98,18 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                 return;
             }
 
-            // 2. Cache miss — load from Firestore
+            // 2. Cache miss — check if online before Firestore call
+            const isOnline = useNetworkStatusStore.getState().isOnline;
+            if (!isOnline) {
+                // Offline + no cache = fail fast
+                if (mounted) {
+                    setError(strings.offline.noOfflineData);
+                    setIsLoading(false);
+                }
+                return;
+            }
+
+            // 3. Load from Firestore (online)
             try {
                 await loadFromFirestore(userId, workspaceId, applyIfMounted);
             } catch (err) {

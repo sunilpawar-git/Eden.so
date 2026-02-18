@@ -25,16 +25,20 @@ import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT } from
 import styles from './IdeaCard.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
 
+// Proximity threshold for utils bar (CSS variable in px)
+const PROXIMITY_THRESHOLD = 80;
+
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews } = data as IdeaNodeData;
     const promptSource = (heading?.trim() ?? prompt) || ''; // Heading is SSOT for prompts; legacy fallback
     const isAICard = Boolean(promptSource && output && promptSource !== output);
     const [showTagInput, setShowTagInput] = useState(false);
+    const [isNearEdge, setIsNearEdge] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
     const cardWrapperRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<NodeHeadingHandle>(null);
-    const barPlacement = useBarPlacement(cardWrapperRef, isHovered);
+    const barPlacement = useBarPlacement(cardWrapperRef, isNearEdge);
     const { isPinnedOpen, handlers: pinOpenHandlers } = useBarPinOpen();
 
     const { generateFromPrompt } = useNodeGeneration();
@@ -83,10 +87,38 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const onTagsChange = useCallback((ids: string[]) => { handleTagsChange(ids); if (ids.length === 0) setShowTagInput(false); }, [handleTagsChange]);
     const onKeyDownReact = useCallback((e: React.KeyboardEvent) => handleKeyDown(e.nativeEvent), [handleKeyDown]);
 
+    // Proximity-based hover: Show utils bar only when cursor is near edge
+    // Resize buttons: Show when hovered anywhere on the node
+    const handleMouseEnter = useCallback(() => {
+        setIsHovered(true);
+    }, []);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        const wrapper = cardWrapperRef.current;
+        if (!wrapper) return;
+
+        const rect = wrapper.getBoundingClientRect();
+        const isLeft = barPlacement === 'left';
+
+        // Calculate distance from relevant edge
+        const distanceFromEdge = isLeft
+            ? e.clientX - rect.left  // Distance from left edge
+            : rect.right - e.clientX; // Distance from right edge
+
+        setIsNearEdge(distanceFromEdge <= PROXIMITY_THRESHOLD);
+    }, [barPlacement]);
+
+    const handleMouseLeave = useCallback(() => {
+        setIsNearEdge(false);
+        setIsHovered(false);
+    }, []);
+
     return (
         <div ref={cardWrapperRef}
             className={`${styles.cardWrapper} ${handleStyles.resizerWrapper} ${isCollapsed ? styles.cardWrapperCollapsed : ''}`}
-            onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
             onContextMenu={pinOpenHandlers.onContextMenu}
             onTouchStart={pinOpenHandlers.onTouchStart} onTouchEnd={pinOpenHandlers.onTouchEnd}>
             <NodeResizer minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}
@@ -94,7 +126,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
             <NodeResizeButtons nodeId={id} visible={isHovered} />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
-            <div className={`${styles.ideaCard} ${isHovered ? styles.ideaCardHovered : ''} ${isCollapsed ? styles.collapsed : ''}`}>
+            <div className={`${styles.ideaCard} ${isNearEdge ? styles.ideaCardHovered : ''} ${isCollapsed ? styles.collapsed : ''}`}>
                 <div className={styles.headingSection}>
                     <NodeHeading ref={headingRef} heading={heading ?? ''} isEditing={isEditing}
                         onHeadingChange={handleHeadingChange} onEnterKey={focusBody}
@@ -107,10 +139,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                         data-testid="content-area" ref={contentRef} tabIndex={selected || isEditing ? 0 : -1}
                         onKeyDown={selected || isEditing ? onKeyDownReact : undefined}>
                         {isEditing ? <EditingContent editor={editor} /> :
-                         isGenerating ? <GeneratingContent /> :
-                         hasContent && isAICard && !heading?.trim() ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
-                         hasContent ? <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
-                         <PlaceholderContent onDoubleClick={handleDoubleClick} />}
+                            isGenerating ? <GeneratingContent /> :
+                                hasContent && isAICard && !heading?.trim() ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
+                                    hasContent ? <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
+                                        <PlaceholderContent onDoubleClick={handleDoubleClick} />}
                     </div>
                 )}
                 {!isCollapsed && (showTagInput || tagIds.length > 0) && (
@@ -123,7 +155,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 onCollapseToggle={handleCollapseToggle} hasContent={hasContent}
                 isTransforming={isTransforming} isPinned={isPinned ?? false}
                 isCollapsed={isCollapsed ?? false} disabled={isGenerating ?? false}
-                visible={isHovered} isPinnedOpen={isPinnedOpen}
+                visible={isNearEdge} isPinnedOpen={isPinnedOpen}
                 placement={barPlacement} />
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />

@@ -197,6 +197,25 @@ describe('CanvasStore', () => {
 
             expect(useCanvasStore.getState().edges).toHaveLength(0);
         });
+
+        it('should not affect other edges when deleting one', () => {
+            const edge2: CanvasEdge = { ...mockEdge, id: 'edge-2', sourceNodeId: 'node-2', targetNodeId: 'node-1' };
+            useCanvasStore.getState().addEdge(mockEdge);
+            useCanvasStore.getState().addEdge(edge2);
+            useCanvasStore.getState().deleteEdge('edge-1');
+
+            const edges = useCanvasStore.getState().edges;
+            expect(edges).toHaveLength(1);
+            expect(edges[0]?.id).toBe('edge-2');
+        });
+
+        it('should no-op for non-existent edge ID', () => {
+            useCanvasStore.getState().addEdge(mockEdge);
+            useCanvasStore.getState().deleteEdge('nonexistent');
+
+            expect(useCanvasStore.getState().edges).toHaveLength(1);
+            expect(useCanvasStore.getState().edges[0]?.id).toBe('edge-1');
+        });
     });
 
     describe('selectNode', () => {

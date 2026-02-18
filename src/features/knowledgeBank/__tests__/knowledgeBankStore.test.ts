@@ -142,6 +142,38 @@ describe('knowledgeBankStore', () => {
         });
     });
 
+    describe('pinEntry / unpinEntry / getPinnedEntries', () => {
+        it('pinEntry sets pinned to true and updates updatedAt', () => {
+            const entry = createMockEntry({ id: 'kb-1', enabled: true });
+            useKnowledgeBankStore.getState().addEntry(entry);
+            const beforeDate = useKnowledgeBankStore.getState().entries[0]!.updatedAt;
+            useKnowledgeBankStore.getState().pinEntry('kb-1');
+            const updated = useKnowledgeBankStore.getState().entries[0]!;
+            expect(updated.pinned).toBe(true);
+            expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeDate.getTime());
+        });
+
+        it('unpinEntry sets pinned to false', () => {
+            const entry = createMockEntry({ id: 'kb-1', enabled: true });
+            useKnowledgeBankStore.getState().addEntry(entry);
+            useKnowledgeBankStore.getState().pinEntry('kb-1');
+            useKnowledgeBankStore.getState().unpinEntry('kb-1');
+            expect(useKnowledgeBankStore.getState().entries[0]!.pinned).toBe(false);
+        });
+
+        it('getPinnedEntries returns only pinned + enabled entries', () => {
+            useKnowledgeBankStore.getState().setEntries([
+                createMockEntry({ id: 'kb-1', enabled: true, pinned: true }),
+                createMockEntry({ id: 'kb-2', enabled: true, pinned: false }),
+                createMockEntry({ id: 'kb-3', enabled: false, pinned: true }),
+                createMockEntry({ id: 'kb-4', enabled: true }),  // pinned undefined → not pinned
+            ]);
+            const pinned = useKnowledgeBankStore.getState().getPinnedEntries();
+            expect(pinned).toHaveLength(1);
+            expect(pinned[0]!.id).toBe('kb-1');
+        });
+    });
+
     describe('summarizingEntryIds', () => {
         it('starts empty', () => {
             expect(useKnowledgeBankStore.getState().summarizingEntryIds).toEqual([]);

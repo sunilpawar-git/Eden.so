@@ -9,3 +9,4 @@ export * from './GridIcon';
 export * from './FileTextIcon';
 export * from './ImageIcon';
 export * from './EditIcon';
+export * from './PinIcon';

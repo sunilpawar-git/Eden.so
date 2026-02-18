@@ -13,11 +13,28 @@ const DEFAULT_SUBSCRIPTION: SubscriptionInfo = {
     isActive: true,
 };
 
+/** Dev-only bypass for testing gated features */
+const DEV_PRO_SUBSCRIPTION: SubscriptionInfo = {
+    tier: SUBSCRIPTION_TIERS.pro,
+    expiresAt: null,
+    isActive: true,
+};
+
+/** Check if dev bypass is enabled via env var */
+function isDevBypassEnabled(): boolean {
+    return import.meta.env.VITE_DEV_BYPASS_SUBSCRIPTION === 'true';
+}
+
 /** In-memory cache to avoid repeated Firestore reads */
 let cachedSubscription: SubscriptionInfo | null = null;
 let cachedUserId: string | null = null;
 
 async function getSubscription(userId: string): Promise<SubscriptionInfo> {
+    // DEV ONLY: Bypass subscription check if env var is set
+    if (isDevBypassEnabled()) {
+        return DEV_PRO_SUBSCRIPTION;
+    }
+
     // Return cached if same user
     if (cachedUserId === userId && cachedSubscription) {
         return cachedSubscription;

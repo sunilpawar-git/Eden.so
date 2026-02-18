@@ -4,6 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { buildKBContextBlock } from '../hooks/useKnowledgeBankContext';
+import { KB_TOKEN_BUDGETS } from '../types/knowledgeBank';
 
 describe('buildKBContextBlock', () => {
     it('returns empty string when no entries', () => {
@@ -109,6 +110,104 @@ describe('buildKBContextBlock', () => {
             const cookIndex = result.indexOf('Cooking Recipes');
             const mlIndex = result.indexOf('Machine Learning');
             expect(cookIndex).toBeLessThan(mlIndex);
+        });
+    });
+
+    describe('dynamic token budgets by generation type', () => {
+        // CHARS_PER_TOKEN = 4, so budget in chars = tokens * 4
+        // single: 12000 * 4 = 48000, chain: 4000 * 4 = 16000, transform: 3000 * 4 = 12000
+
+        /** Create an entry whose block is approximately `charCount` chars */
+        function makeEntry(name: string, charCount: number) {
+            const overhead = `[Knowledge: ${name}]\n`.length;
+            return { title: name, content: 'x'.repeat(Math.max(0, charCount - overhead)) };
+        }
+
+        it('uses 12K token budget for single generation type', () => {
+            // 48000 chars budget; 2 entries of 20K each — both should fit
+            const entries = [makeEntry('A', 20_000), makeEntry('B', 20_000)];
+            const result = buildKBContextBlock(entries, undefined, 'single');
+            expect(result).toContain('[Knowledge: A]');
+            expect(result).toContain('[Knowledge: B]');
+        });
+
+        it('uses 4K token budget for chain generation type', () => {
+            // 16000 chars budget; entry of 20K should NOT fit
+            const entries = [makeEntry('Big', 20_000)];
+            const result = buildKBContextBlock(entries, undefined, 'chain');
+            expect(result).toBe('');
+        });
+
+        it('uses 3K token budget for transform generation type', () => {
+            // 12000 chars budget; entry of 15K should NOT fit
+            const entries = [makeEntry('Big', 15_000)];
+            const result = buildKBContextBlock(entries, undefined, 'transform');
+            expect(result).toBe('');
+        });
+
+        it('uses default 8K budget when no generation type provided', () => {
+            // 32000 chars budget; entry of 30K should fit, but not 33K
+            const entries = [makeEntry('Fits', 30_000)];
+            const result = buildKBContextBlock(entries);
+            expect(result).toContain('[Knowledge: Fits]');
+        });
+
+        it('chain budget truncates earlier than single budget', () => {
+            // Entry of 18K chars: fits in single (48K), not in chain (16K)
+            const entries = [makeEntry('Medium', 18_000)];
+            const singleResult = buildKBContextBlock(entries, undefined, 'single');
+            const chainResult = buildKBContextBlock(entries, undefined, 'chain');
+            expect(singleResult).toContain('[Knowledge: Medium]');
+            expect(chainResult).toBe('');
+        });
+
+        it('exports KB_TOKEN_BUDGETS with correct values', () => {
+            expect(KB_TOKEN_BUDGETS.single).toBe(12_000);
+            expect(KB_TOKEN_BUDGETS.chain).toBe(4_000);
+            expect(KB_TOKEN_BUDGETS.transform).toBe(3_000);
+        });
+    });
+
+    describe('pinned entries priority', () => {
+        it('places pinned entries before unpinned regardless of relevance', () => {
+            const entries = [
+                { title: 'Unpinned ML', content: 'Machine learning neural networks.', pinned: false },
+                { title: 'Pinned Cooking', content: 'How to make pasta.', pinned: true },
+            ];
+            // Prompt favors ML, but pinned Cooking should come first
+            const result = buildKBContextBlock(entries, 'machine learning neural');
+            const cookIdx = result.indexOf('Pinned Cooking');
+            const mlIdx = result.indexOf('Unpinned ML');
+            expect(cookIdx).toBeLessThan(mlIdx);
+        });
+
+        it('pinned entries consume budget first', () => {
+            // Use transform budget (3K tokens = 12K chars)
+            // Pinned entry fills almost all budget, leaving no room for unpinned
+            const pinnedEntry = {
+                title: 'Pinned Big', content: 'x'.repeat(11_950), pinned: true,
+            };
+            const unpinnedEntry = {
+                title: 'Unpinned Small', content: 'This should not fit in remaining budget.', pinned: false,
+            };
+            const result = buildKBContextBlock([unpinnedEntry, pinnedEntry], undefined, 'transform');
+            expect(result).toContain('Pinned Big');
+            expect(result).not.toContain('Unpinned Small');
+        });
+
+        it('ranks unpinned entries by relevance after pinned', () => {
+            const entries = [
+                { title: 'Unpinned Finance', content: 'Q4 budget data.', pinned: false },
+                { title: 'Unpinned ML', content: 'Neural network classification.', pinned: false },
+                { title: 'Pinned Style', content: 'Use formal tone.', pinned: true },
+            ];
+            const result = buildKBContextBlock(entries, 'neural network');
+            const styleIdx = result.indexOf('Pinned Style');
+            const mlIdx = result.indexOf('Unpinned ML');
+            const finIdx = result.indexOf('Unpinned Finance');
+            // Pinned first, then ML (relevant), then Finance
+            expect(styleIdx).toBeLessThan(mlIdx);
+            expect(mlIdx).toBeLessThan(finIdx);
         });
     });
 });

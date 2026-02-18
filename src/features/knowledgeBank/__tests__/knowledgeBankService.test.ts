@@ -88,6 +88,13 @@ describe('knowledgeBankService', () => {
             await addKBEntry('user-1', 'ws-1', validInput, undefined, 5);
             expect(getCountFromServer).not.toHaveBeenCalled();
         });
+
+        it('writes pinned: false to Firestore for new entries', async () => {
+            const entry = await addKBEntry('user-1', 'ws-1', validInput);
+            expect(entry.pinned).toBe(false);
+            const passedData = vi.mocked(setDoc).mock.calls[0]![1] as Record<string, unknown>;
+            expect(passedData).toHaveProperty('pinned', false);
+        });
     });
 
     describe('updateKBEntry', () => {
@@ -143,6 +150,18 @@ describe('knowledgeBankService', () => {
             const tags = passedData.tags as string[];
             expect(tags).toEqual(['alpha']);
         });
+
+        it('persists pinned: true to Firestore', async () => {
+            await updateKBEntry('user-1', 'ws-1', 'kb-1', { pinned: true });
+            const passedData = vi.mocked(setDoc).mock.calls[0]![1] as Record<string, unknown>;
+            expect(passedData.pinned).toBe(true);
+        });
+
+        it('persists pinned: false to Firestore', async () => {
+            await updateKBEntry('user-1', 'ws-1', 'kb-1', { pinned: false });
+            const passedData = vi.mocked(setDoc).mock.calls[0]![1] as Record<string, unknown>;
+            expect(passedData.pinned).toBe(false);
+        });
     });
 
     describe('deleteKBEntry', () => {
@@ -195,6 +214,39 @@ describe('knowledgeBankService', () => {
             expect(entries[0]!.id).toBe('kb-1');
             expect(entries[0]!.title).toBe('Test');
             expect(entries[0]!.workspaceId).toBe('ws-1');
+        });
+
+        it('defaults pinned to false for legacy entries without pinned field', async () => {
+            const mockDocs = [{
+                id: 'kb-legacy',
+                data: () => ({
+                    type: 'text', title: 'Legacy', content: 'Old entry',
+                    enabled: true,
+                    createdAt: { toDate: () => new Date() },
+                    updatedAt: { toDate: () => new Date() },
+                    // No pinned field — legacy data
+                }),
+            }];
+            vi.mocked(getDocs).mockResolvedValueOnce({ docs: mockDocs } as never);
+
+            const entries = await loadKBEntries('user-1', 'ws-1');
+            expect(entries[0]!.pinned).toBe(false);
+        });
+
+        it('preserves pinned: true from Firestore', async () => {
+            const mockDocs = [{
+                id: 'kb-pinned',
+                data: () => ({
+                    type: 'text', title: 'Pinned', content: 'Important',
+                    enabled: true, pinned: true,
+                    createdAt: { toDate: () => new Date() },
+                    updatedAt: { toDate: () => new Date() },
+                }),
+            }];
+            vi.mocked(getDocs).mockResolvedValueOnce({ docs: mockDocs } as never);
+
+            const entries = await loadKBEntries('user-1', 'ws-1');
+            expect(entries[0]!.pinned).toBe(true);
         });
     });
 });

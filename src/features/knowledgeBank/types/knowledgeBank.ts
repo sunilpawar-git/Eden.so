@@ -19,6 +19,7 @@ export interface KnowledgeBankEntry {
     storageUrl?: string;         // Firebase Storage URL (images only)
     mimeType?: string;
     parentEntryId?: string;      // Links chunks to parent document entry
+    pinned?: boolean;             // Pinned entries always rank first in AI context
     enabled: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -60,6 +61,9 @@ export interface KnowledgeBankActions {
     updateEntry: (entryId: string, updates: Partial<KnowledgeBankEntry>) => void;
     removeEntry: (entryId: string) => void;
     toggleEntry: (entryId: string) => void;
+    pinEntry: (entryId: string) => void;
+    unpinEntry: (entryId: string) => void;
+    getPinnedEntries: () => KnowledgeBankEntry[];
     clearEntries: () => void;
     setPanelOpen: (isOpen: boolean) => void;
     setSearchQuery: (query: string) => void;
@@ -73,6 +77,36 @@ export interface KnowledgeBankActions {
     getEntryCount: () => number;
 }
 
+// ── Generation Type Budgets ─────────────────────────────
+
+/** AI generation types that determine KB token budget */
+export type KBGenerationType = 'single' | 'chain' | 'transform';
+
+/** Token budgets per generation type — single gets most room, transform least */
+export const KB_TOKEN_BUDGETS: Record<KBGenerationType, number> = {
+    single: 12_000,    // No parent chain → more room for KB
+    chain: 4_000,      // Parent chain consumes context window
+    transform: 3_000,  // Transforms need minimal KB reference
+} as const;
+
+// ── Summary Depth Tiers ────────────────────────────────
+
+/** Summarization depth tier based on content length */
+export type SummaryTier = 'brief' | 'standard' | 'detailed';
+
+/** Character thresholds that determine summary tier */
+export const KB_SUMMARY_TIER_THRESHOLDS = {
+    standard: 2_000,   // ≥ 2000 chars → standard
+    detailed: 5_000,   // ≥ 5000 chars → detailed
+} as const;
+
+/** Max output tokens per summary tier */
+export const KB_SUMMARY_TOKEN_LIMITS: Record<SummaryTier, number> = {
+    brief: 128,
+    standard: 256,
+    detailed: 512,
+} as const;
+
 // ── Constants ──────────────────────────────────────────
 
 export const KB_MAX_ENTRIES = 50;
@@ -81,6 +115,8 @@ export const KB_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
 export const KB_MAX_IMAGE_DIMENSION = 1024;        // px — longest side
 export const KB_IMAGE_QUALITY = 0.7;               // JPEG compression
 export const KB_MAX_CONTEXT_TOKENS = 8000;         // Token budget for AI
+export const KB_CHARS_PER_TOKEN = 4;               // Approx chars per token (1 token ≈ 4 chars)
+export const KB_CONTEXT_ENTRY_OVERHEAD = 30;       // ~chars per entry for "[Knowledge: ...]\n" wrapper
 export const KB_CHUNK_THRESHOLD = 8_000;           // Chars before auto-chunking
 export const KB_SUMMARY_THRESHOLD = 500;           // Chars before auto-summarization
 export const KB_MAX_TITLE_LENGTH = 100;             // Max chars per title

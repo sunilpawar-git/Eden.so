@@ -20,6 +20,11 @@ vi.mock('@xyflow/react', async (importOriginal) => {
         )),
         Background: vi.fn(() => <div data-testid="mock-background" />),
         Controls: () => <div data-testid="mock-controls" />,
+        useReactFlow: vi.fn(() => ({
+            zoomIn: vi.fn(),
+            zoomOut: vi.fn(),
+            fitView: vi.fn(),
+        })),
     };
 });
 

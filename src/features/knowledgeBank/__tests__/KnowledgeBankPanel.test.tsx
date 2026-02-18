@@ -8,8 +8,9 @@ import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
 import type { KnowledgeBankEntry } from '../types/knowledgeBank';
 
 // Mock Firebase services
+const mockUpdateKBEntry = vi.fn();
 vi.mock('../services/knowledgeBankService', () => ({
-    updateKBEntry: vi.fn(),
+    updateKBEntry: (...args: unknown[]) => mockUpdateKBEntry(...args),
     deleteKBEntry: vi.fn(),
 }));
 
@@ -46,7 +47,10 @@ function resetStore() {
 }
 
 describe('KnowledgeBankPanel', () => {
-    beforeEach(resetStore);
+    beforeEach(() => {
+        resetStore();
+        mockUpdateKBEntry.mockReset();
+    });
 
     it('renders nothing when panel is closed', () => {
         const { container } = render(<KnowledgeBankPanel />);
@@ -124,5 +128,32 @@ describe('KnowledgeBankPanel', () => {
         useKnowledgeBankStore.getState().setSearchQuery('zzzzz');
         render(<KnowledgeBankPanel />);
         expect(screen.getByText('No matching entries')).toBeDefined();
+    });
+
+    // ── Pin integration tests ──────────────────────────
+    it('pins unpinned entry in store and persists to Firestore', () => {
+        useKnowledgeBankStore.getState().setPanelOpen(true);
+        useKnowledgeBankStore.getState().addEntry({ ...mockEntry, pinned: false });
+        render(<KnowledgeBankPanel />);
+
+        const pinButton = screen.getByLabelText('Pin to always include in AI context');
+        fireEvent.click(pinButton);
+
+        const entry = useKnowledgeBankStore.getState().entries[0]!;
+        expect(entry.pinned).toBe(true);
+        expect(mockUpdateKBEntry).toHaveBeenCalledWith('user-1', 'ws-1', 'kb-1', { pinned: true });
+    });
+
+    it('unpins pinned entry in store and persists to Firestore', () => {
+        useKnowledgeBankStore.getState().setPanelOpen(true);
+        useKnowledgeBankStore.getState().addEntry({ ...mockEntry, pinned: true });
+        render(<KnowledgeBankPanel />);
+
+        const unpinButton = screen.getByLabelText('Unpin entry');
+        fireEvent.click(unpinButton);
+
+        const entry = useKnowledgeBankStore.getState().entries[0]!;
+        expect(entry.pinned).toBe(false);
+        expect(mockUpdateKBEntry).toHaveBeenCalledWith('user-1', 'ws-1', 'kb-1', { pinned: false });
     });
 });

@@ -20,6 +20,8 @@ describe('subscriptionService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         subscriptionService.clearCache();
+        // Ensure dev bypass is disabled for tests
+        delete (import.meta.env as Record<string, unknown>).VITE_DEV_BYPASS_SUBSCRIPTION;
     });
 
     it('returns free tier when subscription doc does not exist', async () => {
@@ -102,5 +104,28 @@ describe('subscriptionService', () => {
         await subscriptionService.getSubscription('user-1');
 
         expect(mockGetDoc).toHaveBeenCalledTimes(2);
+    });
+
+    describe('dev bypass', () => {
+        it('returns pro tier when VITE_DEV_BYPASS_SUBSCRIPTION=true', async () => {
+            (import.meta.env as Record<string, unknown>).VITE_DEV_BYPASS_SUBSCRIPTION = 'true';
+
+            const result = await subscriptionService.getSubscription('user-1');
+
+            expect(result.tier).toBe('pro');
+            expect(result.isActive).toBe(true);
+            // Should not call Firestore when bypass is enabled
+            expect(mockGetDoc).not.toHaveBeenCalled();
+        });
+
+        it('ignores bypass when env var is not "true"', async () => {
+            (import.meta.env as Record<string, unknown>).VITE_DEV_BYPASS_SUBSCRIPTION = 'false';
+            mockGetDoc.mockResolvedValue({ exists: () => false });
+
+            const result = await subscriptionService.getSubscription('user-1');
+
+            expect(result.tier).toBe('free');
+            expect(mockGetDoc).toHaveBeenCalled();
+        });
     });
 });

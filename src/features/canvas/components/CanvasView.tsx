@@ -7,7 +7,6 @@ import {
     ReactFlow,
     Background,
     BackgroundVariant,
-    Controls,
     ConnectionLineType,
     MarkerType,
     SelectionMode,
@@ -27,6 +26,8 @@ import { useCanvasStore } from '../stores/canvasStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { IdeaCard } from './nodes/IdeaCard';
+import { DeletableEdge } from './edges/DeletableEdge';
+import { ZoomControls } from './ZoomControls';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
@@ -38,6 +39,11 @@ function getContainerClassName(isSwitching: boolean): string {
 // Memoized node types for performance
 const nodeTypes = {
     idea: IdeaCard,
+};
+
+// Memoized edge types for performance (custom edges with delete button)
+const edgeTypes = {
+    deletable: DeletableEdge,
 };
 
 // eslint-disable-next-line max-lines-per-function -- main ReactFlow integration component
@@ -54,6 +60,7 @@ export function CanvasView() {
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
     const canvasGrid = useSettingsStore((s) => s.canvasGrid);
     const canvasScrollMode = useSettingsStore((s) => s.canvasScrollMode);
+    const isCanvasLocked = useSettingsStore((s) => s.isCanvasLocked);
     const isNavigateMode = canvasScrollMode === 'navigate';
 
     // RAF throttling for resize events (performance optimization)
@@ -77,7 +84,8 @@ export function CanvasView() {
         data: node.data,
         selected: selectedNodeIds.has(node.id),
         // Pinned nodes cannot be dragged (Phase R: bug fix)
-        draggable: !node.data.isPinned,
+        // Also disabled if canvas is fully locked
+        draggable: !isCanvasLocked && !node.data.isPinned,
         // Use dimensions from store (persisted from Firestore)
         ...(node.width && { width: node.width }),
         ...(node.height && { height: node.height }),
@@ -90,13 +98,15 @@ export function CanvasView() {
         target: edge.targetNodeId,
         sourceHandle: `${edge.sourceNodeId}-source`,
         targetHandle: `${edge.targetNodeId}-target`,
-        type: 'bezier',
+        type: 'deletable',
         animated: edge.relationshipType === 'derived',
     }));
 
     // Handle node changes (position, selection, dimensions)
     const onNodesChange: OnNodesChange = useCallback(
         (changes: NodeChange[]) => {
+            if (isCanvasLocked) return; // Prevent changes when locked
+
             let needsUpdate = false;
             const updatedNodes = nodes.map((node) => ({ ...node }));
 
@@ -143,12 +153,14 @@ export function CanvasView() {
                 setNodes(updatedNodes);
             }
         },
-        [nodes, setNodes, updateNodeDimensions]
+        [nodes, setNodes, updateNodeDimensions, isCanvasLocked]
     );
 
     // Handle edge changes (removal)
     const onEdgesChange: OnEdgesChange = useCallback(
         (changes: EdgeChange[]) => {
+            if (isCanvasLocked) return; // Prevent changes when locked
+
             let needsUpdate = false;
             const updatedEdges = [...edges];
 
@@ -166,11 +178,13 @@ export function CanvasView() {
                 setEdges(updatedEdges);
             }
         },
-        [edges, setEdges]
+        [edges, setEdges, isCanvasLocked]
     );
 
     const onConnect: OnConnect = useCallback(
         (connection) => {
+            if (isCanvasLocked) return; // Prevent connections when locked
+
             if (connection.source && connection.target) {
                 const newEdge = {
                     id: `edge-${Date.now()}`,
@@ -182,15 +196,17 @@ export function CanvasView() {
                 useCanvasStore.getState().addEdge(newEdge);
             }
         },
-        [currentWorkspaceId]
+        [currentWorkspaceId, isCanvasLocked]
     );
 
     const onSelectionChange: OnSelectionChangeFunc = useCallback(
         ({ nodes: selectedNodes }) => {
+            if (isCanvasLocked) return; // Prevent selection changes when locked
+
             clearSelection();
             selectedNodes.forEach((node) => selectNode(node.id));
         },
-        [clearSelection, selectNode]
+        [clearSelection, selectNode, isCanvasLocked]
     );
 
     return (
@@ -203,9 +219,10 @@ export function CanvasView() {
                 onConnect={onConnect}
                 onSelectionChange={onSelectionChange}
                 nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
                 connectionLineType={ConnectionLineType.Bezier}
                 defaultEdgeOptions={{
-                    type: 'bezier',
+                    type: 'deletable',
                     markerEnd: { type: MarkerType.ArrowClosed },
                 }}
                 defaultViewport={{ x: 32, y: 32, zoom: 1 }}
@@ -213,14 +230,18 @@ export function CanvasView() {
                 snapGrid={[16, 16]}
                 minZoom={0.1}
                 maxZoom={2}
-                zoomOnScroll={!isNavigateMode}
-                panOnScroll={isNavigateMode}
+                zoomOnScroll={!isCanvasLocked && !isNavigateMode}
+                panOnScroll={!isCanvasLocked && isNavigateMode}
+                panOnDrag={!isCanvasLocked}
+                nodesDraggable={!isCanvasLocked}
+                elementsSelectable={!isCanvasLocked}
+                nodesConnectable={!isCanvasLocked}
                 {...(isNavigateMode && { panOnScrollMode: PanOnScrollMode.Free })}
-                selectionOnDrag
+                selectionOnDrag={!isCanvasLocked}
                 selectionMode={SelectionMode.Partial}
             >
                 {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1} />}
-                <Controls />
+                <ZoomControls />
             </ReactFlow>
         </div>
     );

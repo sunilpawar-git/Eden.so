@@ -57,7 +57,6 @@ function buildVisionRequestBody(
     return {
         contents: [{
             parts: [
-                { text: prompt },
                 { inlineData: { mimeType, data: base64Data } },
             ],
         }],
@@ -65,5 +64,6 @@ function buildVisionRequestBody(
             temperature: 0.3,
             maxOutputTokens: 512,
         },
+        systemInstruction: { parts: [{ text: prompt }] },
     };
 }
