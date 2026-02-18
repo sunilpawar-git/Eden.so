@@ -177,8 +177,14 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
         }
     };
 
+    const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
+
     return (
-        <aside className={styles.sidebar}>
+        <aside
+            className={styles.sidebar}
+            data-pinned={String(isPinned)}
+            data-open={String(isHoverOpen)}
+        >
             <div className={styles.header}>
                 <div className={styles.logo}>
                     <svg

@@ -1,5 +1,6 @@
 /**
  * Main Layout - Sidebar + Canvas Area
+ * Manages pinned/hover sidebar mode with elastic topbar
  */
 import type { ReactNode } from 'react';
 import { useCallback } from 'react';
@@ -12,6 +13,8 @@ import { KnowledgeBankAddButton } from '@/features/knowledgeBank/components/Know
 import { KnowledgeBankPanel } from '@/features/knowledgeBank/components/KnowledgeBankPanel';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import { useSidebarStore } from '@/shared/stores/sidebarStore';
+import { useSidebarHover } from '@/shared/hooks/useSidebarHover';
 import styles from './Layout.module.css';
 
 interface LayoutProps {
@@ -23,10 +26,12 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
     const selectNode = useCanvasStore((s) => s.selectNode);
     const clearSelection = useCanvasStore((s) => s.clearSelection);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const isPinned = useSidebarStore((s) => s.isPinned);
+    const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
+    const { triggerZoneRef } = useSidebarHover();
 
     const handleSearchResultClick = useCallback(
         (nodeId: string, workspaceId: string) => {
-            // Only navigate if in same workspace (cross-workspace nav is future scope)
             if (workspaceId === currentWorkspaceId) {
                 clearSelection();
                 selectNode(nodeId);
@@ -36,8 +41,18 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
     );
 
     return (
-        <div className={styles.layout}>
-            <Sidebar onSettingsClick={onSettingsClick} />
+        <div
+            className={styles.layout}
+            data-sidebar-pinned={String(isPinned)}
+            data-sidebar-open={String(isHoverOpen)}
+        >
+            <div
+                ref={triggerZoneRef}
+                data-testid="sidebar-trigger-zone"
+                className={styles.sidebarZone}
+            >
+                <Sidebar onSettingsClick={onSettingsClick} />
+            </div>
             <KnowledgeBankPanel />
             <div className={styles.mainArea}>
                 <header className={styles.topBar}>
