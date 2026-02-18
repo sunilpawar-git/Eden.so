@@ -184,6 +184,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             className={styles.sidebar}
             data-pinned={String(isPinned)}
             data-open={String(isHoverOpen)}
+            aria-label={strings.sidebar.pinTooltip}
         >
             <div className={styles.header}>
                 <div className={styles.logo}>
@@ -210,6 +211,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     onClick={togglePin}
                     aria-label={isPinned ? strings.sidebar.unpin : strings.sidebar.pin}
                     aria-pressed={isPinned}
+                    aria-expanded={isPinned || isHoverOpen}
                     title={isPinned ? strings.sidebar.unpinTooltip : strings.sidebar.pinTooltip}
                 >
                     <PinIcon size={16} filled={isPinned} />

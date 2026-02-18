@@ -152,4 +152,35 @@ describe('Layout integration - sidebar pin/hover mode', () => {
         render(<Layout><div /></Layout>);
         expect(screen.getByText(strings.app.name)).toBeInTheDocument();
     });
+
+    describe('sidebar ARIA attributes', () => {
+        it('should have aria-label on sidebar aside', () => {
+            const { container } = render(<Layout><div /></Layout>);
+            const aside = container.querySelector('aside');
+            expect(aside).toHaveAttribute('aria-label');
+        });
+
+        it('should have aria-expanded on pin toggle button when pinned', () => {
+            mockIsPinned = true;
+            render(<Layout><div /></Layout>);
+            const pinButton = screen.getByLabelText(strings.sidebar.unpin);
+            expect(pinButton).toHaveAttribute('aria-expanded', 'true');
+        });
+
+        it('should have aria-expanded false on pin button when unpinned and closed', () => {
+            mockIsPinned = false;
+            mockIsHoverOpen = false;
+            render(<Layout><div /></Layout>);
+            const pinButton = screen.getByLabelText(strings.sidebar.pin);
+            expect(pinButton).toHaveAttribute('aria-expanded', 'false');
+        });
+
+        it('should have aria-expanded true on pin button when unpinned and hover open', () => {
+            mockIsPinned = false;
+            mockIsHoverOpen = true;
+            render(<Layout><div /></Layout>);
+            const pinButton = screen.getByLabelText(strings.sidebar.pin);
+            expect(pinButton).toHaveAttribute('aria-expanded', 'true');
+        });
+    });
 });

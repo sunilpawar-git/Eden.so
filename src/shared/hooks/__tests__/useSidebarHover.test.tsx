@@ -1,5 +1,5 @@
 /**
- * useSidebarHover Hook Tests — hover open/close for unpinned sidebar
+ * useSidebarHover Hook Tests — hover, Escape key, cleanup
  * Uses a wrapper component to properly test ref-based event listeners
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -7,13 +7,14 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import { useSidebarHover } from '../useSidebarHover';
 
 let mockIsPinned = true;
+let mockIsHoverOpen = false;
 const mockSetHoverOpen = vi.fn();
 
 vi.mock('@/shared/stores/sidebarStore', () => ({
     useSidebarStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) => {
         const state = {
             isPinned: mockIsPinned,
-            isHoverOpen: false,
+            isHoverOpen: mockIsHoverOpen,
             togglePin: vi.fn(),
             setHoverOpen: mockSetHoverOpen,
         };
@@ -34,6 +35,7 @@ describe('useSidebarHover', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockIsPinned = true;
+        mockIsHoverOpen = false;
     });
 
     afterEach(() => {
@@ -64,5 +66,31 @@ describe('useSidebarHover', () => {
         render(<TestWrapper />);
         fireEvent.mouseLeave(screen.getByTestId('trigger-zone'));
         expect(mockSetHoverOpen).toHaveBeenCalledWith(false);
+    });
+
+    describe('Escape key', () => {
+        it('should close hover sidebar on Escape when unpinned and open', () => {
+            mockIsPinned = false;
+            mockIsHoverOpen = true;
+            render(<TestWrapper />);
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(mockSetHoverOpen).toHaveBeenCalledWith(false);
+        });
+
+        it('should NOT react to Escape when pinned', () => {
+            mockIsPinned = true;
+            mockIsHoverOpen = false;
+            render(<TestWrapper />);
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(mockSetHoverOpen).not.toHaveBeenCalled();
+        });
+
+        it('should NOT react to Escape when hover is already closed', () => {
+            mockIsPinned = false;
+            mockIsHoverOpen = false;
+            render(<TestWrapper />);
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(mockSetHoverOpen).not.toHaveBeenCalled();
+        });
     });
 });
