@@ -18,7 +18,8 @@ import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwi
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { indexedDbService, IDB_STORES } from '@/shared/services/indexedDbService';
 import { toast } from '@/shared/stores/toastStore';
-import { PlusIcon, SettingsIcon } from '@/shared/components/icons';
+import { useSidebarStore } from '@/shared/stores/sidebarStore';
+import { PlusIcon, SettingsIcon, PinIcon } from '@/shared/components/icons';
 import { WorkspaceItem } from './WorkspaceItem';
 import styles from './Sidebar.module.css';
 
@@ -39,6 +40,8 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
         updateWorkspace 
     } = useWorkspaceStore();
     const { switchWorkspace } = useWorkspaceSwitcher();
+    const isPinned = useSidebarStore((s) => s.isPinned);
+    const togglePin = useSidebarStore((s) => s.togglePin);
     const [isCreating, setIsCreating] = useState(false);
 
     // Load workspaces on mount
@@ -196,6 +199,15 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     </svg>
                 </div>
                 <span className={styles.appName}>{strings.app.name}</span>
+                <button
+                    className={styles.pinToggleButton}
+                    onClick={togglePin}
+                    aria-label={isPinned ? strings.sidebar.unpin : strings.sidebar.pin}
+                    aria-pressed={isPinned}
+                    title={isPinned ? strings.sidebar.unpinTooltip : strings.sidebar.pinTooltip}
+                >
+                    <PinIcon size={16} filled={isPinned} />
+                </button>
             </div>
 
             <div className={styles.workspaces}>

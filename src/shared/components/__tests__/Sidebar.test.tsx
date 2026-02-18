@@ -11,6 +11,18 @@ import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
 
 vi.mock('@/features/auth/stores/authStore', () => ({ useAuthStore: vi.fn() }));
+
+vi.mock('@/shared/stores/sidebarStore', () => ({
+    useSidebarStore: vi.fn((selector: (state: Record<string, unknown>) => unknown) => {
+        const state = {
+            isPinned: true,
+            isHoverOpen: false,
+            togglePin: vi.fn(),
+            setHoverOpen: vi.fn(),
+        };
+        return typeof selector === 'function' ? selector(state) : state;
+    }),
+}));
 const mockGetState = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(vi.fn(), { getState: () => mockGetState() }),
@@ -260,4 +272,5 @@ describe('Sidebar', () => {
             consoleSpy.mockRestore();
         });
     });
+
 });

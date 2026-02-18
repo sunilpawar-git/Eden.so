@@ -29,6 +29,25 @@
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
+    flex: 1;
+}
+
+.pinToggleButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    background: transparent;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.pinToggleButton:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
 }
 
 .workspaces {
