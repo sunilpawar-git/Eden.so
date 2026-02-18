@@ -12,6 +12,7 @@ import { KnowledgeBankAddButton } from '@/features/knowledgeBank/components/Know
 import { KnowledgeBankPanel } from '@/features/knowledgeBank/components/KnowledgeBankPanel';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
 import styles from './Layout.module.css';
 
 interface LayoutProps {
@@ -23,6 +24,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
     const selectNode = useCanvasStore((s) => s.selectNode);
     const clearSelection = useCanvasStore((s) => s.clearSelection);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const isSidebarPinned = useSettingsStore((s) => s.isSidebarPinned);
 
     const handleSearchResultClick = useCallback(
         (nodeId: string, workspaceId: string) => {
@@ -39,7 +41,9 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
         <div className={styles.layout}>
             <Sidebar onSettingsClick={onSettingsClick} />
             <KnowledgeBankPanel />
-            <div className={styles.mainArea}>
+            <div
+                className={`${styles.mainArea} ${isSidebarPinned ? styles.pinned : styles.unpinned}`}
+            >
                 <header className={styles.topBar}>
                     <KnowledgeBankAddButton />
                     <SearchBar onResultClick={handleSearchResultClick} />

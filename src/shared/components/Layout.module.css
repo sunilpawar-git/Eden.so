@@ -3,8 +3,10 @@
  */
 .layout {
     display: flex;
-    width: 100%;
-    min-height: 100vh;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--color-background);
 }
 
 .mainArea {
@@ -12,21 +14,54 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
+    background-color: var(--color-background);
+    /* Transition margin for smooth push/pull effect */
+    transition: margin-left 0.3s ease;
 }
 
+/* Adjust margin based on sidebar state */
+.mainArea.pinned {
+    /* Margin is handled by the sidebar taking up space in flow */
+    margin-left: 0;
+}
+
+.mainArea.unpinned {
+    /* Sidebar is 20px wide in unpinned state (collapsed strip). 
+       The sidebar is still in the flex flow, so it pushes content by 20px. 
+       No negative margin needed unless we want content to underlap.
+    */
+    margin-left: 0;
+}
+
+/* Main content wrapper */
+.content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Top Bar/Header */
 .topBar {
+    height: 60px;
     display: flex;
     align-items: center;
-    gap: 0.5cm;
-    padding: var(--space-sm) var(--space-md);
-    background: var(--surface-primary);
-    border-bottom: 1px solid var(--border-color);
-    z-index: 50;
+    justify-content: flex-start;
+    /* Or space-between depending on desired layout */
+    padding: 0 var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    gap: var(--space-md);
+    flex-shrink: 0;
 }
 
+/* Main workspace area */
 .main {
     flex: 1;
-    position: relative;
     overflow: hidden;
-    background-color: var(--canvas-background);
+    position: relative;
+    display: flex;
+    flex-direction: column;
 }

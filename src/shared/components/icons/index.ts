@@ -10,3 +10,5 @@ export * from './FileTextIcon';
 export * from './ImageIcon';
 export * from './EditIcon';
 export * from './PinIcon';
+export * from './PinOffIcon';
+export * from './AppLogoIcon';

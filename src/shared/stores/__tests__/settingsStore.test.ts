@@ -118,6 +118,34 @@ describe('SettingsStore', () => {
         });
     });
 
+    describe('sidebar settings', () => {
+        it('should default isSidebarPinned to true', () => {
+            expect(useSettingsStore.getState().isSidebarPinned).toBe(true);
+        });
+
+        it('should toggle isSidebarPinned setting', () => {
+            expect(useSettingsStore.getState().isSidebarPinned).toBe(true);
+            useSettingsStore.getState().toggleSidebarPin();
+            expect(useSettingsStore.getState().isSidebarPinned).toBe(false);
+            useSettingsStore.getState().toggleSidebarPin();
+            expect(useSettingsStore.getState().isSidebarPinned).toBe(true);
+        });
+
+        it('should persist isSidebarPinned to localStorage', () => {
+            useSettingsStore.getState().toggleSidebarPin(); // set to false
+            expect(localStorageMock.setItem).toHaveBeenCalledWith('settings-isSidebarPinned', 'false');
+        });
+
+        it('should load isSidebarPinned from storage', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-isSidebarPinned') return 'false';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().isSidebarPinned).toBe(false);
+        });
+    });
+
     describe('compact mode', () => {
         it('should toggle compactMode setting', () => {
             expect(useSettingsStore.getState().compactMode).toBe(false);

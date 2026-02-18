@@ -17,6 +17,10 @@ export const strings = {
         signingIn: 'Signing in...',
         welcome: 'Welcome back',
     },
+    sidebar: {
+        pin: 'Pin Sidebar',
+        unpin: 'Unpin Sidebar',
+    },
     workspace: {
         newWorkspace: 'New Workspace',
         untitled: 'Untitled Workspace',

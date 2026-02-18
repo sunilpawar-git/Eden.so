@@ -2,21 +2,106 @@
  * Sidebar Styles
  */
 .sidebar {
-    width: var(--sidebar-width);
+    /* width handled dynamically via class/variable */
     height: 100vh;
     background-color: var(--color-surface);
     border-right: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    position: relative;
+    z-index: 100;
 }
 
+/* Pinned state (default) */
+.sidebar {
+    width: var(--sidebar-width);
+}
+
+/* Unpinned state (collapsed) */
+.sidebar.unpinned {
+    width: 20px; /* Collapsed width trigger strip */
+    background-color: transparent; /* Transparent when collapsed so it doesn't look like a bar */
+    border-right: none;
+}
+
+/* Inner content wrapper */
+.innerContent {
+    width: var(--sidebar-width);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+
+.sidebar.unpinned .innerContent {
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* Hide off-screen but keep 20px visible for hover trigger if needed, 
+       OR rely on the parent .sidebar width being the trigger. 
+       Let's transform it fully out but user hovers the 20px placeholder. 
+       Actually, if we transform -100%, it's gone. 
+       Let's transform it so just a sliver is visible or fully hidden?
+       Ref: "very thin vertical strip".
+       Let's assume the .sidebar div itself acts as the trigger.
+    */
+    transform: translateX(calc(-100% + 20px)); 
+    box-shadow: none;
+}
+
+/* Expanded state (unpinned + hover) */
+.sidebar.unpinned.expanded .innerContent {
+    transform: translateX(0);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Overlay/Trigger area visualization if needed */
+.sidebar.unpinned::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Subtle indicator for the trigger zone */
+    background: transparent;
+}
+.sidebar.unpinned:hover::after {
+    background: rgba(var(--color-primary-rgb), 0.1);
+}
+
+/* Header adjustments */
 .header {
     display: flex;
     align-items: center;
+    justify-content: space-between; /* Space for Pin button */
     gap: var(--space-sm);
     padding: var(--space-md);
     border-bottom: 1px solid var(--color-border);
+}
+
+.pinButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    padding: 0;
+}
+
+.pinButton:hover {
+    background-color: var(--color-surface-hover);
+    color: var(--color-text-primary);
 }
 
 .logo {
