@@ -184,7 +184,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             className={styles.sidebar}
             data-pinned={String(isPinned)}
             data-open={String(isHoverOpen)}
-            aria-label={strings.sidebar.pinTooltip}
+            aria-label={strings.sidebar.ariaLabel}
         >
             <div className={styles.header}>
                 <div className={styles.logo}>

@@ -59,12 +59,22 @@ describe('SidebarStore', () => {
             expect(store.getState().isHoverOpen).toBe(false);
         });
 
-        it('should persist isPinned to localStorage', async () => {
+        it('should persist isPinned=false to localStorage', async () => {
             const store = await getStore();
             store.getState().togglePin();
             expect(localStorageMock.setItem).toHaveBeenCalledWith(
                 'sidebar-isPinned',
                 'false'
+            );
+        });
+
+        it('should persist isPinned=true to localStorage when toggled back', async () => {
+            const store = await getStore();
+            store.getState().togglePin();
+            store.getState().togglePin();
+            expect(localStorageMock.setItem).toHaveBeenCalledWith(
+                'sidebar-isPinned',
+                'true'
             );
         });
     });

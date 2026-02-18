@@ -276,6 +276,7 @@ export const strings = {
         noDataMessage: 'Visit your workspaces while online to cache them for offline use.',
     },
     sidebar: {
+        ariaLabel: 'Workspace sidebar',
         pin: 'Pin sidebar',
         unpin: 'Unpin sidebar',
         pinTooltip: 'Keep sidebar always visible',

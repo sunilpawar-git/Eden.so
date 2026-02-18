@@ -154,10 +154,10 @@ describe('Layout integration - sidebar pin/hover mode', () => {
     });
 
     describe('sidebar ARIA attributes', () => {
-        it('should have aria-label on sidebar aside', () => {
+        it('should have descriptive aria-label on sidebar aside', () => {
             const { container } = render(<Layout><div /></Layout>);
             const aside = container.querySelector('aside');
-            expect(aside).toHaveAttribute('aria-label');
+            expect(aside).toHaveAttribute('aria-label', strings.sidebar.ariaLabel);
         });
 
         it('should have aria-expanded on pin toggle button when pinned', () => {

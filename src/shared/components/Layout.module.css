@@ -37,11 +37,11 @@
 .topBar {
     display: flex;
     align-items: center;
-    gap: 0.5cm;
+    gap: var(--space-md);
     padding: var(--space-sm) var(--space-md);
     background: var(--surface-primary);
     border-bottom: 1px solid var(--border-color);
-    z-index: 50;
+    z-index: var(--z-sticky);
 }
 
 .main {

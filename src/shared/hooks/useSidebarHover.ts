@@ -20,9 +20,10 @@ export function useSidebarHover() {
     }, [isPinned, setHoverOpen]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key === 'Escape' && !isPinned && isHoverOpen) {
-            setHoverOpen(false);
-        }
+        if (e.key !== 'Escape' || isPinned || !isHoverOpen) return;
+        const tag = (document.activeElement?.tagName ?? '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea') return;
+        setHoverOpen(false);
     }, [isPinned, isHoverOpen, setHoverOpen]);
 
     useEffect(() => {

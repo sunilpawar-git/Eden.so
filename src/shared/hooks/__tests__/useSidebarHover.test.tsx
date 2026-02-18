@@ -92,5 +92,56 @@ describe('useSidebarHover', () => {
             fireEvent.keyDown(document, { key: 'Escape' });
             expect(mockSetHoverOpen).not.toHaveBeenCalled();
         });
+
+        it('should NOT close sidebar on Escape when focus is in an input', () => {
+            mockIsPinned = false;
+            mockIsHoverOpen = true;
+            render(
+                <div>
+                    <TestWrapper />
+                    <input data-testid="text-input" />
+                </div>
+            );
+            const input = screen.getByTestId('text-input');
+            input.focus();
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(mockSetHoverOpen).not.toHaveBeenCalled();
+        });
+
+        it('should NOT close sidebar on Escape when focus is in a textarea', () => {
+            mockIsPinned = false;
+            mockIsHoverOpen = true;
+            render(
+                <div>
+                    <TestWrapper />
+                    <textarea data-testid="text-area" />
+                </div>
+            );
+            screen.getByTestId('text-area').focus();
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(mockSetHoverOpen).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('cleanup on unmount', () => {
+        it('should not call setHoverOpen after unmount on mouseenter', () => {
+            mockIsPinned = false;
+            const { unmount } = render(<TestWrapper />);
+            const zone = screen.getByTestId('trigger-zone');
+            unmount();
+            mockSetHoverOpen.mockClear();
+            zone.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+            expect(mockSetHoverOpen).not.toHaveBeenCalled();
+        });
+
+        it('should not call setHoverOpen after unmount on Escape', () => {
+            mockIsPinned = false;
+            mockIsHoverOpen = true;
+            const { unmount } = render(<TestWrapper />);
+            unmount();
+            mockSetHoverOpen.mockClear();
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(mockSetHoverOpen).not.toHaveBeenCalled();
+        });
     });
 });

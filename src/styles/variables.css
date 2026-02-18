@@ -26,6 +26,8 @@
   /* Muted text - WCAG AA compliant (4.5:1 contrast ratio on white) */
   --color-text-muted: hsl(220, 9%, 46%);
 
+  --color-text-on-primary: hsl(0, 0%, 100%);
+
   --color-border: hsl(220, 13%, 90%);
   --color-border-focus: var(--color-primary);
 
@@ -148,6 +150,7 @@
   --sidebar-width: 260px;
   --sidebar-hover-trigger-width: 12px;
   --sidebar-transition: 250ms ease;
+  --pin-button-size: 28px;
 
   /* Sync Status Indicator */
   --sync-dot-size: 8px;
