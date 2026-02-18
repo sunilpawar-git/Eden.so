@@ -275,6 +275,12 @@ export const strings = {
         noDataTitle: 'No cached data',
         noDataMessage: 'Visit your workspaces while online to cache them for offline use.',
     },
+    sidebar: {
+        pin: 'Pin sidebar',
+        unpin: 'Unpin sidebar',
+        pinTooltip: 'Keep sidebar always visible',
+        unpinTooltip: 'Collapse sidebar; hover to reveal',
+    },
     knowledgeBank: knowledgeBankStrings,
 } as const;
 
