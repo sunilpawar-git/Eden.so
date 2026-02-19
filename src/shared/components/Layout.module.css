@@ -1,10 +1,14 @@
 /**
- * Layout Styles
+ * Layout Styles — supports pinned + hover sidebar modes
  */
 .layout {
     display: flex;
     width: 100%;
     min-height: 100vh;
+}
+
+.sidebarZone {
+    flex-shrink: 0;
 }
 
 .mainArea {
@@ -14,14 +18,30 @@
     overflow: hidden;
 }
 
+/* Unpinned idle: mainArea shifts left, topbar gets nearly full width */
+.layout[data-sidebar-pinned="false"] .sidebarZone {
+    width: 0;
+    overflow: visible;
+}
+
+.layout[data-sidebar-pinned="false"] .mainArea {
+    margin-left: var(--sidebar-hover-trigger-width);
+    transition: margin-left var(--sidebar-transition);
+}
+
+/* Unpinned + hover open: mainArea shifts right, topbar shrinks smoothly */
+.layout[data-sidebar-pinned="false"][data-sidebar-open="true"] .mainArea {
+    margin-left: var(--sidebar-width);
+}
+
 .topBar {
     display: flex;
     align-items: center;
-    gap: 0.5cm;
+    gap: var(--space-md);
     padding: var(--space-sm) var(--space-md);
     background: var(--surface-primary);
     border-bottom: 1px solid var(--border-color);
-    z-index: 50;
+    z-index: var(--z-sticky);
 }
 
 .main {

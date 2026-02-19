@@ -8,6 +8,7 @@ import type { Editor } from '@tiptap/react';
 import type { SubmitKeymapHandler } from '../extensions/submitKeymap';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useLinkPreviewFetch } from './useLinkPreviewFetch';
+import { GLOBAL_SHORTCUT_KEYS } from '@/shared/constants/shortcutKeys';
 
 /** Regex to extract http/https URLs from text */
 const URL_REGEX = /https?:\/\/[^\s)]+/g;
@@ -148,6 +149,10 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
                 handler();
                 return;
             }
+        }
+
+        if (isPrintable && GLOBAL_SHORTCUT_KEYS.has(e.key.toLowerCase())) {
+            return;
         }
 
         if (isPrintable) {

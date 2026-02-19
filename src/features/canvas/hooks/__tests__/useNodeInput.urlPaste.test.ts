@@ -1,46 +1,18 @@
 /**
  * useNodeInput URL Detection & Paste Handler Tests
- * Split from useNodeInput.test.ts to stay under 300-line limit.
  * Validates URL extraction from draft content and paste-to-draft pipeline.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useNodeInput } from '../useNodeInput';
-import type { CanvasNode } from '../../types/node';
+import { NODE_ID, createMockNode, createMockEditor } from './nodeInputTestHelpers';
 
-// Mock useLinkPreviewFetch — tested separately
 vi.mock('../useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
 
-const createMockNode = (id: string): CanvasNode => ({
-    id,
-    workspaceId: 'ws-1',
-    type: 'idea',
-    position: { x: 0, y: 0 },
-    data: { prompt: '', output: 'existing content', tags: [] },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-});
-
-const createMockEditor = () => {
-    const mockTr = { insertText: vi.fn().mockReturnThis() };
-    return {
-        view: {
-            dom: document.createElement('div'),
-            state: { selection: { from: 0, to: 0 }, tr: mockTr },
-            dispatch: vi.fn(),
-        },
-        commands: { insertContent: vi.fn(), focus: vi.fn(), setContent: vi.fn() },
-        setEditable: vi.fn(),
-        getHTML: vi.fn(() => '<p>test</p>'),
-        isEmpty: false,
-    };
-};
-
 describe('useNodeInput URL detection', () => {
-    const NODE_ID = 'node-1';
     let mockEditor: ReturnType<typeof createMockEditor>;
 
     beforeEach(() => {

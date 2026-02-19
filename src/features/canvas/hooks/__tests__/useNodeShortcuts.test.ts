@@ -127,6 +127,22 @@ describe('useNodeShortcuts', () => {
         input.remove();
     });
 
+    it('does NOT intercept globally reserved shortcut keys (e.g. N for Add Node)', () => {
+        const onN = vi.fn();
+        renderHook(() => useNodeShortcuts('node-1', true, { n: onN }));
+
+        pressKey('n');
+        expect(onN).not.toHaveBeenCalled();
+    });
+
+    it('does NOT intercept uppercase globally reserved shortcut keys', () => {
+        const onN = vi.fn();
+        renderHook(() => useNodeShortcuts('node-1', true, { n: onN }));
+
+        pressKey('N');
+        expect(onN).not.toHaveBeenCalled();
+    });
+
     it('cleans up listener when node becomes unselected', () => {
         const onTag = vi.fn();
         const { rerender } = renderHook(

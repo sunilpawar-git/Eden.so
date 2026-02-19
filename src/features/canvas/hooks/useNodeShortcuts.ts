@@ -12,18 +12,9 @@
  */
 import { useEffect, useCallback } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
+import { isEditableTarget } from '@/shared/utils/domGuards';
+import { GLOBAL_SHORTCUT_KEYS } from '@/shared/constants/shortcutKeys';
 import type { NodeShortcutMap } from './useNodeInput';
-
-/** Check if event target is an editable DOM element */
-function isEditableTarget(e: KeyboardEvent): boolean {
-    const target = e.target as HTMLElement;
-    return (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable ||
-        target.contentEditable === 'true'
-    );
-}
 
 export function useNodeShortcuts(
     _nodeId: string,
@@ -40,6 +31,8 @@ export function useNodeShortcuts(
         // Only handle single-char keys without modifiers
         const isSingleChar = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
         if (!isSingleChar) return;
+
+        if (GLOBAL_SHORTCUT_KEYS.has(e.key.toLowerCase())) return;
 
         const handler = shortcuts[e.key.toLowerCase()];
         if (handler) {

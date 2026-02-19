@@ -6,14 +6,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { fireKeyDown } from './keyboardShortcutTestHelpers';
 
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: vi.fn(),
 }));
-
-const fireKeyDown = (key: string, opts: Partial<KeyboardEvent> = {}) => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...opts }));
-};
 
 describe('Keyboard Shortcuts Integration', () => {
     const mockDeleteNode = vi.fn();
@@ -93,6 +90,44 @@ describe('Keyboard Shortcuts Integration', () => {
         renderHook(() => useKeyboardShortcuts({}));
         fireKeyDown('Escape');
         expect(mockClearSelection).toHaveBeenCalledTimes(1);
+    });
+
+    it('Cmd+N should preventDefault to block browser new-tab behavior', () => {
+        renderHook(() => useKeyboardShortcuts({ onQuickCapture: mockOnQuickCapture }));
+        const event = fireKeyDown('n', { metaKey: true });
+        expect(event.defaultPrevented).toBe(true);
+        expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+    });
+
+    it('Cmd+N should stopImmediatePropagation to prevent other handlers', () => {
+        renderHook(() => useKeyboardShortcuts({ onQuickCapture: mockOnQuickCapture }));
+
+        const rivalHandler = vi.fn();
+        document.addEventListener('keydown', rivalHandler, { capture: true });
+
+        fireKeyDown('n', { metaKey: true });
+        expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+        expect(rivalHandler).not.toHaveBeenCalled();
+
+        document.removeEventListener('keydown', rivalHandler, { capture: true });
+    });
+
+    it('N key from search input should not trigger addNode', () => {
+        renderHook(() => useKeyboardShortcuts({ onAddNode: mockOnAddNode }));
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        document.body.appendChild(input);
+        input.focus();
+
+        const event = new KeyboardEvent('keydown', {
+            key: 'n', bubbles: true, cancelable: true,
+        });
+        Object.defineProperty(event, 'target', { value: input });
+        document.dispatchEvent(event);
+
+        expect(mockOnAddNode).not.toHaveBeenCalled();
+        input.remove();
     });
 
     it('shortcuts should be suppressed when editing a node', () => {

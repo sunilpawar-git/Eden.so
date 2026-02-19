@@ -1,5 +1,5 @@
 /**
- * Sidebar Styles
+ * Sidebar Styles — supports pinned + hover (fixed overlay) modes
  */
 .sidebar {
     width: var(--sidebar-width);
@@ -9,6 +9,24 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    transition: transform var(--sidebar-transition), box-shadow var(--sidebar-transition);
+}
+
+/* Unpinned: sidebar becomes fixed overlay, mostly off-screen */
+.sidebar[data-pinned="false"] {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: var(--z-modal);
+    transform: translateX(
+        calc(-1 * var(--sidebar-width) + var(--sidebar-hover-trigger-width))
+    );
+}
+
+/* Unpinned + hover open: slide fully into view */
+.sidebar[data-pinned="false"][data-open="true"] {
+    transform: translateX(0);
+    box-shadow: var(--shadow-xl);
 }
 
 .header {
@@ -29,6 +47,25 @@
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
+    flex: 1;
+}
+
+.pinToggleButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--pin-button-size);
+    height: var(--pin-button-size);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    background: transparent;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.pinToggleButton:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
 }
 
 .workspaces {
@@ -44,7 +81,7 @@
     width: 100%;
     padding: var(--space-sm) var(--space-md);
     background-color: var(--color-primary);
-    color: white;
+    color: var(--color-text-on-primary);
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
@@ -133,7 +170,7 @@
     height: 36px;
     border-radius: 50%;
     background-color: var(--color-primary);
-    color: white;
+    color: var(--color-text-on-primary);
     display: flex;
     align-items: center;
     justify-content: center;

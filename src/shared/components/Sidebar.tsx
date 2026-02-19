@@ -18,7 +18,8 @@ import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwi
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { indexedDbService, IDB_STORES } from '@/shared/services/indexedDbService';
 import { toast } from '@/shared/stores/toastStore';
-import { PlusIcon, SettingsIcon } from '@/shared/components/icons';
+import { useSidebarStore } from '@/shared/stores/sidebarStore';
+import { PlusIcon, SettingsIcon, PinIcon } from '@/shared/components/icons';
 import { WorkspaceItem } from './WorkspaceItem';
 import styles from './Sidebar.module.css';
 
@@ -39,6 +40,8 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
         updateWorkspace 
     } = useWorkspaceStore();
     const { switchWorkspace } = useWorkspaceSwitcher();
+    const isPinned = useSidebarStore((s) => s.isPinned);
+    const togglePin = useSidebarStore((s) => s.togglePin);
     const [isCreating, setIsCreating] = useState(false);
 
     // Load workspaces on mount
@@ -174,8 +177,15 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
         }
     };
 
+    const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
+
     return (
-        <aside className={styles.sidebar}>
+        <aside
+            className={styles.sidebar}
+            data-pinned={String(isPinned)}
+            data-open={String(isHoverOpen)}
+            aria-label={strings.sidebar.ariaLabel}
+        >
             <div className={styles.header}>
                 <div className={styles.logo}>
                     <svg
@@ -196,6 +206,16 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     </svg>
                 </div>
                 <span className={styles.appName}>{strings.app.name}</span>
+                <button
+                    className={styles.pinToggleButton}
+                    onClick={togglePin}
+                    aria-label={isPinned ? strings.sidebar.unpin : strings.sidebar.pin}
+                    aria-pressed={isPinned}
+                    aria-expanded={isPinned || isHoverOpen}
+                    title={isPinned ? strings.sidebar.unpinTooltip : strings.sidebar.pinTooltip}
+                >
+                    <PinIcon size={16} filled={isPinned} />
+                </button>
             </div>
 
             <div className={styles.workspaces}>

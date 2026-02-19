@@ -1,13 +1,19 @@
 /**
  * useKeyboardShortcuts Hook - Global keyboard shortcuts
+ * Registered on document capture phase to intercept before browser defaults.
  */
 import { useEffect, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { isEditableTarget } from '@/shared/utils/domGuards';
 
 interface KeyboardShortcutsOptions {
     onOpenSettings?: () => void;
     onAddNode?: () => void;
     onQuickCapture?: () => void;
+}
+
+function hasModifier(e: KeyboardEvent): boolean {
+    return e.metaKey || e.ctrlKey;
 }
 
 export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
@@ -18,65 +24,74 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
     const { onOpenSettings, onAddNode, onQuickCapture } = options;
 
     const handleKeyDown = useCallback(
-         
         (e: KeyboardEvent) => {
-            // Cmd/Ctrl + N for Quick Capture (works even during editing)
-            if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) {
-                e.preventDefault();
-                onQuickCapture?.();
+            if (handleModifierShortcuts(e, onQuickCapture, onOpenSettings)) {
                 return;
             }
 
-            // Cmd/Ctrl + , to open settings (works even during editing)
-            if ((e.metaKey || e.ctrlKey) && e.key === ',') {
-                e.preventDefault();
-                onOpenSettings?.();
-                return;
-            }
+            if (editingNodeId) return;
+            if (isEditableTarget(e)) return;
 
-            // Store-based guard: skip non-modifier shortcuts when a node is being edited
-            if (editingNodeId) {
-                return;
-            }
-
-            // Legacy DOM guard: skip when typing in native input/textarea/contenteditable
-            const target = e.target as HTMLElement;
-            const isEditable =
-                target.tagName === 'INPUT' ||
-                target.tagName === 'TEXTAREA' ||
-                target.isContentEditable ||
-                target.contentEditable === 'true';
-            if (isEditable) {
-                return;
-            }
-
-            // N to add new node (without modifier)
-            if (e.key === 'n' || e.key === 'N') {
-                e.preventDefault();
-                onAddNode?.();
-                return;
-            }
-
-            // Delete selected nodes
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                selectedNodeIds.forEach((nodeId) => {
-                    deleteNode(nodeId);
-                });
-                clearSelection();
-            }
-
-            // Escape to clear selection
-            if (e.key === 'Escape') {
-                clearSelection();
-            }
+            handlePlainShortcuts(e, onAddNode, selectedNodeIds, deleteNode, clearSelection);
         },
         [selectedNodeIds, deleteNode, clearSelection, editingNodeId, onOpenSettings, onAddNode, onQuickCapture]
     );
 
     useEffect(() => {
-        window.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown, { capture: true });
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keydown', handleKeyDown, { capture: true });
         };
     }, [handleKeyDown]);
+}
+
+/** Modifier shortcuts (Cmd/Ctrl+key). Returns true if handled. */
+function handleModifierShortcuts(
+    e: KeyboardEvent,
+    onQuickCapture?: () => void,
+    onOpenSettings?: () => void,
+): boolean {
+    if (!hasModifier(e)) return false;
+
+    if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onQuickCapture?.();
+        return true;
+    }
+
+    if (e.key === ',') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onOpenSettings?.();
+        return true;
+    }
+
+    return false;
+}
+
+/** Plain (non-modifier) shortcuts for canvas operations. */
+function handlePlainShortcuts(
+    e: KeyboardEvent,
+    onAddNode?: () => void,
+    selectedNodeIds?: Set<string>,
+    deleteNode?: (id: string) => void,
+    clearSelection?: () => void,
+): void {
+    if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        onAddNode?.();
+        return;
+    }
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        selectedNodeIds?.forEach((nodeId) => deleteNode?.(nodeId));
+        clearSelection?.();
+        return;
+    }
+
+    if (e.key === 'Escape') {
+        clearSelection?.();
+    }
 }
