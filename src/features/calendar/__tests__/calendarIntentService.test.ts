@@ -123,7 +123,7 @@ describe('calendarIntentService', () => {
         });
 
         it('should parse JSON wrapped in markdown code fences', async () => {
-            mockGeminiResponse('```json\n' + JSON.stringify({
+            mockGeminiResponse(`\`\`\`json\n${JSON.stringify({
                 isCalendar: true,
                 type: 'reminder',
                 title: 'Buy groceries',
@@ -131,7 +131,7 @@ describe('calendarIntentService', () => {
                 endDate: null,
                 notes: null,
                 confirmation: 'OK. Reminder set.',
-            }) + '\n```');
+            })}\n\`\`\``);
 
             const result = await detectCalendarIntent('Remind me to buy groceries at 6pm');
 
@@ -141,13 +141,13 @@ describe('calendarIntentService', () => {
         });
 
         it('should parse JSON wrapped in plain code fences', async () => {
-            mockGeminiResponse('```\n' + JSON.stringify({
+            mockGeminiResponse(`\`\`\`\n${JSON.stringify({
                 isCalendar: true,
                 type: 'event',
                 title: 'Meeting',
                 date: '2026-02-20T10:00:00.000Z',
                 confirmation: 'OK.',
-            }) + '\n```');
+            })}\n\`\`\``);
 
             const result = await detectCalendarIntent('Schedule meeting');
 

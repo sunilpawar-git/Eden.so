@@ -79,7 +79,7 @@ function calculateEndTime(startDate: string, type: CalendarEventType): string {
     const end = new Date(start.getTime() + DEFAULT_EVENT_DURATION_MS);
 
     const offsetMatch = /([+-]\d{2}:\d{2})$/.exec(startDate);
-    if (!offsetMatch) return end.toISOString();
+    if (!offsetMatch?.[1]) return end.toISOString();
 
     const offset = offsetMatch[1];
     const offsetMin = parseOffsetMinutes(offset);
@@ -90,8 +90,10 @@ function calculateEndTime(startDate: string, type: CalendarEventType): string {
 }
 
 function parseOffsetMinutes(offset: string): number {
-    const sign = offset[0] === '+' ? 1 : -1;
-    const [h, m] = offset.slice(1).split(':').map(Number);
+    const sign = offset.startsWith('+') ? 1 : -1;
+    const parts = offset.slice(1).split(':').map(Number);
+    const h = parts[0] ?? 0;
+    const m = parts[1] ?? 0;
     return sign * (h * 60 + m);
 }
 
