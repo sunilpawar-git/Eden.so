@@ -65,6 +65,19 @@ describe('updateEvent', () => {
         expect(result.type).toBe('reminder');
     });
 
+    it('should preserve timezone offset in calculated end time', async () => {
+        (callCalendar as Mock).mockResolvedValue({
+            ok: true, status: 200,
+            data: { id: 'gcal-1' },
+        });
+
+        await updateEvent('gcal-1', 'event', 'Standup', '2026-02-20T10:00:00+05:30');
+
+        const call = (callCalendar as Mock).mock.calls[0] as unknown[];
+        const body = call[2] as { end: { dateTime: string } };
+        expect(body.end.dateTime).toBe('2026-02-20T10:30:00+05:30');
+    });
+
     it('should calculate default end time when not provided', async () => {
         (callCalendar as Mock).mockResolvedValue({
             ok: true, status: 200,

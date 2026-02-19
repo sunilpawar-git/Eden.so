@@ -74,4 +74,23 @@ describe('CalendarBadge', () => {
         expect(title.textContent).toBe(longTitle);
         expect(title.className).toBeTruthy();
     });
+
+    it('shows error text in tooltip for failed events', () => {
+        const meta = { ...baseMeta, status: 'failed' as const, error: 'API quota exceeded' };
+        render(<CalendarBadge metadata={meta} />);
+        expect(screen.getByTestId('calendar-badge')).toHaveAttribute('title', 'API quota exceeded');
+    });
+
+    it('shows fallback tooltip when failed event has no error', () => {
+        const meta = { ...baseMeta, status: 'failed' as const };
+        render(<CalendarBadge metadata={meta} />);
+        expect(screen.getByTestId('calendar-badge')).toHaveAttribute('title', cs.errors.createFailed);
+    });
+
+    it('renders non-empty date text', () => {
+        render(<CalendarBadge metadata={baseMeta} />);
+        const dateEl = screen.getByTestId('badge-date');
+        expect(dateEl.textContent).toBeTruthy();
+        expect(dateEl.textContent!.length).toBeGreaterThan(0);
+    });
 });

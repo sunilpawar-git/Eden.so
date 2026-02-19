@@ -116,6 +116,7 @@ describe('calendarClient', () => {
         it('should clear token on 401 response', async () => {
             const mockSetToken = vi.fn();
             const { useAuthStore } = await import('@/features/auth/stores/authStore');
+            const originalSetToken = useAuthStore.getState().setGoogleAccessToken;
             useAuthStore.setState({ setGoogleAccessToken: mockSetToken } as never);
 
             (global.fetch as Mock).mockResolvedValue({
@@ -129,6 +130,8 @@ describe('calendarClient', () => {
 
             expect(result).toEqual({ ok: false, status: 401, data: null });
             expect(mockSetToken).toHaveBeenCalledWith(null);
+
+            useAuthStore.setState({ setGoogleAccessToken: originalSetToken } as never);
         });
 
         it('should handle network errors gracefully', async () => {

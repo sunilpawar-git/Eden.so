@@ -19,6 +19,9 @@ const STATUS_ICONS: Record<string, string> = {
     failed: '⚠️',
 };
 
+const DEFAULT_TYPE_ICON = '📋';
+const DEFAULT_STATUS_ICON = '?';
+
 interface CalendarBadgeProps {
     metadata: CalendarEventMetadata;
     onClick?: () => void;
@@ -44,7 +47,7 @@ export const CalendarBadge = React.memo(({ metadata, onClick, onRetry }: Calenda
         onRetry?.();
     };
 
-    const badgeTitle = status === 'failed' ? error : cs.badge.viewEvent;
+    const badgeTitle = status === 'failed' ? (error ?? cs.errors.createFailed) : cs.badge.viewEvent;
     const Tag = onClick ? 'button' : 'div';
 
     return (
@@ -57,11 +60,11 @@ export const CalendarBadge = React.memo(({ metadata, onClick, onRetry }: Calenda
             title={badgeTitle}
             {...(onClick ? { type: 'button' as const } : {})}
         >
-            <span className={styles.icon}>{TYPE_ICONS[type]}</span>
+            <span className={styles.icon}>{TYPE_ICONS[type] ?? DEFAULT_TYPE_ICON}</span>
             <span className={styles.title} data-testid="badge-title">{title}</span>
-            <span className={styles.date}>{formatBadgeDate(date)}</span>
-            <span className={styles.status}>{STATUS_ICONS[status]}</span>
-            {status === 'failed' && onRetry && (
+            <span className={styles.date} data-testid="badge-date">{formatBadgeDate(date)}</span>
+            <span className={styles.status}>{STATUS_ICONS[status] ?? DEFAULT_STATUS_ICON}</span>
+            {(status === 'failed' || status === 'pending') && onRetry && (
                 <span
                     className={styles.retryBtn}
                     onClick={handleRetryClick}

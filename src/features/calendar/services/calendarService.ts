@@ -67,12 +67,32 @@ function throwIfInvalid(title: string, date: string, type: CalendarEventType, en
     throw new Error(cs.errors[key]);
 }
 
+/**
+ * Compute end time by adding the default duration.
+ * Preserves the original offset (e.g. +05:30) so Google Calendar gets
+ * the correct local time. Falls back to ISO/Z if no offset found.
+ */
 function calculateEndTime(startDate: string, type: CalendarEventType): string {
-    if (type === 'event') {
-        const start = new Date(startDate);
-        return new Date(start.getTime() + DEFAULT_EVENT_DURATION_MS).toISOString();
-    }
-    return startDate;
+    if (type !== 'event') return startDate;
+
+    const start = new Date(startDate);
+    const end = new Date(start.getTime() + DEFAULT_EVENT_DURATION_MS);
+
+    const offsetMatch = /([+-]\d{2}:\d{2})$/.exec(startDate);
+    if (!offsetMatch) return end.toISOString();
+
+    const offset = offsetMatch[1];
+    const offsetMin = parseOffsetMinutes(offset);
+    const local = new Date(end.getTime() + offsetMin * 60_000);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${local.getUTCFullYear()}-${pad(local.getUTCMonth() + 1)}-${pad(local.getUTCDate())}` +
+        `T${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}:${pad(local.getUTCSeconds())}${offset}`;
+}
+
+function parseOffsetMinutes(offset: string): number {
+    const sign = offset[0] === '+' ? 1 : -1;
+    const [h, m] = offset.slice(1).split(':').map(Number);
+    return sign * (h * 60 + m);
 }
 
 function extractErrorMessage(data: Record<string, unknown> | null, fallback: string): string {
@@ -92,10 +112,11 @@ export async function createEvent(
 ): Promise<CalendarEventMetadata> {
     throwIfInvalid(title, date, type, endDate, notes);
 
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const eventBody: Record<string, unknown> = {
         summary: title,
-        start: { dateTime: date },
-        end: { dateTime: endDate ?? calculateEndTime(date, type) },
+        start: { dateTime: date, timeZone: tz },
+        end: { dateTime: endDate ?? calculateEndTime(date, type), timeZone: tz },
         description: notes,
     };
 
@@ -106,7 +127,7 @@ export async function createEvent(
     const result = await callCalendar('POST', '/calendars/primary/events', eventBody);
 
     if (!result.ok) {
-        throw new Error(extractErrorMessage(result.data, 'Failed to create event'));
+        throw new Error(extractErrorMessage(result.data, cs.errors.createFailed));
     }
 
     const rawId = result.data?.id;
@@ -129,7 +150,7 @@ export async function deleteEvent(eventId: string): Promise<void> {
     const result = await callCalendar('DELETE', `/calendars/primary/events/${encodeURIComponent(eventId)}`);
 
     if (!result.ok && result.status !== 404) {
-        throw new Error('Failed to delete event');
+        throw new Error(cs.errors.deleteFailed);
     }
 }
 
@@ -144,17 +165,18 @@ export async function updateEvent(
 ): Promise<CalendarEventMetadata> {
     throwIfInvalid(title, date, type, endDate, notes);
 
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const eventBody: Record<string, unknown> = {
         summary: title,
-        start: { dateTime: date },
-        end: { dateTime: endDate ?? calculateEndTime(date, type) },
+        start: { dateTime: date, timeZone: tz },
+        end: { dateTime: endDate ?? calculateEndTime(date, type), timeZone: tz },
         description: notes,
     };
 
     const result = await callCalendar('PATCH', `/calendars/primary/events/${encodeURIComponent(eventId)}`, eventBody);
 
     if (!result.ok) {
-        throw new Error(extractErrorMessage(result.data, 'Failed to update event'));
+        throw new Error(extractErrorMessage(result.data, cs.errors.updateFailed));
     }
 
     return {

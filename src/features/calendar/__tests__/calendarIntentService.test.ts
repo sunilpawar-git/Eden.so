@@ -13,7 +13,7 @@ vi.mock('@/features/knowledgeBank/services/geminiClient', () => ({
 // eslint-disable-next-line import-x/first
 import { callGemini, isGeminiAvailable, extractGeminiText } from '@/features/knowledgeBank/services/geminiClient';
 // eslint-disable-next-line import-x/first
-import { detectCalendarIntent } from '../services/calendarIntentService';
+import { detectCalendarIntent, looksLikeCalendarIntent } from '../services/calendarIntentService';
 
 function mockGeminiResponse(text: string) {
     (callGemini as Mock).mockResolvedValue({ ok: true, status: 200, data: {} });
@@ -24,6 +24,30 @@ describe('calendarIntentService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (isGeminiAvailable as Mock).mockReturnValue(true);
+    });
+
+    describe('looksLikeCalendarIntent', () => {
+        it.each([
+            'Remind me to call Mama at 9pm',
+            'Schedule meeting with Max tomorrow',
+            'Create an event for Friday at 3pm',
+            'Todo: buy groceries',
+            'Set a reminder for dentist appointment',
+            'Book a call with John next Monday',
+            'I have an appointment at 10am',
+        ])('should return true for: %s', (prompt) => {
+            expect(looksLikeCalendarIntent(prompt)).toBe(true);
+        });
+
+        it.each([
+            'Write a poem about the ocean',
+            'Explain quantum mechanics',
+            'Summarize this article',
+            'What is the capital of France?',
+            'Help me debug this code',
+        ])('should return false for: %s', (prompt) => {
+            expect(looksLikeCalendarIntent(prompt)).toBe(false);
+        });
     });
 
     describe('detectCalendarIntent', () => {
@@ -98,6 +122,39 @@ describe('calendarIntentService', () => {
             expect(callGemini).not.toHaveBeenCalled();
         });
 
+        it('should parse JSON wrapped in markdown code fences', async () => {
+            mockGeminiResponse('```json\n' + JSON.stringify({
+                isCalendar: true,
+                type: 'reminder',
+                title: 'Buy groceries',
+                date: '2026-02-20T18:00:00.000Z',
+                endDate: null,
+                notes: null,
+                confirmation: 'OK. Reminder set.',
+            }) + '\n```');
+
+            const result = await detectCalendarIntent('Remind me to buy groceries at 6pm');
+
+            expect(result).not.toBeNull();
+            expect(result?.type).toBe('reminder');
+            expect(result?.title).toBe('Buy groceries');
+        });
+
+        it('should parse JSON wrapped in plain code fences', async () => {
+            mockGeminiResponse('```\n' + JSON.stringify({
+                isCalendar: true,
+                type: 'event',
+                title: 'Meeting',
+                date: '2026-02-20T10:00:00.000Z',
+                confirmation: 'OK.',
+            }) + '\n```');
+
+            const result = await detectCalendarIntent('Schedule meeting');
+
+            expect(result).not.toBeNull();
+            expect(result?.type).toBe('event');
+        });
+
         it('should return null on invalid JSON response', async () => {
             mockGeminiResponse('not valid json at all');
 
@@ -168,6 +225,19 @@ describe('calendarIntentService', () => {
 
             const body = (callGemini as Mock).mock.calls[0]?.[0];
             expect(body.generationConfig.temperature).toBeLessThanOrEqual(0.2);
+        });
+
+        it('should include timezone info in system prompt', async () => {
+            mockGeminiResponse(JSON.stringify({ isCalendar: false }));
+
+            await detectCalendarIntent('Remind me at 5pm');
+
+            const body = (callGemini as Mock).mock.calls[0]?.[0];
+            const sysText = body.systemInstruction.parts[0].text as string;
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            expect(sysText).toContain(tz);
+            expect(sysText).toMatch(/UTC offset: [+-]\d{2}:\d{2}/);
+            expect(sysText).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}/);
         });
 
         it('should return null for invalid type value', async () => {

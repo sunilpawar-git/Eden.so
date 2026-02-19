@@ -1,7 +1,7 @@
 /**
  * useNodeGeneration Hook - Bridges AI service with canvas store
  * Handles AI generation for IdeaCard nodes
- * Intercepts calendar intents to create events seamlessly
+ * Calendar intent interception delegated to calendarIntentHandler
  */
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
@@ -11,32 +11,9 @@ import { createIdeaNode } from '@/features/canvas/types/node';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
-import { detectCalendarIntent, type CalendarIntentResult } from '@/features/calendar/services/calendarIntentService';
-import { isCalendarAvailable } from '@/features/calendar/services/calendarClient';
-import { createEvent } from '@/features/calendar/services/calendarService';
-import { calendarStrings as cs } from '@/features/calendar/localization/calendarStrings';
+import { processCalendarIntent } from '@/features/calendar/services/calendarIntentHandler';
 
 const BRANCH_OFFSET_X = 350;
-
-/**
- * Handle a detected calendar intent: create event if OAuth available, display confirmation
- */
-async function handleCalendarIntent(nodeId: string, intent: CalendarIntentResult): Promise<void> {
-    const store = useCanvasStore.getState();
-    store.updateNodeOutput(nodeId, intent.confirmation);
-
-    if (!isCalendarAvailable()) {
-        toast.info(cs.errors.noToken);
-        return;
-    }
-
-    try {
-        const meta = await createEvent(intent.type, intent.title, intent.date, intent.endDate, intent.notes);
-        store.setNodeCalendarEvent(nodeId, meta);
-    } catch {
-        toast.error(cs.errors.createFailed);
-    }
-}
 
 /**
  * Hook for generating AI content from IdeaCard nodes
@@ -52,23 +29,21 @@ export function useNodeGeneration() {
      */
     const generateFromPrompt = useCallback(
         async (nodeId: string) => {
-            // CRITICAL: Use getState() for fresh data, not closure
             const freshNodes = useCanvasStore.getState().nodes;
             const node = freshNodes.find((n) => n.id === nodeId);
             if (node?.type !== 'idea') return;
 
             const ideaData = node.data;
-            // Heading is SSOT for prompts; fall back to prompt for legacy data
             // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field access
             const promptText = (ideaData.heading?.trim() || ideaData.prompt) || '';
             if (!promptText) return;
 
+            // Calendar intent interception (handles spinner internally)
+            const handled = await processCalendarIntent(nodeId, promptText);
+            if (handled) return;
+
             // Collect upstream context via edges
             const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
-
-            // Reverse for chronological order (oldest ancestor first)
-            // Filter to include any node with content (heading/prompt OR output)
-            // When both heading and output exist, combine them for semantic context
             const contextChain: string[] = upstreamNodes
                 .reverse()
                 .filter((n) => {
@@ -82,24 +57,10 @@ export function useNodeGeneration() {
                     const heading = d.heading?.trim() || '';
                     // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field access for backward compat
                     const content = d.output ?? d.prompt ?? '';
-
-                    // When both heading and content exist, combine them with blank line separator
-                    if (heading && content) {
-                        return `${heading}\n\n${content}`;
-                    }
-
-                    // Otherwise, use whichever exists
+                    if (heading && content) return `${heading}\n\n${content}`;
                     return content || heading;
                 });
 
-            // Intercept calendar intent before general AI generation
-            const calendarIntent = await detectCalendarIntent(promptText);
-            if (calendarIntent) {
-                await handleCalendarIntent(nodeId, calendarIntent);
-                return;
-            }
-
-            // Set generating state on the node
             useCanvasStore.getState().setNodeGenerating(nodeId, true);
             startGeneration(nodeId);
 

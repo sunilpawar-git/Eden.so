@@ -16,8 +16,16 @@ vi.mock('../services/calendarClient', () => ({
     isCalendarAvailable: vi.fn(() => true),
 }));
 
+vi.mock('@/features/auth/services/authService', () => ({
+    reauthenticateForCalendar: vi.fn(),
+}));
+
 // eslint-disable-next-line import-x/first
 import { createEvent, deleteEvent, updateEvent } from '../services/calendarService';
+// eslint-disable-next-line import-x/first
+import { isCalendarAvailable } from '../services/calendarClient';
+// eslint-disable-next-line import-x/first
+import { reauthenticateForCalendar } from '@/features/auth/services/authService';
 // eslint-disable-next-line import-x/first
 import { useIdeaCardCalendar } from '../hooks/useIdeaCardCalendar';
 // eslint-disable-next-line import-x/first
@@ -35,6 +43,12 @@ const failedMetaNoId: CalendarEventMetadata = {
     id: '', type: 'reminder', title: 'Call client',
     date: '2026-02-21T09:00:00Z', status: 'failed',
     calendarId: 'primary', error: 'API error',
+};
+
+const pendingMeta: CalendarEventMetadata = {
+    id: '', type: 'reminder', title: 'Walk Sheero',
+    date: '2026-02-19T15:30:00Z', status: 'pending',
+    calendarId: 'primary',
 };
 
 describe('useIdeaCardCalendar', () => {
@@ -95,17 +109,53 @@ describe('useIdeaCardCalendar', () => {
             expect(createEvent).not.toHaveBeenCalled();
             expect(updateEvent).not.toHaveBeenCalled();
         });
+
+        it('triggers re-auth when token missing, then creates event', async () => {
+            (isCalendarAvailable as Mock).mockReturnValue(false);
+            (reauthenticateForCalendar as Mock).mockResolvedValue(true);
+            (createEvent as Mock).mockResolvedValue({ ...pendingMeta, id: 'gcal-new', status: 'synced' });
+
+            const { result } = renderHook(() =>
+                useIdeaCardCalendar({ nodeId: 'node-1', calendarEvent: pendingMeta }),
+            );
+
+            await act(async () => {
+                await result.current.handleRetry();
+            });
+
+            expect(reauthenticateForCalendar).toHaveBeenCalled();
+            expect(createEvent).toHaveBeenCalledWith(
+                'reminder', 'Walk Sheero', '2026-02-19T15:30:00Z', undefined, undefined,
+            );
+        });
+
+        it('skips event creation when re-auth fails', async () => {
+            (isCalendarAvailable as Mock).mockReturnValue(false);
+            (reauthenticateForCalendar as Mock).mockResolvedValue(false);
+
+            const { result } = renderHook(() =>
+                useIdeaCardCalendar({ nodeId: 'node-1', calendarEvent: pendingMeta }),
+            );
+
+            await act(async () => {
+                await result.current.handleRetry();
+            });
+
+            expect(reauthenticateForCalendar).toHaveBeenCalled();
+            expect(createEvent).not.toHaveBeenCalled();
+        });
     });
 
     describe('cleanupOnDelete', () => {
-        it('calls deleteEvent when calendarEvent has an id', () => {
+        it('calls deleteEvent via syncDelete when calendarEvent has an id', async () => {
             (deleteEvent as Mock).mockResolvedValue(undefined);
+            useCanvasStore.getState().setNodeCalendarEvent('node-1', syncedMeta);
 
             const { result } = renderHook(() =>
                 useIdeaCardCalendar({ nodeId: 'node-1', calendarEvent: syncedMeta }),
             );
 
-            act(() => {
+            await act(async () => {
                 result.current.cleanupOnDelete();
             });
 

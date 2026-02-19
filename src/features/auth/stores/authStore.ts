@@ -5,6 +5,28 @@
 import { create } from 'zustand';
 import type { User } from '../types/user';
 
+const GCAL_TOKEN_KEY = 'gcal_access_token';
+
+function persistToken(token: string | null): void {
+    try {
+        if (token) {
+            sessionStorage.setItem(GCAL_TOKEN_KEY, token);
+        } else {
+            sessionStorage.removeItem(GCAL_TOKEN_KEY);
+        }
+    } catch {
+        /* sessionStorage may be unavailable in some environments */
+    }
+}
+
+function restoreToken(): string | null {
+    try {
+        return sessionStorage.getItem(GCAL_TOKEN_KEY);
+    } catch {
+        return null;
+    }
+}
+
 interface AuthState {
     user: User | null;
     isLoading: boolean;
@@ -28,7 +50,7 @@ const initialState: AuthState = {
     isLoading: false,
     isAuthenticated: false,
     error: null,
-    googleAccessToken: null,
+    googleAccessToken: restoreToken(),
 };
 
 export const useAuthStore = create<AuthStore>()((set) => ({
@@ -44,9 +66,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     },
 
     clearUser: () => {
+        persistToken(null);
         set({
             user: null,
             isAuthenticated: false,
+            googleAccessToken: null,
         });
     },
 
@@ -62,6 +86,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     },
 
     setGoogleAccessToken: (token: string | null) => {
+        persistToken(token);
         set({ googleAccessToken: token });
     },
 }));

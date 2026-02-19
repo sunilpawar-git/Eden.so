@@ -139,7 +139,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                         onSubmitAI={onSubmitAI} />
                     {calendarEvent && (
                         <CalendarBadge metadata={calendarEvent}
-                            onRetry={calendarEvent.status === 'failed' ? calendar.handleRetry : undefined} />
+                            onRetry={calendarEvent.status !== 'synced' ? calendar.handleRetry : undefined} />
                     )}
                     {!isCollapsed && <NodeDivider />}
                 </div>

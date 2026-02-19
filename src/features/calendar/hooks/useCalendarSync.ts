@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { createEvent, deleteEvent, updateEvent } from '../services/calendarService';
+import { calendarStrings as cs } from '../localization/calendarStrings';
 import type { CalendarEventType } from '../types/calendarEvent';
 
 export function useCalendarSync(nodeId: string) {
@@ -21,7 +22,7 @@ export function useCalendarSync(nodeId: string) {
             const metadata = await createEvent(type, title, date, endDate, notes);
             useCanvasStore.getState().setNodeCalendarEvent(nodeId, metadata);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Sync failed';
+            const msg = err instanceof Error ? err.message : cs.errors.syncFailed;
             setError(msg);
             useCanvasStore.getState().setNodeCalendarEvent(nodeId, {
                 id: '', type, title, date, endDate, notes,
@@ -42,7 +43,7 @@ export function useCalendarSync(nodeId: string) {
             const metadata = await updateEvent(eventId, type, title, date, endDate, notes);
             useCanvasStore.getState().setNodeCalendarEvent(nodeId, metadata);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Update failed';
+            const msg = err instanceof Error ? err.message : cs.errors.updateFailed;
             setError(msg);
             useCanvasStore.getState().setNodeCalendarEvent(nodeId, {
                 id: eventId, type, title, date, endDate, notes,
@@ -63,7 +64,7 @@ export function useCalendarSync(nodeId: string) {
             await deleteEvent(eventId);
             useCanvasStore.getState().setNodeCalendarEvent(nodeId, undefined);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Delete failed';
+            const msg = err instanceof Error ? err.message : cs.errors.deleteFailed;
             setError(msg);
         } finally {
             setIsLoading(false);

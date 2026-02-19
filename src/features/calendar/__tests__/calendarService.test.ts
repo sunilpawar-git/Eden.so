@@ -97,6 +97,35 @@ describe('calendarService', () => {
             expect(endMs - startMs).toBe(30 * 60 * 1000);
         });
 
+        it('should preserve timezone offset in calculated end time', async () => {
+            (callCalendar as Mock).mockResolvedValue({
+                ok: true,
+                status: 200,
+                data: { id: 'gcal-tz-1' },
+            });
+
+            await createEvent('event', 'Meeting', '2026-02-20T17:00:00+05:30');
+
+            const call = (callCalendar as Mock).mock.calls[0] as unknown[];
+            const body = call[2] as { start: { dateTime: string }; end: { dateTime: string } };
+            expect(body.end.dateTime).toBe('2026-02-20T17:30:00+05:30');
+            expect(body.start.dateTime).toBe('2026-02-20T17:00:00+05:30');
+        });
+
+        it('should preserve negative timezone offset in calculated end time', async () => {
+            (callCalendar as Mock).mockResolvedValue({
+                ok: true,
+                status: 200,
+                data: { id: 'gcal-tz-2' },
+            });
+
+            await createEvent('event', 'Standup', '2026-02-20T09:00:00-08:00');
+
+            const call = (callCalendar as Mock).mock.calls[0] as unknown[];
+            const body = call[2] as { start: { dateTime: string }; end: { dateTime: string } };
+            expect(body.end.dateTime).toBe('2026-02-20T09:30:00-08:00');
+        });
+
         it('should use same time for reminder/todo end', async () => {
             (callCalendar as Mock).mockResolvedValue({
                 ok: true,
@@ -132,7 +161,7 @@ describe('calendarService', () => {
 
             await expect(
                 createEvent('event', 'Team standup', validDate),
-            ).rejects.toThrow('Failed to create event');
+            ).rejects.toThrow('Failed to create calendar event. Please try again.');
         });
     });
 
@@ -169,7 +198,7 @@ describe('calendarService', () => {
                 data: null,
             });
 
-            await expect(deleteEvent('gcal-event-1')).rejects.toThrow('Failed to delete event');
+            await expect(deleteEvent('gcal-event-1')).rejects.toThrow('Failed to delete calendar event.');
         });
     });
 

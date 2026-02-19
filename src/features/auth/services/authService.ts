@@ -13,6 +13,7 @@ import { auth, googleProvider } from '@/config/firebase';
 import { useAuthStore } from '../stores/authStore';
 import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
 import { createUserFromAuth } from '../types/user';
+import { strings } from '@/shared/localization/strings';
 
 /**
  * Sign in with Google OAuth
@@ -40,27 +41,53 @@ export async function signInWithGoogle(): Promise<void> {
 
         setUser(user);
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'Sign in failed';
+        const message = error instanceof Error ? error.message : strings.auth.signInFailed;
         setError(message);
         throw error;
     }
 }
 
 /**
- * Sign out current user
+ * Sign out current user.
+ * Always clears local state even if Firebase sign-out fails,
+ * preventing an inconsistent "authenticated but no token" state.
  */
 export async function signOut(): Promise<void> {
     const { clearUser, setError, setGoogleAccessToken } = useAuthStore.getState();
 
     try {
-        setGoogleAccessToken(null);
         await firebaseSignOut(auth);
-        clearUser();
-        useSubscriptionStore.getState().reset();
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'Sign out failed';
+        const message = error instanceof Error ? error.message : strings.auth.signOutFailed;
         setError(message);
         throw error;
+    } finally {
+        setGoogleAccessToken(null);
+        clearUser();
+        useSubscriptionStore.getState().reset();
+    }
+}
+
+/**
+ * Re-acquire Google OAuth access token for Calendar API.
+ * Used when user is signed in but token was lost (e.g. page refresh).
+ * Returns true if token was successfully acquired.
+ */
+export async function reauthenticateForCalendar(): Promise<boolean> {
+    const { setGoogleAccessToken } = useAuthStore.getState();
+
+    if (!auth.currentUser) return false;
+
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+            setGoogleAccessToken(credential.accessToken);
+            return true;
+        }
+        return false;
+    } catch {
+        return false;
     }
 }
 

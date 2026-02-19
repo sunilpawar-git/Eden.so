@@ -17,6 +17,8 @@ export const strings = {
         signOut: 'Sign out',
         signingIn: 'Signing in...',
         welcome: 'Welcome back',
+        signInFailed: 'Sign in failed',
+        signOutFailed: 'Sign out failed',
     },
     workspace: {
         newWorkspace: 'New Workspace',

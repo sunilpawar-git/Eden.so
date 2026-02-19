@@ -20,9 +20,9 @@ export async function getAuthToken(): Promise<string | null> {
 }
 
 /**
- * Get the Google OAuth access token from in-memory Zustand store.
+ * Get the Google OAuth access token from Zustand store.
  * Returns null if user hasn't authenticated with Calendar scope.
- * Synchronous — token is already in memory (never persisted to storage).
+ * Synchronous — token is in memory (backed by sessionStorage for refresh survival).
  */
 export function getGoogleAccessToken(): string | null {
     return useAuthStore.getState().googleAccessToken;
