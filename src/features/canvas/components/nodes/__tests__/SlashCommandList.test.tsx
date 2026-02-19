@@ -30,9 +30,14 @@ describe('SlashCommandList', () => {
             expect(items).toHaveLength(slashCommands.length);
         });
 
-        it('shows command prefix label', () => {
+        it('shows resolved command label', () => {
             render(<SlashCommandList {...defaultProps} />);
-            expect(screen.getByText('ai')).toBeInTheDocument();
+            expect(screen.getByText(strings.slashCommands.aiGenerate.label)).toBeInTheDocument();
+        });
+
+        it('shows resolved command description', () => {
+            render(<SlashCommandList {...defaultProps} />);
+            expect(screen.getByText(strings.slashCommands.aiGenerate.description)).toBeInTheDocument();
         });
 
         it('shows no results message when items empty', () => {
@@ -53,7 +58,8 @@ describe('SlashCommandList', () => {
             const command = vi.fn();
             render(<SlashCommandList {...defaultProps} command={command} />);
 
-            fireEvent.mouseDown(screen.getByRole('menuitem'));
+            const items = screen.getAllByRole('menuitem');
+            fireEvent.mouseDown(items[0]!);
             expect(command).toHaveBeenCalledWith(slashCommands[0]);
         });
     });
@@ -63,8 +69,8 @@ describe('SlashCommandList', () => {
             const ref = { current: null as SlashCommandListRef | null };
             render(<SlashCommandList {...defaultProps} ref={ref} />);
 
-            const firstItem = screen.getByRole('menuitem');
-            expect(firstItem).toHaveAttribute('data-highlighted', 'true');
+            const items = screen.getAllByRole('menuitem');
+            expect(items[0]).toHaveAttribute('data-highlighted', 'true');
         });
 
         it('onKeyDown Enter selects highlighted item', () => {

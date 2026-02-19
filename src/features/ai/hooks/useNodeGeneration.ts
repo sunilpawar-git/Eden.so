@@ -1,6 +1,7 @@
 /**
  * useNodeGeneration Hook - Bridges AI service with canvas store
  * Handles AI generation for IdeaCard nodes
+ * Intercepts calendar intents to create events seamlessly
  */
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
@@ -10,13 +11,36 @@ import { createIdeaNode } from '@/features/canvas/types/node';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
+import { detectCalendarIntent, type CalendarIntentResult } from '@/features/calendar/services/calendarIntentService';
+import { isCalendarAvailable } from '@/features/calendar/services/calendarClient';
+import { createEvent } from '@/features/calendar/services/calendarService';
+import { calendarStrings as cs } from '@/features/calendar/localization/calendarStrings';
 
 const BRANCH_OFFSET_X = 350;
 
 /**
+ * Handle a detected calendar intent: create event if OAuth available, display confirmation
+ */
+async function handleCalendarIntent(nodeId: string, intent: CalendarIntentResult): Promise<void> {
+    const store = useCanvasStore.getState();
+    store.updateNodeOutput(nodeId, intent.confirmation);
+
+    if (!isCalendarAvailable()) {
+        toast.info(cs.errors.noToken);
+        return;
+    }
+
+    try {
+        const meta = await createEvent(intent.type, intent.title, intent.date, intent.endDate, intent.notes);
+        store.setNodeCalendarEvent(nodeId, meta);
+    } catch {
+        toast.error(cs.errors.createFailed);
+    }
+}
+
+/**
  * Hook for generating AI content from IdeaCard nodes
  */
- 
 export function useNodeGeneration() {
     const { addNode } = useCanvasStore();
     const { startGeneration, completeGeneration, setError } = useAIStore();
@@ -68,6 +92,13 @@ export function useNodeGeneration() {
                     return content || heading;
                 });
 
+            // Intercept calendar intent before general AI generation
+            const calendarIntent = await detectCalendarIntent(promptText);
+            if (calendarIntent) {
+                await handleCalendarIntent(nodeId, calendarIntent);
+                return;
+            }
+
             // Set generating state on the node
             useCanvasStore.getState().setNodeGenerating(nodeId, true);
             startGeneration(nodeId);
@@ -77,7 +108,6 @@ export function useNodeGeneration() {
                 const kbContext = getKBContext(promptText, generationType);
                 const content = await generateContentWithContext(promptText, contextChain, kbContext);
 
-                // Update output in-place (no new node created!)
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);
                 useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 completeGeneration();

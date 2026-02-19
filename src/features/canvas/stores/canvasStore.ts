@@ -4,6 +4,7 @@
  */
 import { create } from 'zustand';
 import type { CanvasNode, NodePosition, LinkPreviewMetadata } from '../types/node';
+import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
 import {
@@ -82,6 +83,9 @@ interface CanvasActions {
     // Link preview actions
     addLinkPreview: (nodeId: string, url: string, metadata: LinkPreviewMetadata) => void;
     removeLinkPreview: (nodeId: string, url: string) => void;
+
+    // Calendar event actions
+    setNodeCalendarEvent: (nodeId: string, event: CalendarEventMetadata | undefined) => void;
 }
 
 type CanvasStore = CanvasState & CanvasActions;
@@ -220,4 +224,7 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
                 };
             }),
         })),
+
+    setNodeCalendarEvent: (nodeId, event) =>
+        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'calendarEvent', event) })),
 }));

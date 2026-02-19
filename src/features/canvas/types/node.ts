@@ -1,6 +1,7 @@
 /**
  * Node Model - Type definitions for canvas nodes
  */
+import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 
 /**
  * Node dimension constraints (in pixels)
@@ -78,9 +79,10 @@ export interface IdeaNodeData {
     isPinned?: boolean;
     /** Shows only heading when true (Phase 5: NodeUX) */
     isCollapsed?: boolean;
-    tags?: string[]; // Tag IDs for BASB organization
-    linkPreviews?: Record<string, LinkPreviewMetadata>; // Keyed by URL
-    [key: string]: unknown; // Index signature for ReactFlow compatibility
+    tags?: string[];
+    linkPreviews?: Record<string, LinkPreviewMetadata>;
+    calendarEvent?: CalendarEventMetadata;
+    [key: string]: unknown;
 }
 
 export interface CanvasNode {

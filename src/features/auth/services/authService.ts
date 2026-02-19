@@ -9,24 +9,27 @@ import {
     onAuthStateChanged,
     type User as FirebaseUser,
 } from 'firebase/auth';
-import { auth } from '@/config/firebase';
+import { auth, googleProvider } from '@/config/firebase';
 import { useAuthStore } from '../stores/authStore';
 import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
 import { createUserFromAuth } from '../types/user';
-
-const googleProvider = new GoogleAuthProvider();
 
 /**
  * Sign in with Google OAuth
  */
 export async function signInWithGoogle(): Promise<void> {
-    const { setLoading, setUser, setError } = useAuthStore.getState();
+    const { setLoading, setUser, setError, setGoogleAccessToken } = useAuthStore.getState();
 
     setLoading(true);
 
     try {
         const result = await signInWithPopup(auth, googleProvider);
         const firebaseUser = result.user;
+
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+            setGoogleAccessToken(credential.accessToken);
+        }
 
         const user = createUserFromAuth(
             firebaseUser.uid,
@@ -47,9 +50,10 @@ export async function signInWithGoogle(): Promise<void> {
  * Sign out current user
  */
 export async function signOut(): Promise<void> {
-    const { clearUser, setError } = useAuthStore.getState();
+    const { clearUser, setError, setGoogleAccessToken } = useAuthStore.getState();
 
     try {
+        setGoogleAccessToken(null);
         await firebaseSignOut(auth);
         clearUser();
         useSubscriptionStore.getState().reset();

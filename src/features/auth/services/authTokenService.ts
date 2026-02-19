@@ -1,8 +1,9 @@
 /**
- * Auth Token Service - Provides Firebase ID token for authenticated API calls
- * Single responsibility: retrieve current user's ID token
+ * Auth Token Service - Provides tokens for authenticated API calls
+ * Firebase ID token for backend, Google OAuth token for Calendar API
  */
 import { auth } from '@/config/firebase';
+import { useAuthStore } from '../stores/authStore';
 
 /**
  * Get the Firebase ID token for the currently authenticated user.
@@ -16,4 +17,13 @@ export async function getAuthToken(): Promise<string | null> {
     } catch {
         return null;
     }
+}
+
+/**
+ * Get the Google OAuth access token from in-memory Zustand store.
+ * Returns null if user hasn't authenticated with Calendar scope.
+ * Synchronous — token is already in memory (never persisted to storage).
+ */
+export function getGoogleAccessToken(): string | null {
+    return useAuthStore.getState().googleAccessToken;
 }

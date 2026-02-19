@@ -78,6 +78,8 @@ export function createSlashSuggestionRender(
                 popup = document.createElement('div');
                 popup.style.position = 'absolute';
                 popup.style.zIndex = POPUP_Z_INDEX;
+                popup.style.borderRadius = 'var(--radius-md)';
+                popup.style.overflow = 'hidden';
                 popup.appendChild(renderer.element);
                 document.body.appendChild(popup);
 
