@@ -2,7 +2,7 @@
  * Calendar E2E Integration Tests
  * Tests full flow: service -> store -> badge display
  */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+ 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { renderHook, act, render, screen, fireEvent } from '@testing-library/react';
 

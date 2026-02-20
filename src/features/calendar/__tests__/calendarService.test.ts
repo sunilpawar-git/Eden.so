@@ -9,10 +9,10 @@ vi.mock('../services/calendarClient', () => ({
     callCalendar: vi.fn(),
 }));
 
-// eslint-disable-next-line import-x/first -- must follow vi.mock()
+// eslint-disable-next-line import-x/first
 import { callCalendar } from '../services/calendarClient';
 // eslint-disable-next-line import-x/first
-import { createEvent, deleteEvent, validateEventInput } from '../services/calendarService';
+import { createEvent, deleteEvent, validateEventInput, listEvents } from '../services/calendarService';
 
 const validDate = new Date(Date.now() + 86400000).toISOString(); // tomorrow
 const validEndDate = new Date(Date.now() + 90000000).toISOString(); // tomorrow + 1hr
@@ -246,6 +246,44 @@ describe('calendarService', () => {
         it('should accept valid notes', () => {
             const errors = validateEventInput('Test', validDate, 'event' as CalendarEventType, undefined, 'Short note');
             expect(errors).toHaveLength(0);
+        });
+    });
+
+    describe('listEvents', () => {
+        it('should fetch events and format query correctly', async () => {
+            (callCalendar as Mock).mockResolvedValue({
+                ok: true,
+                status: 200,
+                data: {
+                    items: [
+                        { summary: 'Meeting 1', start: { dateTime: '2026-02-20T10:00:00Z' }, end: { dateTime: '2026-02-20T11:00:00Z' } },
+                        { summary: 'Meeting 2', start: { dateTime: '2026-02-20T14:00:00Z' } } // no end
+                    ]
+                }
+            });
+
+            const startStr = '2026-02-20T00:00:00Z';
+            const endStr = '2026-02-20T23:59:59Z';
+            const events = await listEvents(startStr, endStr);
+
+            expect(callCalendar).toHaveBeenCalledWith(
+                'GET',
+                expect.stringContaining('/calendars/primary/events?timeMin=')
+            );
+
+            expect(events).toHaveLength(2);
+            expect(events[0]).toMatchObject({ title: 'Meeting 1' });
+            expect(events[1]).toMatchObject({ title: 'Meeting 2' });
+        });
+
+        it('should throw on API error', async () => {
+            (callCalendar as Mock).mockResolvedValue({
+                ok: false,
+                status: 500,
+                data: null
+            });
+
+            await expect(listEvents(validDate, validEndDate)).rejects.toThrow('Failed to fetch calendar events. Please try again.');
         });
     });
 });

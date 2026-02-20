@@ -28,14 +28,14 @@ interface RawIntentResponse {
     confirmation?: string;
 }
 
-const VALID_TYPES = new Set<string>(['event', 'reminder', 'todo']);
+const VALID_TYPES = new Set<string>(['event', 'reminder', 'todo', 'read']);
 
 /**
  * Fast local heuristic: does this prompt look like a calendar request?
  * Used as a pre-flight check before the Gemini API call so we can
  * acquire the OAuth token while still in the user-gesture context.
  */
-const CALENDAR_KEYWORDS_RE = /\b(remind(?:er)?|schedule|meeting|event|appointment|call|todo|to[\s-]?do|task|set\s+(?:a\s+)?(?:reminder|alarm)|book|create\s+(?:a\s+)?(?:meeting|event)|(?:at|by)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?|tomorrow|next\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month))\b/i;
+const CALENDAR_KEYWORDS_RE = /\b(remind(?:er)?|schedule|meeting|event|appointment|call|todo|to[\s-]?do|show\s+(?:my\s+)?(?:calendar|events)|read\s+(?:my\s+)?calendar|agenda|plan|task|set\s+(?:a\s+)?(?:reminder|alarm)|book|create\s+(?:a\s+)?(?:meeting|event)|(?:what|how)\b.*?\b(?:schedule|plan|agenda|calendar)|(?:at|by)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?|tomorrow|next\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month))\b/i;
 
 export function looksLikeCalendarIntent(prompt: string): boolean {
     return CALENDAR_KEYWORDS_RE.test(prompt);
@@ -68,7 +68,7 @@ function parseIntentResponse(text: string): CalendarIntentResult | null {
             date: raw.date,
             endDate: raw.endDate && isValidISODate(raw.endDate) ? raw.endDate : undefined,
             notes: raw.notes ?? undefined,
-            confirmation: raw.confirmation ?? `${cs.confirmationFallback}${raw.title.trim()}`,
+            confirmation: raw.confirmation ?? (raw.type === 'read' ? cs.readConfirmationFallback : `${cs.confirmationFallback}${raw.title.trim()}`),
         };
     } catch {
         return null;

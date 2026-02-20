@@ -73,7 +73,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     const enterEditing = useCallback(() => {
         setContent(getEditableContent());
         useCanvasStore.getState().startEditing(nodeId);
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+         
         if (editor) editor.setEditable(true);
     }, [nodeId, editor, setContent, getEditableContent]);
 
@@ -93,7 +93,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
 
     const exitEditing = useCallback(() => {
         saveContent(getMarkdown());
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+         
         if (editor) editor.setEditable(false);
         useCanvasStore.getState().stopEditing();
     }, [saveContent, getMarkdown, editor]);
@@ -162,7 +162,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
             // Defer character insertion until editor is ready
             const char = e.key;
             queueMicrotask(() => {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                 
                 if (!editor) return;
                 // Use simulateTextInput so TipTap plugins (e.g. Suggestion) fire.
                 // insertContent() bypasses handleTextInput, breaking slash commands.

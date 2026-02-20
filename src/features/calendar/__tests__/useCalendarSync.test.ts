@@ -2,7 +2,7 @@
  * useCalendarSync Tests - TDD: Written FIRST (RED phase)
  * Tests bridge between service layer and Zustand store
  */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+ 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 

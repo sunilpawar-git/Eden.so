@@ -35,6 +35,10 @@ describe('calendarIntentService', () => {
             'Set a reminder for dentist appointment',
             'Book a call with John next Monday',
             'I have an appointment at 10am',
+            'What is my schedule for today?',
+            'Read my calendar',
+            'Show my events for tomorrow',
+            'Whats on the agenda today'
         ])('should return true for: %s', (prompt) => {
             expect(looksLikeCalendarIntent(prompt)).toBe(true);
         });
@@ -103,6 +107,26 @@ describe('calendarIntentService', () => {
 
             expect(result).not.toBeNull();
             expect(result?.type).toBe('todo');
+        });
+
+        it('should detect a read intent', async () => {
+            mockGeminiResponse(JSON.stringify({
+                isCalendar: true,
+                type: 'read',
+                title: 'schedule',
+                date: '2026-02-20T00:00:00.000Z',
+                endDate: '2026-02-20T23:59:59.000Z',
+                notes: null,
+                confirmation: 'Here are your events:',
+            }));
+
+            const result = await detectCalendarIntent('What is my schedule today?');
+
+            expect(result).not.toBeNull();
+            expect(result?.type).toBe('read');
+            expect(result?.date).toBe('2026-02-20T00:00:00.000Z');
+            expect(result?.endDate).toBe('2026-02-20T23:59:59.000Z');
+            expect(result?.confirmation).toBe('Here are your events:');
         });
 
         it('should return null for non-calendar prompts', async () => {

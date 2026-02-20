@@ -1,7 +1,7 @@
 /**
  * Canvas Store Calendar Tests - TDD for setNodeCalendarEvent action
  */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+ 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import type { CanvasNode } from '@/features/canvas/types/node';

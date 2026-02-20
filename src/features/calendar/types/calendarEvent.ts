@@ -4,7 +4,7 @@
  */
 
 /** Supported calendar item types */
-export type CalendarEventType = 'event' | 'reminder' | 'todo';
+export type CalendarEventType = 'event' | 'reminder' | 'todo' | 'read';
 
 /** Sync status for calendar items */
 export type CalendarSyncStatus = 'pending' | 'synced' | 'failed';

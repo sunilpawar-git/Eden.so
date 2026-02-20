@@ -9,9 +9,10 @@ import {
     type CalendarIntentResult,
 } from './calendarIntentService';
 import { isCalendarAvailable } from './calendarClient';
-import { createEvent } from './calendarService';
+import { createEvent, listEvents } from './calendarService';
 import { reauthenticateForCalendar } from '@/features/auth/services/authService';
 import { calendarStrings as cs } from '../localization/calendarStrings';
+import { formatEventsMarkdown } from './calendarEventFormatter';
 
 /**
  * Ensure Google Calendar OAuth token is available.
@@ -34,6 +35,12 @@ async function handleCalendarIntent(
     const store = useCanvasStore.getState();
 
     if (!hasToken) {
+        if (intent.type === 'read') {
+            store.updateNodeOutput(nodeId, cs.errors.readNoToken);
+            toast.info(cs.errors.readNoToken);
+            return;
+        }
+
         store.setNodeCalendarEvent(nodeId, {
             id: '',
             type: intent.type,
@@ -50,12 +57,27 @@ async function handleCalendarIntent(
     }
 
     try {
-        const meta = await createEvent(intent.type, intent.title, intent.date, intent.endDate, intent.notes);
-        store.setNodeCalendarEvent(nodeId, meta);
-        store.updateNodeOutput(nodeId, intent.confirmation);
+        if (intent.type === 'read') {
+            let end = intent.endDate;
+            if (!end || end === intent.date) {
+                const d = new Date(intent.date);
+                d.setHours(d.getHours() + 1);
+                end = d.toISOString();
+            }
+            const events = await listEvents(intent.date, end);
+            const markdown = formatEventsMarkdown(events);
+
+            // For reads, we just update the text content and don't add a badge
+            store.updateNodeOutput(nodeId, markdown);
+        } else {
+            const meta = await createEvent(intent.type, intent.title, intent.date, intent.endDate, intent.notes);
+            store.setNodeCalendarEvent(nodeId, meta);
+            store.updateNodeOutput(nodeId, intent.confirmation);
+        }
     } catch {
-        store.updateNodeOutput(nodeId, cs.errors.createFailed);
-        toast.error(cs.errors.createFailed);
+        const errorMsg = intent.type === 'read' ? cs.errors.readFailed : cs.errors.createFailed;
+        store.updateNodeOutput(nodeId, errorMsg);
+        toast.error(errorMsg);
     }
 }
 

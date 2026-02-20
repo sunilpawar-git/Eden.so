@@ -193,3 +193,41 @@ export async function updateEvent(
         calendarId: 'primary',
     };
 }
+
+/**
+ * Fetch calendar events within a given timeframe.
+ * Returns a simplified list of events containing title and start time.
+ */
+export async function listEvents(
+    startDate: string,
+    endDate: string,
+): Promise<Array<{ title: string; date: string; endDate?: string }>> {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const query = new URLSearchParams({
+        timeMin: new Date(startDate).toISOString(),
+        timeMax: new Date(endDate).toISOString(),
+        timeZone: tz,
+        singleEvents: 'true',
+        orderBy: 'startTime',
+    });
+
+    const result = await callCalendar('GET', `/calendars/primary/events?${query.toString()}`);
+
+    if (!result.ok) {
+        throw new Error(extractErrorMessage(result.data, cs.errors.readFailed));
+    }
+
+    const items = (result.data?.items ?? []) as Array<Record<string, unknown>>;
+
+    return items.map((item) => {
+        const startObj = item.start as Record<string, string> | undefined;
+        const endObj = item.end as Record<string, string> | undefined;
+        const start = startObj?.dateTime ?? startObj?.date ?? new Date().toISOString();
+        const end = endObj?.dateTime ?? endObj?.date;
+        return {
+            title: (item.summary as string) || 'Busy',
+            date: start,
+            endDate: end,
+        };
+    });
+}
