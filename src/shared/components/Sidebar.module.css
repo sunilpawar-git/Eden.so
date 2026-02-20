@@ -106,7 +106,7 @@
 }
 
 .workspaceItem:hover {
-    background-color: var(--color-primary-light);
+    background-color: var(--color-surface-hover);
 }
 
 /* Show pin button when hovering workspace item */
@@ -116,6 +116,12 @@
 
 .workspaceItem.active {
     background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.workspaceItem.active .workspaceName {
+    color: var(--color-primary);
 }
 
 .workspaceNameInput {
