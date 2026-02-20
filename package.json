@@ -9,7 +9,7 @@
     "build:quick": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 49",
     "lint:strict": "eslint . --max-warnings 0",
     "lint:ci": "eslint . --max-warnings 49",
     "lint:fix": "eslint . --fix",

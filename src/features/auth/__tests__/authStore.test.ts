@@ -15,12 +15,13 @@ const mockUser: User = {
 
 describe('AuthStore', () => {
     beforeEach(() => {
-        // Reset store state before each test
+        localStorage.clear();
         useAuthStore.setState({
             user: null,
             isLoading: false,
             isAuthenticated: false,
             error: null,
+            googleAccessToken: null,
         });
     });
 
@@ -93,6 +94,44 @@ describe('AuthStore', () => {
             useAuthStore.getState().setError('Error');
 
             expect(useAuthStore.getState().isLoading).toBe(false);
+        });
+    });
+
+    describe('googleAccessToken - localStorage persistence', () => {
+        it('should persist token to localStorage on setGoogleAccessToken', () => {
+            useAuthStore.getState().setGoogleAccessToken('tok-123');
+
+            expect(localStorage.getItem('gcal_access_token')).toBe('tok-123');
+            expect(useAuthStore.getState().googleAccessToken).toBe('tok-123');
+        });
+
+        it('should clear localStorage when token set to null', () => {
+            localStorage.setItem('gcal_access_token', 'old-tok');
+            useAuthStore.getState().setGoogleAccessToken(null);
+
+            expect(localStorage.getItem('gcal_access_token')).toBeNull();
+            expect(useAuthStore.getState().googleAccessToken).toBeNull();
+        });
+
+        it('should clear token from localStorage on clearUser (sign out)', () => {
+            useAuthStore.getState().setGoogleAccessToken('tok-456');
+            useAuthStore.getState().clearUser();
+
+            expect(localStorage.getItem('gcal_access_token')).toBeNull();
+            expect(useAuthStore.getState().googleAccessToken).toBeNull();
+        });
+
+        it('should gracefully handle localStorage being unavailable', () => {
+            const origSet = localStorage.setItem.bind(localStorage);
+            const origGet = localStorage.getItem.bind(localStorage);
+            localStorage.setItem = () => { throw new Error('blocked'); };
+            localStorage.getItem = () => { throw new Error('blocked'); };
+
+            expect(() => useAuthStore.getState().setGoogleAccessToken('tok-789')).not.toThrow();
+            expect(useAuthStore.getState().googleAccessToken).toBe('tok-789');
+
+            localStorage.setItem = origSet;
+            localStorage.getItem = origGet;
         });
     });
 });

@@ -3,6 +3,7 @@
  * NO hardcoded strings allowed in components
  */
 import { knowledgeBankStrings } from '@/features/knowledgeBank/localization/knowledgeBankStrings';
+import { calendarStrings } from '@/features/calendar/localization/calendarStrings';
 
 export const strings = {
     app: {
@@ -16,6 +17,8 @@ export const strings = {
         signOut: 'Sign out',
         signingIn: 'Signing in...',
         welcome: 'Welcome back',
+        signInFailed: 'Sign in failed',
+        signOutFailed: 'Sign out failed',
     },
     workspace: {
         newWorkspace: 'New Workspace',
@@ -283,6 +286,7 @@ export const strings = {
         unpinTooltip: 'Collapse sidebar; hover to reveal',
     },
     knowledgeBank: knowledgeBankStrings,
+    calendar: calendarStrings,
 } as const;
 
 export type StringKeys = typeof strings;

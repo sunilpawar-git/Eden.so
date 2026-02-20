@@ -20,6 +20,8 @@ import { TagInput } from '@/features/tags';
 import {
     EditingContent, GeneratingContent, AICardContent, SimpleCardContent, PlaceholderContent,
 } from './IdeaCardContent';
+import { CalendarBadge } from '@/features/calendar/components/CalendarBadge';
+import { useIdeaCardCalendar } from '@/features/calendar/hooks/useIdeaCardCalendar';
 import type { IdeaNodeData } from '../../types/node';
 import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT } from '../../types/node';
 import styles from './IdeaCard.module.css';
@@ -29,7 +31,7 @@ import handleStyles from './IdeaCardHandles.module.css';
 const PROXIMITY_THRESHOLD = 80;
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
-    const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews } = data as IdeaNodeData;
+    const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews, calendarEvent } = data as IdeaNodeData;
     const promptSource = (heading?.trim() ?? prompt) || ''; // Heading is SSOT for prompts; legacy fallback
     const isAICard = Boolean(promptSource && output && promptSource !== output);
     const [showTagInput, setShowTagInput] = useState(false);
@@ -42,10 +44,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { isPinnedOpen, handlers: pinOpenHandlers } = useBarPinOpen();
 
     const { generateFromPrompt } = useNodeGeneration();
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     const { getEditableContent, saveContent, placeholder, onSubmitAI } = useIdeaCardState({
         nodeId: id, prompt, output, isAICard, generateFromPrompt,
     });
+
+    const calendar = useIdeaCardCalendar({ nodeId: id, calendarEvent });
 
     const slashHandler = useCallback((c: string) => {
         if (c === 'ai-generate') useCanvasStore.getState().setInputMode('ai');
@@ -57,9 +60,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     });
 
     const {
-        handleDelete, handleRegenerate, handleConnectClick, handleTransform,
+        handleDelete: rawDelete, handleRegenerate, handleConnectClick, handleTransform,
         handleHeadingChange, handleCopy, handleTagsChange, isTransforming,
     } = useIdeaCardActions({ nodeId: id, getEditableContent, contentRef });
+
+    const handleDelete = useCallback(() => { calendar.cleanupOnDelete(); rawDelete(); }, [calendar, rawDelete]);
 
     useLinkPreviewRetry(id, linkPreviews);
 
@@ -132,6 +137,10 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                         onHeadingChange={handleHeadingChange} onEnterKey={focusBody}
                         onDoubleClick={handleDoubleClick} onSlashCommand={slashHandler}
                         onSubmitAI={onSubmitAI} />
+                    {calendarEvent && (
+                        <CalendarBadge metadata={calendarEvent}
+                            onRetry={calendarEvent.status !== 'synced' ? calendar.handleRetry : undefined} />
+                    )}
                     {!isCollapsed && <NodeDivider />}
                 </div>
                 {!isCollapsed && (

@@ -58,7 +58,7 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
         if (suggestionActiveRef.current) return;
         if (slashJustSelectedRef.current) {
             slashJustSelectedRef.current = false;
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-type-assertion
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
             queueMicrotask(() => { editor!.commands.focus(); }); return;
         }
         onBlur?.(md);
@@ -68,7 +68,7 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
     // Trigger placeholder re-render when text changes (e.g. switching to AI mode)
     const prevPH = useRef(placeholder);
     useEffect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+         
         if (!editor || placeholder === prevPH.current) return;
         prevPH.current = placeholder;
         editor.view.dispatch(editor.state.tr.setMeta('placeholderUpdate', true));

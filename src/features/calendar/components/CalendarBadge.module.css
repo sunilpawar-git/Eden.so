@@ -1,0 +1,86 @@
+/**
+ * CalendarBadge Styles
+ * Uses CSS variables only — no hex codes, no --color-accent
+ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
+    padding: var(--space-xxs) var(--space-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-elevated);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-tight);
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.badge:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-border-focus);
+}
+
+/* Type-specific border colors */
+.badge[data-type="event"] {
+    border-left: 3px solid var(--color-primary);
+}
+
+.badge[data-type="reminder"] {
+    border-left: 3px solid var(--color-warning);
+}
+
+.badge[data-type="todo"] {
+    border-left: 3px solid var(--color-success);
+}
+
+/* Status-specific styling */
+.badge[data-status="pending"] {
+    opacity: 0.8;
+}
+
+.badge[data-status="failed"] {
+    border-color: var(--color-error);
+}
+
+.icon {
+    flex-shrink: 0;
+    font-size: var(--font-size-sm);
+}
+
+.title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.date {
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+}
+
+.status {
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+}
+
+.retryBtn {
+    flex-shrink: 0;
+    padding: 0 var(--space-xxs);
+    border: none;
+    background: transparent;
+    color: var(--color-primary);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    border-radius: var(--radius-sm);
+}
+
+.retryBtn:hover {
+    background: var(--color-primary-light);
+}

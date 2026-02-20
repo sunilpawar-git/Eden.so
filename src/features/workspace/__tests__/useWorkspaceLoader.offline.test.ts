@@ -5,8 +5,8 @@
  * Core loading behavior (cache-miss, error handling) is tested
  * extensively in useWorkspaceLoader.test.ts.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, waitFor, cleanup } from '@testing-library/react';
 import { useWorkspaceLoader } from '../hooks/useWorkspaceLoader';
 
 // Exact same mock pattern as useWorkspaceLoader.test.ts
@@ -58,6 +58,10 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
         mockLoadEdges.mockResolvedValue([]);
     });
 
+    afterEach(() => {
+        cleanup();
+    });
+
     it('returns hasOfflineData=true when workspace is cached', async () => {
         mockCacheGet.mockReturnValue({
             nodes: [{ id: 'n1' }],
@@ -65,13 +69,14 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
             loadedAt: Date.now(),
         });
 
-        const { result } = renderHook(() => useWorkspaceLoader('ws-cached'));
+        const { result, unmount } = renderHook(() => useWorkspaceLoader('ws-cached'));
 
         await waitFor(() => {
             expect(result.current.isLoading).toBe(false);
         });
 
         expect(result.current.hasOfflineData).toBe(true);
+        unmount();
     });
 
     it('includes hasOfflineData in the return type', async () => {
@@ -81,7 +86,7 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
             loadedAt: Date.now(),
         });
 
-        const { result } = renderHook(() => useWorkspaceLoader('ws-type'));
+        const { result, unmount } = renderHook(() => useWorkspaceLoader('ws-type'));
 
         await waitFor(() => {
             expect(result.current.isLoading).toBe(false);
@@ -89,5 +94,6 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
 
         expect(result.current).toHaveProperty('hasOfflineData');
         expect(typeof result.current.hasOfflineData).toBe('boolean');
+        unmount();
     });
 });

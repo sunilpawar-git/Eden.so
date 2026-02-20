@@ -1,6 +1,7 @@
 /**
  * useNodeGeneration Hook - Bridges AI service with canvas store
  * Handles AI generation for IdeaCard nodes
+ * Calendar intent interception delegated to calendarIntentHandler
  */
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
@@ -10,13 +11,13 @@ import { createIdeaNode } from '@/features/canvas/types/node';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
+import { processCalendarIntent } from '@/features/calendar/services/calendarIntentHandler';
 
 const BRANCH_OFFSET_X = 350;
 
 /**
  * Hook for generating AI content from IdeaCard nodes
  */
- 
 export function useNodeGeneration() {
     const { addNode } = useCanvasStore();
     const { startGeneration, completeGeneration, setError } = useAIStore();
@@ -28,64 +29,55 @@ export function useNodeGeneration() {
      */
     const generateFromPrompt = useCallback(
         async (nodeId: string) => {
-            // CRITICAL: Use getState() for fresh data, not closure
             const freshNodes = useCanvasStore.getState().nodes;
             const node = freshNodes.find((n) => n.id === nodeId);
             if (node?.type !== 'idea') return;
 
             const ideaData = node.data;
-            // Heading is SSOT for prompts; fall back to prompt for legacy data
             // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field access
             const promptText = (ideaData.heading?.trim() || ideaData.prompt) || '';
             if (!promptText) return;
 
-            // Collect upstream context via edges
-            const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
-
-            // Reverse for chronological order (oldest ancestor first)
-            // Filter to include any node with content (heading/prompt OR output)
-            // When both heading and output exist, combine them for semantic context
-            const contextChain: string[] = upstreamNodes
-                .reverse()
-                .filter((n) => {
-                    const d = n.data;
-                    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field
-                    return !!(d.heading?.trim() || d.prompt || d.output);
-                })
-                .map((n) => {
-                    const d = n.data;
-                    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- intentional: empty string fallback
-                    const heading = d.heading?.trim() || '';
-                    // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field access for backward compat
-                    const content = d.output ?? d.prompt ?? '';
-
-                    // When both heading and content exist, combine them with blank line separator
-                    if (heading && content) {
-                        return `${heading}\n\n${content}`;
-                    }
-
-                    // Otherwise, use whichever exists
-                    return content || heading;
-                });
-
-            // Set generating state on the node
+            // Set generating immediately before any async work to prevent placeholder flash
             useCanvasStore.getState().setNodeGenerating(nodeId, true);
-            startGeneration(nodeId);
 
             try {
+                // Calendar intent interception (spinner already set above)
+                const handled = await processCalendarIntent(nodeId, promptText);
+                if (handled) return;
+
+                // Collect upstream context via edges
+                const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
+                const contextChain: string[] = upstreamNodes
+                    .reverse()
+                    .filter((n) => {
+                        const d = n.data;
+                        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field
+                        return !!(d.heading?.trim() || d.prompt || d.output);
+                    })
+                    .map((n) => {
+                        const d = n.data;
+                        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- intentional: empty string fallback
+                        const heading = d.heading?.trim() || '';
+                        // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field access for backward compat
+                        const content = d.output ?? d.prompt ?? '';
+                        if (heading && content) return `${heading}\n\n${content}`;
+                        return content || heading;
+                    });
+
+                startGeneration(nodeId);
                 const generationType = contextChain.length > 0 ? 'chain' as const : 'single' as const;
                 const kbContext = getKBContext(promptText, generationType);
                 const content = await generateContentWithContext(promptText, contextChain, kbContext);
 
-                // Update output in-place (no new node created!)
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);
-                useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 completeGeneration();
             } catch (error) {
                 const message = error instanceof Error ? error.message : strings.errors.aiError;
-                useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 setError(message);
                 toast.error(message);
+            } finally {
+                useCanvasStore.getState().setNodeGenerating(nodeId, false);
             }
         },
         [startGeneration, completeGeneration, setError, getKBContext]
