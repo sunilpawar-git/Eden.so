@@ -62,27 +62,21 @@ async function handleCalendarIntent(
 /**
  * Process a potential calendar intent for a node.
  * Returns true if the prompt was handled as a calendar intent.
- * The spinner (isGenerating) is managed internally via try/finally.
+ * The spinner (isGenerating) is managed by the caller (useNodeGeneration).
  */
 export async function processCalendarIntent(nodeId: string, promptText: string): Promise<boolean> {
     let calendarTokenReady = false;
     const maybeCalendar = looksLikeCalendarIntent(promptText);
 
     if (maybeCalendar) {
-        useCanvasStore.getState().setNodeGenerating(nodeId, true);
+        // Pre-acquire OAuth token while heuristic suggests calendar intent
         calendarTokenReady = await ensureCalendarToken();
     }
 
-    try {
-        const calendarIntent = await detectCalendarIntent(promptText);
-        if (calendarIntent) {
-            await handleCalendarIntent(nodeId, calendarIntent, calendarTokenReady);
-            return true;
-        }
-        return false;
-    } finally {
-        if (maybeCalendar) {
-            useCanvasStore.getState().setNodeGenerating(nodeId, false);
-        }
+    const calendarIntent = await detectCalendarIntent(promptText);
+    if (calendarIntent) {
+        await handleCalendarIntent(nodeId, calendarIntent, calendarTokenReady);
+        return true;
     }
+    return false;
 }

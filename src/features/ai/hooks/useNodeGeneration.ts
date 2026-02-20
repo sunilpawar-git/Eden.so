@@ -38,45 +38,46 @@ export function useNodeGeneration() {
             const promptText = (ideaData.heading?.trim() || ideaData.prompt) || '';
             if (!promptText) return;
 
-            // Calendar intent interception (handles spinner internally)
-            const handled = await processCalendarIntent(nodeId, promptText);
-            if (handled) return;
-
-            // Collect upstream context via edges
-            const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
-            const contextChain: string[] = upstreamNodes
-                .reverse()
-                .filter((n) => {
-                    const d = n.data;
-                    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field
-                    return !!(d.heading?.trim() || d.prompt || d.output);
-                })
-                .map((n) => {
-                    const d = n.data;
-                    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- intentional: empty string fallback
-                    const heading = d.heading?.trim() || '';
-                    // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field access for backward compat
-                    const content = d.output ?? d.prompt ?? '';
-                    if (heading && content) return `${heading}\n\n${content}`;
-                    return content || heading;
-                });
-
+            // Set generating immediately before any async work to prevent placeholder flash
             useCanvasStore.getState().setNodeGenerating(nodeId, true);
-            startGeneration(nodeId);
 
             try {
+                // Calendar intent interception (spinner already set above)
+                const handled = await processCalendarIntent(nodeId, promptText);
+                if (handled) return;
+
+                // Collect upstream context via edges
+                const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
+                const contextChain: string[] = upstreamNodes
+                    .reverse()
+                    .filter((n) => {
+                        const d = n.data;
+                        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field
+                        return !!(d.heading?.trim() || d.prompt || d.output);
+                    })
+                    .map((n) => {
+                        const d = n.data;
+                        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- intentional: empty string fallback
+                        const heading = d.heading?.trim() || '';
+                        // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field access for backward compat
+                        const content = d.output ?? d.prompt ?? '';
+                        if (heading && content) return `${heading}\n\n${content}`;
+                        return content || heading;
+                    });
+
+                startGeneration(nodeId);
                 const generationType = contextChain.length > 0 ? 'chain' as const : 'single' as const;
                 const kbContext = getKBContext(promptText, generationType);
                 const content = await generateContentWithContext(promptText, contextChain, kbContext);
 
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);
-                useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 completeGeneration();
             } catch (error) {
                 const message = error instanceof Error ? error.message : strings.errors.aiError;
-                useCanvasStore.getState().setNodeGenerating(nodeId, false);
                 setError(message);
                 toast.error(message);
+            } finally {
+                useCanvasStore.getState().setNodeGenerating(nodeId, false);
             }
         },
         [startGeneration, completeGeneration, setError, getKBContext]
