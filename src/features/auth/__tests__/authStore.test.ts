@@ -15,7 +15,7 @@ const mockUser: User = {
 
 describe('AuthStore', () => {
     beforeEach(() => {
-        sessionStorage.clear();
+        localStorage.clear();
         useAuthStore.setState({
             user: null,
             isLoading: false,
@@ -97,41 +97,41 @@ describe('AuthStore', () => {
         });
     });
 
-    describe('googleAccessToken - sessionStorage persistence', () => {
-        it('should persist token to sessionStorage on setGoogleAccessToken', () => {
+    describe('googleAccessToken - localStorage persistence', () => {
+        it('should persist token to localStorage on setGoogleAccessToken', () => {
             useAuthStore.getState().setGoogleAccessToken('tok-123');
 
-            expect(sessionStorage.getItem('gcal_access_token')).toBe('tok-123');
+            expect(localStorage.getItem('gcal_access_token')).toBe('tok-123');
             expect(useAuthStore.getState().googleAccessToken).toBe('tok-123');
         });
 
-        it('should clear sessionStorage when token set to null', () => {
-            sessionStorage.setItem('gcal_access_token', 'old-tok');
+        it('should clear localStorage when token set to null', () => {
+            localStorage.setItem('gcal_access_token', 'old-tok');
             useAuthStore.getState().setGoogleAccessToken(null);
 
-            expect(sessionStorage.getItem('gcal_access_token')).toBeNull();
+            expect(localStorage.getItem('gcal_access_token')).toBeNull();
             expect(useAuthStore.getState().googleAccessToken).toBeNull();
         });
 
-        it('should clear token from sessionStorage on clearUser (sign out)', () => {
+        it('should clear token from localStorage on clearUser (sign out)', () => {
             useAuthStore.getState().setGoogleAccessToken('tok-456');
             useAuthStore.getState().clearUser();
 
-            expect(sessionStorage.getItem('gcal_access_token')).toBeNull();
+            expect(localStorage.getItem('gcal_access_token')).toBeNull();
             expect(useAuthStore.getState().googleAccessToken).toBeNull();
         });
 
-        it('should gracefully handle sessionStorage being unavailable', () => {
-            const origSet = sessionStorage.setItem.bind(sessionStorage);
-            const origGet = sessionStorage.getItem.bind(sessionStorage);
-            sessionStorage.setItem = () => { throw new Error('blocked'); };
-            sessionStorage.getItem = () => { throw new Error('blocked'); };
+        it('should gracefully handle localStorage being unavailable', () => {
+            const origSet = localStorage.setItem.bind(localStorage);
+            const origGet = localStorage.getItem.bind(localStorage);
+            localStorage.setItem = () => { throw new Error('blocked'); };
+            localStorage.getItem = () => { throw new Error('blocked'); };
 
             expect(() => useAuthStore.getState().setGoogleAccessToken('tok-789')).not.toThrow();
             expect(useAuthStore.getState().googleAccessToken).toBe('tok-789');
 
-            sessionStorage.setItem = origSet;
-            sessionStorage.getItem = origGet;
+            localStorage.setItem = origSet;
+            localStorage.getItem = origGet;
         });
     });
 });

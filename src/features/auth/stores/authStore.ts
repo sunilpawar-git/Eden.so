@@ -10,18 +10,18 @@ const GCAL_TOKEN_KEY = 'gcal_access_token';
 function persistToken(token: string | null): void {
     try {
         if (token) {
-            sessionStorage.setItem(GCAL_TOKEN_KEY, token);
+            localStorage.setItem(GCAL_TOKEN_KEY, token);
         } else {
-            sessionStorage.removeItem(GCAL_TOKEN_KEY);
+            localStorage.removeItem(GCAL_TOKEN_KEY);
         }
     } catch {
-        /* sessionStorage may be unavailable in some environments */
+        /* localStorage may be unavailable in some environments */
     }
 }
 
 function restoreToken(): string | null {
     try {
-        return sessionStorage.getItem(GCAL_TOKEN_KEY);
+        return localStorage.getItem(GCAL_TOKEN_KEY);
     } catch {
         return null;
     }

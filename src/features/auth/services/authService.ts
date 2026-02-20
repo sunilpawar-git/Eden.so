@@ -70,7 +70,8 @@ export async function signOut(): Promise<void> {
 
 /**
  * Re-acquire Google OAuth access token for Calendar API.
- * Used when user is signed in but token was lost (e.g. page refresh).
+ * Attempts silent re-auth first (no user interaction if Google session is active).
+ * Falls back to interactive popup only if silent auth fails.
  * Returns true if token was successfully acquired.
  */
 export async function reauthenticateForCalendar(): Promise<boolean> {
@@ -78,6 +79,23 @@ export async function reauthenticateForCalendar(): Promise<boolean> {
 
     if (!auth.currentUser) return false;
 
+    // Try silent re-auth first — popup opens and closes immediately if Google session is live
+    const silentProvider = new GoogleAuthProvider();
+    silentProvider.addScope('https://www.googleapis.com/auth/calendar.events');
+    silentProvider.setCustomParameters({ prompt: 'none' });
+
+    try {
+        const silentResult = await signInWithPopup(auth, silentProvider);
+        const silentCredential = GoogleAuthProvider.credentialFromResult(silentResult);
+        if (silentCredential?.accessToken) {
+            setGoogleAccessToken(silentCredential.accessToken);
+            return true;
+        }
+    } catch {
+        // Silent failed (session expired or consent revoked) — fall through to interactive
+    }
+
+    // Interactive popup fallback
     try {
         const result = await signInWithPopup(auth, googleProvider);
         const credential = GoogleAuthProvider.credentialFromResult(result);
