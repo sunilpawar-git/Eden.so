@@ -39,7 +39,7 @@ export function useLinkPreviewRetry(
                 if (resolvedKeys.has(resolvedKey(nodeId, url))) return false;
                 if (meta.error) return true;
                 // Retry if no real title (title === domain) and no image
-                const hasRealTitle = meta.title && meta.title !== meta.domain;
+                const hasRealTitle = meta.title != null && meta.title !== meta.domain;
                 return !hasRealTitle && !meta.image;
             })
             .map(([url]) => url);

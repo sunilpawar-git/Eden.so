@@ -7,6 +7,13 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { SUBSCRIPTION_TIERS, type SubscriptionInfo } from '../types/subscription';
 
+/** Expected shape of a subscription document in Firestore */
+interface SubscriptionDocument {
+    tier?: string;
+    expiresAt?: number | null;
+    isActive?: boolean;
+}
+
 const DEFAULT_SUBSCRIPTION: SubscriptionInfo = {
     tier: SUBSCRIPTION_TIERS.free,
     expiresAt: null,
@@ -49,7 +56,7 @@ async function getSubscription(userId: string): Promise<SubscriptionInfo> {
             return DEFAULT_SUBSCRIPTION;
         }
 
-        const data = subDoc.data();
+        const data = subDoc.data() as SubscriptionDocument;
         const info: SubscriptionInfo = {
             tier: data.tier === SUBSCRIPTION_TIERS.pro
                 ? SUBSCRIPTION_TIERS.pro
