@@ -69,4 +69,35 @@ describe('checkCalendarConnection', () => {
         // @ts-expect-error Mocking readonly property
         auth.currentUser = originalUser;
     });
+
+    it('rejects token with invalid characters (XSS injection attempt)', () => {
+        localStorage.setItem(STORAGE_KEY, 'valid<script>alert(1)</script>');
+        localStorage.setItem(EXPIRY_KEY, (Date.now() + 100000).toString());
+
+        checkCalendarConnection();
+
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+        expect(localStorage.getItem(EXPIRY_KEY)).toBeNull();
+        expect(mockSetCalendarConnected).toHaveBeenCalledWith(false);
+    });
+
+    it('rejects token with newline characters (header injection attempt)', () => {
+        localStorage.setItem(STORAGE_KEY, 'token\nX-Malicious: header');
+        localStorage.setItem(EXPIRY_KEY, (Date.now() + 100000).toString());
+
+        checkCalendarConnection();
+
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+        expect(localStorage.getItem(EXPIRY_KEY)).toBeNull();
+        expect(mockSetCalendarConnected).toHaveBeenCalledWith(false);
+    });
+
+    it('accepts valid OAuth token format with dots, dashes, and underscores', () => {
+        localStorage.setItem(STORAGE_KEY, 'mock-token-a0AfB_byC-1234_567890-abc.def');
+        localStorage.setItem(EXPIRY_KEY, (Date.now() + 100000).toString());
+
+        checkCalendarConnection();
+
+        expect(mockSetCalendarConnected).toHaveBeenCalledWith(true);
+    });
 });

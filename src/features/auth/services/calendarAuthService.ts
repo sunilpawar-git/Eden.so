@@ -18,6 +18,14 @@ export function getCalendarToken(): string | null {
     const expiry = localStorage.getItem(EXPIRY_KEY);
     if (!token || !expiry) return null;
 
+    // Validate token format (OAuth tokens are alphanumeric with dots, dashes, underscores)
+    if (!/^[A-Za-z0-9._-]+$/.test(token)) {
+        console.warn('Invalid calendar token format detected, clearing');
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(EXPIRY_KEY);
+        return null;
+    }
+
     // Check if token is expired
     if (Date.now() > parseInt(expiry, 10)) {
         localStorage.removeItem(STORAGE_KEY);

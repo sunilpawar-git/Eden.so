@@ -91,6 +91,19 @@ export async function serverListEvents(
     }));
 }
 
+/** Validates that an event ID follows Google's format */
+function validateEventId(eventId: string): void {
+    // Google Calendar event IDs are alphanumeric with underscores
+    if (!/^[A-Za-z0-9_-]+$/.test(eventId)) {
+        throw new Error('Invalid event ID format');
+    }
+
+    // Prevent path traversal attempts
+    if (eventId.includes('/') || eventId.includes('..') || eventId.includes('%')) {
+        throw new Error('Event ID contains invalid characters');
+    }
+}
+
 /** Helper to format Google Event body */
 function createGoogleEventBody(
     title: string,
@@ -169,6 +182,7 @@ export async function serverUpdateEvent(
     endDate?: string,
     notes?: string,
 ): Promise<CalendarEventMetadata> {
+    validateEventId(eventId);
     const body = createGoogleEventBody(title, date, endDate, notes);
 
     await fetchGoogleApi(`/calendars/primary/events/${eventId}`, {
@@ -191,6 +205,7 @@ export async function serverUpdateEvent(
 
 /** Delete event directly via Google Calendar API. */
 export async function serverDeleteEvent(eventId: string): Promise<void> {
+    validateEventId(eventId);
     await fetchGoogleApi(`/calendars/primary/events/${eventId}`, {
         method: 'DELETE',
     });
