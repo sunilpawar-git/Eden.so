@@ -10,7 +10,7 @@ interface AuthState {
     isLoading: boolean;
     isAuthenticated: boolean;
     error: string | null;
-    /** Server-side OAuth: whether user has connected Google Calendar */
+    /** Client-side OAuth: whether user has an active Google Calendar token */
     isCalendarConnected: boolean;
 }
 

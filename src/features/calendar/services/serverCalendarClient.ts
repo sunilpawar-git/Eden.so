@@ -52,7 +52,14 @@ async function fetchGoogleApi<T = unknown>(endpoint: string, options: RequestIni
     }
 
     if (!res.ok) {
-        throw new Error(cs.errors.createFailed);
+        const method = options.method ?? 'GET';
+        let errorMsg: string = cs.errors.syncFailed;
+        if (method === 'POST') errorMsg = cs.errors.createFailed;
+        else if (method === 'PUT') errorMsg = cs.errors.updateFailed;
+        else if (method === 'DELETE') errorMsg = cs.errors.deleteFailed;
+        else if (method === 'GET') errorMsg = cs.errors.readFailed;
+
+        throw new Error(errorMsg);
     }
 
     // DELETE requests may return 204 No Content
@@ -109,7 +116,11 @@ function createGoogleEventBody(
         if (endDate) {
             endObj.date = endDate;
         } else {
-            endObj.date = date;
+            // Google API spec: For all-day events that last a single day, 
+            // the end date must be the day after the start date.
+            const d = new Date(date);
+            d.setUTCDate(d.getUTCDate() + 1);
+            endObj.date = d.toISOString().split('T')[0];
         }
     }
 

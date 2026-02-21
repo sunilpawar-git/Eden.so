@@ -1,11 +1,9 @@
 /**
- * Calendar Auth Service - Server-side OAuth connection management
- * Uses Google Identity Services (GIS) SDK to get an authorization code,
- * then sends it to our backend Cloud Function for token exchange.
- * Tokens never touch the frontend.
+ * Calendar Auth Service - Google OAuth connection management
+ * Uses Google Identity Services (GIS) SDK to retrieve a pure client-side
+ * Access Token.
  */
 import { auth } from '@/config/firebase';
-// Server-side auth proxy logic removed in favor of client-side integration
 import { useAuthStore } from '../stores/authStore';
 import { calendarStrings as cs } from '@/features/calendar/localization/calendarStrings';
 
@@ -29,6 +27,7 @@ export function getCalendarToken(): string | null {
     return token;
 }
 
+let gisScriptPromise: Promise<void> | null = null;
 let gisScriptLoaded = false;
 
 /** Load the GIS SDK script tag if not already present. */
@@ -39,7 +38,11 @@ function ensureGisScript(): Promise<void> {
         return Promise.resolve();
     }
 
-    return new Promise((resolve, reject) => {
+    if (gisScriptPromise) {
+        return gisScriptPromise;
+    }
+
+    gisScriptPromise = new Promise<void>((resolve, reject) => {
         const script = document.createElement('script');
         script.src = GIS_SCRIPT_URL;
         script.async = true;
@@ -48,10 +51,13 @@ function ensureGisScript(): Promise<void> {
             resolve();
         };
         script.onerror = () => {
+            gisScriptPromise = null;
             reject(new Error(cs.errors.noToken));
         };
         document.head.appendChild(script);
     });
+
+    return gisScriptPromise;
 }
 
 /**
