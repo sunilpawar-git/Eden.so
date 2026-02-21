@@ -18,16 +18,19 @@ vi.mock('@/features/calendar/services/calendarIntentService', () => ({
     looksLikeCalendarIntent: vi.fn(),
 }));
 
-vi.mock('@/features/calendar/services/calendarClient', () => ({
-    isCalendarAvailable: vi.fn(),
-}));
-
 vi.mock('@/features/calendar/services/calendarService', () => ({
     createEvent: vi.fn(),
 }));
 
-vi.mock('@/features/auth/services/authService', () => ({
-    reauthenticateForCalendar: vi.fn(),
+vi.mock('@/features/auth/services/calendarAuthService', () => ({
+    connectGoogleCalendar: vi.fn(),
+}));
+
+let mockIsCalendarConnected = true;
+vi.mock('@/features/auth/stores/authStore', () => ({
+    useAuthStore: {
+        getState: () => ({ isCalendarConnected: mockIsCalendarConnected }),
+    },
 }));
 
 vi.mock('@/shared/stores/toastStore', () => ({
@@ -41,11 +44,9 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 // eslint-disable-next-line import-x/first
 import { detectCalendarIntent, looksLikeCalendarIntent } from '@/features/calendar/services/calendarIntentService';
 // eslint-disable-next-line import-x/first
-import { isCalendarAvailable } from '@/features/calendar/services/calendarClient';
-// eslint-disable-next-line import-x/first
 import { createEvent } from '@/features/calendar/services/calendarService';
 // eslint-disable-next-line import-x/first
-import { reauthenticateForCalendar } from '@/features/auth/services/authService';
+import { connectGoogleCalendar } from '@/features/auth/services/calendarAuthService';
 // eslint-disable-next-line import-x/first
 import { toast } from '@/shared/stores/toastStore';
 // eslint-disable-next-line import-x/first
@@ -78,13 +79,13 @@ function addIdeaNode(id: string, heading: string) {
 describe('useNodeGeneration - calendar intent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockIsCalendarConnected = true;
         useCanvasStore.setState({ nodes: [], edges: [], selectedNodeIds: new Set() });
     });
 
-    it('creates calendar event when intent detected and OAuth available', async () => {
+    it('creates calendar event when intent detected and calendar connected', async () => {
         addIdeaNode('n1', 'Remind me to call Mama at 9pm');
         (looksLikeCalendarIntent as Mock).mockReturnValue(true);
-        (isCalendarAvailable as Mock).mockReturnValue(true);
         (detectCalendarIntent as Mock).mockResolvedValue(calendarResult);
         (createEvent as Mock).mockResolvedValue(eventMeta);
 
@@ -99,28 +100,28 @@ describe('useNodeGeneration - calendar intent', () => {
         expect(geminiService.generateContentWithContext).not.toHaveBeenCalled();
     });
 
-    it('triggers pre-flight re-auth and creates event when token missing', async () => {
+    it('triggers connect and creates event when not connected', async () => {
+        mockIsCalendarConnected = false;
         addIdeaNode('n1', 'Remind me to call Mama');
         (looksLikeCalendarIntent as Mock).mockReturnValue(true);
-        (isCalendarAvailable as Mock).mockReturnValue(false);
-        (reauthenticateForCalendar as Mock).mockResolvedValue(true);
+        (connectGoogleCalendar as Mock).mockResolvedValue(true);
         (detectCalendarIntent as Mock).mockResolvedValue(calendarResult);
         (createEvent as Mock).mockResolvedValue(eventMeta);
 
         const { result } = renderHook(() => useNodeGeneration());
         await act(async () => { await result.current.generateFromPrompt('n1'); });
 
-        expect(reauthenticateForCalendar).toHaveBeenCalledOnce();
+        expect(connectGoogleCalendar).toHaveBeenCalledOnce();
         expect(createEvent).toHaveBeenCalled();
         const node = useCanvasStore.getState().nodes.find(n => n.id === 'n1');
         expect(node?.data.calendarEvent).toEqual(eventMeta);
     });
 
-    it('stores pending event when pre-flight re-auth fails', async () => {
+    it('stores pending event when connect fails', async () => {
+        mockIsCalendarConnected = false;
         addIdeaNode('n1', 'Remind me to call Mama');
         (looksLikeCalendarIntent as Mock).mockReturnValue(true);
-        (isCalendarAvailable as Mock).mockReturnValue(false);
-        (reauthenticateForCalendar as Mock).mockResolvedValue(false);
+        (connectGoogleCalendar as Mock).mockResolvedValue(false);
         (detectCalendarIntent as Mock).mockResolvedValue(calendarResult);
 
         const { result } = renderHook(() => useNodeGeneration());
@@ -136,7 +137,6 @@ describe('useNodeGeneration - calendar intent', () => {
     it('shows error toast when createEvent throws', async () => {
         addIdeaNode('n1', 'Schedule meeting');
         (looksLikeCalendarIntent as Mock).mockReturnValue(true);
-        (isCalendarAvailable as Mock).mockReturnValue(true);
         (detectCalendarIntent as Mock).mockResolvedValue(calendarResult);
         (createEvent as Mock).mockRejectedValue(new Error('API down'));
 
@@ -156,7 +156,7 @@ describe('useNodeGeneration - calendar intent', () => {
         const { result } = renderHook(() => useNodeGeneration());
         await act(async () => { await result.current.generateFromPrompt('n1'); });
 
-        expect(reauthenticateForCalendar).not.toHaveBeenCalled();
+        expect(connectGoogleCalendar).not.toHaveBeenCalled();
         expect(createEvent).not.toHaveBeenCalled();
         expect(geminiService.generateContentWithContext).toHaveBeenCalled();
     });
@@ -164,7 +164,6 @@ describe('useNodeGeneration - calendar intent', () => {
     it('clears generating spinner when keyword match is a false positive', async () => {
         addIdeaNode('n1', 'Call me maybe lyrics');
         (looksLikeCalendarIntent as Mock).mockReturnValue(true);
-        (isCalendarAvailable as Mock).mockReturnValue(true);
         (detectCalendarIntent as Mock).mockResolvedValue(null);
         vi.mocked(geminiService.generateContentWithContext).mockResolvedValue('Lyrics...');
 

@@ -3,12 +3,15 @@
  */
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 
-vi.mock('../services/calendarClient', () => ({
-    callCalendar: vi.fn(),
+vi.mock('../services/serverCalendarClient', () => ({
+    serverCreateEvent: vi.fn(),
+    serverDeleteEvent: vi.fn(),
+    serverUpdateEvent: vi.fn(),
+    serverListEvents: vi.fn(),
 }));
 
 // eslint-disable-next-line import-x/first
-import { callCalendar } from '../services/calendarClient';
+import { serverUpdateEvent } from '../services/serverCalendarClient';
 // eslint-disable-next-line import-x/first
 import { updateEvent } from '../services/calendarService';
 
@@ -20,76 +23,42 @@ describe('updateEvent', () => {
     });
 
     it('should update event and return metadata', async () => {
-        (callCalendar as Mock).mockResolvedValue({
-            ok: true, status: 200,
-            data: { id: 'gcal-1' },
+        (serverUpdateEvent as Mock).mockResolvedValue({
+            id: 'gcal-1', type: 'event', title: 'Updated title',
+            date: validDate, notes: 'New notes',
+            status: 'synced', syncedAt: Date.now(), calendarId: 'primary',
         });
 
         const result = await updateEvent('gcal-1', 'event', 'Updated title', validDate, undefined, 'New notes');
 
-        expect(callCalendar).toHaveBeenCalledWith(
-            'PATCH',
-            '/calendars/primary/events/gcal-1',
-            expect.objectContaining({ summary: 'Updated title', description: 'New notes' }),
+        expect(serverUpdateEvent).toHaveBeenCalledWith(
+            'gcal-1', 'event', 'Updated title', validDate, undefined, 'New notes',
         );
         expect(result.id).toBe('gcal-1');
         expect(result.title).toBe('Updated title');
         expect(result.status).toBe('synced');
     });
 
-    it('should throw on API error', async () => {
-        (callCalendar as Mock).mockResolvedValue({
-            ok: false, status: 500,
-            data: { error: { message: 'Server Error' } },
-        });
+    it('should throw on server error', async () => {
+        (serverUpdateEvent as Mock).mockRejectedValue(new Error('Server Error'));
 
         await expect(updateEvent('gcal-1', 'event', 'Test', validDate)).rejects.toThrow('Server Error');
     });
 
-    it('should throw generic message when no error detail', async () => {
-        (callCalendar as Mock).mockResolvedValue({
-            ok: false, status: 500, data: null,
-        });
-
-        await expect(updateEvent('gcal-1', 'event', 'Test', validDate)).rejects.toThrow();
+    it('should reject invalid input before calling server', async () => {
+        await expect(updateEvent('gcal-1', 'event', '', validDate)).rejects.toThrow();
+        expect(serverUpdateEvent).not.toHaveBeenCalled();
     });
 
     it('should preserve event type on update', async () => {
-        (callCalendar as Mock).mockResolvedValue({
-            ok: true, status: 200,
-            data: { id: 'gcal-1' },
+        (serverUpdateEvent as Mock).mockResolvedValue({
+            id: 'gcal-1', type: 'reminder', title: 'Ping team',
+            date: validDate, status: 'synced', syncedAt: Date.now(),
+            calendarId: 'primary',
         });
 
         const result = await updateEvent('gcal-1', 'reminder', 'Ping team', validDate);
 
         expect(result.type).toBe('reminder');
-    });
-
-    it('should preserve timezone offset in calculated end time', async () => {
-        (callCalendar as Mock).mockResolvedValue({
-            ok: true, status: 200,
-            data: { id: 'gcal-1' },
-        });
-
-        await updateEvent('gcal-1', 'event', 'Standup', '2026-02-20T10:00:00+05:30');
-
-        const call = (callCalendar as Mock).mock.calls[0] as unknown[];
-        const body = call[2] as { end: { dateTime: string } };
-        expect(body.end.dateTime).toBe('2026-02-20T10:30:00+05:30');
-    });
-
-    it('should calculate default end time when not provided', async () => {
-        (callCalendar as Mock).mockResolvedValue({
-            ok: true, status: 200,
-            data: { id: 'gcal-1' },
-        });
-
-        await updateEvent('gcal-1', 'event', 'Quick chat', validDate);
-
-        const call = (callCalendar as Mock).mock.calls[0] as unknown[];
-        const body = call[2] as { end: { dateTime: string } };
-        const endMs = new Date(body.end.dateTime).getTime();
-        const startMs = new Date(validDate).getTime();
-        expect(endMs - startMs).toBe(30 * 60 * 1000);
     });
 });

@@ -1,16 +1,18 @@
 /**
- * Calendar Service Tests - TDD: Written FIRST (RED phase)
- * Tests high-level calendar CRUD and validation
+ * Calendar Service Tests - Tests validation + server-side delegation
  */
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import type { CalendarEventType } from '../types/calendarEvent';
 
-vi.mock('../services/calendarClient', () => ({
-    callCalendar: vi.fn(),
+vi.mock('../services/serverCalendarClient', () => ({
+    serverCreateEvent: vi.fn(),
+    serverDeleteEvent: vi.fn(),
+    serverListEvents: vi.fn(),
+    serverUpdateEvent: vi.fn(),
 }));
 
 // eslint-disable-next-line import-x/first
-import { callCalendar } from '../services/calendarClient';
+import { serverCreateEvent, serverDeleteEvent, serverListEvents } from '../services/serverCalendarClient';
 // eslint-disable-next-line import-x/first
 import { createEvent, deleteEvent, validateEventInput, listEvents } from '../services/calendarService';
 
@@ -24,266 +26,136 @@ describe('calendarService', () => {
 
     describe('createEvent', () => {
         it('should create event and return metadata', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 200,
-                data: { id: 'gcal-event-1' },
+            (serverCreateEvent as Mock).mockResolvedValue({
+                id: 'gcal-event-1', type: 'event', title: 'Team standup',
+                date: validDate, status: 'synced', syncedAt: Date.now(),
+                calendarId: 'primary',
             });
 
-            const result = await createEvent('event', 'Team standup', validDate, validEndDate, 'Weekly sync');
+            const result = await createEvent('event', 'Team standup', validDate);
 
-            expect(callCalendar).toHaveBeenCalledWith(
-                'POST',
-                '/calendars/primary/events',
-                expect.objectContaining({
-                    summary: 'Team standup',
-                    description: 'Weekly sync',
-                }),
+            expect(serverCreateEvent).toHaveBeenCalledWith(
+                'event', 'Team standup', validDate, undefined, undefined,
             );
             expect(result.id).toBe('gcal-event-1');
-            expect(result.type).toBe('event');
-            expect(result.title).toBe('Team standup');
             expect(result.status).toBe('synced');
-            expect(result.calendarId).toBe('primary');
-            expect(result.syncedAt).toBeGreaterThan(0);
         });
 
-        it('should create reminder with correct structure', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 200,
-                data: { id: 'gcal-rem-1' },
+        it('should reject titles that are too short', async () => {
+            await expect(createEvent('event', '', validDate)).rejects.toThrow();
+        });
+
+        it('should reject titles that are too long', async () => {
+            const longTitle = 'A'.repeat(201);
+            await expect(createEvent('event', longTitle, validDate)).rejects.toThrow();
+        });
+
+        it('should reject invalid dates', async () => {
+            await expect(createEvent('event', 'Test event', 'not-a-date')).rejects.toThrow();
+        });
+
+        it('should reject dates too far in the future', async () => {
+            const futureDate = new Date(Date.now() + 11 * 365 * 24 * 60 * 60 * 1000).toISOString();
+            await expect(createEvent('event', 'Future event', futureDate)).rejects.toThrow();
+        });
+
+        it('should reject end date before start', async () => {
+            const pastEnd = new Date(Date.now() - 86400000).toISOString();
+            await expect(createEvent('event', 'Backwards', validDate, pastEnd)).rejects.toThrow();
+        });
+
+        it('should reject notes that are too long', async () => {
+            const longNotes = 'X'.repeat(5001);
+            await expect(createEvent('event', 'Test event', validDate, undefined, longNotes)).rejects.toThrow();
+        });
+
+        it('should pass end date and notes to server', async () => {
+            (serverCreateEvent as Mock).mockResolvedValue({
+                id: 'gcal-2', type: 'event', title: 'Meeting',
+                date: validDate, endDate: validEndDate, notes: 'Some notes',
+                status: 'synced', syncedAt: Date.now(), calendarId: 'primary',
             });
 
-            const result = await createEvent('reminder', 'Call client', validDate);
+            await createEvent('event', 'Meeting', validDate, validEndDate, 'Some notes');
 
-            expect(callCalendar).toHaveBeenCalledWith(
-                'POST',
-                '/calendars/primary/events',
-                expect.objectContaining({
-                    summary: 'Call client',
-                    reminders: { useDefault: true },
-                }),
+            expect(serverCreateEvent).toHaveBeenCalledWith(
+                'event', 'Meeting', validDate, validEndDate, 'Some notes',
             );
-            expect(result.type).toBe('reminder');
         });
 
-        it('should create todo item', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 200,
-                data: { id: 'gcal-todo-1' },
-            });
-
-            const result = await createEvent('todo', 'Submit report', validDate);
-
-            expect(result.type).toBe('todo');
-            expect(result.id).toBe('gcal-todo-1');
-        });
-
-        it('should calculate default end time for events (30 min)', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 200,
-                data: { id: 'gcal-e-1' },
-            });
-
-            await createEvent('event', 'Quick chat', validDate);
-
-            const call = (callCalendar as Mock).mock.calls[0] as unknown[];
-            const body = call[2] as { start: { dateTime: string }; end: { dateTime: string } };
-            const startMs = new Date(body.start.dateTime).getTime();
-            const endMs = new Date(body.end.dateTime).getTime();
-            expect(endMs - startMs).toBe(30 * 60 * 1000);
-        });
-
-        it('should preserve timezone offset in calculated end time', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 200,
-                data: { id: 'gcal-tz-1' },
-            });
-
-            await createEvent('event', 'Meeting', '2026-02-20T17:00:00+05:30');
-
-            const call = (callCalendar as Mock).mock.calls[0] as unknown[];
-            const body = call[2] as { start: { dateTime: string }; end: { dateTime: string } };
-            expect(body.end.dateTime).toBe('2026-02-20T17:30:00+05:30');
-            expect(body.start.dateTime).toBe('2026-02-20T17:00:00+05:30');
-        });
-
-        it('should preserve negative timezone offset in calculated end time', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 200,
-                data: { id: 'gcal-tz-2' },
-            });
-
-            await createEvent('event', 'Standup', '2026-02-20T09:00:00-08:00');
-
-            const call = (callCalendar as Mock).mock.calls[0] as unknown[];
-            const body = call[2] as { start: { dateTime: string }; end: { dateTime: string } };
-            expect(body.end.dateTime).toBe('2026-02-20T09:30:00-08:00');
-        });
-
-        it('should use same time for reminder/todo end', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 200,
-                data: { id: 'gcal-r-1' },
-            });
-
-            await createEvent('reminder', 'Ping team', validDate);
-
-            const call = (callCalendar as Mock).mock.calls[0] as unknown[];
-            const body = call[2] as { start: { dateTime: string }; end: { dateTime: string } };
-            expect(body.start.dateTime).toBe(body.end.dateTime);
-        });
-
-        it('should throw on API error', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: false,
-                status: 500,
-                data: { error: { message: 'Internal Server Error' } },
-            });
+        it('should propagate server errors', async () => {
+            (serverCreateEvent as Mock).mockRejectedValue(new Error('Internal Server Error'));
 
             await expect(
                 createEvent('event', 'Team standup', validDate),
             ).rejects.toThrow('Internal Server Error');
         });
-
-        it('should throw generic message when no error detail', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: false,
-                status: 500,
-                data: null,
-            });
-
-            await expect(
-                createEvent('event', 'Team standup', validDate),
-            ).rejects.toThrow('Failed to create calendar event. Please try again.');
-        });
     });
 
     describe('deleteEvent', () => {
         it('should delete event by ID', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 204,
-                data: {},
-            });
+            (serverDeleteEvent as Mock).mockResolvedValue(undefined);
 
             await deleteEvent('gcal-event-1');
 
-            expect(callCalendar).toHaveBeenCalledWith(
-                'DELETE',
-                '/calendars/primary/events/gcal-event-1',
-            );
+            expect(serverDeleteEvent).toHaveBeenCalledWith('gcal-event-1');
         });
 
-        it('should not throw on 404 (already deleted)', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: false,
-                status: 404,
-                data: { error: { message: 'Not Found' } },
-            });
+        it('should propagate server errors', async () => {
+            (serverDeleteEvent as Mock).mockRejectedValue(new Error('Failed to delete'));
 
-            await expect(deleteEvent('gcal-event-gone')).resolves.toBeUndefined();
-        });
-
-        it('should throw on other errors', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: false,
-                status: 500,
-                data: null,
-            });
-
-            await expect(deleteEvent('gcal-event-1')).rejects.toThrow('Failed to delete calendar event.');
+            await expect(deleteEvent('gcal-event-1')).rejects.toThrow('Failed to delete');
         });
     });
 
     describe('validateEventInput', () => {
-        it('should accept valid input', () => {
-            const errors = validateEventInput('Team standup', validDate, 'event' as CalendarEventType);
-            expect(errors).toHaveLength(0);
+        const types: CalendarEventType[] = ['event', 'reminder', 'todo'];
+
+        types.forEach((type) => {
+            it(`should accept valid input for type ${type}`, () => {
+                expect(validateEventInput('Valid title', validDate, type)).toEqual([]);
+            });
         });
 
         it('should reject empty title', () => {
-            const errors = validateEventInput('', validDate, 'event' as CalendarEventType);
-            expect(errors).toContain('invalidTitle');
+            expect(validateEventInput('', validDate, 'event')).toContain('invalidTitle');
         });
 
         it('should reject title over 200 chars', () => {
-            const longTitle = 'a'.repeat(201);
-            const errors = validateEventInput(longTitle, validDate, 'event' as CalendarEventType);
-            expect(errors).toContain('invalidTitle');
+            expect(validateEventInput('A'.repeat(201), validDate, 'event')).toContain('invalidTitle');
         });
 
         it('should reject invalid date', () => {
-            const errors = validateEventInput('Test', 'not-a-date', 'event' as CalendarEventType);
-            expect(errors).toContain('invalidDate');
+            expect(validateEventInput('Valid', 'not-a-date', 'event')).toContain('invalidDate');
         });
 
-        it('should reject date more than 10 years in future', () => {
-            const farFuture = new Date(Date.now() + 11 * 365 * 24 * 60 * 60 * 1000).toISOString();
-            const errors = validateEventInput('Test', farFuture, 'event' as CalendarEventType);
-            expect(errors).toContain('dateTooFar');
-        });
-
-        it('should reject end date before start date', () => {
-            const start = new Date(Date.now() + 86400000).toISOString();
-            const end = new Date(Date.now() + 3600000).toISOString();
-            const errors = validateEventInput('Test', start, 'event' as CalendarEventType, end);
-            expect(errors).toContain('endBeforeStart');
+        it('should reject end before start', () => {
+            const pastEnd = new Date(Date.now() - 86400000).toISOString();
+            expect(validateEventInput('Valid', validDate, 'event', pastEnd)).toContain('endBeforeStart');
         });
 
         it('should reject notes over 5000 chars', () => {
-            const longNotes = 'a'.repeat(5001);
-            const errors = validateEventInput('Test', validDate, 'event' as CalendarEventType, undefined, longNotes);
-            expect(errors).toContain('notesTooLong');
-        });
-
-        it('should accept valid notes', () => {
-            const errors = validateEventInput('Test', validDate, 'event' as CalendarEventType, undefined, 'Short note');
-            expect(errors).toHaveLength(0);
+            expect(validateEventInput('Valid', validDate, 'event', undefined, 'X'.repeat(5001))).toContain('notesTooLong');
         });
     });
 
     describe('listEvents', () => {
-        it('should fetch events and format query correctly', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: true,
-                status: 200,
-                data: {
-                    items: [
-                        { summary: 'Meeting 1', start: { dateTime: '2026-02-20T10:00:00Z' }, end: { dateTime: '2026-02-20T11:00:00Z' } },
-                        { summary: 'Meeting 2', start: { dateTime: '2026-02-20T14:00:00Z' } } // no end
-                    ]
-                }
-            });
+        it('should fetch events and return formatted data', async () => {
+            (serverListEvents as Mock).mockResolvedValue([
+                { title: 'Meeting', date: '2026-02-20T10:00:00Z', endDate: '2026-02-20T11:00:00Z' },
+            ]);
 
-            const startStr = '2026-02-20T00:00:00Z';
-            const endStr = '2026-02-20T23:59:59Z';
-            const events = await listEvents(startStr, endStr);
+            const events = await listEvents(validDate, validEndDate);
 
-            expect(callCalendar).toHaveBeenCalledWith(
-                'GET',
-                expect.stringContaining('/calendars/primary/events?timeMin=')
-            );
-
-            expect(events).toHaveLength(2);
-            expect(events[0]).toMatchObject({ title: 'Meeting 1' });
-            expect(events[1]).toMatchObject({ title: 'Meeting 2' });
+            expect(serverListEvents).toHaveBeenCalledWith(validDate, validEndDate);
+            expect(events).toHaveLength(1);
+            expect(events[0]!.title).toBe('Meeting');
         });
 
-        it('should throw on API error', async () => {
-            (callCalendar as Mock).mockResolvedValue({
-                ok: false,
-                status: 500,
-                data: null
-            });
+        it('should propagate server errors', async () => {
+            (serverListEvents as Mock).mockRejectedValue(new Error('Failed to fetch'));
 
-            await expect(listEvents(validDate, validEndDate)).rejects.toThrow('Failed to fetch calendar events. Please try again.');
+            await expect(listEvents(validDate, validEndDate)).rejects.toThrow('Failed to fetch');
         });
     });
 });

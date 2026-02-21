@@ -11,21 +11,21 @@ vi.mock('../services/calendarService', () => ({
     updateEvent: vi.fn(),
 }));
 
-vi.mock('../services/calendarClient', () => ({
-    callCalendar: vi.fn(),
-    isCalendarAvailable: vi.fn(() => true),
+vi.mock('@/features/auth/services/calendarAuthService', () => ({
+    connectGoogleCalendar: vi.fn(),
 }));
 
-vi.mock('@/features/auth/services/authService', () => ({
-    reauthenticateForCalendar: vi.fn(),
+let mockIsCalendarConnected = true;
+vi.mock('@/features/auth/stores/authStore', () => ({
+    useAuthStore: {
+        getState: () => ({ isCalendarConnected: mockIsCalendarConnected }),
+    },
 }));
 
 // eslint-disable-next-line import-x/first
 import { createEvent, deleteEvent, updateEvent } from '../services/calendarService';
 // eslint-disable-next-line import-x/first
-import { isCalendarAvailable } from '../services/calendarClient';
-// eslint-disable-next-line import-x/first
-import { reauthenticateForCalendar } from '@/features/auth/services/authService';
+import { connectGoogleCalendar } from '@/features/auth/services/calendarAuthService';
 // eslint-disable-next-line import-x/first
 import { useIdeaCardCalendar } from '../hooks/useIdeaCardCalendar';
 // eslint-disable-next-line import-x/first
@@ -54,6 +54,7 @@ const pendingMeta: CalendarEventMetadata = {
 describe('useIdeaCardCalendar', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockIsCalendarConnected = true;
         useCanvasStore.setState({
             nodes: [{
                 id: 'node-1', workspaceId: 'ws-1', type: 'idea',
@@ -110,9 +111,9 @@ describe('useIdeaCardCalendar', () => {
             expect(updateEvent).not.toHaveBeenCalled();
         });
 
-        it('triggers re-auth when token missing, then creates event', async () => {
-            (isCalendarAvailable as Mock).mockReturnValue(false);
-            (reauthenticateForCalendar as Mock).mockResolvedValue(true);
+        it('triggers connect when not connected, then creates event', async () => {
+            mockIsCalendarConnected = false;
+            (connectGoogleCalendar as Mock).mockResolvedValue(true);
             (createEvent as Mock).mockResolvedValue({ ...pendingMeta, id: 'gcal-new', status: 'synced' });
 
             const { result } = renderHook(() =>
@@ -123,15 +124,15 @@ describe('useIdeaCardCalendar', () => {
                 await result.current.handleRetry();
             });
 
-            expect(reauthenticateForCalendar).toHaveBeenCalled();
+            expect(connectGoogleCalendar).toHaveBeenCalled();
             expect(createEvent).toHaveBeenCalledWith(
                 'reminder', 'Walk Sheero', '2026-02-19T15:30:00Z', undefined, undefined,
             );
         });
 
-        it('skips event creation when re-auth fails', async () => {
-            (isCalendarAvailable as Mock).mockReturnValue(false);
-            (reauthenticateForCalendar as Mock).mockResolvedValue(false);
+        it('skips event creation when connect fails', async () => {
+            mockIsCalendarConnected = false;
+            (connectGoogleCalendar as Mock).mockResolvedValue(false);
 
             const { result } = renderHook(() =>
                 useIdeaCardCalendar({ nodeId: 'node-1', calendarEvent: pendingMeta }),
@@ -141,7 +142,7 @@ describe('useIdeaCardCalendar', () => {
                 await result.current.handleRetry();
             });
 
-            expect(reauthenticateForCalendar).toHaveBeenCalled();
+            expect(connectGoogleCalendar).toHaveBeenCalled();
             expect(createEvent).not.toHaveBeenCalled();
         });
     });

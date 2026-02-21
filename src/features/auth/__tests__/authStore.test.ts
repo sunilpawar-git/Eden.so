@@ -15,13 +15,12 @@ const mockUser: User = {
 
 describe('AuthStore', () => {
     beforeEach(() => {
-        localStorage.clear();
         useAuthStore.setState({
             user: null,
             isLoading: false,
             isAuthenticated: false,
             error: null,
-            googleAccessToken: null,
+            isCalendarConnected: false,
         });
     });
 
@@ -40,6 +39,11 @@ describe('AuthStore', () => {
         it('should start with no error', () => {
             const state = useAuthStore.getState();
             expect(state.error).toBeNull();
+        });
+
+        it('should start with calendar disconnected', () => {
+            const state = useAuthStore.getState();
+            expect(state.isCalendarConnected).toBe(false);
         });
     });
 
@@ -69,6 +73,13 @@ describe('AuthStore', () => {
             expect(state.user).toBeNull();
             expect(state.isAuthenticated).toBe(false);
         });
+
+        it('should reset isCalendarConnected on sign out', () => {
+            useAuthStore.setState({ isCalendarConnected: true });
+            useAuthStore.getState().clearUser();
+
+            expect(useAuthStore.getState().isCalendarConnected).toBe(false);
+        });
     });
 
     describe('setLoading', () => {
@@ -97,41 +108,16 @@ describe('AuthStore', () => {
         });
     });
 
-    describe('googleAccessToken - localStorage persistence', () => {
-        it('should persist token to localStorage on setGoogleAccessToken', () => {
-            useAuthStore.getState().setGoogleAccessToken('tok-123');
-
-            expect(localStorage.getItem('gcal_access_token')).toBe('tok-123');
-            expect(useAuthStore.getState().googleAccessToken).toBe('tok-123');
+    describe('setCalendarConnected', () => {
+        it('should set isCalendarConnected to true', () => {
+            useAuthStore.getState().setCalendarConnected(true);
+            expect(useAuthStore.getState().isCalendarConnected).toBe(true);
         });
 
-        it('should clear localStorage when token set to null', () => {
-            localStorage.setItem('gcal_access_token', 'old-tok');
-            useAuthStore.getState().setGoogleAccessToken(null);
-
-            expect(localStorage.getItem('gcal_access_token')).toBeNull();
-            expect(useAuthStore.getState().googleAccessToken).toBeNull();
-        });
-
-        it('should clear token from localStorage on clearUser (sign out)', () => {
-            useAuthStore.getState().setGoogleAccessToken('tok-456');
-            useAuthStore.getState().clearUser();
-
-            expect(localStorage.getItem('gcal_access_token')).toBeNull();
-            expect(useAuthStore.getState().googleAccessToken).toBeNull();
-        });
-
-        it('should gracefully handle localStorage being unavailable', () => {
-            const origSet = localStorage.setItem.bind(localStorage);
-            const origGet = localStorage.getItem.bind(localStorage);
-            localStorage.setItem = () => { throw new Error('blocked'); };
-            localStorage.getItem = () => { throw new Error('blocked'); };
-
-            expect(() => useAuthStore.getState().setGoogleAccessToken('tok-789')).not.toThrow();
-            expect(useAuthStore.getState().googleAccessToken).toBe('tok-789');
-
-            localStorage.setItem = origSet;
-            localStorage.getItem = origGet;
+        it('should set isCalendarConnected to false', () => {
+            useAuthStore.setState({ isCalendarConnected: true });
+            useAuthStore.getState().setCalendarConnected(false);
+            expect(useAuthStore.getState().isCalendarConnected).toBe(false);
         });
     });
 });

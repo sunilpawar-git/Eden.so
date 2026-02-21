@@ -5,34 +5,13 @@
 import { create } from 'zustand';
 import type { User } from '../types/user';
 
-const GCAL_TOKEN_KEY = 'gcal_access_token';
-
-function persistToken(token: string | null): void {
-    try {
-        if (token) {
-            localStorage.setItem(GCAL_TOKEN_KEY, token);
-        } else {
-            localStorage.removeItem(GCAL_TOKEN_KEY);
-        }
-    } catch {
-        /* localStorage may be unavailable in some environments */
-    }
-}
-
-function restoreToken(): string | null {
-    try {
-        return localStorage.getItem(GCAL_TOKEN_KEY);
-    } catch {
-        return null;
-    }
-}
-
 interface AuthState {
     user: User | null;
     isLoading: boolean;
     isAuthenticated: boolean;
     error: string | null;
-    googleAccessToken: string | null;
+    /** Server-side OAuth: whether user has connected Google Calendar */
+    isCalendarConnected: boolean;
 }
 
 interface AuthActions {
@@ -40,7 +19,7 @@ interface AuthActions {
     clearUser: () => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string) => void;
-    setGoogleAccessToken: (token: string | null) => void;
+    setCalendarConnected: (connected: boolean) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -50,7 +29,7 @@ const initialState: AuthState = {
     isLoading: false,
     isAuthenticated: false,
     error: null,
-    googleAccessToken: restoreToken(),
+    isCalendarConnected: false,
 };
 
 export const useAuthStore = create<AuthStore>()((set) => ({
@@ -66,11 +45,10 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     },
 
     clearUser: () => {
-        persistToken(null);
         set({
             user: null,
             isAuthenticated: false,
-            googleAccessToken: null,
+            isCalendarConnected: false,
         });
     },
 
@@ -85,8 +63,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
         });
     },
 
-    setGoogleAccessToken: (token: string | null) => {
-        persistToken(token);
-        set({ googleAccessToken: token });
+    setCalendarConnected: (isCalendarConnected: boolean) => {
+        set({ isCalendarConnected });
     },
 }));
