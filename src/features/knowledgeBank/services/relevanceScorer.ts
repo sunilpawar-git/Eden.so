@@ -122,7 +122,7 @@ export function rankEntries<T extends ScoredEntryInput>(
 
     const scored = entries.map((entry, index) => {
         const keywordScore = scoreEntry(entry, keywords);
-        const tfidf = tfidfScore(corpus[index]!, keywords, idfMap);
+        const tfidf = tfidfScore(corpus[index] ?? [], keywords, idfMap);
         return { entry, score: keywordScore + tfidf, index };
     });
 

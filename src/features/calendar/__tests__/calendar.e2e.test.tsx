@@ -2,16 +2,20 @@
  * Calendar E2E Integration Tests
  * Tests full flow: service -> store -> badge display
  */
- 
+
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { renderHook, act, render, screen, fireEvent } from '@testing-library/react';
 
-vi.mock('../services/calendarClient', () => ({
-    callCalendar: vi.fn(),
+vi.mock('../services/serverCalendarClient', () => ({
+    REAUTH_REQUIRED: 'REAUTH_REQUIRED',
+    serverCreateEvent: vi.fn(),
+    serverDeleteEvent: vi.fn(),
+    serverUpdateEvent: vi.fn(),
+    serverListEvents: vi.fn(),
 }));
 
 // eslint-disable-next-line import-x/first
-import { callCalendar } from '../services/calendarClient';
+import { serverCreateEvent, serverDeleteEvent } from '../services/serverCalendarClient';
 // eslint-disable-next-line import-x/first
 import { useCalendarSync } from '../hooks/useCalendarSync';
 // eslint-disable-next-line import-x/first
@@ -22,8 +26,6 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import type { CalendarEventMetadata } from '../types/calendarEvent';
 // eslint-disable-next-line import-x/first
 import { calendarStrings as cs } from '../localization/calendarStrings';
-
-const gcalResponse = { ok: true, status: 200, data: { id: 'gcal-e2e-1' } };
 
 describe('Calendar E2E Integration', () => {
     beforeEach(() => {
@@ -39,7 +41,12 @@ describe('Calendar E2E Integration', () => {
     });
 
     it('full create flow: API call -> store update -> badge data', async () => {
-        (callCalendar as Mock).mockResolvedValue(gcalResponse);
+        (serverCreateEvent as Mock).mockResolvedValue({
+            id: 'gcal-e2e-1', type: 'event', title: 'Sprint retro',
+            date: '2026-02-20T14:00:00Z', endDate: '2026-02-20T15:00:00Z',
+            notes: 'Review outcomes', status: 'synced', syncedAt: Date.now(),
+            calendarId: 'primary',
+        });
 
         const { result } = renderHook(() => useCalendarSync('e2e-node'));
 
@@ -47,10 +54,9 @@ describe('Calendar E2E Integration', () => {
             await result.current.syncCreate('event', 'Sprint retro', '2026-02-20T14:00:00Z', '2026-02-20T15:00:00Z', 'Review outcomes');
         });
 
-        expect(callCalendar).toHaveBeenCalledWith('POST', '/calendars/primary/events', expect.objectContaining({
-            summary: 'Sprint retro',
-            description: 'Review outcomes',
-        }));
+        expect(serverCreateEvent).toHaveBeenCalledWith(
+            'event', 'Sprint retro', '2026-02-20T14:00:00Z', '2026-02-20T15:00:00Z', 'Review outcomes',
+        );
 
         const node = useCanvasStore.getState().nodes.find(n => n.id === 'e2e-node')!;
         expect(node.data.calendarEvent).toBeDefined();
@@ -87,7 +93,7 @@ describe('Calendar E2E Integration', () => {
     });
 
     it('failed sync sets error status on node', async () => {
-        (callCalendar as Mock).mockResolvedValue({ ok: false, status: 500, data: null });
+        (serverCreateEvent as Mock).mockRejectedValue(new Error('Network error'));
 
         const { result } = renderHook(() => useCalendarSync('e2e-node'));
 
@@ -101,7 +107,7 @@ describe('Calendar E2E Integration', () => {
     });
 
     it('node deletion triggers calendar event delete', async () => {
-        (callCalendar as Mock).mockResolvedValue({ ok: true, status: 204, headers: new Headers(), data: null });
+        (serverDeleteEvent as Mock).mockResolvedValue(undefined);
 
         useCanvasStore.getState().setNodeCalendarEvent('e2e-node', {
             id: 'gcal-del-1', type: 'event', title: 'Delete me',
@@ -115,7 +121,7 @@ describe('Calendar E2E Integration', () => {
             await result.current.syncDelete();
         });
 
-        expect(callCalendar).toHaveBeenCalledWith('DELETE', expect.stringContaining('/calendars/primary/events/gcal-del-1'));
+        expect(serverDeleteEvent).toHaveBeenCalledWith('gcal-del-1');
         const node = useCanvasStore.getState().nodes.find(n => n.id === 'e2e-node')!;
         expect(node.data.calendarEvent).toBeUndefined();
     });

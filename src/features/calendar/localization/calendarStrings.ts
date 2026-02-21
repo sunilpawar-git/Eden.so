@@ -16,6 +16,7 @@ export const calendarStrings = {
         noToken: 'Sign in with Google to use calendar features.',
         noTokenRetry: 'Tap the ⏳ badge and hit retry to sync to Google Calendar.',
         readNoToken: 'Please sign in with Google to read your calendar events.',
+        sessionExpired: 'Google Calendar session expired. Please reconnect.',
         invalidTitle: 'Title must be between 1 and 200 characters.',
         invalidDate: 'Please enter a valid date.',
         endBeforeStart: 'End date must be after start date.',

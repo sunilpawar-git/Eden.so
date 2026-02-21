@@ -7,6 +7,9 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { createEvent, deleteEvent, updateEvent } from '../services/calendarService';
 import { calendarStrings as cs } from '../localization/calendarStrings';
 import type { CalendarEventType } from '../types/calendarEvent';
+import { disconnectGoogleCalendar } from '@/features/auth/services/calendarAuthService';
+import { REAUTH_REQUIRED } from '../services/serverCalendarClient';
+import { toast } from '@/shared/stores/toastStore';
 
 export function useCalendarSync(nodeId: string) {
     const [isLoading, setIsLoading] = useState(false);
@@ -23,11 +26,21 @@ export function useCalendarSync(nodeId: string) {
             useCanvasStore.getState().setNodeCalendarEvent(nodeId, metadata);
         } catch (err) {
             const msg = err instanceof Error ? err.message : cs.errors.syncFailed;
-            setError(msg);
-            useCanvasStore.getState().setNodeCalendarEvent(nodeId, {
-                id: '', type, title, date, endDate, notes,
-                status: 'failed', calendarId: 'primary', error: msg,
-            });
+            if (msg === REAUTH_REQUIRED) {
+                disconnectGoogleCalendar();
+                toast.error(cs.errors.sessionExpired);
+                setError(cs.errors.sessionExpired);
+                useCanvasStore.getState().setNodeCalendarEvent(nodeId, {
+                    id: '', type, title, date, endDate, notes,
+                    status: 'failed', calendarId: 'primary', error: cs.errors.sessionExpired,
+                });
+            } else {
+                setError(msg);
+                useCanvasStore.getState().setNodeCalendarEvent(nodeId, {
+                    id: '', type, title, date, endDate, notes,
+                    status: 'failed', calendarId: 'primary', error: msg,
+                });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -44,11 +57,21 @@ export function useCalendarSync(nodeId: string) {
             useCanvasStore.getState().setNodeCalendarEvent(nodeId, metadata);
         } catch (err) {
             const msg = err instanceof Error ? err.message : cs.errors.updateFailed;
-            setError(msg);
-            useCanvasStore.getState().setNodeCalendarEvent(nodeId, {
-                id: eventId, type, title, date, endDate, notes,
-                status: 'failed', calendarId: 'primary', error: msg,
-            });
+            if (msg === REAUTH_REQUIRED) {
+                disconnectGoogleCalendar();
+                toast.error(cs.errors.sessionExpired);
+                setError(cs.errors.sessionExpired);
+                useCanvasStore.getState().setNodeCalendarEvent(nodeId, {
+                    id: eventId, type, title, date, endDate, notes,
+                    status: 'failed', calendarId: 'primary', error: cs.errors.sessionExpired,
+                });
+            } else {
+                setError(msg);
+                useCanvasStore.getState().setNodeCalendarEvent(nodeId, {
+                    id: eventId, type, title, date, endDate, notes,
+                    status: 'failed', calendarId: 'primary', error: msg,
+                });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -65,7 +88,13 @@ export function useCalendarSync(nodeId: string) {
             useCanvasStore.getState().setNodeCalendarEvent(nodeId, undefined);
         } catch (err) {
             const msg = err instanceof Error ? err.message : cs.errors.deleteFailed;
-            setError(msg);
+            if (msg === REAUTH_REQUIRED) {
+                disconnectGoogleCalendar();
+                toast.error(cs.errors.sessionExpired);
+                setError(cs.errors.sessionExpired);
+            } else {
+                setError(msg);
+            }
         } finally {
             setIsLoading(false);
         }

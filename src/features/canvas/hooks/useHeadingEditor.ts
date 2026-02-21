@@ -24,14 +24,18 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
     const blurRef = useRef<(md: string) => void>(() => undefined);
     const extensions = useMemo(() => [
         SubmitKeymap.configure({ handlerRef: submitHandlerRef }),
-        SlashCommandSuggestion.configure({ suggestion: { render: createSlashSuggestionRender({
-            onSelect: (id) => { onSlashCommand?.(id); },
-            onActiveChange: (active) => {
-                suggestionActiveRef.current = active;
-                if (!active) slashJustSelectedRef.current = true;
-            },
-        }) } }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        SlashCommandSuggestion.configure({
+            suggestion: {
+                render: createSlashSuggestionRender({
+                    onSelect: (id) => { onSlashCommand?.(id); },
+                    onActiveChange: (active) => {
+                        suggestionActiveRef.current = active;
+                        if (!active) slashJustSelectedRef.current = true;
+                    },
+                })
+            }
+        }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     ], []);
 
     const { editor, getMarkdown } = useTipTapEditor({
@@ -58,8 +62,7 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
         if (suggestionActiveRef.current) return;
         if (slashJustSelectedRef.current) {
             slashJustSelectedRef.current = false;
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-            queueMicrotask(() => { editor!.commands.focus(); }); return;
+            queueMicrotask(() => { editor?.commands.focus(); }); return;
         }
         onBlur?.(md);
     }, [onBlur, editor]);
@@ -68,8 +71,7 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
     // Trigger placeholder re-render when text changes (e.g. switching to AI mode)
     const prevPH = useRef(placeholder);
     useEffect(() => {
-         
-        if (!editor || placeholder === prevPH.current) return;
+        if (editor == null || placeholder === prevPH.current) return;
         prevPH.current = placeholder;
         editor.view.dispatch(editor.state.tr.setMeta('placeholderUpdate', true));
     }, [editor, placeholder]);

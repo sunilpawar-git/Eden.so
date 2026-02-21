@@ -3,7 +3,6 @@ import { processCalendarIntent } from '../services/calendarIntentHandler';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { detectCalendarIntent, looksLikeCalendarIntent } from '../services/calendarIntentService';
 import { createEvent, listEvents } from '../services/calendarService';
-import { isCalendarAvailable } from '../services/calendarClient';
 
 vi.mock('@/features/canvas/stores/canvasStore', () => {
     const updateNodeOutput = vi.fn();
@@ -28,12 +27,15 @@ vi.mock('../services/calendarService', () => ({
     listEvents: vi.fn(),
 }));
 
-vi.mock('../services/calendarClient', () => ({
-    isCalendarAvailable: vi.fn(),
+vi.mock('@/features/auth/services/calendarAuthService', () => ({
+    connectGoogleCalendar: vi.fn().mockResolvedValue(false),
 }));
 
-vi.mock('@/features/auth/services/authService', () => ({
-    reauthenticateForCalendar: vi.fn(),
+let mockIsCalendarConnected = true;
+vi.mock('@/features/auth/stores/authStore', () => ({
+    useAuthStore: {
+        getState: () => ({ isCalendarConnected: mockIsCalendarConnected }),
+    },
 }));
 
 describe('calendarIntentHandler', () => {
@@ -41,7 +43,7 @@ describe('calendarIntentHandler', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (isCalendarAvailable as Mock).mockReturnValue(true);
+        mockIsCalendarConnected = true;
         (looksLikeCalendarIntent as Mock).mockReturnValue(true);
     });
 
@@ -112,7 +114,7 @@ describe('calendarIntentHandler', () => {
     });
 
     it('should not register a pending event for read intents when unauthenticated', async () => {
-        (isCalendarAvailable as Mock).mockReturnValue(false);
+        mockIsCalendarConnected = false;
         (detectCalendarIntent as Mock).mockResolvedValue({
             type: 'read',
             title: 'schedule',

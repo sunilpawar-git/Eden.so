@@ -33,12 +33,12 @@ export function formatEventsMarkdown(events: FormattedEvent[]): string {
         return cs.readNoEventsFallback;
     }
 
-    let markdown = `${cs.readConfirmationFallback  }\n\n`;
+    let markdown = `${cs.readConfirmationFallback}\n\n`;
 
     events.forEach((event) => {
         const startTime = formatTime(event.date);
         const hasEndDate = event.endDate !== undefined && event.endDate.length > 0;
-        const endTime = hasEndDate ? formatTime(event.endDate!) : '';
+        const endTime = hasEndDate ? formatTime(event.endDate ?? '') : '';
 
         let timeStr = startTime;
         if (startTime === 'All Day') {

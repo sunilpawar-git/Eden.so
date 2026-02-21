@@ -1,12 +1,12 @@
 /**
  * useIdeaCardCalendar - Calendar badge interaction for IdeaCard
  * Handles retry on failed/pending syncs and cleanup when node is deleted.
- * Pending items (no token at creation) trigger re-auth on retry (user gesture).
+ * Pending items (no token at creation) trigger re-connect on retry (user gesture).
  */
 import { useCallback } from 'react';
 import { useCalendarSync } from './useCalendarSync';
-import { isCalendarAvailable } from '../services/calendarClient';
-import { reauthenticateForCalendar } from '@/features/auth/services/authService';
+import { connectGoogleCalendar } from '@/features/auth/services/calendarAuthService';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import type { CalendarEventMetadata } from '../types/calendarEvent';
 
 interface UseIdeaCardCalendarOptions {
@@ -21,8 +21,8 @@ export function useIdeaCardCalendar({ nodeId, calendarEvent }: UseIdeaCardCalend
         if (!calendarEvent) return;
         const { id, type, title, date, endDate, notes } = calendarEvent;
 
-        if (!isCalendarAvailable()) {
-            const ok = await reauthenticateForCalendar();
+        if (!useAuthStore.getState().isCalendarConnected) {
+            const ok = await connectGoogleCalendar();
             if (!ok) return;
         }
 
