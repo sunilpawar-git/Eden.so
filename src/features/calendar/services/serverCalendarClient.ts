@@ -12,7 +12,24 @@ export const REAUTH_REQUIRED = 'REAUTH_REQUIRED';
 
 const GOOGLE_CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
 
-async function fetchGoogleApi(endpoint: string, options: RequestInit = {}) {
+interface GoogleCalendarEventItem {
+    id?: string;
+    summary?: string;
+    start?: {
+        dateTime?: string;
+        date?: string;
+    };
+    end?: {
+        dateTime?: string;
+        date?: string;
+    };
+}
+
+interface GoogleCalendarListResponse {
+    items?: GoogleCalendarEventItem[];
+}
+
+async function fetchGoogleApi<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = getCalendarToken();
     if (!token) throw new Error(REAUTH_REQUIRED);
 
@@ -39,10 +56,9 @@ async function fetchGoogleApi(endpoint: string, options: RequestInit = {}) {
     }
 
     // DELETE requests may return 204 No Content
-    if (res.status === 204) return null;
+    if (res.status === 204) return null as unknown as T;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return res.json();
+    return (await res.json()) as T;
 }
 
 /** List events directly from Google Calendar API. */
@@ -57,19 +73,13 @@ export async function serverListEvents(
         orderBy: 'startTime',
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const data = await fetchGoogleApi(`/calendars/primary/events?${query}`);
+    const data = await fetchGoogleApi<GoogleCalendarListResponse>(`/calendars/primary/events?${query}`);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    const items: any[] = data?.items ?? [];
+    const items = data.items ?? [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return items.map((item: any) => ({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+    return items.map((item) => ({
         title: item.summary ?? 'Untitled Event',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
         date: item.start?.dateTime ?? item.start?.date ?? '',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
         endDate: item.end?.dateTime ?? item.end?.date,
     }));
 }
@@ -121,15 +131,13 @@ export async function serverCreateEvent(
 ): Promise<CalendarEventMetadata> {
     const body = createGoogleEventBody(title, date, endDate, notes);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const data = await fetchGoogleApi('/calendars/primary/events', {
+    const data = await fetchGoogleApi<{ id?: string }>('/calendars/primary/events', {
         method: 'POST',
         body: JSON.stringify(body),
     });
 
     return {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        id: (data?.id as string | undefined) ?? '',
+        id: data.id ?? '',
         type,
         title,
         date,

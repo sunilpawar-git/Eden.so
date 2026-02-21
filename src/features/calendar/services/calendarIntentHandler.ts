@@ -8,20 +8,21 @@ import {
     detectCalendarIntent, looksLikeCalendarIntent,
     type CalendarIntentResult,
 } from './calendarIntentService';
-import { isCalendarAvailable } from './calendarClient';
 import { createEvent, listEvents } from './calendarService';
-import { reauthenticateForCalendar } from '@/features/auth/services/authService';
+import { connectGoogleCalendar, disconnectGoogleCalendar } from '@/features/auth/services/calendarAuthService';
 import { calendarStrings as cs } from '../localization/calendarStrings';
+import { REAUTH_REQUIRED } from './serverCalendarClient';
 import { formatEventsMarkdown } from './calendarEventFormatter';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 
 /**
- * Ensure Google Calendar OAuth token is available.
+ * Ensure Google Calendar is connected via server-side OAuth.
  * Must be called from a synchronous user-gesture context (e.g. Enter press)
  * so the popup is not blocked by the browser.
  */
 async function ensureCalendarToken(): Promise<boolean> {
-    if (isCalendarAvailable()) return true;
-    return reauthenticateForCalendar();
+    if (useAuthStore.getState().isCalendarConnected) return true;
+    return connectGoogleCalendar();
 }
 
 /**
@@ -74,7 +75,14 @@ async function handleCalendarIntent(
             store.setNodeCalendarEvent(nodeId, meta);
             store.updateNodeOutput(nodeId, intent.confirmation);
         }
-    } catch {
+    } catch (err) {
+        if (err instanceof Error && err.message === REAUTH_REQUIRED) {
+            disconnectGoogleCalendar();
+            store.updateNodeOutput(nodeId, cs.errors.sessionExpired);
+            toast.error(cs.errors.sessionExpired);
+            return;
+        }
+
         const errorMsg = intent.type === 'read' ? cs.errors.readFailed : cs.errors.createFailed;
         store.updateNodeOutput(nodeId, errorMsg);
         toast.error(errorMsg);
