@@ -6,19 +6,21 @@ import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { PinWorkspaceButton } from '@/features/workspace/components/PinWorkspaceButton';
-import { DragHandleIcon } from '@/shared/components/icons';
+import { DragHandleIcon, TrashIcon } from '@/shared/components/icons';
 import { strings } from '@/shared/localization/strings';
 import styles from './Sidebar.module.css';
 
 interface WorkspaceItemProps {
     id: string;
     name: string;
+    type?: 'workspace' | 'divider';
     isActive: boolean;
     onSelect: (id: string) => void;
     onRename: (id: string, newName: string) => void;
+    onDelete?: (id: string) => void;
 }
 
-export function WorkspaceItem({ id, name, isActive, onSelect, onRename }: WorkspaceItemProps) {
+export function WorkspaceItem({ id, name, type, isActive, onSelect, onRename, onDelete }: WorkspaceItemProps) {
     const {
         attributes,
         listeners,
@@ -40,6 +42,7 @@ export function WorkspaceItem({ id, name, isActive, onSelect, onRename }: Worksp
     };
 
     const handleDoubleClick = () => {
+        if (type === 'divider') return;
         setIsEditing(true);
         setEditName(name);
     };
@@ -60,12 +63,15 @@ export function WorkspaceItem({ id, name, isActive, onSelect, onRename }: Worksp
         }
     };
 
+    const isDivider = type === 'divider';
+
     return (
         <div
             ref={setNodeRef}
             style={style}
-            className={`${styles.workspaceItem} ${isActive ? styles.active : ''} ${isDragging ? styles.dragging : ''}`}
-            onClick={() => !isEditing && onSelect(id)}
+            className={`${styles.workspaceItem} ${isDivider ? styles.dividerItem : ''} ${isActive ? styles.active : ''} ${isDragging ? styles.dragging : ''}`}
+            onClick={() => !isEditing && !isDivider && onSelect(id)}
+            data-testid="workspace-item"
         >
             {isEditing ? (
                 <input
@@ -89,13 +95,38 @@ export function WorkspaceItem({ id, name, isActive, onSelect, onRename }: Worksp
                     >
                         <DragHandleIcon width="16" height="16" />
                     </button>
-                    <span
-                        className={styles.workspaceName}
-                        onDoubleClick={handleDoubleClick}
-                    >
-                        {name}
-                    </span>
-                    <PinWorkspaceButton workspaceId={id} />
+                    {isDivider ? (
+                        <>
+                            <div
+                                className={styles.dividerLine}
+                                onDoubleClick={handleDoubleClick}
+                                data-testid="divider-line"
+                            />
+                            {onDelete && (
+                                <button
+                                    className={styles.deleteDividerButton}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete(id);
+                                    }}
+                                    aria-label="Delete divider"
+                                    title="Delete divider"
+                                >
+                                    <TrashIcon size={14} />
+                                </button>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <span
+                                className={styles.workspaceName}
+                                onDoubleClick={handleDoubleClick}
+                            >
+                                {name}
+                            </span>
+                            <PinWorkspaceButton workspaceId={id} />
+                        </>
+                    )}
                 </>
             )}
         </div>

@@ -1,17 +1,12 @@
 /**
  * Sidebar Component - Workspace list and navigation
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { signOut } from '@/features/auth/services/authService';
 import {
-    createNewWorkspace,
-    loadUserWorkspaces,
-    saveWorkspace,
-    saveNodes,
-    saveEdges,
-    updateWorkspaceOrder
+    createNewWorkspace, createNewDividerWorkspace, loadUserWorkspaces,
+    saveWorkspace, saveNodes, saveEdges, updateWorkspaceOrder, deleteWorkspace
 } from '@/features/workspace/services/workspaceService';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -19,9 +14,13 @@ import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwi
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { indexedDbService, IDB_STORES } from '@/shared/services/indexedDbService';
 import { toast } from '@/shared/stores/toastStore';
+import { useConfirm } from '@/shared/stores/confirmStore';
 import { useSidebarStore } from '@/shared/stores/sidebarStore';
-import { PlusIcon, SettingsIcon, PinIcon } from '@/shared/components/icons';
+import { useOutsideClick } from '@/shared/hooks/useOutsideClick';
+import { PlusIcon, ChevronDownIcon } from '@/shared/components/icons';
 import { WorkspaceList } from './WorkspaceList';
+import { SidebarHeader } from './SidebarHeader';
+import { SidebarFooter } from './SidebarFooter';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -37,14 +36,21 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
         workspaces,
         setCurrentWorkspaceId,
         addWorkspace,
+        insertWorkspaceAfter,
         setWorkspaces,
         updateWorkspace,
         reorderWorkspaces,
+        removeWorkspace, // Added removeWorkspace
     } = useWorkspaceStore();
     const { switchWorkspace } = useWorkspaceSwitcher();
     const isPinned = useSidebarStore((s) => s.isPinned);
     const togglePin = useSidebarStore((s) => s.togglePin);
     const [isCreating, setIsCreating] = useState(false);
+    const [isCreatingDivider, setIsCreatingDivider] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useOutsideClick(dropdownRef, isDropdownOpen, () => setIsDropdownOpen(false));
 
     // Load workspaces on mount
     useEffect(() => {
@@ -69,14 +75,15 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     IDB_STORES.metadata, '__workspace_metadata__', metadata
                 );
 
-                // Auto-select first workspace if current doesn't exist in loaded list
-                const firstWorkspace = loadedWorkspaces[0];
-                if (firstWorkspace) {
+                // Auto-select first real workspace if current doesn't exist in loaded list
+                // Ignore dividers when falling back
+                const firstRealWorkspace = loadedWorkspaces.find(ws => ws.type !== 'divider');
+                if (firstRealWorkspace) {
                     const currentExists = loadedWorkspaces.some(
                         (ws) => ws.id === currentWorkspaceId
                     );
                     if (!currentExists) {
-                        setCurrentWorkspaceId(firstWorkspace.id);
+                        setCurrentWorkspaceId(firstRealWorkspace.id);
                     }
                 }
 
@@ -111,14 +118,6 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
         void loadWorkspaces();
     }, [user, setWorkspaces, currentWorkspaceId, setCurrentWorkspaceId]);
 
-    const handleSignOut = async () => {
-        try {
-            await signOut();
-        } catch {
-            // Error handled in service
-        }
-    };
-
     const handleNewWorkspace = async () => {
         if (!user || isCreating) return;
 
@@ -149,6 +148,70 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             setIsCreating(false);
         }
     };
+
+    const handleNewDivider = useCallback(async () => {
+        if (!user || isCreatingDivider) return;
+        setIsCreatingDivider(true);
+        setIsDropdownOpen(false);
+        try {
+            const newDivider = await createNewDividerWorkspace(user.id);
+
+            if (currentWorkspaceId) {
+                // Determine insertion index based on current workspace
+                const { workspaces: currentList } = useWorkspaceStore.getState();
+                const targetIndex = currentList.findIndex(ws => ws.id === currentWorkspaceId);
+
+                // Insert into Zustand
+                insertWorkspaceAfter(newDivider, currentWorkspaceId);
+
+                // We must also immediately persist the new order to Firestore
+                // since insertWorkspaceAfter implicitly shifts all indices after it
+                const { workspaces: updatedList } = useWorkspaceStore.getState();
+                const updates = updatedList.map((ws, i) => ({
+                    id: ws.id,
+                    orderIndex: i
+                }));
+
+                await Promise.all([
+                    saveWorkspace(user.id, { ...newDivider, orderIndex: targetIndex + 1 }),
+                    updateWorkspaceOrder(user.id, updates)
+                ]);
+            } else {
+                // Fallback to end of list
+                addWorkspace(newDivider);
+                // Note: saveWorkspace internally saves with the orderIndex we provided 
+                // but if we are adding it to the end, the logic from createDivider () works fine
+            }
+
+            toast.success('Divider created');
+        } catch (error) {
+            console.error('[Sidebar] Failed to create divider:', error);
+            toast.error(strings.errors.generic);
+        } finally {
+            setIsCreatingDivider(false);
+        }
+    }, [user, currentWorkspaceId, isCreatingDivider, addWorkspace, insertWorkspaceAfter]);
+
+    const confirm = useConfirm();
+
+    const handleDeleteDivider = useCallback(async (id: string) => {
+        if (!user) return;
+        const confirmed = await confirm({
+            title: strings.workspace.deleteDividerTitle,
+            message: strings.workspace.deleteDividerMessage,
+            confirmText: strings.workspace.deleteDividerButton,
+            isDestructive: true,
+        });
+        if (!confirmed) return;
+
+        try {
+            await deleteWorkspace(user.id, id);
+            removeWorkspace(id);
+        } catch (error) {
+            console.error('[Sidebar] Failed to delete divider:', error);
+            toast.error(strings.errors.generic);
+        }
+    }, [user, confirm, removeWorkspace]);
 
     const handleSelectWorkspace = async (workspaceId: string) => {
         if (workspaceId === currentWorkspaceId) return;
@@ -212,47 +275,46 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             data-open={String(isHoverOpen)}
             aria-label={strings.sidebar.ariaLabel}
         >
-            <div className={styles.header}>
-                <div className={styles.logo}>
-                    <svg
-                        width="32"
-                        height="32"
-                        viewBox="0 0 48 48"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <circle cx="24" cy="24" r="20" fill="var(--color-primary)" />
-                        <path
-                            d="M16 24L22 30L32 18"
-                            stroke="white"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </div>
-                <span className={styles.appName}>{strings.app.name}</span>
-                <button
-                    className={styles.pinToggleButton}
-                    onClick={togglePin}
-                    aria-label={isPinned ? strings.sidebar.unpin : strings.sidebar.pin}
-                    aria-pressed={isPinned}
-                    aria-expanded={isPinned || isHoverOpen}
-                    title={isPinned ? strings.sidebar.unpinTooltip : strings.sidebar.pinTooltip}
-                >
-                    <PinIcon size={16} filled={isPinned} />
-                </button>
-            </div>
+            <SidebarHeader
+                isPinned={isPinned}
+                isHoverOpen={isHoverOpen}
+                onTogglePin={togglePin}
+            />
 
             <div className={styles.workspaces}>
-                <button
-                    className={styles.newWorkspace}
-                    onClick={handleNewWorkspace}
-                    disabled={isCreating}
-                >
-                    <PlusIcon size={18} />
-                    <span>{isCreating ? strings.common.loading : strings.workspace.newWorkspace}</span>
-                </button>
+                <div className={styles.newWorkspaceWrapper} ref={dropdownRef}>
+                    <div className={styles.splitButtonContainer}>
+                        <button
+                            className={styles.newWorkspaceMain}
+                            onClick={handleNewWorkspace}
+                            disabled={isCreating || isCreatingDivider}
+                        >
+                            <PlusIcon size={18} />
+                            <span>{isCreating ? strings.common.loading : strings.workspace.newWorkspace}</span>
+                        </button>
+                        <div className={styles.splitDivider} />
+                        <button
+                            className={styles.newWorkspaceDropdown}
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            disabled={isCreating || isCreatingDivider}
+                            aria-label="New Workspace Options"
+                            aria-expanded={isDropdownOpen}
+                        >
+                            <ChevronDownIcon size={18} />
+                        </button>
+                    </div>
+                    {isDropdownOpen && (
+                        <div className={styles.dropdownMenu}>
+                            <button
+                                className={styles.dropdownItem}
+                                onClick={handleNewDivider}
+                                disabled={isCreating || isCreatingDivider}
+                            >
+                                {isCreatingDivider ? strings.common.loading : 'Add Divider'}
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                 <WorkspaceList
                     workspaces={workspaces}
@@ -260,44 +322,11 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     onSelectWorkspace={handleSelectWorkspace}
                     onRenameWorkspace={handleRenameWorkspace}
                     onReorderWorkspace={handleReorderWorkspace}
+                    onDeleteWorkspace={handleDeleteDivider}
                 />
             </div>
 
-            <div className={styles.footer}>
-                {user && (
-                    <div className={styles.footerContent}>
-                        <div className={styles.userSection}>
-                            {user.avatarUrl ? (
-                                <img
-                                    src={user.avatarUrl}
-                                    alt={user.name}
-                                    className={styles.avatar}
-                                />
-                            ) : (
-                                <div className={styles.avatarPlaceholder}>
-                                    {user.name.charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                            <div className={styles.userInfo}>
-                                <span className={styles.userName}>{user.name}</span>
-                                <button
-                                    className={styles.signOutButton}
-                                    onClick={handleSignOut}
-                                >
-                                    {strings.auth.signOut}
-                                </button>
-                            </div>
-                        </div>
-                        <button
-                            className={styles.settingsButton}
-                            onClick={onSettingsClick}
-                            aria-label={strings.settings.title}
-                        >
-                            <SettingsIcon size={20} />
-                        </button>
-                    </div>
-                )}
-            </div>
+            <SidebarFooter onSettingsClick={onSettingsClick} />
         </aside>
     );
 }

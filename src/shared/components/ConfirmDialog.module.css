@@ -1,0 +1,103 @@
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal);
+    animation: fadeIn 0.15s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.dialog {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: var(--space-xl);
+    max-width: 400px;
+    width: 90%;
+    animation: slideUp 0.15s ease-out forwards;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.message {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xl);
+    line-height: 1.5;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+}
+
+.cancelButton {
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    transition: all var(--transition-fast);
+}
+
+.cancelButton:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.confirmButton {
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-on-primary);
+    background-color: var(--color-primary);
+    transition: background-color var(--transition-fast);
+}
+
+.confirmButton:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.confirmButton.destructive {
+    background-color: var(--color-error);
+}
+
+.confirmButton.destructive:hover {
+    background-color: var(--color-error-dark, var(--color-error));
+    opacity: 0.9;
+}

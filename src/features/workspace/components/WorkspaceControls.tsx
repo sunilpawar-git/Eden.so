@@ -6,6 +6,7 @@ import { deleteWorkspace } from '../services/workspaceService';
 import { PlusIcon, TrashIcon, EraserIcon, GridIcon } from '@/shared/components/icons';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
+import { useConfirm } from '@/shared/stores/confirmStore';
 import { useAddNode } from '@/features/canvas/hooks/useAddNode';
 import styles from './WorkspaceControls.module.css';
 
@@ -24,6 +25,7 @@ export function WorkspaceControls() {
     const nodeCount = nodes.length;
 
     const [isDeleting, setIsDeleting] = useState(false);
+    const confirm = useConfirm();
 
     const handleArrangeNodes = useCallback(() => {
         if (nodeCount === 0) return;
@@ -31,16 +33,18 @@ export function WorkspaceControls() {
         toast.success('Nodes arranged in grid');
     }, [arrangeNodes, nodeCount]);
 
-    const handleClearCanvas = useCallback(() => {
+    const handleClearCanvas = useCallback(async () => {
         if (nodeCount === 0) return;
-
-        // TODO: Replace with a ConfirmDialog component
-        // eslint-disable-next-line no-alert -- acceptable for MVP, replace with modal later
-        const confirmed = window.confirm(strings.canvas.clearConfirm);
+        const confirmed = await confirm({
+            title: strings.canvas.clearConfirmTitle,
+            message: strings.canvas.clearConfirm,
+            confirmText: strings.canvas.clearConfirmButton,
+            isDestructive: true,
+        });
         if (confirmed) {
             clearCanvas();
         }
-    }, [clearCanvas, nodeCount]);
+    }, [clearCanvas, nodeCount, confirm]);
 
     const handleDeleteWorkspace = useCallback(async () => {
         if (!user || !currentWorkspaceId || isDeleting) return;
@@ -52,9 +56,12 @@ export function WorkspaceControls() {
             return;
         }
 
-        // TODO: Replace with a ConfirmDialog component
-        // eslint-disable-next-line no-alert -- acceptable for MVP, replace with modal later
-        const confirmed = window.confirm(strings.workspace.deleteConfirm);
+        const confirmed = await confirm({
+            title: strings.workspace.deleteConfirmTitle,
+            message: strings.workspace.deleteConfirm,
+            confirmText: strings.workspace.deleteConfirmButton,
+            isDestructive: true,
+        });
         if (!confirmed) return;
 
         setIsDeleting(true);
@@ -81,7 +88,7 @@ export function WorkspaceControls() {
         } finally {
             setIsDeleting(false);
         }
-    }, [user, currentWorkspaceId, workspaces, removeWorkspace, setCurrentWorkspaceId, clearCanvas, isDeleting]);
+    }, [user, currentWorkspaceId, workspaces, removeWorkspace, setCurrentWorkspaceId, clearCanvas, isDeleting, confirm]);
 
     return (
         <div className={styles.container}>

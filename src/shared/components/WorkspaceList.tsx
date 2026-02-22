@@ -24,6 +24,7 @@ interface WorkspaceListProps {
     onSelectWorkspace: (id: string) => void;
     onRenameWorkspace: (id: string, newName: string) => void;
     onReorderWorkspace?: (sourceIndex: number, destinationIndex: number) => void;
+    onDeleteWorkspace?: (id: string) => void;
 }
 
 export function WorkspaceList({
@@ -32,6 +33,7 @@ export function WorkspaceList({
     onSelectWorkspace,
     onRenameWorkspace,
     onReorderWorkspace,
+    onDeleteWorkspace,
 }: WorkspaceListProps) {
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -86,9 +88,11 @@ export function WorkspaceList({
                             key={ws.id}
                             id={ws.id}
                             name={ws.name}
+                            type={ws.type}
                             isActive={ws.id === currentWorkspaceId}
                             onSelect={onSelectWorkspace}
                             onRename={onRenameWorkspace}
+                            onDelete={onDeleteWorkspace}
                         />
                     ))}
                 </div>

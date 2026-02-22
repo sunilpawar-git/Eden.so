@@ -2,8 +2,8 @@
  * WorkspaceControls Tests - Consolidated UI Ribbon Component
  * Tests for: Add Node, Clear Canvas, Delete Workspace functionality
  */
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { WorkspaceControls } from '../WorkspaceControls';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '../../stores/workspaceStore';
@@ -15,6 +15,13 @@ import { deleteWorkspace } from '../../services/workspaceService';
 
 vi.mock('../../services/workspaceService', () => ({
     deleteWorkspace: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock useConfirm — initially returns false (cancel), can be overridden per test
+const mockConfirm = vi.fn().mockResolvedValue(false);
+vi.mock('@/shared/stores/confirmStore', () => ({
+    useConfirm: () => mockConfirm,
+    useConfirmStore: vi.fn(),
 }));
 
 // Mock usePanToNode
@@ -78,8 +85,8 @@ describe('WorkspaceControls', () => {
             selectedNodeIds: new Set(),
         });
 
-        // Mock window.confirm
-        vi.spyOn(window, 'confirm').mockReturnValue(false);
+        // Reset mockConfirm to default (cancel/false)
+        mockConfirm.mockResolvedValue(false);
     });
 
     describe('rendering', () => {
@@ -219,7 +226,7 @@ describe('WorkspaceControls', () => {
             expect(clearButton).not.toBeDisabled();
         });
 
-        it('should show confirmation dialog when clicked', () => {
+        it('should show confirmation dialog when clicked', async () => {
             useCanvasStore.setState({
                 nodes: [
                     {
@@ -237,12 +244,17 @@ describe('WorkspaceControls', () => {
             render(<WorkspaceControls />);
 
             const clearButton = screen.getByTitle(strings.canvas.clearCanvas);
-            fireEvent.click(clearButton);
+            await act(async () => {
+                fireEvent.click(clearButton);
+            });
 
-            expect(window.confirm).toHaveBeenCalledWith(strings.canvas.clearConfirm);
+            expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({
+                message: strings.canvas.clearConfirm,
+                isDestructive: true,
+            }));
         });
 
-        it('should clear canvas when confirmed', () => {
+        it('should clear canvas when confirmed', async () => {
             useCanvasStore.setState({
                 nodes: [
                     {
@@ -257,18 +269,20 @@ describe('WorkspaceControls', () => {
                 ],
             });
 
-            (window.confirm as Mock).mockReturnValue(true);
+            mockConfirm.mockResolvedValue(true);
 
             render(<WorkspaceControls />);
 
             const clearButton = screen.getByTitle(strings.canvas.clearCanvas);
-            fireEvent.click(clearButton);
+            await act(async () => {
+                fireEvent.click(clearButton);
+            });
 
             const { nodes } = useCanvasStore.getState();
             expect(nodes).toHaveLength(0);
         });
 
-        it('should not clear canvas when cancelled', () => {
+        it('should not clear canvas when cancelled', async () => {
             useCanvasStore.setState({
                 nodes: [
                     {
@@ -283,12 +297,14 @@ describe('WorkspaceControls', () => {
                 ],
             });
 
-            (window.confirm as Mock).mockReturnValue(false);
+            mockConfirm.mockResolvedValue(false);
 
             render(<WorkspaceControls />);
 
             const clearButton = screen.getByTitle(strings.canvas.clearCanvas);
-            fireEvent.click(clearButton);
+            await act(async () => {
+                fireEvent.click(clearButton);
+            });
 
             const { nodes } = useCanvasStore.getState();
             expect(nodes).toHaveLength(1);
@@ -303,39 +319,50 @@ describe('WorkspaceControls', () => {
             render(<WorkspaceControls />);
 
             const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            fireEvent.click(deleteButton);
+            await act(async () => {
+                fireEvent.click(deleteButton);
+            });
 
             expect(toast.error).toHaveBeenCalledWith(strings.workspace.deleteDefaultError);
         });
 
-        it('should show confirmation dialog when deleting non-default workspace', () => {
+        it('should show confirmation dialog when deleting non-default workspace', async () => {
             render(<WorkspaceControls />);
 
             const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            fireEvent.click(deleteButton);
+            await act(async () => {
+                fireEvent.click(deleteButton);
+            });
 
-            expect(window.confirm).toHaveBeenCalledWith(strings.workspace.deleteConfirm);
+            expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({
+                message: strings.workspace.deleteConfirm,
+                isDestructive: true,
+            }));
         });
 
         it('should not delete workspace when confirmation is cancelled', async () => {
-            (window.confirm as Mock).mockReturnValue(false);
+            mockConfirm.mockResolvedValue(false);
 
             render(<WorkspaceControls />);
 
             const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            fireEvent.click(deleteButton);
+            await act(async () => {
+                fireEvent.click(deleteButton);
+            });
 
             expect(deleteWorkspace).not.toHaveBeenCalled();
         });
 
         it('should delete workspace when confirmed', async () => {
             const { toast } = await import('@/shared/stores/toastStore');
-            (window.confirm as Mock).mockReturnValue(true);
+            mockConfirm.mockResolvedValue(true);
 
             render(<WorkspaceControls />);
 
             const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            fireEvent.click(deleteButton);
+            await act(async () => {
+                fireEvent.click(deleteButton);
+            });
 
             await waitFor(() => {
                 expect(deleteWorkspace).toHaveBeenCalledWith('test-user-id', 'workspace-1');
@@ -355,7 +382,7 @@ describe('WorkspaceControls', () => {
             fireEvent.click(deleteButton);
 
             // Should not show confirmation or call delete
-            expect(window.confirm).not.toHaveBeenCalled();
+            expect(mockConfirm).not.toHaveBeenCalled();
         });
     });
 });

@@ -2,7 +2,7 @@
  * KnowledgeBankAddButton — Toolbar button with dropdown menu
  * Positioned left of SearchBar in top toolbar
  */
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
 import { useFileProcessor } from '../hooks/useFileProcessor';
 import { usePasteTextHandler } from '../hooks/usePasteTextHandler';
@@ -10,6 +10,7 @@ import { PasteTextModal } from './PasteTextModal';
 import { KB_MAX_ENTRIES } from '../types/knowledgeBank';
 import { kbParserRegistry } from '../parsers/parserRegistry';
 import { strings } from '@/shared/localization/strings';
+import { useOutsideClick } from '@/shared/hooks/useOutsideClick';
 import styles from './KnowledgeBankAddButton.module.css';
 
 const ACCEPTED_EXTENSIONS = kbParserRegistry.getSupportedExtensions().join(',');
@@ -89,22 +90,6 @@ export function KnowledgeBankAddButton() {
             />
         </>
     );
-}
-
-/** Hook: close element on outside click */
-function useOutsideClick(
-    ref: React.RefObject<HTMLDivElement | null>,
-    active: boolean,
-    onClose: () => void
-) {
-    useEffect(() => {
-        if (!active) return;
-        const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [active, ref, onClose]);
 }
 
 /** Sub-component: dropdown menu */

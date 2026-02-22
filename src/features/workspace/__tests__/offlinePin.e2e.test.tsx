@@ -83,14 +83,18 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
     }),
 }));
 
-// Mock Knowledge Bank to prevent loading errors
+// Mock Knowledge Bank to prevent loading errors from dynamic imports
 vi.mock('@/features/knowledgeBank/services/knowledgeBankService', () => ({
     loadKBEntries: vi.fn().mockResolvedValue([]),
+    knowledgeBankService: {
+        search: vi.fn(),
+    }
 }));
 
 vi.mock('@/features/knowledgeBank/stores/knowledgeBankStore', () => ({
     useKnowledgeBankStore: {
-        getState: () => ({ setEntries: vi.fn() }),
+        getState: vi.fn(() => ({ setEntries: vi.fn() })),
+        setState: vi.fn(),
     },
 }));
 

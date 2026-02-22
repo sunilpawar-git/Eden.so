@@ -7,6 +7,8 @@ export interface CanvasSettings {
     backgroundColor: CanvasBackground;
 }
 
+export type WorkspaceType = 'workspace' | 'divider';
+
 export interface Workspace {
     id: string;
     userId: string;
@@ -15,6 +17,7 @@ export interface Workspace {
     createdAt: Date;
     updatedAt: Date;
     orderIndex?: number;
+    type?: WorkspaceType; // Undefined means 'workspace'
 }
 
 /**
@@ -35,6 +38,24 @@ export function createWorkspace(
         },
         createdAt: now,
         updatedAt: now,
-        orderIndex: Date.now(), // default to placing new workspaces at the end (or top, based on sort) Let's default to Date.now()
+        orderIndex: Date.now(),
+        type: 'workspace',
+    };
+}
+
+/**
+ * Create a divider item instead of a full workspace
+ */
+export function createDivider(id: string, userId: string): Workspace {
+    const now = new Date();
+    return {
+        id,
+        userId,
+        name: '---', // Keep a fallback name for backwards compatibility
+        canvasSettings: { backgroundColor: 'white' },
+        createdAt: now,
+        updatedAt: now,
+        orderIndex: Date.now(),
+        type: 'divider',
     };
 }

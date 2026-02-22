@@ -15,7 +15,7 @@ interface UseSearchReturn {
     clear: () => void;
 }
 
- 
+
 export function useSearch(): UseSearchReturn {
     const [query, setQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
@@ -25,7 +25,11 @@ export function useSearch(): UseSearchReturn {
 
     const workspaceMap = useMemo(() => {
         const map = new Map<string, string>();
-        workspaces.forEach((ws) => map.set(ws.id, ws.name));
+        workspaces.forEach((ws) => {
+            if (ws.type !== 'divider') {
+                map.set(ws.id, ws.name);
+            }
+        });
         return map;
     }, [workspaces]);
 

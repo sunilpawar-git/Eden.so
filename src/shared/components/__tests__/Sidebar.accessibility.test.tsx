@@ -82,11 +82,11 @@ describe('Sidebar Accessibility', () => {
     describe('Color Contrast Compliance', () => {
         it('renders New Workspace button with accessible text', () => {
             render(<Sidebar />);
-            
-            const newWorkspaceBtn = screen.getByRole('button', { 
-                name: new RegExp(strings.workspace.newWorkspace, 'i') 
+
+            const newWorkspaceBtn = screen.getByRole('button', {
+                name: strings.workspace.newWorkspace
             });
-            
+
             expect(newWorkspaceBtn).toBeInTheDocument();
             // Button should be visible and have proper styling
             expect(newWorkspaceBtn).toBeVisible();
@@ -94,18 +94,18 @@ describe('Sidebar Accessibility', () => {
 
         it('renders Sign out button with accessible text', () => {
             render(<Sidebar />);
-            
-            const signOutBtn = screen.getByRole('button', { 
-                name: strings.auth.signOut 
+
+            const signOutBtn = screen.getByRole('button', {
+                name: strings.auth.signOut
             });
-            
+
             expect(signOutBtn).toBeInTheDocument();
             expect(signOutBtn).toBeVisible();
         });
 
         it('uses string resources for all button labels', () => {
             render(<Sidebar />);
-            
+
             // Verify buttons use localized strings
             expect(screen.getByText(strings.workspace.newWorkspace)).toBeInTheDocument();
             expect(screen.getByText(strings.auth.signOut)).toBeInTheDocument();
@@ -115,11 +115,11 @@ describe('Sidebar Accessibility', () => {
     describe('Interactive Elements', () => {
         it('settings button has accessible aria-label', () => {
             render(<Sidebar onSettingsClick={vi.fn()} />);
-            
-            const settingsBtn = screen.getByRole('button', { 
-                name: strings.settings.title 
+
+            const settingsBtn = screen.getByRole('button', {
+                name: strings.settings.title
             });
-            
+
             expect(settingsBtn).toBeInTheDocument();
             expect(settingsBtn).toHaveAttribute('aria-label', strings.settings.title);
         });

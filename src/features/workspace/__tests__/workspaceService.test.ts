@@ -329,6 +329,22 @@ describe('WorkspaceService', () => {
         });
     });
 
+    describe('createNewDividerWorkspace', () => {
+        it('should create a divider item instead of a normal workspace', async () => {
+            mockSetDoc.mockResolvedValue(undefined);
+            const { createNewDividerWorkspace } = await import('../services/workspaceService');
+
+            const result = await createNewDividerWorkspace('user-2');
+
+            expect(mockSetDoc).toHaveBeenCalled();
+            expect(result.type).toBe('divider');
+            expect(result.name).toBe('---');
+            expect(result.userId).toBe('user-2');
+            expect(result.id).toBeDefined();
+            expect(result.id).toContain('divider-');
+        });
+    });
+
     describe('updateWorkspaceOrder', () => {
         it('should batch update orderIndex for provided workspaces', async () => {
             const mockBatchUpdate = vi.fn();

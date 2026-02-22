@@ -16,6 +16,7 @@ interface WorkspaceActions {
     setCurrentWorkspaceId: (workspaceId: string | null) => void;
     setWorkspaces: (workspaces: Workspace[]) => void;
     addWorkspace: (workspace: Workspace) => void;
+    insertWorkspaceAfter: (workspace: Workspace, targetWorkspaceId: string) => void;
     updateWorkspace: (workspaceId: string, updates: Partial<Workspace>) => void;
     removeWorkspace: (workspaceId: string) => void;
     reorderWorkspaces: (sourceIndex: number, destinationIndex: number) => void;
@@ -53,6 +54,27 @@ export const useWorkspaceStore = create<WorkspaceStore>()((set) => ({
         }));
     },
 
+    insertWorkspaceAfter: (workspace: Workspace, targetWorkspaceId: string) => {
+        set((state) => {
+            const targetIndex = state.workspaces.findIndex((ws) => ws.id === targetWorkspaceId);
+            if (targetIndex === -1) {
+                // Fallback to append if target not found
+                return { workspaces: [...state.workspaces, workspace] };
+            }
+
+            const newWorkspaces = [...state.workspaces];
+            newWorkspaces.splice(targetIndex + 1, 0, workspace);
+
+            // Re-assign order indices for all workspaces to ensure consistency
+            const updatedWorkspaces = newWorkspaces.map((ws, i) => ({
+                ...ws,
+                orderIndex: i,
+            }));
+
+            return { workspaces: updatedWorkspaces };
+        });
+    },
+
     updateWorkspace: (workspaceId: string, updates: Partial<Workspace>) => {
         set((state) => ({
             workspaces: state.workspaces.map((ws) =>
@@ -62,14 +84,21 @@ export const useWorkspaceStore = create<WorkspaceStore>()((set) => ({
     },
 
     removeWorkspace: (workspaceId: string) => {
-        set((state) => ({
-            workspaces: state.workspaces.filter((ws) => ws.id !== workspaceId),
-            // Reset to default if current workspace is removed
-            currentWorkspaceId:
-                state.currentWorkspaceId === workspaceId
-                    ? DEFAULT_WORKSPACE_ID
-                    : state.currentWorkspaceId,
-        }));
+        set((state) => {
+            const nextWorkspaces = state.workspaces.filter((ws) => ws.id !== workspaceId);
+
+            // If we are deleting the current workspace, find a valid fallback
+            let nextWorkspaceId = state.currentWorkspaceId;
+            if (state.currentWorkspaceId === workspaceId) {
+                const fallbackWorkspace = nextWorkspaces.find((ws) => ws.type !== 'divider');
+                nextWorkspaceId = fallbackWorkspace ? fallbackWorkspace.id : DEFAULT_WORKSPACE_ID;
+            }
+
+            return {
+                workspaces: nextWorkspaces,
+                currentWorkspaceId: nextWorkspaceId,
+            };
+        });
     },
 
     reorderWorkspaces: (sourceIndex: number, destinationIndex: number) => {

@@ -12,6 +12,7 @@ import { Layout } from '@/shared/components/Layout';
 import { CanvasView } from '@/features/canvas/components/CanvasView';
 import { KeyboardShortcutsProvider } from '@/features/canvas/components/KeyboardShortcutsProvider';
 import { ToastContainer } from '@/shared/components/Toast';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { LoadingFallback } from '@/shared/components/LoadingFallback';
 import { SwUpdatePrompt } from '@/shared/components/SwUpdatePrompt';
@@ -31,10 +32,10 @@ import { strings } from '@/shared/localization/strings';
 import '@/styles/global.css';
 
 // Lazy load non-critical components for better initial load performance
-const LoginPage = lazy(() => 
+const LoginPage = lazy(() =>
     import('@/features/auth/components/LoginPage').then(m => ({ default: m.LoginPage }))
 );
-const SettingsPanel = lazy(() => 
+const SettingsPanel = lazy(() =>
     import('@/shared/components/SettingsPanel').then(m => ({ default: m.SettingsPanel }))
 );
 
@@ -48,7 +49,7 @@ function AuthenticatedApp() {
         hasOfflineData,
     } = useWorkspaceLoader(currentWorkspaceId ?? '');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    
+
     useThemeApplicator();
     useCompactMode();
     useNetworkStatus();
@@ -76,8 +77,8 @@ function AuthenticatedApp() {
     // Always keep ReactFlowProvider mounted to prevent blink on workspace switch
     return (
         <ReactFlowProvider>
-            <KeyboardShortcutsProvider 
-                onOpenSettings={() => setIsSettingsOpen(true)} 
+            <KeyboardShortcutsProvider
+                onOpenSettings={() => setIsSettingsOpen(true)}
             />
             <Layout onSettingsClick={() => setIsSettingsOpen(true)}>
                 <CanvasView />
@@ -89,9 +90,9 @@ function AuthenticatedApp() {
                 )}
             </Layout>
             <Suspense fallback={null}>
-                <SettingsPanel 
-                    isOpen={isSettingsOpen} 
-                    onClose={() => setIsSettingsOpen(false)} 
+                <SettingsPanel
+                    isOpen={isSettingsOpen}
+                    onClose={() => setIsSettingsOpen(false)}
                 />
             </Suspense>
         </ReactFlowProvider>
@@ -137,6 +138,7 @@ export function App() {
             <ErrorBoundary>
                 <AppContent />
                 <ToastContainer />
+                <ConfirmDialog />
                 <SwUpdatePrompt registration={swRegistration} />
             </ErrorBoundary>
         </QueryClientProvider>

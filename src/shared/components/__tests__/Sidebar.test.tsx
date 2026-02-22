@@ -5,7 +5,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import { signOut } from '@/features/auth/services/authService';
-import { createNewWorkspace, loadUserWorkspaces, saveNodes, saveEdges } from '@/features/workspace/services/workspaceService';
+import { createNewWorkspace, loadUserWorkspaces, saveNodes, saveEdges, deleteWorkspace } from '@/features/workspace/services/workspaceService';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
@@ -22,7 +22,15 @@ vi.mock('@/shared/stores/toastStore', () => ({
 vi.mock('@/features/auth/services/authService', () => ({ signOut: vi.fn() }));
 vi.mock('@/features/workspace/services/workspaceService', () => ({
     createNewWorkspace: vi.fn(), loadUserWorkspaces: vi.fn(), saveWorkspace: vi.fn(),
-    saveNodes: vi.fn(), saveEdges: vi.fn(),
+    saveNodes: vi.fn(), saveEdges: vi.fn(), deleteWorkspace: vi.fn(),
+    updateWorkspaceOrder: vi.fn(), createNewDividerWorkspace: vi.fn(),
+}));
+
+// Mock useConfirm — resolves to true by default
+const mockConfirm = vi.fn().mockResolvedValue(true);
+vi.mock('@/shared/stores/confirmStore', () => ({
+    useConfirm: () => mockConfirm,
+    useConfirmStore: vi.fn(),
 }));
 
 // Mock the workspace switcher hook
@@ -131,12 +139,88 @@ describe('Sidebar', () => {
         });
 
         it('should show error toast when creation fails', async () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
             vi.mocked(createNewWorkspace).mockRejectedValue(new Error('Network error'));
             render(<Sidebar />);
             fireEvent.click(screen.getByText(strings.workspace.newWorkspace));
             await waitFor(() => expect(toast.error).toHaveBeenCalledWith(strings.errors.generic));
             consoleSpy.mockRestore();
+        });
+    });
+
+    describe('divider deletion', () => {
+        it('deletes divider via workspaceService and removes from store', async () => {
+            const mockRemoveWorkspace = vi.fn();
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+            // mockConfirm is already set to resolve(true) at the module level
+
+            vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
+                const state = createMockState({
+                    workspaces: [
+                        { id: 'ws-1', name: 'Project Alpha', userId: 'user-1', createdAt: new Date(), updatedAt: new Date() },
+                        { id: 'div-1', name: '---', type: 'divider', userId: 'user-1', createdAt: new Date(), updatedAt: new Date() },
+                    ],
+                    removeWorkspace: mockRemoveWorkspace
+                });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                return typeof selector === 'function' ? selector(state as any) : state;
+            });
+
+            vi.mocked(deleteWorkspace).mockResolvedValue(undefined);
+
+            render(<Sidebar />);
+
+            // Click delete button on the divider
+            const deleteButtons = screen.getAllByLabelText('Delete divider');
+            fireEvent.click(deleteButtons[0] as HTMLElement);
+
+            await waitFor(() => {
+                expect(deleteWorkspace).toHaveBeenCalledWith('user-1', 'div-1');
+                expect(mockRemoveWorkspace).toHaveBeenCalledWith('div-1');
+            });
+
+            consoleSpy.mockRestore();
+        });
+    });
+
+    describe('split button dropdown', () => {
+        it('toggles dropdown when chevron is clicked', () => {
+            render(<Sidebar />);
+
+            // Dropdown is initially closed
+            expect(screen.queryByText('Add Divider')).not.toBeInTheDocument();
+
+            // Click chevron
+            const chevronButton = screen.getByLabelText('New Workspace Options');
+            fireEvent.click(chevronButton);
+
+            // Dropdown is open
+            expect(screen.getByText('Add Divider')).toBeInTheDocument();
+
+            // Click chevron again to close
+            fireEvent.click(chevronButton);
+            expect(screen.queryByText('Add Divider')).not.toBeInTheDocument();
+        });
+
+        it('closes dropdown when clicking outside', () => {
+            render(
+                <div>
+                    <div data-testid="outside">Outside Element</div>
+                    <Sidebar />
+                </div>
+            );
+
+            // Open dropdown
+            const chevronButton = screen.getByLabelText('New Workspace Options');
+            fireEvent.click(chevronButton);
+            expect(screen.getByText('Add Divider')).toBeInTheDocument();
+
+            // Click outside
+            fireEvent.mouseDown(screen.getByTestId('outside'));
+
+            // Dropdown should be closed
+            expect(screen.queryByText('Add Divider')).not.toBeInTheDocument();
         });
     });
 
@@ -176,7 +260,7 @@ describe('Sidebar', () => {
         });
 
         it('should show error toast when switch fails', async () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
             mockSwitchWorkspace.mockRejectedValue(new Error('Switch failed'));
             setupWithWorkspaces();
             render(<Sidebar />);
@@ -219,7 +303,7 @@ describe('Sidebar', () => {
         it('should call onSettingsClick when settings button is clicked', () => {
             const mockOnSettingsClick = vi.fn();
             render(<Sidebar onSettingsClick={mockOnSettingsClick} />);
-            
+
             fireEvent.click(screen.getByLabelText(strings.settings.title));
             expect(mockOnSettingsClick).toHaveBeenCalledTimes(1);
         });
@@ -247,7 +331,7 @@ describe('Sidebar', () => {
         it('should handle preload errors gracefully', async () => {
             vi.mocked(loadUserWorkspaces).mockResolvedValue(mockWorkspacesList);
             mockPreload.mockRejectedValue(new Error('Preload failed'));
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
             setupWithWorkspaces();
 
             render(<Sidebar />);

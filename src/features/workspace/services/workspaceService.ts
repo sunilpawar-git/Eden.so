@@ -4,7 +4,7 @@
 import { doc, setDoc, getDoc, getDocs, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import type { Workspace } from '../types/workspace';
-import { createWorkspace } from '../types/workspace';
+import { createWorkspace, createDivider } from '../types/workspace';
 import { strings } from '@/shared/localization/strings';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
@@ -40,6 +40,14 @@ export async function createNewWorkspace(userId: string, name?: string): Promise
     return workspace;
 }
 
+/** Create a new divider and save to Firestore */
+export async function createNewDividerWorkspace(userId: string): Promise<Workspace> {
+    const workspaceId = `divider-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const workspace = createDivider(workspaceId, userId);
+    await saveWorkspace(userId, workspace);
+    return workspace;
+}
+
 /** Save workspace metadata to Firestore */
 export async function saveWorkspace(userId: string, workspace: Workspace): Promise<void> {
     const workspaceRef = doc(db, 'users', userId, 'workspaces', workspace.id);
@@ -50,6 +58,7 @@ export async function saveWorkspace(userId: string, workspace: Workspace): Promi
         createdAt: workspace.createdAt,
         updatedAt: serverTimestamp(),
         orderIndex: workspace.orderIndex ?? Date.now(),
+        type: workspace.type ?? 'workspace',
     });
 }
 
@@ -61,6 +70,7 @@ interface WorkspaceDoc {
     createdAt?: { toDate?: () => Date };
     updatedAt?: { toDate?: () => Date };
     orderIndex?: number;
+    type?: 'workspace' | 'divider';
 }
 
 /** Load workspace from Firestore */
@@ -77,6 +87,7 @@ export async function loadWorkspace(userId: string, workspaceId: string): Promis
         createdAt: data.createdAt?.toDate?.() ?? new Date(),
         updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
         orderIndex: data.orderIndex ?? Date.now(),
+        type: data.type ?? 'workspace',
     };
 }
 
@@ -94,6 +105,7 @@ export async function loadUserWorkspaces(userId: string): Promise<Workspace[]> {
             createdAt: data.createdAt?.toDate?.() ?? new Date(),
             updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
             orderIndex: data.orderIndex ?? Date.now(),
+            type: data.type ?? 'workspace',
         };
     });
 }

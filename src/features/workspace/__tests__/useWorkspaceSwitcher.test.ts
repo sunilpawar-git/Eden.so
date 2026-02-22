@@ -45,6 +45,21 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
     ),
 }));
 
+// Mock Knowledge Bank to prevent loading errors from dynamic imports
+vi.mock('@/features/knowledgeBank/services/knowledgeBankService', () => ({
+    loadKBEntries: vi.fn().mockResolvedValue([]),
+    knowledgeBankService: {
+        search: vi.fn(),
+    }
+}));
+
+vi.mock('@/features/knowledgeBank/stores/knowledgeBankStore', () => ({
+    useKnowledgeBankStore: {
+        getState: vi.fn(() => ({ setEntries: vi.fn() })),
+        setState: vi.fn(),
+    },
+}));
+
 // Mock workspace store
 const mockSetCurrentWorkspaceId = vi.fn();
 const mockSetSwitching = vi.fn();
@@ -156,7 +171,7 @@ describe('useWorkspaceSwitcher', () => {
     });
 
     it('handles switch errors gracefully', async () => {
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
         mockLoadNodes.mockRejectedValue(new Error('Network error'));
 
         const { result } = renderHook(() => useWorkspaceSwitcher());
