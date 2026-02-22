@@ -9,6 +9,8 @@
     font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
     user-select: none;
+    /* Prevent neighbouring icons from shifting during text changes */
+    min-width: 145px;
 }
 
 .dot {
@@ -51,9 +53,12 @@
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.4;
     }
@@ -63,6 +68,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
