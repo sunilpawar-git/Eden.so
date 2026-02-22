@@ -202,4 +202,21 @@ describe('WorkspaceStore', () => {
             expect(workspaces[0]?.id).toBe('1');
         });
     });
+
+    describe('node count actions', () => {
+        it('should set node count for a specific workspace', () => {
+            const { setWorkspaces, setNodeCount } = useWorkspaceStore.getState();
+            const mockWorkspaces: Workspace[] = [
+                { id: 'ws-1', name: 'WS 1' } as Workspace,
+                { id: 'ws-2', name: 'WS 2' } as Workspace,
+            ];
+            setWorkspaces(mockWorkspaces);
+
+            setNodeCount('ws-1', 5);
+
+            const { workspaces } = useWorkspaceStore.getState();
+            expect(workspaces.find((ws) => ws.id === 'ws-1')?.nodeCount).toBe(5);
+            expect(workspaces.find((ws) => ws.id === 'ws-2')?.nodeCount).toBeUndefined();
+        });
+    });
 });

@@ -234,11 +234,16 @@ describe('Offline Pin - E2E Integration', () => {
         // IndexedDB write fails with quota error
         mockIdbSet.mockRejectedValue(new Error('QuotaExceededError: Storage quota exceeded'));
 
-        await act(async () => {
-            await expect(
-                usePinnedWorkspaceStore.getState().pinWorkspace('ws-huge')
-            ).rejects.toThrow('Storage quota exceeded');
-        });
+        let thrownError: Error | undefined;
+        try {
+            await act(async () => {
+                await usePinnedWorkspaceStore.getState().pinWorkspace('ws-huge');
+            });
+        } catch (e) {
+            thrownError = e as Error;
+        }
+
+        expect(thrownError?.message).toContain('Storage quota exceeded');
 
         // Should rollback: not added to pinned list if cache fails
         expect(usePinnedWorkspaceStore.getState().isPinned('ws-huge')).toBe(false);

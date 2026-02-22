@@ -18,6 +18,7 @@ interface WorkspaceActions {
     addWorkspace: (workspace: Workspace) => void;
     insertWorkspaceAfter: (workspace: Workspace, targetWorkspaceId: string) => void;
     updateWorkspace: (workspaceId: string, updates: Partial<Workspace>) => void;
+    setNodeCount: (workspaceId: string, count: number) => void;
     removeWorkspace: (workspaceId: string) => void;
     reorderWorkspaces: (sourceIndex: number, destinationIndex: number) => void;
     setLoading: (isLoading: boolean) => void;
@@ -38,93 +39,64 @@ const initialState: WorkspaceState = {
 export const useWorkspaceStore = create<WorkspaceStore>()((set) => ({
     ...initialState,
 
-    setCurrentWorkspaceId: (workspaceId: string | null) => {
-        set({ currentWorkspaceId: workspaceId });
-    },
+    setCurrentWorkspaceId: (id: string | null) => set({ currentWorkspaceId: id }),
 
     setWorkspaces: (workspaces: Workspace[]) => {
-        // Ensure workspaces are loaded sorted by orderIndex
         const sorted = [...workspaces].sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
         set({ workspaces: sorted });
     },
 
     addWorkspace: (workspace: Workspace) => {
+        set((state) => ({ workspaces: [...state.workspaces, workspace] }));
+    },
+
+    insertWorkspaceAfter: (workspace: Workspace, targetId: string) => {
+        set((state) => {
+            const index = state.workspaces.findIndex((ws) => ws.id === targetId);
+            if (index === -1) return { workspaces: [...state.workspaces, workspace] };
+
+            const list = [...state.workspaces];
+            list.splice(index + 1, 0, workspace);
+            return { workspaces: list.map((ws, i) => ({ ...ws, orderIndex: i })) };
+        });
+    },
+
+    updateWorkspace: (id: string, updates: Partial<Workspace>) => {
         set((state) => ({
-            workspaces: [...state.workspaces, workspace],
+            workspaces: state.workspaces.map((ws) => (ws.id === id ? { ...ws, ...updates } : ws)),
         }));
     },
 
-    insertWorkspaceAfter: (workspace: Workspace, targetWorkspaceId: string) => {
-        set((state) => {
-            const targetIndex = state.workspaces.findIndex((ws) => ws.id === targetWorkspaceId);
-            if (targetIndex === -1) {
-                // Fallback to append if target not found
-                return { workspaces: [...state.workspaces, workspace] };
-            }
-
-            const newWorkspaces = [...state.workspaces];
-            newWorkspaces.splice(targetIndex + 1, 0, workspace);
-
-            // Re-assign order indices for all workspaces to ensure consistency
-            const updatedWorkspaces = newWorkspaces.map((ws, i) => ({
-                ...ws,
-                orderIndex: i,
-            }));
-
-            return { workspaces: updatedWorkspaces };
-        });
-    },
-
-    updateWorkspace: (workspaceId: string, updates: Partial<Workspace>) => {
+    setNodeCount: (id: string, count: number) => {
         set((state) => ({
-            workspaces: state.workspaces.map((ws) =>
-                ws.id === workspaceId ? { ...ws, ...updates } : ws
-            ),
+            workspaces: state.workspaces.map((ws) => (ws.id === id ? { ...ws, nodeCount: count } : ws)),
         }));
     },
 
-    removeWorkspace: (workspaceId: string) => {
+    removeWorkspace: (id: string) => {
         set((state) => {
-            const nextWorkspaces = state.workspaces.filter((ws) => ws.id !== workspaceId);
-
-            // If we are deleting the current workspace, find a valid fallback
-            let nextWorkspaceId = state.currentWorkspaceId;
-            if (state.currentWorkspaceId === workspaceId) {
-                const fallbackWorkspace = nextWorkspaces.find((ws) => ws.type !== 'divider');
-                nextWorkspaceId = fallbackWorkspace ? fallbackWorkspace.id : DEFAULT_WORKSPACE_ID;
+            const list = state.workspaces.filter((ws) => ws.id !== id);
+            let nextId = state.currentWorkspaceId;
+            if (state.currentWorkspaceId === id) {
+                const fb = list.find((ws) => ws.type !== 'divider');
+                nextId = fb ? fb.id : DEFAULT_WORKSPACE_ID;
             }
-
-            return {
-                workspaces: nextWorkspaces,
-                currentWorkspaceId: nextWorkspaceId,
-            };
+            return { workspaces: list, currentWorkspaceId: nextId };
         });
     },
 
-    reorderWorkspaces: (sourceIndex: number, destinationIndex: number) => {
+    reorderWorkspaces: (src: number, dest: number) => {
         set((state) => {
-            const newWorkspaces = [...state.workspaces];
-            const [movedItem] = newWorkspaces.splice(sourceIndex, 1);
-            if (!movedItem) return state;
-            newWorkspaces.splice(destinationIndex, 0, movedItem);
-
-            // Assign sequential order indices to preserve the new order
-            const updatedWorkspaces = newWorkspaces.map((ws, i) => ({
-                ...ws,
-                orderIndex: i,
-            }));
-
-            return { workspaces: updatedWorkspaces };
+            const list = [...state.workspaces];
+            const [item] = list.splice(src, 1);
+            if (!item) return state;
+            list.splice(dest, 0, item);
+            return { workspaces: list.map((ws, i) => ({ ...ws, orderIndex: i })) };
         });
     },
 
-    setLoading: (isLoading: boolean) => {
-        set({ isLoading });
-    },
-
-    setSwitching: (isSwitching: boolean) => {
-        set({ isSwitching });
-    },
+    setLoading: (isLoading: boolean) => set({ isLoading }),
+    setSwitching: (isSwitching: boolean) => set({ isSwitching }),
 }));
 
 export { DEFAULT_WORKSPACE_ID };

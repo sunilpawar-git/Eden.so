@@ -71,6 +71,7 @@ interface WorkspaceDoc {
     updatedAt?: { toDate?: () => Date };
     orderIndex?: number;
     type?: 'workspace' | 'divider';
+    nodeCount?: number;
 }
 
 /** Load workspace from Firestore */
@@ -88,6 +89,7 @@ export async function loadWorkspace(userId: string, workspaceId: string): Promis
         updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
         orderIndex: data.orderIndex ?? Date.now(),
         type: data.type ?? 'workspace',
+        nodeCount: data.nodeCount ?? 0,
     };
 }
 
@@ -106,6 +108,7 @@ export async function loadUserWorkspaces(userId: string): Promise<Workspace[]> {
             updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
             orderIndex: data.orderIndex ?? Date.now(),
             type: data.type ?? 'workspace',
+            nodeCount: data.nodeCount ?? 0,
         };
     });
 }

@@ -25,15 +25,20 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
     }),
 }));
 
+const mockWorkspaceGetState = vi.fn();
 vi.mock('@/features/workspace/stores/workspaceStore', () => ({
-    useWorkspaceStore: () => ({
-        currentWorkspaceId: 'ws-1',
-        workspaces: [{ id: 'ws-1', name: 'Test Workspace' }],
-        setCurrentWorkspaceId: vi.fn(),
-        addWorkspace: vi.fn(),
-        setWorkspaces: vi.fn(),
-        updateWorkspace: vi.fn(),
-    }),
+    useWorkspaceStore: Object.assign(vi.fn((selector) => {
+        const state = {
+            currentWorkspaceId: 'ws-1',
+            workspaces: [{ id: 'ws-1', name: 'Test Workspace' }],
+            setCurrentWorkspaceId: vi.fn(),
+            addWorkspace: vi.fn(),
+            setWorkspaces: vi.fn(),
+            updateWorkspace: vi.fn(),
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return selector ? selector(state as any) : state;
+    }), { getState: () => mockWorkspaceGetState() })
 }));
 
 vi.mock('@/features/workspace/hooks/useWorkspaceSwitcher', () => ({
@@ -77,6 +82,10 @@ vi.mock('@/features/auth/services/authService', () => ({
 describe('Sidebar Accessibility', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockWorkspaceGetState.mockReturnValue({
+            currentWorkspaceId: 'ws-1',
+            workspaces: [{ id: 'ws-1', name: 'Test Workspace' }],
+        });
     });
 
     describe('Color Contrast Compliance', () => {

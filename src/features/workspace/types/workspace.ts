@@ -18,6 +18,7 @@ export interface Workspace {
     updatedAt: Date;
     orderIndex?: number;
     type?: WorkspaceType; // Undefined means 'workspace'
+    nodeCount?: number;
 }
 
 /**

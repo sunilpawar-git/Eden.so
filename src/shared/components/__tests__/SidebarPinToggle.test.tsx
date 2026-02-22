@@ -8,7 +8,6 @@ import { Sidebar } from '../Sidebar';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { strings } from '@/shared/localization/strings';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
-import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
 
 vi.mock('@/features/auth/stores/authStore', () => ({ useAuthStore: vi.fn() }));
@@ -31,13 +30,25 @@ const mockGetState = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(vi.fn(), { getState: () => mockGetState() }),
 }));
-vi.mock('@/features/workspace/stores/workspaceStore', () => ({ useWorkspaceStore: vi.fn() }));
+const mockWorkspaceGetState = vi.fn();
+vi.mock('@/features/workspace/stores/workspaceStore', () => ({
+    useWorkspaceStore: Object.assign(vi.fn((selector) => {
+        const state = {
+            currentWorkspaceId: 'ws-1', workspaces: [], isLoading: false,
+            setCurrentWorkspaceId: vi.fn(), addWorkspace: vi.fn(),
+            setWorkspaces: vi.fn(), updateWorkspace: vi.fn(),
+            removeWorkspace: vi.fn(), setLoading: vi.fn(),
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return typeof selector === 'function' ? selector(state as any) : state;
+    }), { getState: () => mockWorkspaceGetState() })
+}));
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
 vi.mock('@/features/auth/services/authService', () => ({ signOut: vi.fn() }));
 vi.mock('@/features/workspace/services/workspaceService', () => ({
-    createNewWorkspace: vi.fn(), loadUserWorkspaces: vi.fn(), saveWorkspace: vi.fn(),
+    createNewWorkspace: vi.fn(), loadUserWorkspaces: vi.fn().mockResolvedValue([]), saveWorkspace: vi.fn(),
     saveNodes: vi.fn(), saveEdges: vi.fn(),
 }));
 vi.mock('@/features/workspace/hooks/useWorkspaceSwitcher', () => ({
@@ -60,6 +71,12 @@ describe('Sidebar pin toggle button', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockIsPinned = true;
+        mockWorkspaceGetState.mockReturnValue({
+            currentWorkspaceId: 'ws-1', workspaces: [], isLoading: false,
+            setCurrentWorkspaceId: vi.fn(), addWorkspace: vi.fn(),
+            setWorkspaces: vi.fn(), updateWorkspace: vi.fn(),
+            removeWorkspace: vi.fn(), setLoading: vi.fn(),
+        });
         vi.mocked(useAuthStore).mockReturnValue({
             user: { id: 'user-1', name: 'Test User', avatarUrl: '' },
             isLoading: false, isAuthenticated: true, error: null,
@@ -67,16 +84,7 @@ describe('Sidebar pin toggle button', () => {
         } as Partial<ReturnType<typeof useAuthStore>> as ReturnType<typeof useAuthStore>);
         vi.mocked(useCanvasStore).mockReturnValue(vi.fn());
         mockGetState.mockReturnValue({ nodes: [], edges: [] });
-        vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
-            const state = {
-                currentWorkspaceId: 'ws-1', workspaces: [], isLoading: false,
-                setCurrentWorkspaceId: vi.fn(), addWorkspace: vi.fn(),
-                setWorkspaces: vi.fn(), updateWorkspace: vi.fn(),
-                removeWorkspace: vi.fn(), setLoading: vi.fn(),
-            };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return typeof selector === 'function' ? selector(state as any) : state;
-        });
+        // The mock implementation is now inside the module mock above
         vi.mocked(useWorkspaceSwitcher).mockReturnValue({
             isSwitching: false, error: null, switchWorkspace: vi.fn(),
         });

@@ -90,6 +90,7 @@ export function WorkspaceList({
                             name={ws.name}
                             type={ws.type}
                             isActive={ws.id === currentWorkspaceId}
+                            nodeCount={ws.nodeCount}
                             onSelect={onSelectWorkspace}
                             onRename={onRenameWorkspace}
                             onDelete={onDeleteWorkspace}

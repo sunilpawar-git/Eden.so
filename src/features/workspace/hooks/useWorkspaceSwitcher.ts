@@ -5,8 +5,9 @@ import { useState, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '../stores/workspaceStore';
-import { loadNodes, loadEdges, saveNodes, saveEdges } from '../services/workspaceService';
+import { loadNodes, loadEdges } from '../services/workspaceService';
 import { workspaceCache } from '../services/workspaceCache';
+import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import { strings } from '@/shared/localization/strings';
 
 interface UseWorkspaceSwitcherResult {
@@ -48,11 +49,10 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
             // 1. Fire-and-forget save (non-blocking, parallel with load)
             const { nodes: currentNodes, edges: currentEdges } = useCanvasStore.getState();
             if (currentWorkspaceId && (currentNodes.length > 0 || currentEdges.length > 0)) {
-                // Don't await - save happens in background while we load new workspace
-                void Promise.all([
-                    saveNodes(user.id, currentWorkspaceId, currentNodes),
-                    saveEdges(user.id, currentWorkspaceId, currentEdges),
-                ]).catch((err: unknown) => console.error('[useWorkspaceSwitcher] Background save failed:', err));
+                useWorkspaceStore.getState().setNodeCount(currentWorkspaceId, currentNodes.length);
+
+                // Use offline queue for reliable saving, even if currently offline
+                useOfflineQueueStore.getState().queueSave(user.id, currentWorkspaceId, currentNodes, currentEdges);
             }
 
             // 2. Check cache first (instant if cached)
@@ -81,6 +81,9 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
             // 3. Atomic swap: update nodes/edges directly (no clearCanvas)
             setNodes(newNodes);
             setEdges(newEdges);
+
+            // Phase R3: Sync node count explicitly to UI store
+            useWorkspaceStore.getState().setNodeCount(workspaceId, newNodes.length);
 
             // 4. Update workspace ID last
             setCurrentWorkspaceId(workspaceId);

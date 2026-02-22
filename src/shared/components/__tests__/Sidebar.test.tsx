@@ -5,7 +5,9 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import { signOut } from '@/features/auth/services/authService';
-import { createNewWorkspace, loadUserWorkspaces, saveNodes, saveEdges, deleteWorkspace } from '@/features/workspace/services/workspaceService';
+import {
+    createNewWorkspace, loadUserWorkspaces, saveNodes, saveEdges, deleteWorkspace,
+} from '@/features/workspace/services/workspaceService';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
@@ -15,7 +17,10 @@ const mockGetState = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(vi.fn(), { getState: () => mockGetState() }),
 }));
-vi.mock('@/features/workspace/stores/workspaceStore', () => ({ useWorkspaceStore: vi.fn() }));
+const mockWorkspaceGetState = vi.fn();
+vi.mock('@/features/workspace/stores/workspaceStore', () => ({
+    useWorkspaceStore: Object.assign(vi.fn(), { getState: () => mockWorkspaceGetState() })
+}));
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
@@ -88,6 +93,7 @@ describe('Sidebar', () => {
     const setupWithWorkspaces = (workspaces = mockWorkspacesList, currentId = 'ws-1') => {
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
             const state = createMockState({ currentWorkspaceId: currentId, workspaces });
+            mockWorkspaceGetState.mockReturnValue(state);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return typeof selector === 'function' ? selector(state as any) : state;
         });
@@ -104,6 +110,7 @@ describe('Sidebar', () => {
         mockGetState.mockReturnValue({ nodes: [], edges: [] });
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
             const state = createMockState();
+            mockWorkspaceGetState.mockReturnValue(state);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return typeof selector === 'function' ? selector(state as any) : state;
         });
@@ -131,7 +138,7 @@ describe('Sidebar', () => {
 
             await waitFor(() => {
                 expect(createNewWorkspace).toHaveBeenCalledWith('user-1');
-                expect(mockAddWorkspace).toHaveBeenCalledWith(mockWorkspace);
+                expect(mockAddWorkspace).toHaveBeenCalledWith({ ...mockWorkspace, nodeCount: 0 });
                 expect(mockSetCurrentWorkspaceId).toHaveBeenCalledWith('ws-new');
                 expect(mockClearCanvas).toHaveBeenCalled();
                 expect(toast.success).toHaveBeenCalled();
@@ -247,6 +254,18 @@ describe('Sidebar', () => {
             await waitFor(() => expect(mockSwitchWorkspace).toHaveBeenCalledWith('ws-2'));
             // clearCanvas should NOT be called - hook handles atomic swap
             expect(mockClearCanvas).not.toHaveBeenCalled();
+        });
+
+        it('should display node count when available', async () => {
+            const workspacesWithCounts = [
+                { ...mockWorkspacesList[0]!, nodeCount: 5 },
+                { ...mockWorkspacesList[1]!, nodeCount: 0 },
+            ];
+            setupWithWorkspaces(workspacesWithCounts);
+            render(<Sidebar />);
+
+            expect(screen.getByText('(5)')).toBeInTheDocument();
+            expect(screen.getByText('(0)')).toBeInTheDocument();
         });
     });
 

@@ -36,7 +36,6 @@ vi.mock('firebase/firestore', () => ({
 
 describe('WorkspaceService', () => {
     beforeEach(() => {
-        mockSetDoc.mockReset();
         mockGetDoc.mockReset();
         mockGetDocs.mockReset();
     });

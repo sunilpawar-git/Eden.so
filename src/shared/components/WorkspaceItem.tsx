@@ -8,28 +8,67 @@ import { CSS } from '@dnd-kit/utilities';
 import { PinWorkspaceButton } from '@/features/workspace/components/PinWorkspaceButton';
 import { DragHandleIcon, TrashIcon } from '@/shared/components/icons';
 import { strings } from '@/shared/localization/strings';
-import styles from './Sidebar.module.css';
+import styles from './WorkspaceItem.module.css';
 
 interface WorkspaceItemProps {
     id: string;
     name: string;
     type?: 'workspace' | 'divider';
     isActive: boolean;
+    nodeCount?: number;
     onSelect: (id: string) => void;
     onRename: (id: string, newName: string) => void;
     onDelete?: (id: string) => void;
 }
 
-export function WorkspaceItem({ id, name, type, isActive, onSelect, onRename, onDelete }: WorkspaceItemProps) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id });
+interface WorkspaceContentProps {
+    name: string;
+    nodeCount?: number;
+    id: string;
+    onDoubleClick: () => void;
+}
 
+const WorkspaceNameContent = ({ name, nodeCount, id, onDoubleClick }: WorkspaceContentProps) => (
+    <>
+        <span className={styles.workspaceName} onDoubleClick={onDoubleClick}>
+            {name}
+            {nodeCount !== undefined && (
+                <span className={styles.nodeCount} data-testid="node-count">
+                    {strings.workspace.nodeCount(nodeCount)}
+                </span>
+            )}
+        </span>
+        <PinWorkspaceButton workspaceId={id} />
+    </>
+);
+
+interface DividerContentProps {
+    id: string;
+    onDoubleClick: () => void;
+    onDelete?: (id: string) => void;
+}
+
+const DividerContent = ({ id, onDoubleClick, onDelete }: DividerContentProps) => (
+    <>
+        <div className={styles.dividerLine} onDoubleClick={onDoubleClick} data-testid="divider-line" />
+        {onDelete && (
+            <button
+                className={styles.deleteDividerButton}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(id);
+                }}
+                aria-label="Delete divider"
+                title="Delete divider"
+            >
+                <TrashIcon size={14} />
+            </button>
+        )}
+    </>
+);
+
+export function WorkspaceItem({ id, name, type, isActive, nodeCount, onSelect, onRename, onDelete }: WorkspaceItemProps) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(name);
 
@@ -49,15 +88,12 @@ export function WorkspaceItem({ id, name, type, isActive, onSelect, onRename, on
 
     const handleBlur = () => {
         setIsEditing(false);
-        if (editName.trim() && editName !== name) {
-            onRename(id, editName.trim());
-        }
+        if (editName.trim() && editName !== name) onRename(id, editName.trim());
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleBlur();
-        } else if (e.key === 'Escape') {
+        if (e.key === 'Enter') handleBlur();
+        else if (e.key === 'Escape') {
             setIsEditing(false);
             setEditName(name);
         }
@@ -96,36 +132,9 @@ export function WorkspaceItem({ id, name, type, isActive, onSelect, onRename, on
                         <DragHandleIcon width="16" height="16" />
                     </button>
                     {isDivider ? (
-                        <>
-                            <div
-                                className={styles.dividerLine}
-                                onDoubleClick={handleDoubleClick}
-                                data-testid="divider-line"
-                            />
-                            {onDelete && (
-                                <button
-                                    className={styles.deleteDividerButton}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDelete(id);
-                                    }}
-                                    aria-label="Delete divider"
-                                    title="Delete divider"
-                                >
-                                    <TrashIcon size={14} />
-                                </button>
-                            )}
-                        </>
+                        <DividerContent id={id} onDoubleClick={handleDoubleClick} onDelete={onDelete} />
                     ) : (
-                        <>
-                            <span
-                                className={styles.workspaceName}
-                                onDoubleClick={handleDoubleClick}
-                            >
-                                {name}
-                            </span>
-                            <PinWorkspaceButton workspaceId={id} />
-                        </>
+                        <WorkspaceNameContent name={name} nodeCount={nodeCount} id={id} onDoubleClick={handleDoubleClick} />
                     )}
                 </>
             )}

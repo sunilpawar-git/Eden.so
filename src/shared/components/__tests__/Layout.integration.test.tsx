@@ -40,8 +40,9 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
     ),
 }));
 
+const mockWorkspaceGetState = vi.fn();
 vi.mock('@/features/workspace/stores/workspaceStore', () => ({
-    useWorkspaceStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) => {
+    useWorkspaceStore: Object.assign(vi.fn((selector: (s: Record<string, unknown>) => unknown) => {
         const state = {
             currentWorkspaceId: 'ws-1', workspaces: [],
             setCurrentWorkspaceId: vi.fn(), addWorkspace: vi.fn(),
@@ -49,7 +50,7 @@ vi.mock('@/features/workspace/stores/workspaceStore', () => ({
             removeWorkspace: vi.fn(), setLoading: vi.fn(),
         };
         return typeof selector === 'function' ? selector(state) : state;
-    }),
+    }), { getState: () => mockWorkspaceGetState() })
 }));
 
 vi.mock('@/shared/stores/toastStore', () => ({
@@ -88,6 +89,12 @@ describe('Layout integration - sidebar pin/hover mode', () => {
         vi.clearAllMocks();
         mockIsPinned = true;
         mockIsHoverOpen = false;
+        mockWorkspaceGetState.mockReturnValue({
+            currentWorkspaceId: 'ws-1', workspaces: [],
+            setCurrentWorkspaceId: vi.fn(), addWorkspace: vi.fn(),
+            setWorkspaces: vi.fn(), updateWorkspace: vi.fn(),
+            removeWorkspace: vi.fn(), setLoading: vi.fn(),
+        });
     });
 
     it('should set data-sidebar-pinned="true" when pinned', () => {

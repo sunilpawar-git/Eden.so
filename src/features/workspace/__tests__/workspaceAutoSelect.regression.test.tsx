@@ -6,12 +6,12 @@
  * from 'default-workspace' to an actual workspace ID.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
-import { Sidebar } from '@/shared/components/Sidebar';
+import { waitFor } from '@testing-library/react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { loadUserWorkspaces, saveNodes, saveEdges } from '@/features/workspace/services/workspaceService';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import { useSidebarWorkspaces } from '@/shared/hooks/useSidebarWorkspaces';
 
 // Mock stores and services
 vi.mock('@/features/auth/stores/authStore', () => ({
@@ -23,8 +23,9 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(vi.fn(), { getState: () => mockGetState() }),
 }));
 
+const mockWorkspaceGetState = vi.fn();
 vi.mock('@/features/workspace/stores/workspaceStore', () => ({
-    useWorkspaceStore: vi.fn(),
+    useWorkspaceStore: Object.assign(vi.fn(), { getState: () => mockWorkspaceGetState() })
 }));
 
 vi.mock('@/shared/stores/toastStore', () => ({
@@ -33,6 +34,11 @@ vi.mock('@/shared/stores/toastStore', () => ({
 
 vi.mock('@/features/auth/services/authService', () => ({
     signOut: vi.fn(),
+}));
+
+// Mock the useSidebarWorkspaces hook completely since the logic moved there
+vi.mock('@/shared/hooks/useSidebarWorkspaces', () => ({
+    useSidebarWorkspaces: vi.fn(),
 }));
 
 vi.mock('@/features/workspace/services/workspaceService', () => ({
@@ -109,9 +115,23 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
             const state = createMockState();
+            mockWorkspaceGetState.mockReturnValue(state);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return typeof selector === 'function' ? selector(state as any) : state;
         });
+
+        vi.mocked(useSidebarWorkspaces).mockReturnValue({
+            workspaces: [],
+            currentWorkspaceId: 'default-workspace',
+            isCreating: false,
+            isCreatingDivider: false,
+            handleNewWorkspace: vi.fn(),
+            handleNewDivider: vi.fn(),
+            handleDeleteDivider: vi.fn(),
+            handleSelectWorkspace: vi.fn(),
+            handleRenameWorkspace: vi.fn(),
+            handleReorderWorkspace: vi.fn(),
+        } as unknown as ReturnType<typeof useSidebarWorkspaces>);
 
         vi.mocked(loadUserWorkspaces).mockResolvedValue([]);
         vi.mocked(saveNodes).mockResolvedValue(undefined);
@@ -126,14 +146,23 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
         vi.mocked(loadUserWorkspaces).mockResolvedValue(mockWorkspaces);
 
-        // currentWorkspaceId is 'default-workspace' which doesn't exist
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
             const state = createMockState({ currentWorkspaceId: 'default-workspace', workspaces: [] });
+            mockWorkspaceGetState.mockReturnValue(state);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return typeof selector === 'function' ? selector(state as any) : state;
         });
 
-        render(<Sidebar />);
+        // Test logic moved to useWorkspaceLoading, which we can test via renderHook
+
+        // Actually, let's just render the hook directly to test the regression
+        const { renderHook } = await import('@testing-library/react');
+        const { useWorkspaceLoading } = await import('@/shared/hooks/useWorkspaceLoading');
+
+        // Unmock the hook so we can test it real implementation
+        vi.unmock('@/shared/hooks/useWorkspaceLoading');
+
+        renderHook(() => useWorkspaceLoading());
 
         await waitFor(() => {
             expect(mockSetCurrentWorkspaceId).toHaveBeenCalledWith('ws-real-1');
@@ -150,11 +179,16 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
             const state = createMockState({ currentWorkspaceId: 'ws-existing', workspaces: [] });
+            mockWorkspaceGetState.mockReturnValue(state);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return typeof selector === 'function' ? selector(state as any) : state;
         });
 
-        render(<Sidebar />);
+        // Test the hook directly
+        const { renderHook } = await import('@testing-library/react');
+        const { useWorkspaceLoading } = await import('@/shared/hooks/useWorkspaceLoading');
+
+        renderHook(() => useWorkspaceLoading());
 
         await waitFor(() => {
             expect(mockSetWorkspaces).toHaveBeenCalledWith(mockWorkspaces);
@@ -166,13 +200,10 @@ describe('Workspace Auto-Selection (Regression)', () => {
     it('should handle empty workspace list gracefully', async () => {
         vi.mocked(loadUserWorkspaces).mockResolvedValue([]);
 
-        vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
-            const state = createMockState({ currentWorkspaceId: 'default-workspace', workspaces: [] });
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return typeof selector === 'function' ? selector(state as any) : state;
-        });
+        const { renderHook } = await import('@testing-library/react');
+        const { useWorkspaceLoading } = await import('@/shared/hooks/useWorkspaceLoading');
 
-        render(<Sidebar />);
+        renderHook(() => useWorkspaceLoading());
 
         await waitFor(() => {
             expect(mockSetWorkspaces).toHaveBeenCalledWith([]);

@@ -9,13 +9,18 @@ import { useWorkspaceSwitcher } from '../hooks/useWorkspaceSwitcher';
 // Mock the workspace service
 const mockLoadNodes = vi.fn();
 const mockLoadEdges = vi.fn();
-const mockSaveNodes = vi.fn();
-const mockSaveEdges = vi.fn();
 vi.mock('../services/workspaceService', () => ({
     loadNodes: (...args: unknown[]) => mockLoadNodes(...args),
     loadEdges: (...args: unknown[]) => mockLoadEdges(...args),
-    saveNodes: (...args: unknown[]) => mockSaveNodes(...args),
-    saveEdges: (...args: unknown[]) => mockSaveEdges(...args),
+}));
+
+const mockQueueSave = vi.fn();
+vi.mock('../stores/offlineQueueStore', () => ({
+    useOfflineQueueStore: {
+        getState: () => ({
+            queueSave: mockQueueSave,
+        }),
+    },
 }));
 
 // Mock the workspace cache
@@ -65,16 +70,22 @@ const mockSetCurrentWorkspaceId = vi.fn();
 const mockSetSwitching = vi.fn();
 let mockCurrentWorkspaceId = 'ws-current';
 let mockIsSwitching = false;
+const mockSetNodeCount = vi.fn();
 vi.mock('../stores/workspaceStore', () => ({
-    useWorkspaceStore: (selector: (state: Record<string, unknown>) => unknown) => {
-        const state = {
-            currentWorkspaceId: mockCurrentWorkspaceId,
-            setCurrentWorkspaceId: mockSetCurrentWorkspaceId,
-            isSwitching: mockIsSwitching,
-            setSwitching: mockSetSwitching,
-        };
-        return typeof selector === 'function' ? selector(state) : state;
-    },
+    useWorkspaceStore: Object.assign(
+        (selector: (state: Record<string, unknown>) => unknown) => {
+            const state = {
+                currentWorkspaceId: mockCurrentWorkspaceId,
+                setCurrentWorkspaceId: mockSetCurrentWorkspaceId,
+                isSwitching: mockIsSwitching,
+                setSwitching: mockSetSwitching,
+            };
+            return typeof selector === 'function' ? selector(state) : state;
+        },
+        {
+            getState: () => ({ setNodeCount: mockSetNodeCount })
+        }
+    ),
 }));
 
 describe('useWorkspaceSwitcher', () => {
@@ -87,8 +98,7 @@ describe('useWorkspaceSwitcher', () => {
         mockIsSwitching = false;
         mockLoadNodes.mockResolvedValue(mockNodes);
         mockLoadEdges.mockResolvedValue(mockEdges);
-        mockSaveNodes.mockResolvedValue(undefined);
-        mockSaveEdges.mockResolvedValue(undefined);
+        mockQueueSave.mockResolvedValue(undefined);
         mockGetState.mockReturnValue({ nodes: [], edges: [] });
         mockCacheGet.mockReturnValue(null); // Default: cache miss
     });
@@ -239,8 +249,7 @@ describe('useWorkspaceSwitcher', () => {
             await result.current.switchWorkspace('ws-new');
         });
 
-        expect(mockSaveNodes).toHaveBeenCalledWith('user-1', 'ws-current', mockNodes);
-        expect(mockSaveEdges).toHaveBeenCalledWith('user-1', 'ws-current', mockEdges);
+        expect(mockQueueSave).toHaveBeenCalledWith('user-1', 'ws-current', mockNodes, mockEdges);
     });
 
     describe('cache integration', () => {
