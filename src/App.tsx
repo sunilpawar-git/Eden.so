@@ -54,7 +54,7 @@ function AuthenticatedApp() {
     useCompactMode();
     useNetworkStatus();
     useQueueDrainer();
-    useAutosave(currentWorkspaceId ?? '');
+    useAutosave(currentWorkspaceId ?? '', initialLoading);
 
     // Initialize pinned workspace and subscription stores on login
     useEffect(() => {

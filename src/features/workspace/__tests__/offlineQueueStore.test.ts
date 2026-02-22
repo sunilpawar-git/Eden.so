@@ -6,10 +6,12 @@ import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 
 const mockSaveNodes = vi.fn().mockResolvedValue(undefined);
 const mockSaveEdges = vi.fn().mockResolvedValue(undefined);
+const mockUpdateWorkspaceNodeCount = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/features/workspace/services/workspaceService', () => ({
     saveNodes: (...args: unknown[]) => mockSaveNodes(...args),
     saveEdges: (...args: unknown[]) => mockSaveEdges(...args),
+    updateWorkspaceNodeCount: (...args: unknown[]) => mockUpdateWorkspaceNodeCount(...args),
 }));
 
 vi.mock('@/shared/stores/saveStatusStore', () => ({

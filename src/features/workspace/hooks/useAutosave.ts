@@ -16,7 +16,7 @@ import { strings } from '@/shared/localization/strings';
 const AUTOSAVE_DELAY_MS = 2000; // 2 second debounce
 
 
-export function useAutosave(workspaceId: string) {
+export function useAutosave(workspaceId: string, isWorkspaceLoading: boolean = false) {
     const { nodes, edges } = useCanvasStore();
     const { user } = useAuthStore();
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,6 +82,13 @@ export function useAutosave(workspaceId: string) {
             return;
         }
 
+        // Phase R2: If the workspace is currently loading, absorb the state as our baseline
+        // without triggering a save. This prevents a "mount save" tech debt trap.
+        if (isWorkspaceLoading) {
+            lastSavedRef.current = { nodes: nodesJson, edges: edgesJson };
+            return;
+        }
+
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
@@ -96,5 +103,5 @@ export function useAutosave(workspaceId: string) {
                 clearTimeout(timeoutRef.current);
             }
         };
-    }, [nodes, edges, save]);
+    }, [nodes, edges, save, isWorkspaceLoading]);
 }

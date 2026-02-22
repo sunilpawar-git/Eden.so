@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import { offlineQueueService } from '../services/offlineQueueService';
 import { backgroundSyncService } from '../services/backgroundSyncService';
 import { serializeNodes, deserializeNodes } from '../services/nodeSerializer';
-import { saveNodes, saveEdges } from '../services/workspaceService';
+import { saveNodes, saveEdges, updateWorkspaceNodeCount } from '../services/workspaceService';
 import { useSaveStatusStore } from '@/shared/stores/saveStatusStore';
 import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
 import { GATED_FEATURES } from '@/features/subscription/types/subscription';
@@ -76,6 +76,7 @@ export const useOfflineQueueStore = create<OfflineQueueStore>()((set, get) => ({
             await Promise.all([
                 saveNodes(oldest.userId, oldest.workspaceId, nodes),
                 saveEdges(oldest.userId, oldest.workspaceId, oldest.edges),
+                updateWorkspaceNodeCount(oldest.userId, oldest.workspaceId, nodes.length),
             ]);
 
             offlineQueueService.dequeue(oldest.id);

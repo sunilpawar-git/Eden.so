@@ -1,7 +1,7 @@
 /**
  * Workspace Service - Firestore persistence for workspaces
  */
-import { doc, setDoc, getDoc, getDocs, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, writeBatch, serverTimestamp, getCountFromServer, updateDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import type { Workspace } from '../types/workspace';
 import { createWorkspace, createDivider } from '../types/workspace';
@@ -36,6 +36,7 @@ const getSubcollectionDocRef = (userId: string, workspaceId: string, subcollecti
 export async function createNewWorkspace(userId: string, name?: string): Promise<Workspace> {
     const workspaceId = `workspace-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const workspace = createWorkspace(workspaceId, userId, name ?? strings.workspace.untitled);
+    workspace.nodeCount = 0;
     await saveWorkspace(userId, workspace);
     return workspace;
 }
@@ -59,6 +60,16 @@ export async function saveWorkspace(userId: string, workspace: Workspace): Promi
         updatedAt: serverTimestamp(),
         orderIndex: workspace.orderIndex ?? Date.now(),
         type: workspace.type ?? 'workspace',
+        nodeCount: workspace.nodeCount ?? 0,
+    });
+}
+
+/** Efficiently update the node count of a workspace without rewriting other metadata */
+export async function updateWorkspaceNodeCount(userId: string, workspaceId: string, nodeCount: number): Promise<void> {
+    const workspaceRef = doc(db, 'users', userId, 'workspaces', workspaceId);
+    await updateDoc(workspaceRef, {
+        nodeCount,
+        updatedAt: serverTimestamp(),
     });
 }
 
@@ -80,6 +91,23 @@ export async function loadWorkspace(userId: string, workspaceId: string): Promis
     const snapshot = await getDoc(workspaceRef);
     if (!snapshot.exists()) return null;
     const data = snapshot.data() as WorkspaceDoc;
+    let nodeCount = data.nodeCount;
+
+    // Backfill node count for backward compatibility on legacy workspaces
+    if (nodeCount === undefined && data.type !== 'divider') {
+        try {
+            const nodesRef = getSubcollectionRef(userId, workspaceId, 'nodes');
+            const countSnapshot = await getCountFromServer(nodesRef);
+            nodeCount = countSnapshot.data().count;
+            // Fire-and-forget update to backfill the missing field
+            setDoc(workspaceRef, { nodeCount }, { merge: true })
+                .catch((err: unknown) => console.error('[workspaceService] Failed to backfill nodeCount:', err));
+        } catch (error: unknown) {
+            console.error('[workspaceService] Failed to get nodeCount for workspace', workspaceId, error);
+            nodeCount = 0;
+        }
+    }
+
     return {
         id: data.id,
         userId,
@@ -89,7 +117,7 @@ export async function loadWorkspace(userId: string, workspaceId: string): Promis
         updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
         orderIndex: data.orderIndex ?? Date.now(),
         type: data.type ?? 'workspace',
-        nodeCount: data.nodeCount ?? 0,
+        nodeCount: nodeCount ?? 0,
     };
 }
 
@@ -97,20 +125,49 @@ export async function loadWorkspace(userId: string, workspaceId: string): Promis
 export async function loadUserWorkspaces(userId: string): Promise<Workspace[]> {
     const workspacesRef = collection(db, 'users', userId, 'workspaces');
     const snapshot = await getDocs(workspacesRef);
-    return snapshot.docs.map((docSnapshot) => {
-        const data = docSnapshot.data() as WorkspaceDoc;
-        return {
-            id: data.id,
-            userId,
-            name: data.name,
-            canvasSettings: data.canvasSettings ?? { backgroundColor: 'grid' },
-            createdAt: data.createdAt?.toDate?.() ?? new Date(),
-            updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
-            orderIndex: data.orderIndex ?? Date.now(),
-            type: data.type ?? 'workspace',
-            nodeCount: data.nodeCount ?? 0,
-        };
-    });
+
+    const workspaces: Workspace[] = [];
+    const CHUNK_SIZE = 20; // Limit concurrent getCountFromServer calls
+
+    for (let i = 0; i < snapshot.docs.length; i += CHUNK_SIZE) {
+        const chunk = snapshot.docs.slice(i, i + CHUNK_SIZE);
+
+        const processedChunk = await Promise.all(chunk.map(async (docSnapshot) => {
+            const data = docSnapshot.data() as WorkspaceDoc;
+            let nodeCount = data.nodeCount;
+
+            // Backfill node count for backward compatibility on legacy workspaces
+            if (nodeCount === undefined && data.type !== 'divider') {
+                try {
+                    const nodesRef = getSubcollectionRef(userId, data.id, 'nodes');
+                    const countSnapshot = await getCountFromServer(nodesRef);
+                    nodeCount = countSnapshot.data().count;
+                    // Fire-and-forget update to backfill the missing field
+                    setDoc(docSnapshot.ref, { nodeCount }, { merge: true })
+                        .catch((err: unknown) => console.error('[workspaceService] Failed to backfill nodeCount:', err));
+                } catch (error: unknown) {
+                    console.error('[workspaceService] Failed to get nodeCount for workspace', data.id, error);
+                    nodeCount = 0;
+                }
+            }
+
+            return {
+                id: data.id,
+                userId,
+                name: data.name,
+                canvasSettings: data.canvasSettings ?? { backgroundColor: 'grid' },
+                createdAt: data.createdAt?.toDate?.() ?? new Date(),
+                updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+                orderIndex: data.orderIndex ?? Date.now(),
+                type: data.type ?? 'workspace',
+                nodeCount: nodeCount ?? 0,
+            };
+        }));
+
+        workspaces.push(...processedChunk);
+    }
+
+    return workspaces;
 }
 
 /** Save nodes to Firestore using batch write with delete sync */
