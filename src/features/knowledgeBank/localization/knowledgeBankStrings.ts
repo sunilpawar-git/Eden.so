@@ -6,7 +6,7 @@ export const knowledgeBankStrings = {
     title: 'Knowledge Bank',
     addButton: 'Add to Knowledge Bank',
     uploadFile: 'Upload File',
-    pasteText: 'Paste Text',
+    pasteText: 'Add Text',
     viewBank: 'View Knowledge Bank',
     saveEntry: 'Save to Knowledge Bank',
     toggleEntry: 'Toggle entry enabled',

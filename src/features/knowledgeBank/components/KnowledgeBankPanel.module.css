@@ -9,7 +9,7 @@
     width: 340px;
     background: var(--color-surface);
     border-right: 1px solid var(--color-border);
-    z-index: 90;
+    z-index: var(--z-modal);
     display: flex;
     flex-direction: column;
     box-shadow: 4px 0 24px hsla(0, 0%, 0%, 0.15);
