@@ -5,12 +5,13 @@ import { useState, useEffect } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { signOut } from '@/features/auth/services/authService';
-import { 
-    createNewWorkspace, 
+import {
+    createNewWorkspace,
     loadUserWorkspaces,
     saveWorkspace,
     saveNodes,
-    saveEdges 
+    saveEdges,
+    updateWorkspaceOrder
 } from '@/features/workspace/services/workspaceService';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -20,7 +21,7 @@ import { indexedDbService, IDB_STORES } from '@/shared/services/indexedDbService
 import { toast } from '@/shared/stores/toastStore';
 import { useSidebarStore } from '@/shared/stores/sidebarStore';
 import { PlusIcon, SettingsIcon, PinIcon } from '@/shared/components/icons';
-import { WorkspaceItem } from './WorkspaceItem';
+import { WorkspaceList } from './WorkspaceList';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -31,13 +32,14 @@ interface SidebarProps {
 export function Sidebar({ onSettingsClick }: SidebarProps) {
     const { user } = useAuthStore();
     const clearCanvas = useCanvasStore((s) => s.clearCanvas);
-    const { 
-        currentWorkspaceId, 
-        workspaces, 
-        setCurrentWorkspaceId, 
-        addWorkspace, 
+    const {
+        currentWorkspaceId,
+        workspaces,
+        setCurrentWorkspaceId,
+        addWorkspace,
         setWorkspaces,
-        updateWorkspace 
+        updateWorkspace,
+        reorderWorkspaces,
     } = useWorkspaceStore();
     const { switchWorkspace } = useWorkspaceSwitcher();
     const isPinned = useSidebarStore((s) => s.isPinned);
@@ -119,20 +121,20 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
 
     const handleNewWorkspace = async () => {
         if (!user || isCreating) return;
-        
+
         setIsCreating(true);
         try {
             // Save current workspace before switching
             const currentNodes = useCanvasStore.getState().nodes;
             const currentEdges = useCanvasStore.getState().edges;
-            
+
             if (currentWorkspaceId && (currentNodes.length > 0 || currentEdges.length > 0)) {
                 await Promise.all([
                     saveNodes(user.id, currentWorkspaceId, currentNodes),
                     saveEdges(user.id, currentWorkspaceId, currentEdges),
                 ]);
             }
-            
+
             const workspace = await createNewWorkspace(user.id);
             // Add workspace to store and switch to it
             addWorkspace(workspace);
@@ -150,7 +152,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
 
     const handleSelectWorkspace = async (workspaceId: string) => {
         if (workspaceId === currentWorkspaceId) return;
-        
+
         try {
             // Use atomic switcher: prefetch → swap → update ID (no clearCanvas)
             await switchWorkspace(workspaceId);
@@ -162,7 +164,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
 
     const handleRenameWorkspace = async (workspaceId: string, newName: string) => {
         if (!user) return;
-        
+
         const workspace = workspaces.find((ws) => ws.id === workspaceId);
         if (!workspace) return;
 
@@ -173,6 +175,30 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             await saveWorkspace(user.id, { ...workspace, name: newName });
         } catch (error) {
             console.error('[Sidebar] Failed to rename workspace:', error);
+            toast.error(strings.errors.generic);
+        }
+    };
+
+    const handleReorderWorkspace = async (sourceIndex: number, destinationIndex: number) => {
+        if (!user || sourceIndex === destinationIndex) return;
+
+        // 1. Optimistic local update
+        reorderWorkspaces(sourceIndex, destinationIndex);
+
+        // 2. Read the newly computed array state directly from the store
+        const { workspaces: updatedWorkspaces } = useWorkspaceStore.getState();
+
+        const updates = updatedWorkspaces.map((ws, index) => ({
+            id: ws.id,
+            orderIndex: index
+        }));
+
+        try {
+            // 3. Persist to Firestore asynchronously
+            await updateWorkspaceOrder(user.id, updates);
+        } catch (error) {
+            console.error('[Sidebar] Failed to save workspace order:', error);
+            // Optionally, revert state if needed, or rely on a user refresh
             toast.error(strings.errors.generic);
         }
     };
@@ -219,8 +245,8 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             </div>
 
             <div className={styles.workspaces}>
-                <button 
-                    className={styles.newWorkspace} 
+                <button
+                    className={styles.newWorkspace}
                     onClick={handleNewWorkspace}
                     disabled={isCreating}
                 >
@@ -228,26 +254,13 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
                     <span>{isCreating ? strings.common.loading : strings.workspace.newWorkspace}</span>
                 </button>
 
-                <div className={styles.workspaceList}>
-                    {workspaces.length > 0 ? (
-                        workspaces.map((ws) => (
-                            <WorkspaceItem
-                                key={ws.id}
-                                id={ws.id}
-                                name={ws.name}
-                                isActive={ws.id === currentWorkspaceId}
-                                onSelect={handleSelectWorkspace}
-                                onRename={handleRenameWorkspace}
-                            />
-                        ))
-                    ) : (
-                        <div className={styles.workspaceItem}>
-                            <span className={styles.workspaceName}>
-                                {strings.workspace.untitled}
-                            </span>
-                        </div>
-                    )}
-                </div>
+                <WorkspaceList
+                    workspaces={workspaces}
+                    currentWorkspaceId={currentWorkspaceId}
+                    onSelectWorkspace={handleSelectWorkspace}
+                    onRenameWorkspace={handleRenameWorkspace}
+                    onReorderWorkspace={handleReorderWorkspace}
+                />
             </div>
 
             <div className={styles.footer}>

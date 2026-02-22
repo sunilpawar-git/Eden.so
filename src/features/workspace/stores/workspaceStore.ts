@@ -18,6 +18,7 @@ interface WorkspaceActions {
     addWorkspace: (workspace: Workspace) => void;
     updateWorkspace: (workspaceId: string, updates: Partial<Workspace>) => void;
     removeWorkspace: (workspaceId: string) => void;
+    reorderWorkspaces: (sourceIndex: number, destinationIndex: number) => void;
     setLoading: (isLoading: boolean) => void;
     setSwitching: (isSwitching: boolean) => void;
 }
@@ -41,7 +42,9 @@ export const useWorkspaceStore = create<WorkspaceStore>()((set) => ({
     },
 
     setWorkspaces: (workspaces: Workspace[]) => {
-        set({ workspaces });
+        // Ensure workspaces are loaded sorted by orderIndex
+        const sorted = [...workspaces].sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+        set({ workspaces: sorted });
     },
 
     addWorkspace: (workspace: Workspace) => {
@@ -67,6 +70,23 @@ export const useWorkspaceStore = create<WorkspaceStore>()((set) => ({
                     ? DEFAULT_WORKSPACE_ID
                     : state.currentWorkspaceId,
         }));
+    },
+
+    reorderWorkspaces: (sourceIndex: number, destinationIndex: number) => {
+        set((state) => {
+            const newWorkspaces = [...state.workspaces];
+            const [movedItem] = newWorkspaces.splice(sourceIndex, 1);
+            if (!movedItem) return state;
+            newWorkspaces.splice(destinationIndex, 0, movedItem);
+
+            // Assign sequential order indices to preserve the new order
+            const updatedWorkspaces = newWorkspaces.map((ws, i) => ({
+                ...ws,
+                orderIndex: i,
+            }));
+
+            return { workspaces: updatedWorkspaces };
+        });
     },
 
     setLoading: (isLoading: boolean) => {

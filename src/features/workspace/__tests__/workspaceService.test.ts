@@ -8,6 +8,7 @@ import {
     loadNodes,
     loadEdges,
     createNewWorkspace,
+    updateWorkspaceOrder,
 } from '../services/workspaceService';
 
 // Mock Firestore
@@ -260,7 +261,7 @@ describe('WorkspaceService', () => {
     describe('loadUserWorkspaces', () => {
         it('should return empty array when no workspaces exist', async () => {
             mockGetDocs.mockResolvedValue({ docs: [] });
-            
+
             const { loadUserWorkspaces } = await import('../services/workspaceService');
             const result = await loadUserWorkspaces('user-1');
 
@@ -325,6 +326,66 @@ describe('WorkspaceService', () => {
             const result = await createNewWorkspace('user-1');
 
             expect(result.name).toBe('Untitled Workspace');
+        });
+    });
+
+    describe('updateWorkspaceOrder', () => {
+        it('should batch update orderIndex for provided workspaces', async () => {
+            const mockBatchUpdate = vi.fn();
+            const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
+
+            // Override the writeBatch mock strictly for this test using vi.mocked isn't necessary
+            // since writeBatch is already mocked at the top. We just spy on its methods.
+            const firestore = await import('firebase/firestore');
+            vi.mocked(firestore.writeBatch).mockReturnValue({
+                set: vi.fn(),
+                delete: vi.fn(),
+                update: mockBatchUpdate,
+                commit: mockBatchCommit,
+            } as unknown as ReturnType<typeof firestore.writeBatch>);
+
+            await updateWorkspaceOrder('user-1', [
+                { id: 'ws-1', orderIndex: 0 },
+                { id: 'ws-2', orderIndex: 1 }
+            ]);
+
+            expect(mockBatchUpdate).toHaveBeenCalledTimes(2);
+            expect(mockBatchUpdate).toHaveBeenNthCalledWith(
+                1,
+                expect.anything(),
+                expect.objectContaining({ orderIndex: 0 })
+            );
+            expect(mockBatchUpdate).toHaveBeenNthCalledWith(
+                2,
+                expect.anything(),
+                expect.objectContaining({ orderIndex: 1 })
+            );
+            expect(mockBatchCommit).toHaveBeenCalled();
+        });
+
+        it('should chunk updates into batches of 500 max to respect Firestore limits', async () => {
+            const mockBatchUpdate = vi.fn();
+            const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
+
+            const firestore = await import('firebase/firestore');
+            vi.mocked(firestore.writeBatch).mockReturnValue({
+                set: vi.fn(),
+                delete: vi.fn(),
+                update: mockBatchUpdate,
+                commit: mockBatchCommit,
+            } as unknown as ReturnType<typeof firestore.writeBatch>);
+
+            // Generate 1200 updates
+            const manyUpdates = Array.from({ length: 1200 }, (_, i) => ({
+                id: `ws-${i}`,
+                orderIndex: i
+            }));
+
+            await updateWorkspaceOrder('user-1', manyUpdates);
+
+            expect(mockBatchUpdate).toHaveBeenCalledTimes(1200);
+            // 1200 / 500 = 2.4 => 3 commits required
+            expect(mockBatchCommit).toHaveBeenCalledTimes(3);
         });
     });
 });

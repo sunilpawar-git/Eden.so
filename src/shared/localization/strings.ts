@@ -33,6 +33,9 @@ export const strings = {
         switching: 'Switching workspace...',
         switchError: 'Failed to switch workspace',
         offlineUnavailable: 'Offline mode unavailable',
+        dragHandle: 'Drag to reorder workspace',
+        reorderedSuccess: 'Workspaces reordered',
+        dragCancel: 'Drag cancelled',
     },
     canvas: {
         addNode: 'Add node',

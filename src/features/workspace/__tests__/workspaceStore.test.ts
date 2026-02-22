@@ -35,17 +35,17 @@ describe('WorkspaceStore', () => {
     describe('setCurrentWorkspaceId', () => {
         it('should update current workspace ID', () => {
             const { setCurrentWorkspaceId } = useWorkspaceStore.getState();
-            
+
             setCurrentWorkspaceId('new-workspace-id');
-            
+
             expect(useWorkspaceStore.getState().currentWorkspaceId).toBe('new-workspace-id');
         });
 
         it('should allow setting to null', () => {
             const { setCurrentWorkspaceId } = useWorkspaceStore.getState();
-            
+
             setCurrentWorkspaceId(null);
-            
+
             expect(useWorkspaceStore.getState().currentWorkspaceId).toBeNull();
         });
     });
@@ -63,10 +63,26 @@ describe('WorkspaceStore', () => {
                     updatedAt: new Date(),
                 },
             ];
-            
+
             setWorkspaces(mockWorkspaces);
-            
+
             expect(useWorkspaceStore.getState().workspaces).toEqual(mockWorkspaces);
+        });
+
+        it('should load workspaces sorted by orderIndex', () => {
+            const { setWorkspaces } = useWorkspaceStore.getState();
+            const mockWorkspaces: Workspace[] = [
+                { id: '1', name: 'ws 1', orderIndex: 3 } as Workspace,
+                { id: '2', name: 'ws 2', orderIndex: 1 } as Workspace,
+                { id: '3', name: 'ws 3', orderIndex: 2 } as Workspace,
+            ];
+
+            setWorkspaces(mockWorkspaces);
+
+            const { workspaces } = useWorkspaceStore.getState();
+            expect(workspaces[0]?.id).toBe('2');
+            expect(workspaces[1]?.id).toBe('3');
+            expect(workspaces[2]?.id).toBe('1');
         });
     });
 
@@ -81,9 +97,9 @@ describe('WorkspaceStore', () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
-            
+
             addWorkspace(newWorkspace);
-            
+
             const { workspaces } = useWorkspaceStore.getState();
             expect(workspaces).toHaveLength(1);
             expect(workspaces[0]).toEqual(newWorkspace);
@@ -102,9 +118,9 @@ describe('WorkspaceStore', () => {
                 updatedAt: new Date(),
             };
             setWorkspaces([workspace]);
-            
+
             updateWorkspace('ws-1', { name: 'New Name' });
-            
+
             const { workspaces } = useWorkspaceStore.getState();
             expect(workspaces[0]?.name).toBe('New Name');
         });
@@ -122,9 +138,9 @@ describe('WorkspaceStore', () => {
                 updatedAt: new Date(),
             };
             setWorkspaces([workspace]);
-            
+
             removeWorkspace('ws-1');
-            
+
             expect(useWorkspaceStore.getState().workspaces).toHaveLength(0);
         });
 
@@ -140,10 +156,50 @@ describe('WorkspaceStore', () => {
             };
             setWorkspaces([workspace]);
             setCurrentWorkspaceId('ws-1');
-            
+
             removeWorkspace('ws-1');
-            
+
             expect(useWorkspaceStore.getState().currentWorkspaceId).toBe(DEFAULT_WORKSPACE_ID);
+        });
+    });
+
+    describe('reorderWorkspaces', () => {
+        it('should correctly move an item and reassign orderIndices', () => {
+            const { setWorkspaces, reorderWorkspaces } = useWorkspaceStore.getState();
+            const mockWorkspaces: Workspace[] = [
+                { id: '1', name: 'A', orderIndex: 0 } as Workspace,
+                { id: '2', name: 'B', orderIndex: 1 } as Workspace,
+                { id: '3', name: 'C', orderIndex: 2 } as Workspace,
+            ];
+            setWorkspaces(mockWorkspaces);
+
+            // Move '1' from index 0 to index 2
+            reorderWorkspaces(0, 2);
+
+            const { workspaces } = useWorkspaceStore.getState();
+            expect(workspaces).toHaveLength(3);
+            expect(workspaces[0]?.id).toBe('2');
+            expect(workspaces[0]?.orderIndex).toBe(0);
+
+            expect(workspaces[1]?.id).toBe('3');
+            expect(workspaces[1]?.orderIndex).toBe(1);
+
+            expect(workspaces[2]?.id).toBe('1');
+            expect(workspaces[2]?.orderIndex).toBe(2);
+        });
+
+        it('should cleanly handle out of bounds or invalid indices silently', () => {
+            const { setWorkspaces, reorderWorkspaces } = useWorkspaceStore.getState();
+            const mockWorkspaces: Workspace[] = [
+                { id: '1', name: 'A', orderIndex: 0 } as Workspace,
+            ];
+            setWorkspaces(mockWorkspaces);
+
+            reorderWorkspaces(5, 0); // Invalid source
+
+            const { workspaces } = useWorkspaceStore.getState();
+            expect(workspaces).toHaveLength(1);
+            expect(workspaces[0]?.id).toBe('1');
         });
     });
 });

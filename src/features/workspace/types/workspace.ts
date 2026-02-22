@@ -14,6 +14,7 @@ export interface Workspace {
     canvasSettings: CanvasSettings;
     createdAt: Date;
     updatedAt: Date;
+    orderIndex?: number;
 }
 
 /**
@@ -34,5 +35,6 @@ export function createWorkspace(
         },
         createdAt: now,
         updatedAt: now,
+        orderIndex: Date.now(), // default to placing new workspaces at the end (or top, based on sort) Let's default to Date.now()
     };
 }

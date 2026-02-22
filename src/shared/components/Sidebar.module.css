@@ -18,9 +18,7 @@
     left: 0;
     top: 0;
     z-index: var(--z-modal);
-    transform: translateX(
-        calc(-1 * var(--sidebar-width) + var(--sidebar-hover-trigger-width))
-    );
+    transform: translateX(calc(-1 * var(--sidebar-width) + var(--sidebar-hover-trigger-width)));
 }
 
 /* Unpinned + hover open: slide fully into view */
@@ -109,9 +107,42 @@
     background-color: var(--color-surface-hover);
 }
 
-/* Show pin button when hovering workspace item */
-.workspaceItem:hover button {
+/* Show pin button and drag handle when hovering or focusing workspace item */
+.workspaceItem:hover button,
+.workspaceItem:focus-within button {
     opacity: 1;
+}
+
+.dragging {
+    box-shadow: var(--shadow-md);
+    background-color: var(--color-surface-hover);
+    z-index: var(--z-modal);
+}
+
+.dragHandle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: none;
+    cursor: grab;
+    opacity: 0;
+    transition: opacity var(--transition-fast), background-color var(--transition-fast);
+    padding: 2px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    touch-action: none;
+}
+
+.dragHandle:hover {
+    background-color: var(--color-surface-active);
+    color: var(--color-text-primary);
+}
+
+.dragHandle:active {
+    cursor: grabbing;
 }
 
 .workspaceItem.active {

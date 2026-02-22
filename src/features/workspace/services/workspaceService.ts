@@ -49,6 +49,7 @@ export async function saveWorkspace(userId: string, workspace: Workspace): Promi
         canvasSettings: workspace.canvasSettings,
         createdAt: workspace.createdAt,
         updatedAt: serverTimestamp(),
+        orderIndex: workspace.orderIndex ?? Date.now(),
     });
 }
 
@@ -59,6 +60,7 @@ interface WorkspaceDoc {
     canvasSettings?: Workspace['canvasSettings'];
     createdAt?: { toDate?: () => Date };
     updatedAt?: { toDate?: () => Date };
+    orderIndex?: number;
 }
 
 /** Load workspace from Firestore */
@@ -74,6 +76,7 @@ export async function loadWorkspace(userId: string, workspaceId: string): Promis
         canvasSettings: data.canvasSettings ?? { backgroundColor: 'grid' },
         createdAt: data.createdAt?.toDate?.() ?? new Date(),
         updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+        orderIndex: data.orderIndex ?? Date.now(),
     };
 }
 
@@ -90,6 +93,7 @@ export async function loadUserWorkspaces(userId: string): Promise<Workspace[]> {
             canvasSettings: data.canvasSettings ?? { backgroundColor: 'grid' },
             createdAt: data.createdAt?.toDate?.() ?? new Date(),
             updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+            orderIndex: data.orderIndex ?? Date.now(),
         };
     });
 }
@@ -211,4 +215,28 @@ export async function deleteWorkspace(userId: string, workspaceId: string): Prom
 
     // 5. Commit batch
     await batch.commit();
+}
+
+/** Batch update workspace order indices */
+export async function updateWorkspaceOrder(
+    userId: string,
+    updates: Array<{ id: string; orderIndex: number }>
+): Promise<void> {
+    const CHUNK_SIZE = 500;
+
+    // Firestore limits a single write batch to 500 operations
+    for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
+        const chunk = updates.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(db);
+
+        chunk.forEach(({ id, orderIndex }) => {
+            const workspaceRef = doc(db, 'users', userId, 'workspaces', id);
+            batch.update(workspaceRef, {
+                orderIndex,
+                updatedAt: serverTimestamp()
+            });
+        });
+
+        await batch.commit();
+    }
 }
