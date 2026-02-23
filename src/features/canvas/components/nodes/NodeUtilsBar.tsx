@@ -17,6 +17,7 @@ interface NodeUtilsBarProps {
     onAIClick?: () => void;
     onConnectClick: () => void;
     onCopyClick?: () => void;
+    onFocusClick?: () => void;
     onDelete: () => void;
     onTransform?: (type: TransformationType) => void;
     onRegenerate?: () => void;
@@ -39,6 +40,7 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
     onAIClick,
     onConnectClick,
     onCopyClick,
+    onFocusClick,
     onDelete,
     onTransform,
     onRegenerate,
@@ -110,6 +112,17 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
                         icon="📋"
                         onClick={onCopyClick}
                         disabled={disabled || !hasContent}
+                        tooltipPlacement={tooltipSide}
+                    />
+                )}
+                {onFocusClick && (
+                    <TooltipButton
+                        label={strings.nodeUtils.focus}
+                        tooltipText={strings.nodeUtils.focus}
+                        shortcut={strings.nodeUtils.focusShortcut}
+                        icon="🔍"
+                        onClick={onFocusClick}
+                        disabled={disabled}
                         tooltipPlacement={tooltipSide}
                     />
                 )}

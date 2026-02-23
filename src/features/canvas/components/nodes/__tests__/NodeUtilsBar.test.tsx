@@ -105,4 +105,30 @@ describe('NodeUtilsBar', () => {
             expect(onCopyClick).not.toHaveBeenCalled();
         });
     });
+
+    describe('Focus button', () => {
+        it('renders Focus button when onFocusClick is provided', () => {
+            const onFocusClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onFocusClick={onFocusClick} />);
+            expect(screen.getByLabelText('Focus')).toBeInTheDocument();
+        });
+
+        it('does not render Focus button when onFocusClick is not provided', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            expect(screen.queryByLabelText('Focus')).not.toBeInTheDocument();
+        });
+
+        it('calls onFocusClick when Focus button is clicked', () => {
+            const onFocusClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onFocusClick={onFocusClick} />);
+            fireEvent.click(screen.getByLabelText('Focus'));
+            expect(onFocusClick).toHaveBeenCalledTimes(1);
+        });
+
+        it('disables Focus button when disabled prop is true', () => {
+            const onFocusClick = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onFocusClick={onFocusClick} disabled={true} />);
+            expect(screen.getByLabelText('Focus')).toBeDisabled();
+        });
+    });
 });

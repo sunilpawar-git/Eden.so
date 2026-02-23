@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { useFocusStore } from '../../stores/focusStore';
 import { useIdeaCardEditor } from '../../hooks/useIdeaCardEditor';
 import { useNodeInput, type NodeShortcutMap } from '../../hooks/useNodeInput';
 import { useNodeShortcuts } from '../../hooks/useNodeShortcuts';
@@ -71,14 +72,15 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const handlePinToggle = useCallback(() => { useCanvasStore.getState().toggleNodePinned(id); }, [id]);
     const handleCollapseToggle = useCallback(() => { useCanvasStore.getState().toggleNodeCollapsed(id); }, [id]);
     const handleTagOpen = useCallback(() => { setShowTagInput(true); }, []);
+    const handleFocusClick = useCallback(() => { useFocusStore.getState().enterFocus(id); }, [id]);
 
     const focusBody = useCallback(() => { editor?.commands.focus(); }, [editor]);
     const focusHeading = useCallback(() => { headingRef.current?.focus(); }, []);
-    // Keyboard shortcuts: t = tags, c = collapse/expand (fires at document level)
     const nodeShortcuts: NodeShortcutMap = useMemo(() => ({
         t: handleTagOpen,
         c: handleCollapseToggle,
-    }), [handleTagOpen, handleCollapseToggle]);
+        f: handleFocusClick,
+    }), [handleTagOpen, handleCollapseToggle, handleFocusClick]);
     useNodeShortcuts(id, selected ?? false, nodeShortcuts);
 
     const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
@@ -159,7 +161,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 )}
             </div>
             <NodeUtilsBar onTagClick={handleTagOpen} onConnectClick={handleConnectClick}
-                onCopyClick={handleCopy} onDelete={handleDelete} onTransform={handleTransform}
+                onCopyClick={handleCopy} onFocusClick={handleFocusClick}
+                onDelete={handleDelete} onTransform={handleTransform}
                 onRegenerate={handleRegenerate} onPinToggle={handlePinToggle}
                 onCollapseToggle={handleCollapseToggle} hasContent={hasContent}
                 isTransforming={isTransforming} isPinned={isPinned ?? false}

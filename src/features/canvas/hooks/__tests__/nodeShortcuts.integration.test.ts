@@ -143,6 +143,30 @@ describe('Node Shortcuts Integration', () => {
         });
     });
 
+    describe('Focus shortcut (F key)', () => {
+        it('fires focus handler when F is pressed on selected node', () => {
+            const onFocus = vi.fn();
+            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+                f: onFocus,
+            }));
+
+            pressKeyGlobal('f');
+            expect(onFocus).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT fire focus handler during editing', () => {
+            useCanvasStore.setState({ editingNodeId: NODE_ID });
+
+            const onFocus = vi.fn();
+            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+                f: onFocus,
+            }));
+
+            pressKeyGlobal('f');
+            expect(onFocus).not.toHaveBeenCalled();
+        });
+    });
+
     describe('Multiple shortcuts coexist', () => {
         it('T and C shortcuts work independently on the same node', () => {
             const onTagOpen = vi.fn();
@@ -163,6 +187,23 @@ describe('Node Shortcuts Integration', () => {
 
             const node = useCanvasStore.getState().nodes.find(n => n.id === NODE_ID);
             expect(node?.data.isCollapsed).toBe(true);
+        });
+
+        it('T, C, and F shortcuts work independently on the same node', () => {
+            const onTagOpen = vi.fn();
+            const toggleCollapse = vi.fn();
+            const onFocus = vi.fn();
+
+            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+                t: onTagOpen,
+                c: toggleCollapse,
+                f: onFocus,
+            }));
+
+            pressKeyGlobal('f');
+            expect(onFocus).toHaveBeenCalledTimes(1);
+            expect(onTagOpen).not.toHaveBeenCalled();
+            expect(toggleCollapse).not.toHaveBeenCalled();
         });
 
         it('non-shortcut keys do not trigger any handler', () => {
