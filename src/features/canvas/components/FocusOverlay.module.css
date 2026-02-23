@@ -1,0 +1,93 @@
+/**
+ * FocusOverlay Styles - Backdrop + centered panel for focus mode
+ * All colors from CSS variables, no hardcoded values
+ */
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--focus-backdrop-bg);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: backdropFadeIn var(--transition-normal) ease forwards;
+}
+
+.panel {
+    position: relative;
+    width: min(70%, var(--focus-panel-max-width));
+    max-height: min(80vh, calc(100vh - var(--focus-panel-inset) * 2));
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--focus-panel-radius);
+    box-shadow: var(--focus-panel-shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: panelScaleIn var(--transition-normal) ease forwards;
+}
+
+.closeButton {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    z-index: 1;
+    width: var(--focus-close-size);
+    height: var(--focus-close-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: var(--font-size-lg);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.closeButton:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.headingSection {
+    flex-shrink: 0;
+    padding: var(--space-lg) var(--space-lg) 0;
+    padding-right: calc(var(--space-lg) + var(--focus-close-size) + var(--space-sm));
+}
+
+.divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-sm) var(--space-lg);
+}
+
+.contentArea {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--space-lg);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+}
+
+.tagsSection {
+    flex-shrink: 0;
+    padding: var(--space-sm) var(--space-lg) var(--space-md);
+    border-top: 1px solid var(--color-border);
+}
+
+@keyframes backdropFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes panelScaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}

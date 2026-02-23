@@ -47,13 +47,22 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
     useEffect(() => {
         submitHandlerRef.current = {
             onEnter: () => {
-                if (suggestionActiveRef.current) return false;
+                // Safety net: consume the event when suggestion is active.
+                // Normally the Suggestion plugin (priority 1100) handles Enter
+                // first, but if it fails this prevents StarterKit fallthrough.
+                if (suggestionActiveRef.current) return true;
                 const mode = useCanvasStore.getState().inputMode;
                 if (mode === 'ai') onSubmitAI?.(getMarkdown().trim());
                 else onEnterKey?.();
                 return true;
             },
-            onEscape: () => { onEnterKey?.(); return true; },
+            onEscape: () => {
+                // When suggestion popup is open, let the Suggestion plugin
+                // handle Escape (close popup) — don't move focus to body.
+                if (suggestionActiveRef.current) return true;
+                onEnterKey?.();
+                return true;
+            },
         };
         return () => { submitHandlerRef.current = null; };
     }, [getMarkdown, onEnterKey, onSubmitAI]);

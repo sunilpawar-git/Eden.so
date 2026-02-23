@@ -1,0 +1,170 @@
+/**
+ * Focus Mode Integration Tests
+ * Verifies the full focus mode flow: store -> hook -> overlay -> canvas gating
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useFocusStore } from '../stores/focusStore';
+import { useCanvasStore } from '../stores/canvasStore';
+import { useFocusMode } from '../hooks/useFocusMode';
+import type { CanvasNode } from '../types/node';
+
+const createNode = (id: string, heading: string): CanvasNode => ({
+    id, workspaceId: 'ws-1', type: 'idea',
+    position: { x: 0, y: 0 },
+    data: {
+        heading,
+        prompt: heading,
+        output: `Content for ${heading}`,
+        isGenerating: false,
+        isPromptCollapsed: false,
+        tags: ['tag-1'],
+    },
+    createdAt: new Date(), updatedAt: new Date(),
+});
+
+function pressKey(key: string) {
+    act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+            key, bubbles: true, cancelable: true,
+        }));
+    });
+}
+
+describe('Focus Mode Integration', () => {
+    const nodeA = createNode('node-a', 'Node A');
+    const nodeB = createNode('node-b', 'Node B');
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        useFocusStore.setState({ focusedNodeId: null });
+        useCanvasStore.setState({
+            nodes: [nodeA, nodeB],
+            edges: [],
+            selectedNodeIds: new Set(),
+            editingNodeId: null,
+            draftContent: null,
+            inputMode: 'note',
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    describe('Enter and exit focus flow', () => {
+        it('enterFocus sets focusedNodeId and useFocusMode reflects it', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+
+            expect(result.current.isFocused).toBe(true);
+            expect(result.current.focusedNodeId).toBe('node-a');
+            expect(result.current.focusedNode?.data.heading).toBe('Node A');
+        });
+
+        it('ESC closes focus and clears editing state', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+            useCanvasStore.setState({ editingNodeId: null });
+
+            pressKey('Escape');
+
+            expect(result.current.isFocused).toBe(false);
+            expect(result.current.focusedNodeId).toBeNull();
+        });
+
+        it('exitFocus stops editing state', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+            useCanvasStore.setState({ editingNodeId: 'node-a' });
+
+            act(() => { result.current.exitFocus(); });
+
+            expect(useCanvasStore.getState().editingNodeId).toBeNull();
+        });
+    });
+
+    describe('Switching focused nodes', () => {
+        it('switching focus from node A to node B shows node B data', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+            expect(result.current.focusedNode?.data.heading).toBe('Node A');
+
+            act(() => { result.current.enterFocus('node-b'); });
+            expect(result.current.focusedNode?.data.heading).toBe('Node B');
+            expect(result.current.focusedNodeId).toBe('node-b');
+        });
+    });
+
+    describe('Canvas interaction gating', () => {
+        it('isFocused is true when a node is focused', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+            expect(result.current.isFocused).toBe(true);
+        });
+
+        it('isFocused is false after exiting focus', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+            act(() => { result.current.exitFocus(); });
+            expect(result.current.isFocused).toBe(false);
+        });
+    });
+
+    describe('Heading edits persist', () => {
+        it('heading changes via store persist after focus exit', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+
+            act(() => {
+                useCanvasStore.getState().updateNodeHeading('node-a', 'Updated Heading');
+            });
+
+            act(() => { result.current.exitFocus(); });
+
+            const node = useCanvasStore.getState().nodes.find(n => n.id === 'node-a');
+            expect(node?.data.heading).toBe('Updated Heading');
+        });
+    });
+
+    describe('Tag edits persist', () => {
+        it('tag changes via store persist after focus exit', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+
+            act(() => {
+                useCanvasStore.getState().updateNodeTags('node-a', ['tag-1', 'tag-2', 'tag-3']);
+            });
+
+            act(() => { result.current.exitFocus(); });
+
+            const node = useCanvasStore.getState().nodes.find(n => n.id === 'node-a');
+            expect(node?.data.tags).toEqual(['tag-1', 'tag-2', 'tag-3']);
+        });
+    });
+
+    describe('Content edits persist on exit', () => {
+        it('output changes via store persist after exitFocus', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+
+            act(() => {
+                useCanvasStore.getState().updateNodeOutput('node-a', 'Updated body content');
+            });
+
+            act(() => { result.current.exitFocus(); });
+
+            const node = useCanvasStore.getState().nodes.find(n => n.id === 'node-a');
+            expect(node?.data.output).toBe('Updated body content');
+        });
+    });
+});

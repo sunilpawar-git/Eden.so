@@ -2,9 +2,9 @@ name: ActionStation CI
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, 'feature/**' ]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, 'feature/**' ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

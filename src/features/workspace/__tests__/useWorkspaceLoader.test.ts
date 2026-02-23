@@ -62,10 +62,10 @@ vi.mock('@/features/auth/stores/authStore', () => ({
 const mockSetNodes = vi.fn();
 const mockSetEdges = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
-    useCanvasStore: () => ({
-        setNodes: mockSetNodes,
-        setEdges: mockSetEdges,
-    }),
+    useCanvasStore: Object.assign(
+        () => ({ setNodes: mockSetNodes, setEdges: mockSetEdges }),
+        { getState: () => ({ nodes: [], edges: [], editingNodeId: null }) }
+    ),
 }));
 
 describe('useWorkspaceLoader', () => {
@@ -73,8 +73,8 @@ describe('useWorkspaceLoader', () => {
         vi.clearAllMocks();
         mockLoadNodes.mockResolvedValue([]);
         mockLoadEdges.mockResolvedValue([]);
-        mockCacheGet.mockReturnValue(null); // Reset cache to empty
-        mockIsOnline.mockReturnValue(true); // Reset to online
+        mockCacheGet.mockReturnValue(null);
+        mockIsOnline.mockReturnValue(true);
     });
 
     it('returns isLoading true initially', async () => {
@@ -225,15 +225,20 @@ describe('useWorkspaceLoader', () => {
             consoleSpy.mockRestore();
         });
 
-        it('does not import toast or conflict detector (structural guard)', () => {
-            // Structural regression: ensure conflict detection was fully removed
+        it('structural guards: uses mergeNodes, no toast/conflict, merge callback', () => {
             const src = readFileSync(
-                resolve(__dirname, '../hooks/useWorkspaceLoader.ts'),
-                'utf-8'
+                resolve(__dirname, '../hooks/useWorkspaceLoader.ts'), 'utf-8'
             );
             expect(src).not.toContain('toastStore');
             expect(src).not.toContain('conflictDetector');
             expect(src).not.toContain('detectConflict');
+            expect(src).toContain("from '../services/mergeNodes'");
+
+            const bgStart = src.indexOf('async function backgroundRefresh');
+            const bgEnd = src.indexOf('\n}\n', bgStart) + 3;
+            const bgRefreshFn = src.slice(bgStart, bgEnd);
+            expect(bgRefreshFn).not.toContain('setNodes');
+            expect(bgRefreshFn).toContain('onMerge');
         });
 
         it('shows error toast when offline and no cache available', async () => {

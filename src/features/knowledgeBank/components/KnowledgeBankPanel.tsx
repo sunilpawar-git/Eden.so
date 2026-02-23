@@ -139,7 +139,7 @@ function PanelHeader({ onClose }: { onClose: () => void }) {
                 onClick={onClose}
                 aria-label={strings.settings.close}
             >
-                &times;
+                {strings.common.closeSymbol}
             </button>
         </div>
     );

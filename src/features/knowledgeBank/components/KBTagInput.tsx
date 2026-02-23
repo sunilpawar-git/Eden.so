@@ -50,7 +50,7 @@ export const KBTagInput = React.memo(function KBTagInput({ tags, onChange }: KBT
                             onClick={() => removeTag(tag)}
                             aria-label={`${ts.removeTag} ${tag}`}
                         >
-                            &times;
+                            {strings.common.closeSymbol}
                         </button>
                     </span>
                 ))}

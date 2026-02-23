@@ -2,6 +2,9 @@
  * useWorkspaceLoader - Cache-first workspace loading
  * Loads from cache instantly, background-refreshes from Firestore when online.
  * Falls back to Firestore on cache miss. Shows error when offline + no cache.
+ *
+ * Background refresh uses two-layer merge (editingNodeId guard + timestamp)
+ * to prevent overwriting local edits. @see mergeNodes.ts
  */
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -10,6 +13,7 @@ import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import { loadNodes, loadEdges } from '../services/workspaceService';
 import { workspaceCache } from '../services/workspaceCache';
+import { mergeNodes, mergeEdges } from '../services/mergeNodes';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { strings } from '@/shared/localization/strings';
 
@@ -20,12 +24,13 @@ interface UseWorkspaceLoaderResult {
 }
 
 type UpdateCallback = (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
+type MergeCallback = (freshNodes: CanvasNode[], freshEdges: CanvasEdge[]) => void;
 
-/** Background-refresh from Firestore, merging into cache */
+/** Background-refresh from Firestore, merging with local state */
 async function backgroundRefresh(
     userId: string,
     workspaceId: string,
-    onUpdate: UpdateCallback
+    onMerge: MergeCallback
 ): Promise<void> {
     if (!useNetworkStatusStore.getState().isOnline) return;
 
@@ -35,12 +40,7 @@ async function backgroundRefresh(
             loadEdges(userId, workspaceId),
         ]);
 
-        onUpdate(freshNodes, freshEdges);
-        workspaceCache.set(workspaceId, {
-            nodes: freshNodes,
-            edges: freshEdges,
-            loadedAt: Date.now(),
-        });
+        onMerge(freshNodes, freshEdges);
     } catch (err) {
         console.warn('[useWorkspaceLoader] Background refresh failed:', err);
     }
@@ -83,6 +83,22 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
             }
         };
 
+        const mergeIfMounted: MergeCallback = (freshNodes, freshEdges) => {
+            if (!mounted) return;
+
+            const state = useCanvasStore.getState();
+            const mergedNodes = mergeNodes(state.nodes, freshNodes, state.editingNodeId);
+            const mergedEdges = mergeEdges(state.edges, freshEdges);
+
+            setNodes(mergedNodes);
+            setEdges(mergedEdges);
+            workspaceCache.set(workspaceId, {
+                nodes: mergedNodes,
+                edges: mergedEdges,
+                loadedAt: Date.now(),
+            });
+        };
+
         async function load() {
             setIsLoading(true);
             setError(null);
@@ -94,14 +110,13 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
             if (cached) {
                 applyIfMounted(cached.nodes, cached.edges);
                 if (mounted) setIsLoading(false);
-                await backgroundRefresh(userId, workspaceId, applyIfMounted);
+                await backgroundRefresh(userId, workspaceId, mergeIfMounted);
                 return;
             }
 
             // 2. Cache miss — check if online before Firestore call
             const isOnline = useNetworkStatusStore.getState().isOnline;
             if (!isOnline) {
-                // Offline + no cache = fail fast
                 if (mounted) {
                     setError(strings.offline.noOfflineData);
                     setIsLoading(false);
@@ -127,7 +142,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
 
         void load();
 
-        // Load Knowledge Bank entries (non-blocking, mirrors useWorkspaceSwitcher pattern)
+        // Load Knowledge Bank entries (non-blocking)
         void (async () => {
             try {
                 const { loadKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');

@@ -50,14 +50,30 @@ describe('GeminiService', () => {
             expect(result).toBe('Generated response');
         });
 
-        it('should throw error on API failure', async () => {
+        it('should retry once on transient failure then throw', async () => {
             mockError(500);
             await expect(generateContent('Test')).rejects.toThrow('AI generation failed');
+            expect(callGemini).toHaveBeenCalledTimes(2);
         });
 
-        it('should throw error on quota exceeded', async () => {
+        it('should succeed on retry after transient failure', async () => {
+            vi.mocked(callGemini)
+                .mockResolvedValueOnce({ ok: false, status: 502, data: null })
+                .mockResolvedValueOnce({
+                    ok: true, status: 200,
+                    data: { candidates: [{ content: { parts: [{ text: 'Retry OK' }] } }] },
+                });
+            vi.mocked(extractGeminiText).mockReturnValue('Retry OK');
+
+            const result = await generateContent('Test');
+            expect(result).toBe('Retry OK');
+            expect(callGemini).toHaveBeenCalledTimes(2);
+        });
+
+        it('should throw immediately on quota exceeded without retry', async () => {
             mockError(429);
             await expect(generateContent('Test')).rejects.toThrow('quota exceeded');
+            expect(callGemini).toHaveBeenCalledTimes(1);
         });
 
         it('should include KB usage guidance in systemInstruction when KB context provided', async () => {
@@ -131,18 +147,20 @@ describe('GeminiService', () => {
             expect(sysText).not.toContain('Knowledge Bank reference material');
         });
 
-        it('should handle API errors correctly', async () => {
+        it('should retry once on transient failure then throw', async () => {
             mockError(500);
             await expect(
                 generateContentWithContext('Test', ['Context'])
             ).rejects.toThrow('AI generation failed');
+            expect(callGemini).toHaveBeenCalledTimes(2);
         });
 
-        it('should handle quota exceeded errors', async () => {
+        it('should throw immediately on quota exceeded without retry', async () => {
             mockError(429);
             await expect(
                 generateContentWithContext('Test', ['Context'])
             ).rejects.toThrow('quota exceeded');
+            expect(callGemini).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -189,14 +207,18 @@ describe('GeminiService', () => {
             expect(sysText.toLowerCase()).toMatch(/proofread|grammar|spelling|correct/);
         });
 
-        it('should handle API errors correctly', async () => {
+        it('should retry once on transient failure then throw', async () => {
             mockError(500);
-            await expect(transformContent('Some text', 'refine')).rejects.toThrow('AI generation failed');
+            await expect(
+                transformContent('Some text', 'refine')
+            ).rejects.toThrow('AI generation failed');
+            expect(callGemini).toHaveBeenCalledTimes(2);
         });
 
-        it('should handle quota exceeded errors', async () => {
+        it('should throw immediately on quota exceeded without retry', async () => {
             mockError(429);
             await expect(transformContent('Some text', 'shorten')).rejects.toThrow('quota exceeded');
+            expect(callGemini).toHaveBeenCalledTimes(1);
         });
 
         it('should include preserve meaning instructions in systemInstruction', async () => {

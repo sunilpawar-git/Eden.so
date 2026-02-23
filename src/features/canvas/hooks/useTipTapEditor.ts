@@ -51,33 +51,32 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
         },
     });
 
-    // Sync editable state reactively — TipTap's useEditor does not update
-    // editability after creation, so we must call setEditable explicitly.
-    useEffect(() => {
+    /** Type guard: useEditor returns Editor | null at runtime despite TS types */
+    function isEditorReady(e: ReturnType<typeof useEditor>): e is NonNullable<typeof e> {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (editor && !editor.isDestroyed && editor.isEditable !== editable) {
+        return e != null && !e.isDestroyed;
+    }
+
+    useEffect(() => {
+        if (isEditorReady(editor) && editor.isEditable !== editable) {
             editor.setEditable(editable);
         }
     }, [editor, editable]);
 
     const getMarkdown = useCallback((): string => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        return editor ? htmlToMarkdown(editor.getHTML()) : '';
+        return isEditorReady(editor) ? htmlToMarkdown(editor.getHTML()) : '';
     }, [editor]);
 
     const getText = useCallback((): string => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        return editor ? editor.getText() : '';
+        return isEditorReady(editor) ? editor.getText() : '';
     }, [editor]);
 
     const setContent = useCallback((markdown: string): void => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!editor) return;
+        if (!isEditorReady(editor)) return;
         skipNextUpdateRef.current = true;
         if (markdown) { editor.commands.setContent(markdownToHtml(markdown)); }
         else { editor.commands.clearContent(); }
     }, [editor]);
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    return { editor, getMarkdown, getText, setContent, isEmpty: editor ? editor.isEmpty : true };
+    return { editor, getMarkdown, getText, setContent, isEmpty: isEditorReady(editor) ? editor.isEmpty : true };
 }

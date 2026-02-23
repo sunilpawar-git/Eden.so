@@ -54,7 +54,7 @@ describe('Node Shortcuts Integration', () => {
                 useCanvasStore.getState().toggleNodeCollapsed(NODE_ID);
             });
 
-            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+            renderHook(() => useNodeShortcuts(true, {
                 c: toggleCollapse,
             }));
 
@@ -75,7 +75,7 @@ describe('Node Shortcuts Integration', () => {
                 useCanvasStore.getState().toggleNodeCollapsed(NODE_ID);
             });
 
-            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+            renderHook(() => useNodeShortcuts(true, {
                 c: toggleCollapse,
             }));
 
@@ -91,7 +91,7 @@ describe('Node Shortcuts Integration', () => {
                 useCanvasStore.getState().toggleNodeCollapsed(NODE_ID);
             });
 
-            renderHook(() => useNodeShortcuts(NODE_ID, false, {
+            renderHook(() => useNodeShortcuts(false, {
                 c: toggleCollapse,
             }));
 
@@ -108,7 +108,7 @@ describe('Node Shortcuts Integration', () => {
                 useCanvasStore.getState().toggleNodeCollapsed(NODE_ID);
             });
 
-            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+            renderHook(() => useNodeShortcuts(true, {
                 c: toggleCollapse,
             }));
 
@@ -122,7 +122,7 @@ describe('Node Shortcuts Integration', () => {
     describe('Tags shortcut (T key)', () => {
         it('fires tag handler when T is pressed on selected node', () => {
             const onTagOpen = vi.fn();
-            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+            renderHook(() => useNodeShortcuts(true, {
                 t: onTagOpen,
             }));
 
@@ -134,12 +134,36 @@ describe('Node Shortcuts Integration', () => {
             useCanvasStore.setState({ editingNodeId: NODE_ID });
 
             const onTagOpen = vi.fn();
-            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+            renderHook(() => useNodeShortcuts(true, {
                 t: onTagOpen,
             }));
 
             pressKeyGlobal('t');
             expect(onTagOpen).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Focus shortcut (F key)', () => {
+        it('fires focus handler when F is pressed on selected node', () => {
+            const onFocus = vi.fn();
+            renderHook(() => useNodeShortcuts(true, {
+                f: onFocus,
+            }));
+
+            pressKeyGlobal('f');
+            expect(onFocus).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT fire focus handler during editing', () => {
+            useCanvasStore.setState({ editingNodeId: NODE_ID });
+
+            const onFocus = vi.fn();
+            renderHook(() => useNodeShortcuts(true, {
+                f: onFocus,
+            }));
+
+            pressKeyGlobal('f');
+            expect(onFocus).not.toHaveBeenCalled();
         });
     });
 
@@ -150,7 +174,7 @@ describe('Node Shortcuts Integration', () => {
                 useCanvasStore.getState().toggleNodeCollapsed(NODE_ID);
             });
 
-            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+            renderHook(() => useNodeShortcuts(true, {
                 t: onTagOpen,
                 c: toggleCollapse,
             }));
@@ -165,11 +189,28 @@ describe('Node Shortcuts Integration', () => {
             expect(node?.data.isCollapsed).toBe(true);
         });
 
+        it('T, C, and F shortcuts work independently on the same node', () => {
+            const onTagOpen = vi.fn();
+            const toggleCollapse = vi.fn();
+            const onFocus = vi.fn();
+
+            renderHook(() => useNodeShortcuts(true, {
+                t: onTagOpen,
+                c: toggleCollapse,
+                f: onFocus,
+            }));
+
+            pressKeyGlobal('f');
+            expect(onFocus).toHaveBeenCalledTimes(1);
+            expect(onTagOpen).not.toHaveBeenCalled();
+            expect(toggleCollapse).not.toHaveBeenCalled();
+        });
+
         it('non-shortcut keys do not trigger any handler', () => {
             const onTagOpen = vi.fn();
             const toggleCollapse = vi.fn();
 
-            renderHook(() => useNodeShortcuts(NODE_ID, true, {
+            renderHook(() => useNodeShortcuts(true, {
                 t: onTagOpen,
                 c: toggleCollapse,
             }));

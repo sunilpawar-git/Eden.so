@@ -45,10 +45,10 @@ vi.mock('@/features/auth/stores/authStore', () => ({
 const mockSetNodes = vi.fn();
 const mockSetEdges = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
-    useCanvasStore: () => ({
-        setNodes: mockSetNodes,
-        setEdges: mockSetEdges,
-    }),
+    useCanvasStore: Object.assign(
+        () => ({ setNodes: mockSetNodes, setEdges: mockSetEdges }),
+        { getState: () => ({ nodes: [], edges: [], editingNodeId: null }) }
+    ),
 }));
 
 describe('useWorkspaceLoader - hasOfflineData', () => {
@@ -69,6 +69,8 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
             loadedAt: Date.now(),
         });
 
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
         const { result, unmount } = renderHook(() => useWorkspaceLoader('ws-cached'));
 
         await waitFor(() => {
@@ -76,6 +78,14 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
         });
 
         expect(result.current.hasOfflineData).toBe(true);
+
+        // Background refresh must not silently crash (regression for getState mock)
+        await waitFor(() => {
+            expect(mockLoadNodes).toHaveBeenCalled();
+        });
+        expect(warnSpy).not.toHaveBeenCalled();
+
+        warnSpy.mockRestore();
         unmount();
     });
 

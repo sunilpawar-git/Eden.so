@@ -24,6 +24,12 @@ interface SlashCommandSuggestionOptions {
 export const SlashCommandSuggestion = Extension.create<SlashCommandSuggestionOptions>({
     name: 'slashCommandSuggestion',
 
+    // Must be higher than SubmitKeymap (1000) so the Suggestion plugin's
+    // handleKeyDown runs FIRST when the popup is active. When active, it
+    // handles Enter (select command) and Escape (close popup) before
+    // SubmitKeymap or StarterKit can interfere.
+    priority: 1100,
+
     addOptions() {
         return {
             suggestion: {

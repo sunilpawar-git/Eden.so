@@ -18,6 +18,9 @@ export const MAX_IMAGE_SIZE_BYTES = 5_242_880;
 /** Fetch timeout for external requests in milliseconds */
 export const FETCH_TIMEOUT_MS = 5000;
 
+/** Fetch timeout for Gemini API calls — LLM inference needs more headroom */
+export const GEMINI_FETCH_TIMEOUT_MS = 30_000;
+
 /** Rate limit: max metadata requests per window per user */
 export const META_RATE_LIMIT = 20;
 

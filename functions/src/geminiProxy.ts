@@ -14,7 +14,7 @@ import {
     GEMINI_MAX_OUTPUT_TOKENS,
     GEMINI_API_BASE,
     GEMINI_MODEL,
-    FETCH_TIMEOUT_MS,
+    GEMINI_FETCH_TIMEOUT_MS,
 } from './utils/securityConstants.js';
 
 /** Secret managed via Google Cloud Secret Manager */
@@ -73,7 +73,7 @@ export async function handleGeminiProxy(
 
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        const timeout = setTimeout(() => controller.abort(), GEMINI_FETCH_TIMEOUT_MS);
 
         const response = await fetch(url, {
             method: 'POST',

@@ -1,8 +1,9 @@
 /** IdeaCard - Unified note/AI card component. Orchestrates editor, keyboard, and UI state via useNodeInput (SSOT) */
-/* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-condition */
 import React, { useCallback, useMemo, useState, useRef } from 'react';
+import type { Editor } from '@tiptap/react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { useFocusStore } from '../../stores/focusStore';
 import { useIdeaCardEditor } from '../../hooks/useIdeaCardEditor';
 import { useNodeInput, type NodeShortcutMap } from '../../hooks/useNodeInput';
 import { useNodeShortcuts } from '../../hooks/useNodeShortcuts';
@@ -30,7 +31,31 @@ import handleStyles from './IdeaCardHandles.module.css';
 // Proximity threshold for utils bar (CSS variable in px)
 const PROXIMITY_THRESHOLD = 80;
 
+interface ContentAreaProps {
+    isEditing: boolean;
+    isGenerating: boolean;
+    hasContent: boolean;
+    isAICard: boolean;
+    heading: string | undefined;
+    prompt: string;
+    editor: Editor | null;
+    handleDoubleClick: () => void;
+    linkPreviews: IdeaNodeData['linkPreviews'];
+}
+
+function renderContentArea(props: ContentAreaProps): React.ReactElement {
+    const { isEditing, isGenerating, hasContent, isAICard, heading, prompt, editor, handleDoubleClick, linkPreviews } = props;
+    if (isEditing) return <EditingContent editor={editor} />;
+    if (isGenerating) return <GeneratingContent />;
+    if (hasContent && isAICard && !heading?.trim()) {
+        return <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} />;
+    }
+    if (hasContent) return <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} />;
+    return <PlaceholderContent onDoubleClick={handleDoubleClick} />;
+}
+
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field, heading is SSOT
     const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews, calendarEvent } = data as IdeaNodeData;
     const promptSource = (heading?.trim() ?? prompt) || ''; // Heading is SSOT for prompts; legacy fallback
     const isAICard = Boolean(promptSource && output && promptSource !== output);
@@ -45,7 +70,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const { generateFromPrompt } = useNodeGeneration();
     const { getEditableContent, saveContent, placeholder, onSubmitAI } = useIdeaCardState({
-        nodeId: id, prompt, output, isAICard, generateFromPrompt,
+        nodeId: id, prompt, output, isAICard,
+        generateFromPrompt, // eslint-disable-line @typescript-eslint/no-misused-promises -- async, consumed by useIdeaCardState
     });
 
     const calendar = useIdeaCardCalendar({ nodeId: id, calendarEvent });
@@ -71,19 +97,29 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const handlePinToggle = useCallback(() => { useCanvasStore.getState().toggleNodePinned(id); }, [id]);
     const handleCollapseToggle = useCallback(() => { useCanvasStore.getState().toggleNodeCollapsed(id); }, [id]);
     const handleTagOpen = useCallback(() => { setShowTagInput(true); }, []);
+    const handleFocusClick = useCallback(() => { useFocusStore.getState().enterFocus(id); }, [id]);
 
-    const focusBody = useCallback(() => { editor?.commands.focus(); }, [editor]);
-    const focusHeading = useCallback(() => { headingRef.current?.focus(); }, []);
-    // Keyboard shortcuts: t = tags, c = collapse/expand (fires at document level)
+    const focusBody = useCallback(() => {
+        // Editor may be null before first render
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
+        if (editor) editor.commands.focus();
+    }, [editor]);
+    const focusHeading = useCallback(() => {
+        const el = headingRef.current;
+        if (el) el.focus();
+    }, []);
     const nodeShortcuts: NodeShortcutMap = useMemo(() => ({
         t: handleTagOpen,
         c: handleCollapseToggle,
-    }), [handleTagOpen, handleCollapseToggle]);
-    useNodeShortcuts(id, selected ?? false, nodeShortcuts);
+        f: handleFocusClick,
+    }), [handleTagOpen, handleCollapseToggle, handleFocusClick]);
+    /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- selected can be undefined from NodeProps */
+    useNodeShortcuts(selected ?? false, nodeShortcuts);
 
     const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
         nodeId: id, editor, getMarkdown, setContent, getEditableContent, saveContent,
-        submitHandlerRef, isGenerating: isGenerating ?? false,
+        submitHandlerRef,
+        isGenerating: Boolean(isGenerating),
         isNewEmptyNode: !prompt && !output, focusHeading,
         shortcuts: nodeShortcuts,
     });
@@ -147,11 +183,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`}
                         data-testid="content-area" ref={contentRef} tabIndex={selected || isEditing ? 0 : -1}
                         onKeyDown={selected || isEditing ? onKeyDownReact : undefined}>
-                        {isEditing ? <EditingContent editor={editor} /> :
-                            isGenerating ? <GeneratingContent /> :
-                                hasContent && isAICard && !heading?.trim() ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
-                                    hasContent ? <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
-                                        <PlaceholderContent onDoubleClick={handleDoubleClick} />}
+                        {renderContentArea({
+                            isEditing, isGenerating: isGenerating ?? false,
+                            hasContent, isAICard, heading, prompt,
+                            editor, handleDoubleClick, linkPreviews,
+                        })}
                     </div>
                 )}
                 {!isCollapsed && (showTagInput || tagIds.length > 0) && (
@@ -159,7 +195,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                 )}
             </div>
             <NodeUtilsBar onTagClick={handleTagOpen} onConnectClick={handleConnectClick}
-                onCopyClick={handleCopy} onDelete={handleDelete} onTransform={handleTransform}
+                onCopyClick={handleCopy} onFocusClick={handleFocusClick}
+                onDelete={handleDelete} onTransform={handleTransform}
                 onRegenerate={handleRegenerate} onPinToggle={handlePinToggle}
                 onCollapseToggle={handleCollapseToggle} hasContent={hasContent}
                 isTransforming={isTransforming} isPinned={isPinned ?? false}

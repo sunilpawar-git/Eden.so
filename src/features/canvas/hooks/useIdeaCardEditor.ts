@@ -21,7 +21,7 @@ interface UseIdeaCardEditorReturn {
     editor: ReturnType<typeof useEditor>;
     getMarkdown: () => string;
     setContent: (markdown: string) => void;
-    /** Ref for Enter/Escape key handlers — populated by useNodeInput */
+    /** Ref for Enter/Escape key handlers — populated by useNodeInput or useFocusOverlayActions */
     submitHandlerRef: React.MutableRefObject<SubmitKeymapHandler | null>;
 }
 
@@ -30,7 +30,7 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
         isEditing, output, getEditableContent, placeholder,
         saveContent, onExitEditing,
     } = options;
-    /** Ref for Enter/Escape handlers — populated by useNodeInput */
+    /** Ref for Enter/Escape handlers — populated by useNodeInput or useFocusOverlayActions */
     const submitHandlerRef = useRef<SubmitKeymapHandler | null>(null);
 
     const editorExtensions = useMemo(() => [
@@ -54,8 +54,8 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
     const handleBlur = useCallback((markdown: string) => {
         saveContent(markdown);
         onExitEditing();
-        setContent(output ?? '');
-    }, [saveContent, onExitEditing, setContent, output]);
+        setContent(markdown);
+    }, [saveContent, onExitEditing, setContent]);
 
     useEffect(() => { blurRef.current = handleBlur; }, [handleBlur]);
 

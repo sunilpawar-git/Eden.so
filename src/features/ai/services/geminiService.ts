@@ -70,10 +70,10 @@ Only fix errors, do not change the style or content.`,
 
 // ── Response Handler ────────────────────────────────────
 
-/** Extract text from a Gemini call result, throwing on errors */
-async function callAndExtract(body: GeminiRequestBody): Promise<string> {
-    const result = await callGemini(body);
+const RETRY_DELAY_MS = 1000;
 
+/** Parse a Gemini result, throwing on errors */
+function parseResult(result: { ok: boolean; status: number; data: { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>; error?: { message: string; code: number } } | null }): string {
     if (!result.ok) {
         if (result.status === 429) {
             throw new Error(strings.errors.quotaExceeded);
@@ -88,6 +88,22 @@ async function callAndExtract(body: GeminiRequestBody): Promise<string> {
     const text = extractGeminiText(result.data);
     if (!text) throw new Error(strings.errors.aiError);
     return text;
+}
+
+/** Call Gemini and extract text, retrying once on transient (non-429) failures */
+async function callAndExtract(body: GeminiRequestBody): Promise<string> {
+    const result = await callGemini(body);
+    try {
+        return parseResult(result);
+    } catch (firstError) {
+        const is429 = firstError instanceof Error
+            && firstError.message === strings.errors.quotaExceeded;
+        if (is429) throw firstError;
+
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        const retryResult = await callGemini(body);
+        return parseResult(retryResult);
+    }
 }
 
 // ── Public API ──────────────────────────────────────────
