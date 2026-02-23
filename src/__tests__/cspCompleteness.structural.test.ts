@@ -75,6 +75,27 @@ describe('CSP Completeness (index.html)', () => {
         );
     });
 
+    // ── img-src: required sources for image features ──────
+
+    describe('img-src allows sources needed by image features', () => {
+        const requiredSources = [
+            { source: 'blob:', reason: 'imageCompressor uses URL.createObjectURL for canvas processing' },
+            { source: 'data:', reason: 'progressive upload inserts base64 placeholder images' },
+        ];
+
+        it.each(requiredSources)(
+            'includes $source ($reason)',
+            ({ source }) => {
+                const imgSrc = getDirective(csp, 'img-src');
+                expect(
+                    imgSrc,
+                    `img-src is missing "${source}". ` +
+                    'Add it to the CSP meta tag in index.html.',
+                ).toContain(source);
+            },
+        );
+    });
+
     // ── frame-src: Google Sign-In popup ──────────────────
 
     it('frame-src allows accounts.google.com for Google Sign-In', () => {
