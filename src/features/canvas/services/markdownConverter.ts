@@ -39,7 +39,7 @@ const HEADING_PREFIXES: Record<string, string> = {
 
 /** Tags that represent block-level elements requiring newline separation */
 const BLOCK_TAGS = new Set([
-    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre',
+    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre', 'img',
 ]);
 
 /** Recursively convert DOM node tree to markdown */
@@ -80,6 +80,7 @@ function elementToMarkdown(el: Element, tag: string, childMd: string): string {
     if (tag === 'strong' || tag === 'b') return `**${childMd}**`;
     if (tag === 'em' || tag === 'i') return `*${childMd}*`;
     if (tag === 'code') return codeToMarkdown(el, childMd);
+    if (tag === 'img') return imageToMarkdown(el);
     if (tag in HEADING_PREFIXES) return `${HEADING_PREFIXES[tag]}${childMd}`;
     if (tag === 'blockquote') return `> ${childMd.replace(/\n/g, '')}`;
     if (tag === 'pre') return `\`\`\`\n${childMd}\`\`\``;
@@ -94,6 +95,14 @@ function elementToMarkdown(el: Element, tag: string, childMd: string): string {
 function codeToMarkdown(el: Element, childMd: string): string {
     if (el.parentElement?.tagName.toLowerCase() === 'pre') return childMd;
     return `\`${childMd}\``;
+}
+
+/** Convert img element to markdown image syntax */
+function imageToMarkdown(el: Element): string {
+    const src = el.getAttribute('src') ?? '';
+    const alt = el.getAttribute('alt') ?? '';
+    if (!src) return '';
+    return `![${alt}](${src})`;
 }
 
 /** Convert list element to markdown */

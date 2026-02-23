@@ -7,6 +7,7 @@ import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Extension } from '@tiptap/core';
+import { NodeImage } from '../extensions/imageExtension';
 import { markdownToHtml, htmlToMarkdown } from '../services/markdownConverter';
 
 interface UseTipTapEditorOptions {
@@ -41,7 +42,7 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
     placeholderRef.current = placeholder;
 
     const editor = useEditor({
-        extensions: [StarterKit, Placeholder.configure({ placeholder: () => placeholderRef.current }), ...extraExtensions],
+        extensions: [StarterKit, Placeholder.configure({ placeholder: () => placeholderRef.current }), NodeImage, ...extraExtensions],
         content: initialContent ? markdownToHtml(initialContent) : '',
         editable,
         onBlur: ({ editor: e }) => { onBlur?.(htmlToMarkdown(e.getHTML())); },
