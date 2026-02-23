@@ -59,6 +59,8 @@ describe('CSP Completeness (index.html)', () => {
             { domain: 'https://*.cloudfunctions.net', reason: 'Cloud Functions proxy' },
             { domain: 'https://www.googleapis.com', reason: 'Google APIs (Calendar, etc.)' },
             { domain: 'https://oauth2.googleapis.com', reason: 'OAuth2 token exchange' },
+            { domain: 'https://firebasestorage.googleapis.com', reason: 'Firebase Storage upload API' },
+            { domain: 'https://*.firebasestorage.app', reason: 'Firebase Storage download URLs' },
         ];
 
         it.each(requiredDomains)(
