@@ -83,13 +83,20 @@ function replaceImageSrc(editor: Editor, oldSrc: string, newSrc: string): void {
     editor.view.dispatch(tr);
 }
 
-/** Remove an image node matching the given src (cleanup on upload failure) */
+/**
+ * Remove image nodes matching the given src (cleanup on upload failure).
+ * Collects positions first, then deletes bottom-to-top to avoid position shift.
+ */
 function removeImageBySrc(editor: Editor, src: string): void {
     const { doc, tr } = editor.state;
+    const positions: Array<{ pos: number; size: number }> = [];
     doc.descendants((node, pos) => {
         if (node.type.name === 'image' && node.attrs.src === src) {
-            tr.delete(pos, pos + node.nodeSize);
+            positions.push({ pos, size: node.nodeSize });
         }
     });
+    for (const { pos, size } of positions.reverse()) {
+        tr.delete(pos, pos + size);
+    }
     editor.view.dispatch(tr);
 }
