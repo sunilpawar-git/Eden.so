@@ -28,9 +28,8 @@ export function markdownToHtml(markdown: string): string {
 export function htmlToMarkdown(html: string): string {
     if (!html) return '';
 
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    return nodeToMarkdown(tempDiv).trim();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return nodeToMarkdown(doc.body).trim();
 }
 
 /** Heading tag to markdown prefix mapping */
