@@ -100,9 +100,10 @@ function codeToMarkdown(el: Element, childMd: string): string {
 /** Convert img element to markdown image syntax */
 function imageToMarkdown(el: Element): string {
     const src = el.getAttribute('src') ?? '';
-    const alt = el.getAttribute('alt') ?? '';
+    const rawAlt = el.getAttribute('alt') ?? '';
     if (!src) return '';
-    return `![${alt}](${src})`;
+    const safeAlt = rawAlt.replace(/[[\]]/g, '');
+    return `![${safeAlt}](${src})`;
 }
 
 /** Convert list element to markdown */

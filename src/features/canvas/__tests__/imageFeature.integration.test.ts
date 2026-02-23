@@ -114,6 +114,13 @@ describe('Image feature — markdown round-trip integration', () => {
         const md = '![a](https://x.com/1.jpg)\n\n![b](https://x.com/2.jpg)';
         expect(htmlToMarkdown(markdownToHtml(md))).toBe(md);
     });
+
+    it('sanitizes brackets in alt text to prevent markdown injection', () => {
+        const html = '<img src="https://x.com/img.jpg" alt="[evil](https://xss.com)" />';
+        const md = htmlToMarkdown(html);
+        expect(md).not.toContain('[evil]');
+        expect(md).toBe('![evil(https://xss.com)](https://x.com/img.jpg)');
+    });
 });
 
 describe('Image feature — localization integration', () => {
@@ -121,6 +128,7 @@ describe('Image feature — localization integration', () => {
         expect(strings.canvas.imageUploading).toBeDefined();
         expect(strings.canvas.imageUploadFailed).toBeDefined();
         expect(strings.canvas.imageReadFailed).toBeDefined();
+        expect(strings.canvas.imageUnsafeUrl).toBeDefined();
         expect(strings.canvas.imageFileTooLarge).toBeDefined();
         expect(strings.canvas.imageUnsupportedType).toBeDefined();
         expect(strings.nodeUtils.image).toBeDefined();
@@ -132,6 +140,7 @@ describe('Image feature — localization integration', () => {
         expect(strings.canvas.imageUploading.length).toBeGreaterThan(0);
         expect(strings.canvas.imageUploadFailed.length).toBeGreaterThan(0);
         expect(strings.canvas.imageReadFailed.length).toBeGreaterThan(0);
+        expect(strings.canvas.imageUnsafeUrl.length).toBeGreaterThan(0);
         expect(strings.canvas.imageFileTooLarge.length).toBeGreaterThan(0);
         expect(strings.canvas.imageUnsupportedType.length).toBeGreaterThan(0);
         expect(strings.nodeUtils.image.length).toBeGreaterThan(0);
@@ -157,5 +166,11 @@ describe('Image feature — infrastructure', () => {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         expect(config.storage).toBeDefined();
         expect(config.storage.rules).toBe('storage.rules');
+    });
+
+    it('storage.rules enforces server-side 5MB upload limit', () => {
+        const content = fs.readFileSync(rulesPath, 'utf-8');
+        expect(content).toContain('request.resource.size');
+        expect(content).toContain('5 * 1024 * 1024');
     });
 });

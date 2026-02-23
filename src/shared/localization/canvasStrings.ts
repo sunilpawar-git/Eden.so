@@ -14,6 +14,7 @@ export const canvasStrings = {
     imageUploading: 'Uploading image...',
     imageUploadFailed: 'Image upload failed. Please try again.',
     imageReadFailed: 'Failed to read image file.',
+    imageUnsafeUrl: 'Image URL failed security validation.',
     imageFileTooLarge: 'Image exceeds 5 MB size limit.',
     imageUnsupportedType: 'Unsupported image format. Use JPEG, PNG, GIF, or WebP.',
 };

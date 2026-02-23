@@ -5,6 +5,7 @@
 import type { Editor } from '@tiptap/core';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
+import { isSafeImageSrc } from '../extensions/imageExtension';
 
 export type ImageUploadFn = (file: File) => Promise<string>;
 
@@ -66,6 +67,11 @@ export async function insertImageIntoEditor(
     try {
         toast.info(strings.canvas.imageUploading);
         const permanentUrl = await uploadFn(file);
+        if (!isSafeImageSrc(permanentUrl)) {
+            removeImageBySrc(editor, dataUrl);
+            toast.error(strings.canvas.imageUnsafeUrl);
+            return;
+        }
         replaceImageSrc(editor, dataUrl, permanentUrl);
     } catch (error: unknown) {
         removeImageBySrc(editor, dataUrl);

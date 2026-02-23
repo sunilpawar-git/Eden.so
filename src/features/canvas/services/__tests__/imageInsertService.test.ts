@@ -105,6 +105,20 @@ describe('insertImageIntoEditor — error handling', () => {
         expect(toast.error).toHaveBeenCalledWith(strings.canvas.imageUnsupportedType);
     });
 
+    it('rejects unsafe permanent URL with security toast', async () => {
+        const { toast } = await import('@/shared/stores/toastStore');
+        const { strings } = await import('@/shared/localization/strings');
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const uploadFn = vi.fn().mockResolvedValue('http://insecure.com/img.jpg');
+        const file = new File(['x'], 'pic.png', { type: 'image/png' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, uploadFn);
+
+        expect(toast.error).toHaveBeenCalledWith(strings.canvas.imageUnsafeUrl);
+    });
+
     it('does nothing when editor is destroyed', async () => {
         const editor = makeMockEditor(true, true);
         const uploadFn = vi.fn();
