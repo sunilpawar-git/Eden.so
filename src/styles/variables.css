@@ -184,6 +184,10 @@
   --opacity-disabled: 0.5;
   --opacity-hover-subtle: 0.9;
 
+  /* Node Images */
+  --node-image-radius: var(--radius-md);
+  --node-image-overlay-bg: hsla(0, 0%, 100%, 0.8);
+
   /* Focus Mode */
   --focus-backdrop-bg: hsla(0, 0%, 0%, 0.5);
   --focus-panel-shadow: 0 24px 48px hsla(220, 13%, 13%, 0.2);

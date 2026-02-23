@@ -2,7 +2,7 @@
  * Image Extension Tests — Validates TipTap Image configuration and URL safety
  */
 import { describe, it, expect } from 'vitest';
-import { isSafeImageSrc } from '../imageExtension';
+import { isSafeImageSrc, NodeImage } from '../imageExtension';
 
 describe('isSafeImageSrc', () => {
     it('accepts HTTPS URLs', () => {
@@ -36,5 +36,26 @@ describe('isSafeImageSrc', () => {
 
     it('rejects blob: URLs', () => {
         expect(isSafeImageSrc('blob:http://example.com/uuid')).toBe(false);
+    });
+});
+
+describe('NodeImage extension', () => {
+    it('is named "image"', () => {
+        expect(NodeImage.name).toBe('image');
+    });
+
+    it('is configured as block-level (not inline)', () => {
+        expect(NodeImage.options.inline).toBe(false);
+    });
+
+    it('allows base64 images', () => {
+        expect(NodeImage.options.allowBase64).toBe(true);
+    });
+
+    it('has resize enabled with aspect ratio preservation', () => {
+        const resize = NodeImage.options.resize;
+        expect(resize).not.toBe(false);
+        expect(typeof resize === 'object' && resize.enabled).toBe(true);
+        expect(typeof resize === 'object' && resize.alwaysPreserveAspectRatio).toBe(true);
     });
 });

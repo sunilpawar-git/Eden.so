@@ -1,6 +1,5 @@
 /**
- * TipTap Image Extension — Configured for block-level images with base64 support
- * Resize is disabled here; enabled in Phase 5 with custom NodeView
+ * TipTap Image Extension — Block-level images with base64 support and resize
  */
 import Image from '@tiptap/extension-image';
 
@@ -16,9 +15,20 @@ export function isSafeImageSrc(src: string): boolean {
     }
 }
 
+/** Minimum image width to prevent accidental shrink-to-invisible */
+const MIN_IMAGE_WIDTH = 50;
+const MIN_IMAGE_HEIGHT = 50;
+
 export const NodeImage = Image.configure({
     inline: false,
     allowBase64: true,
+    resize: {
+        enabled: true,
+        directions: ['right', 'bottom'],
+        minWidth: MIN_IMAGE_WIDTH,
+        minHeight: MIN_IMAGE_HEIGHT,
+        alwaysPreserveAspectRatio: true,
+    },
     HTMLAttributes: {
         class: 'node-image',
         loading: 'lazy',

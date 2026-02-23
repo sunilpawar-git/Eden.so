@@ -1,0 +1,49 @@
+/**
+ * NodeImage Styles — Block-level image rendering within IdeaCard nodes
+ * Uses design tokens from variables.css (no hardcoded values)
+ */
+
+.nodeImage {
+    max-width: 100%;
+    border-radius: var(--node-image-radius, var(--radius-md));
+    display: block;
+    margin: var(--space-xs) 0;
+    transition: box-shadow var(--transition-fast);
+}
+
+.nodeImage:hover {
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+/* TipTap resize wrapper */
+:global(.node-image) {
+    max-width: 100%;
+    border-radius: var(--node-image-radius, var(--radius-md));
+    display: block;
+    margin: var(--space-xs) 0;
+}
+
+/* Upload overlay shown while image is uploading */
+.uploadOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--node-image-overlay-bg, hsla(0, 0%, 100%, 0.8));
+    border-radius: var(--node-image-radius, var(--radius-md));
+    backdrop-filter: blur(4px);
+}
+
+.uploadSpinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: var(--radius-full);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
