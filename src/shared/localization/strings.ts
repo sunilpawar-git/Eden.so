@@ -129,6 +129,8 @@ export const strings = {
         focus: 'Focus',
         focusShortcut: 'F',
         exitFocus: 'Exit focus',
+        image: 'Image',
+        imageShortcut: '⌘⇧I',
     },
     tooltip: {
         shortcutSeparator: ' ',
@@ -176,6 +178,10 @@ export const strings = {
         aiGenerate: {
             label: 'AI Generate',
             description: 'Generate content with AI',
+        },
+        insertImage: {
+            label: 'Insert Image',
+            description: 'Upload an image from your device',
         },
         noResults: 'No commands found',
         menuLabel: 'Slash commands',

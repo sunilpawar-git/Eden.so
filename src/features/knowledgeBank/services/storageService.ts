@@ -5,19 +5,9 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { storage } from '@/config/firebase';
 import { KB_MAX_FILE_SIZE, KB_ACCEPTED_MIME_TYPES } from '../types/knowledgeBank';
 import { strings } from '@/shared/localization/strings';
+import { sanitizeFilename } from '@/shared/utils/sanitize';
 
-/**
- * Sanitize a filename to prevent path traversal and special character exploits.
- * Strips directory separators, "..", and non-printable characters.
- */
-export function sanitizeFilename(raw: string): string {
-    // Remove path separators and parent directory traversal
-    const stripped = raw.replace(/[/\\]/g, '_').replace(/\.\./g, '_');
-    // Remove non-printable and control characters
-    // eslint-disable-next-line no-control-regex
-    const cleaned = stripped.replace(/[\x00-\x1F\x7F]/g, '');
-    return cleaned || 'unnamed';
-}
+export { sanitizeFilename };
 
 /** Build storage path for a KB file */
 function getStoragePath(

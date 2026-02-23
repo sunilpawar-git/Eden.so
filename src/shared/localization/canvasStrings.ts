@@ -11,4 +11,8 @@ export const canvasStrings = {
     clearConfirm: 'Are you sure you want to clear all nodes?',
     clearConfirmTitle: 'Clear Canvas',
     clearConfirmButton: 'Clear all',
+    imageUploading: 'Uploading image...',
+    imageUploadFailed: 'Image upload failed. Please try again.',
+    imageFileTooLarge: 'Image exceeds 5 MB size limit.',
+    imageUnsupportedType: 'Unsupported image format. Use JPEG, PNG, GIF, or WebP.',
 };
