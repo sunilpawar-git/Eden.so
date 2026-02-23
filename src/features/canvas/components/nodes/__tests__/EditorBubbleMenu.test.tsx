@@ -52,42 +52,56 @@ describe('EditorBubbleMenu', () => {
         expect(screen.getByLabelText(strings.formatting.code)).toBeInTheDocument();
     });
 
-    it('calls toggleBold on Bold button click', () => {
+    it('calls toggleBold on Bold button mouseDown', () => {
         const editor = createMockEditor();
         render(<EditorBubbleMenu editor={editor as never} />);
 
-        fireEvent.click(screen.getByLabelText(strings.formatting.bold));
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.bold));
         expect(editor.chain).toHaveBeenCalled();
         expect(editor._chain.focus).toHaveBeenCalled();
         expect(editor._chain.toggleBold).toHaveBeenCalled();
         expect(editor._run).toHaveBeenCalled();
     });
 
-    it('calls toggleItalic on Italic button click', () => {
+    it('calls toggleItalic on Italic button mouseDown', () => {
         const editor = createMockEditor();
         render(<EditorBubbleMenu editor={editor as never} />);
 
-        fireEvent.click(screen.getByLabelText(strings.formatting.italic));
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.italic));
         expect(editor._chain.toggleItalic).toHaveBeenCalled();
         expect(editor._run).toHaveBeenCalled();
     });
 
-    it('calls toggleStrike on Strikethrough button click', () => {
+    it('calls toggleStrike on Strikethrough button mouseDown', () => {
         const editor = createMockEditor();
         render(<EditorBubbleMenu editor={editor as never} />);
 
-        fireEvent.click(screen.getByLabelText(strings.formatting.strikethrough));
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.strikethrough));
         expect(editor._chain.toggleStrike).toHaveBeenCalled();
         expect(editor._run).toHaveBeenCalled();
     });
 
-    it('calls toggleCode on Code button click', () => {
+    it('calls toggleCode on Code button mouseDown', () => {
         const editor = createMockEditor();
         render(<EditorBubbleMenu editor={editor as never} />);
 
-        fireEvent.click(screen.getByLabelText(strings.formatting.code));
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.code));
         expect(editor._chain.toggleCode).toHaveBeenCalled();
         expect(editor._run).toHaveBeenCalled();
+    });
+
+    it('prevents default and stops propagation on mouseDown to preserve selection', () => {
+        const editor = createMockEditor();
+        render(<EditorBubbleMenu editor={editor as never} />);
+
+        const boldButton = screen.getByLabelText(strings.formatting.bold);
+        const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        const preventSpy = vi.spyOn(event, 'preventDefault');
+        const stopSpy = vi.spyOn(event, 'stopPropagation');
+        boldButton.dispatchEvent(event);
+
+        expect(preventSpy).toHaveBeenCalled();
+        expect(stopSpy).toHaveBeenCalled();
     });
 
     it('applies active class when format is active', () => {

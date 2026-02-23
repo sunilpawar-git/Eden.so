@@ -27,8 +27,10 @@ const FORMATS: ReadonlyArray<{
 ];
 
 export const EditorBubbleMenu = React.memo(function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
-    const handleClick = useCallback(
-        (action: FormatAction) => {
+    const handleFormat = useCallback(
+        (e: React.MouseEvent, action: FormatAction) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (!editor) return;
             action(editor);
         },
@@ -46,7 +48,7 @@ export const EditorBubbleMenu = React.memo(function EditorBubbleMenu({ editor }:
                         type="button"
                         aria-label={label}
                         className={`${styles.formatButton}${editor.isActive(key) ? ` ${styles.active}` : ''}`}
-                        onClick={() => handleClick(action)}
+                        onMouseDown={(e) => handleFormat(e, action)}
                     >
                         {display}
                     </button>
