@@ -152,14 +152,14 @@ describe('SubmitKeymap extension (real TipTap)', () => {
 });
 
 describe('SubmitKeymap + suggestion-active guard (heading editor pattern)', () => {
-    it('onEnter returns false when suggestion is active, allowing Suggestion plugin to handle it', () => {
+    it('onEnter returns true (consumes event) when suggestion is active, preventing StarterKit fallthrough', () => {
         const suggestionActiveRef = { current: true };
         const onSubmitNote = vi.fn();
+        const onEnterKey = vi.fn();
         const handlerRef: { current: SubmitKeymapHandler | null } = {
             current: {
                 onEnter: () => {
-                    // Mirrors the real useNodeInput logic
-                    if (suggestionActiveRef.current) return false;
+                    if (suggestionActiveRef.current) return true;
                     onSubmitNote('content');
                     return true;
                 },
@@ -171,12 +171,39 @@ describe('SubmitKeymap + suggestion-active guard (heading editor pattern)', () =
         const editor = result.current;
 
         act(() => { editor!.commands.insertContent('/'); });
+        const htmlBefore = editor!.getHTML();
 
-        // Simulate Enter while suggestion is "active"
         act(() => { simulateKeyInEditor(editor, 'Enter'); });
 
-        // SubmitKeymap should have returned false → event continues to Suggestion plugin
         expect(onSubmitNote).not.toHaveBeenCalled();
+        expect(onEnterKey).not.toHaveBeenCalled();
+        // StarterKit must NOT create a new paragraph
+        expect(editor!.getHTML()).toBe(htmlBefore);
+    });
+
+    it('onEscape returns true without calling onEnterKey when suggestion is active', () => {
+        const suggestionActiveRef = { current: true };
+        const onEnterKey = vi.fn();
+        const handlerRef: { current: SubmitKeymapHandler | null } = {
+            current: {
+                onEnter: () => {
+                    if (suggestionActiveRef.current) return true;
+                    return true;
+                },
+                onEscape: () => {
+                    if (suggestionActiveRef.current) return true;
+                    onEnterKey();
+                    return true;
+                },
+            },
+        };
+
+        const { result } = createEditorWithSubmitKeymap({ handlerRef });
+        const editor = result.current;
+
+        act(() => { simulateKeyInEditor(editor, 'Escape'); });
+
+        expect(onEnterKey).not.toHaveBeenCalled();
     });
 
     it('after suggestion closes (ref set to false), next Enter submits', () => {
@@ -185,7 +212,7 @@ describe('SubmitKeymap + suggestion-active guard (heading editor pattern)', () =
         const handlerRef: { current: SubmitKeymapHandler | null } = {
             current: {
                 onEnter: () => {
-                    if (suggestionActiveRef.current) return false;
+                    if (suggestionActiveRef.current) return true;
                     onSubmitNote('content');
                     return true;
                 },

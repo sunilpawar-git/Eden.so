@@ -3,7 +3,7 @@
  * TDD: Validates updatePosition + createSlashSuggestionRender lifecycle
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { updatePosition, createSlashSuggestionRender } from '../slashCommandSuggestion';
+import { updatePosition, createSlashSuggestionRender, SlashCommandSuggestion } from '../slashCommandSuggestion';
 
 // Mock ReactRenderer
 const mockUpdateProps = vi.fn();
@@ -18,6 +18,16 @@ vi.mock('@tiptap/react', () => ({
         destroy: mockDestroy,
     })),
 }));
+
+describe('SlashCommandSuggestion priority', () => {
+    it('has higher priority than SubmitKeymap (1000) so Suggestion handles Enter/Escape before SubmitKeymap', () => {
+        expect(SlashCommandSuggestion.config.priority).toBeGreaterThan(1000);
+    });
+
+    it('has higher priority than StarterKit (100) so its handleKeyDown runs before StarterKit Enter', () => {
+        expect(SlashCommandSuggestion.config.priority).toBeGreaterThan(100);
+    });
+});
 
 describe('updatePosition', () => {
     let popup: HTMLDivElement;
