@@ -1,5 +1,6 @@
 /** IdeaCard - Unified note/AI card component. Orchestrates editor, keyboard, and UI state via useNodeInput (SSOT) */
 import React, { useCallback, useMemo, useState, useRef } from 'react';
+import type { Editor } from '@tiptap/react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useFocusStore } from '../../stores/focusStore';
@@ -37,7 +38,7 @@ interface ContentAreaProps {
     isAICard: boolean;
     heading: string | undefined;
     prompt: string;
-    editor: ReturnType<typeof import('../../hooks/useIdeaCardEditor').useIdeaCardEditor>['editor'];
+    editor: Editor | null;
     handleDoubleClick: () => void;
     linkPreviews: IdeaNodeData['linkPreviews'];
 }
@@ -54,6 +55,7 @@ function renderContentArea(props: ContentAreaProps): React.ReactElement {
 }
 
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field, heading is SSOT
     const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews, calendarEvent } = data as IdeaNodeData;
     const promptSource = (heading?.trim() ?? prompt) || ''; // Heading is SSOT for prompts; legacy fallback
     const isAICard = Boolean(promptSource && output && promptSource !== output);
@@ -68,7 +70,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const { generateFromPrompt } = useNodeGeneration();
     const { getEditableContent, saveContent, placeholder, onSubmitAI } = useIdeaCardState({
-        nodeId: id, prompt, output, isAICard, generateFromPrompt,
+        nodeId: id, prompt, output, isAICard,
+        generateFromPrompt, // eslint-disable-line @typescript-eslint/no-misused-promises -- async, consumed by useIdeaCardState
     });
 
     const calendar = useIdeaCardCalendar({ nodeId: id, calendarEvent });
@@ -96,18 +99,27 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const handleTagOpen = useCallback(() => { setShowTagInput(true); }, []);
     const handleFocusClick = useCallback(() => { useFocusStore.getState().enterFocus(id); }, [id]);
 
-    const focusBody = useCallback(() => { editor?.commands.focus(); }, [editor]);
-    const focusHeading = useCallback(() => { headingRef.current?.focus(); }, []);
+    const focusBody = useCallback(() => {
+        // Editor may be null before first render
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
+        if (editor) editor.commands.focus();
+    }, [editor]);
+    const focusHeading = useCallback(() => {
+        const el = headingRef.current;
+        if (el) el.focus();
+    }, []);
     const nodeShortcuts: NodeShortcutMap = useMemo(() => ({
         t: handleTagOpen,
         c: handleCollapseToggle,
         f: handleFocusClick,
     }), [handleTagOpen, handleCollapseToggle, handleFocusClick]);
+    /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- selected can be undefined from NodeProps */
     useNodeShortcuts(selected ?? false, nodeShortcuts);
 
     const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
         nodeId: id, editor, getMarkdown, setContent, getEditableContent, saveContent,
-        submitHandlerRef, isGenerating: isGenerating ?? false,
+        submitHandlerRef,
+        isGenerating: Boolean(isGenerating),
         isNewEmptyNode: !prompt && !output, focusHeading,
         shortcuts: nodeShortcuts,
     });

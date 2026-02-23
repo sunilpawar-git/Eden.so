@@ -66,6 +66,8 @@ export function useFocusOverlayActions({ nodeId, output, isEditing, onExit }: Us
             },
         };
         return () => { submitHandlerRef.current = null; };
+        // submitHandlerRef is stable; omit from deps to avoid unnecessary effect re-runs
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [saveBeforeExit, onExit]);
 
     return { editor, handleDoubleClick, handleHeadingChange, handleTagsChange, saveBeforeExit };
