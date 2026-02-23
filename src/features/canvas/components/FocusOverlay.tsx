@@ -52,7 +52,7 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
                     onClick={handleExit}
                     aria-label={strings.nodeUtils.exitFocus}
                 >
-                    &times;
+                    {strings.common.closeSymbol}
                 </button>
                 <div className={styles.headingSection}>
                     <NodeHeading

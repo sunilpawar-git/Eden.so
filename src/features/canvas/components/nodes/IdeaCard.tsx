@@ -1,5 +1,4 @@
 /** IdeaCard - Unified note/AI card component. Orchestrates editor, keyboard, and UI state via useNodeInput (SSOT) */
-/* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-condition */
 import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
@@ -81,7 +80,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         c: handleCollapseToggle,
         f: handleFocusClick,
     }), [handleTagOpen, handleCollapseToggle, handleFocusClick]);
-    useNodeShortcuts(id, selected ?? false, nodeShortcuts);
+    useNodeShortcuts(selected ?? false, nodeShortcuts);
 
     const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
         nodeId: id, editor, getMarkdown, setContent, getEditableContent, saveContent,

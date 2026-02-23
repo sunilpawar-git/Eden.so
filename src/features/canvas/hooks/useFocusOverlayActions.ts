@@ -66,7 +66,7 @@ export function useFocusOverlayActions({ nodeId, output, isEditing, onExit }: Us
             },
         };
         return () => { submitHandlerRef.current = null; };
-    }, [submitHandlerRef, saveBeforeExit, onExit]);
+    }, [saveBeforeExit, onExit]);
 
     return { editor, handleDoubleClick, handleHeadingChange, handleTagsChange, saveBeforeExit };
 }

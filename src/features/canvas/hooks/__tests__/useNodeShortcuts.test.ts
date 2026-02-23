@@ -28,7 +28,7 @@ describe('useNodeShortcuts', () => {
 
     it('fires shortcut when node is selected and not editing', () => {
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { t: onTag }));
+        renderHook(() => useNodeShortcuts( true, { t: onTag }));
 
         pressKey('t');
         expect(onTag).toHaveBeenCalledTimes(1);
@@ -36,7 +36,7 @@ describe('useNodeShortcuts', () => {
 
     it('is case-insensitive (T fires t handler)', () => {
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { t: onTag }));
+        renderHook(() => useNodeShortcuts( true, { t: onTag }));
 
         pressKey('T');
         expect(onTag).toHaveBeenCalledTimes(1);
@@ -44,7 +44,7 @@ describe('useNodeShortcuts', () => {
 
     it('does NOT fire when node is not selected', () => {
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', false, { t: onTag }));
+        renderHook(() => useNodeShortcuts( false, { t: onTag }));
 
         pressKey('t');
         expect(onTag).not.toHaveBeenCalled();
@@ -53,7 +53,7 @@ describe('useNodeShortcuts', () => {
     it('does NOT fire when any node is being edited', () => {
         useCanvasStore.setState({ editingNodeId: 'node-1' });
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { t: onTag }));
+        renderHook(() => useNodeShortcuts( true, { t: onTag }));
 
         pressKey('t');
         expect(onTag).not.toHaveBeenCalled();
@@ -62,7 +62,7 @@ describe('useNodeShortcuts', () => {
     it('does NOT fire when another node is being edited', () => {
         useCanvasStore.setState({ editingNodeId: 'node-2' });
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { t: onTag }));
+        renderHook(() => useNodeShortcuts( true, { t: onTag }));
 
         pressKey('t');
         expect(onTag).not.toHaveBeenCalled();
@@ -70,7 +70,7 @@ describe('useNodeShortcuts', () => {
 
     it('does NOT fire for keys with Ctrl modifier', () => {
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { t: onTag }));
+        renderHook(() => useNodeShortcuts( true, { t: onTag }));
 
         pressKey('t', { ctrlKey: true });
         expect(onTag).not.toHaveBeenCalled();
@@ -78,7 +78,7 @@ describe('useNodeShortcuts', () => {
 
     it('does NOT fire for keys with Meta modifier', () => {
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { t: onTag }));
+        renderHook(() => useNodeShortcuts( true, { t: onTag }));
 
         pressKey('t', { metaKey: true });
         expect(onTag).not.toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe('useNodeShortcuts', () => {
 
     it('does NOT fire for non-shortcut keys', () => {
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { t: onTag }));
+        renderHook(() => useNodeShortcuts( true, { t: onTag }));
 
         pressKey('x');
         expect(onTag).not.toHaveBeenCalled();
@@ -95,7 +95,7 @@ describe('useNodeShortcuts', () => {
     it('fires different handlers for different keys', () => {
         const onTag = vi.fn();
         const onCollapse = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, {
+        renderHook(() => useNodeShortcuts( true, {
             t: onTag,
             c: onCollapse,
         }));
@@ -110,7 +110,7 @@ describe('useNodeShortcuts', () => {
 
     it('does NOT fire when target is an input element', () => {
         const onTag = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { t: onTag }));
+        renderHook(() => useNodeShortcuts( true, { t: onTag }));
 
         // Simulate event from an input element
         const input = document.createElement('input');
@@ -129,7 +129,7 @@ describe('useNodeShortcuts', () => {
 
     it('does NOT intercept globally reserved shortcut keys (e.g. N for Add Node)', () => {
         const onN = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { n: onN }));
+        renderHook(() => useNodeShortcuts( true, { n: onN }));
 
         pressKey('n');
         expect(onN).not.toHaveBeenCalled();
@@ -137,7 +137,7 @@ describe('useNodeShortcuts', () => {
 
     it('does NOT intercept uppercase globally reserved shortcut keys', () => {
         const onN = vi.fn();
-        renderHook(() => useNodeShortcuts('node-1', true, { n: onN }));
+        renderHook(() => useNodeShortcuts( true, { n: onN }));
 
         pressKey('N');
         expect(onN).not.toHaveBeenCalled();
@@ -146,7 +146,7 @@ describe('useNodeShortcuts', () => {
     it('cleans up listener when node becomes unselected', () => {
         const onTag = vi.fn();
         const { rerender } = renderHook(
-            ({ selected }) => useNodeShortcuts('node-1', selected, { t: onTag }),
+            ({ selected }) => useNodeShortcuts( selected, { t: onTag }),
             { initialProps: { selected: true } },
         );
 

@@ -59,6 +59,7 @@ export const strings = {
         loading: 'Loading...',
         loadingComponent: 'Loading component...',
         comingSoon: 'Coming soon!',
+        closeSymbol: '\u00D7',
     },
     settings: {
         title: 'Settings',

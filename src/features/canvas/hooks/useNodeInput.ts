@@ -174,19 +174,13 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         }
     }, [isGenerating, enterEditing, editor, shortcuts]);
 
-    const handleEditModeKey = useCallback((_e: KeyboardEvent) => {
-        // Enter and Escape are handled by the SubmitKeymap TipTap extension
-        // at the ProseMirror level (before the event bubbles to this div).
-        // We must NOT re-handle them here because by the time the event
-        // reaches this React handler, the Suggestion plugin may have already
-        // changed suggestionActiveRef (e.g. after selecting a slash command),
-        // causing a false-positive empty-content submit.
-    }, []);
-
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (isEditing) handleEditModeKey(e);
-        else handleViewModeKey(e);
-    }, [isEditing, handleEditModeKey, handleViewModeKey]);
+        // In edit mode, Enter/Escape are handled by SubmitKeymap at the
+        // ProseMirror level (before the event bubbles to this div). We
+        // intentionally do nothing here to avoid false-positive submits
+        // when the Suggestion plugin has already consumed the key.
+        if (!isEditing) handleViewModeKey(e);
+    }, [isEditing, handleViewModeKey]);
 
     const handleDoubleClick = useCallback(() => {
         if (!isGenerating) enterEditing();

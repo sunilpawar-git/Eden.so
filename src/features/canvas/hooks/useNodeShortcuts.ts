@@ -17,7 +17,6 @@ import { GLOBAL_SHORTCUT_KEYS } from '@/shared/constants/shortcutKeys';
 import type { NodeShortcutMap } from './useNodeInput';
 
 export function useNodeShortcuts(
-    _nodeId: string,
     selected: boolean,
     shortcuts: NodeShortcutMap,
 ): void {

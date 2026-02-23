@@ -55,7 +55,7 @@ export function PasteTextModal({ isOpen, onClose, onSave }: PasteTextModalProps)
                         onClick={onClose}
                         aria-label={strings.settings.close}
                     >
-                        &times;
+                        {strings.common.closeSymbol}
                     </button>
                 </div>
                 <div className={styles.body}>
