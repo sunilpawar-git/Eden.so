@@ -14,6 +14,7 @@ import buttonStyles from './TooltipButton.module.css';
 
 interface NodeUtilsBarProps {
     onTagClick: () => void;
+    onImageClick?: () => void;
     onAIClick?: () => void;
     onConnectClick: () => void;
     onCopyClick?: () => void;
@@ -37,6 +38,7 @@ interface NodeUtilsBarProps {
 
 export const NodeUtilsBar = React.memo(function NodeUtilsBar({
     onTagClick,
+    onImageClick,
     onAIClick,
     onConnectClick,
     onCopyClick,
@@ -78,6 +80,17 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
                     disabled={disabled}
                     tooltipPlacement={tooltipSide}
                 />
+                {onImageClick && (
+                    <TooltipButton
+                        label={strings.nodeUtils.image}
+                        tooltipText={strings.nodeUtils.image}
+                        shortcut={strings.nodeUtils.imageShortcut}
+                        icon="🖼️"
+                        onClick={onImageClick}
+                        disabled={disabled}
+                        tooltipPlacement={tooltipSide}
+                    />
+                )}
                 {onTransform ? (
                     <TransformMenu
                         onTransform={onTransform}

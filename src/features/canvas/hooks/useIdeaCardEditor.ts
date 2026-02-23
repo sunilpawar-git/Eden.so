@@ -4,9 +4,12 @@
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { useEditor } from '@tiptap/react';
+import type { Extension } from '@tiptap/core';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useTipTapEditor } from './useTipTapEditor';
 import { SubmitKeymap, type SubmitKeymapHandler } from '../extensions/submitKeymap';
+import { createFileHandlerExtension } from '../extensions/fileHandlerExtension';
+import type { ImageUploadFn } from '../services/imageInsertService';
 
 interface UseIdeaCardEditorOptions {
     isEditing: boolean;
@@ -15,6 +18,7 @@ interface UseIdeaCardEditorOptions {
     placeholder: string;
     saveContent: (markdown: string) => void;
     onExitEditing: () => void;
+    imageUploadFn?: ImageUploadFn;
 }
 
 interface UseIdeaCardEditorReturn {
@@ -28,14 +32,15 @@ interface UseIdeaCardEditorReturn {
 export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCardEditorReturn {
     const {
         isEditing, output, getEditableContent, placeholder,
-        saveContent, onExitEditing,
+        saveContent, onExitEditing, imageUploadFn,
     } = options;
-    /** Ref for Enter/Escape handlers — populated by useNodeInput or useFocusOverlayActions */
     const submitHandlerRef = useRef<SubmitKeymapHandler | null>(null);
 
-    const editorExtensions = useMemo(() => [
-        SubmitKeymap.configure({ handlerRef: submitHandlerRef }),
-    ], []);
+    const editorExtensions: Extension[] = useMemo(() => {
+        const exts: Extension[] = [SubmitKeymap.configure({ handlerRef: submitHandlerRef }) as Extension];
+        if (imageUploadFn) exts.push(createFileHandlerExtension(imageUploadFn) as Extension);
+        return exts;
+    }, [imageUploadFn]);
 
     const blurRef = useRef<(md: string) => void>(() => undefined);
     const displayContent = isEditing ? getEditableContent() : (output ?? '');

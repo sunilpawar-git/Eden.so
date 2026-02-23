@@ -14,6 +14,7 @@ import { useBarPlacement } from '../../hooks/useBarPlacement';
 import { useBarPinOpen } from '../../hooks/useBarPinOpen';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useImageInsert } from '../../hooks/useImageInsert';
+import { ensureEditorFocus } from '../../services/imageInsertService';
 import { useNodeImageUpload } from '../../hooks/useNodeImageUpload';
 import { NodeUtilsBar } from './NodeUtilsBar';
 import { NodeResizeButtons } from './NodeResizeButtons';
@@ -83,6 +84,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         isEditing: useCanvasStore((s) => s.editingNodeId === id),
         output, getEditableContent, placeholder, saveContent,
         onExitEditing: useCallback((): void => { useCanvasStore.getState().stopEditing(); }, []),
+        imageUploadFn,
     });
 
     const { triggerFilePicker } = useImageInsert(editor, imageUploadFn);
@@ -90,6 +92,12 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         if (c === 'ai-generate') useCanvasStore.getState().setInputMode('ai');
         if (c === 'insert-image') triggerFilePicker();
     }, [triggerFilePicker]);
+    const handleImageClick = useCallback(() => {
+        const store = useCanvasStore.getState();
+        if (store.editingNodeId !== id) store.startEditing(id);
+        ensureEditorFocus(editor);
+        triggerFilePicker();
+    }, [id, editor, triggerFilePicker]);
 
     const {
         handleDelete: rawDelete, handleRegenerate, handleConnectClick, handleTransform,
@@ -200,7 +208,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     <div className={styles.tagsSection}><TagInput selectedTagIds={tagIds} onChange={onTagsChange} compact /></div>
                 )}
             </div>
-            <NodeUtilsBar onTagClick={handleTagOpen} onConnectClick={handleConnectClick}
+            <NodeUtilsBar onTagClick={handleTagOpen} onImageClick={handleImageClick}
+                onConnectClick={handleConnectClick}
                 onCopyClick={handleCopy} onFocusClick={handleFocusClick}
                 onDelete={handleDelete} onTransform={handleTransform}
                 onRegenerate={handleRegenerate} onPinToggle={handlePinToggle}
