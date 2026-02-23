@@ -68,17 +68,24 @@ function serializeBody(body: GeminiRequestBody): string {
 
 // ── Core Call ────────────────────────────────────────────
 
+/** HTTP status codes that indicate the proxy itself failed (not a Gemini content error) */
+const PROXY_TRANSIENT_STATUSES = new Set([0, 401, 502, 503, 504]);
+
 /**
  * Call the Gemini API — proxy preferred, direct fallback.
- * If proxy is configured but unreachable (e.g. emulator not running),
- * automatically falls back to direct key. Never throws; returns { ok, status, data }.
+ * Falls back to direct key when the proxy is unreachable (network error)
+ * OR returns a transient HTTP error (401/502/503/504).
+ * Never throws; returns { ok, status, data }.
  */
 export async function callGemini(body: GeminiRequestBody): Promise<GeminiCallResult> {
     if (isProxyConfigured()) {
         try {
-            return await callViaProxy(body);
+            const result = await callViaProxy(body);
+            if (!result.ok && PROXY_TRANSIENT_STATUSES.has(result.status) && getDirectApiKey()) {
+                return callDirect(body);
+            }
+            return result;
         } catch {
-            // Proxy unreachable (emulator down / network error) — try direct
             if (getDirectApiKey()) {
                 return callDirect(body);
             }

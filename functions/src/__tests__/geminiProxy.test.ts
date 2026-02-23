@@ -162,6 +162,24 @@ describe('geminiProxy', () => {
             expect(result.status).toBe(502);
         });
 
+        it('uses GEMINI_FETCH_TIMEOUT_MS (30s) for the abort controller', async () => {
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve(MOCK_GEMINI_RESPONSE),
+            });
+            vi.stubGlobal('fetch', mockFetch);
+            const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+
+            await handleGeminiProxy(VALID_BODY, 'user-1', 'test-key');
+
+            const abortCall = setTimeoutSpy.mock.calls.find(
+                ([, ms]) => ms === 30_000,
+            );
+            expect(abortCall).toBeDefined();
+
+            setTimeoutSpy.mockRestore();
+        });
+
         it('supports vision requests with inlineData', async () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
                 ok: true,

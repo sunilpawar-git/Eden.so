@@ -161,11 +161,10 @@ describe('geminiClient', () => {
             expect(result).toEqual({ ok: false, status: 0, data: null });
         });
 
-        it('does NOT fall back on HTTP errors (only network errors)', async () => {
+        it('does NOT fall back on non-transient HTTP errors like 500', async () => {
             vi.stubEnv('VITE_CLOUD_FUNCTIONS_URL', 'https://fn.example.com');
             vi.stubEnv('VITE_GEMINI_API_KEY', 'fallback-key');
 
-            // Proxy returns 500 (HTTP error, not network error)
             vi.mocked(fetch).mockResolvedValueOnce({
                 ok: false, status: 500,
                 json: () => Promise.resolve({ error: { message: 'Internal', code: 500 } }),
@@ -173,10 +172,69 @@ describe('geminiClient', () => {
 
             const result = await callGemini(TEST_BODY);
 
-            // Should NOT fall back — HTTP errors are valid responses
             expect(fetch).toHaveBeenCalledTimes(1);
             expect(result.ok).toBe(false);
             expect(result.status).toBe(500);
+        });
+
+        it('falls back to direct key on proxy 502 error', async () => {
+            vi.stubEnv('VITE_CLOUD_FUNCTIONS_URL', 'https://fn.example.com');
+            vi.stubEnv('VITE_GEMINI_API_KEY', 'fallback-key');
+
+            const directResponse = geminiJsonResponse('Direct fallback');
+            vi.mocked(fetch)
+                .mockResolvedValueOnce({
+                    ok: false, status: 502,
+                    json: () => Promise.resolve({ error: { message: 'Bad gateway' } }),
+                } as Response)
+                .mockResolvedValueOnce({
+                    ok: true, status: 200,
+                    json: () => Promise.resolve(directResponse),
+                } as Response);
+
+            const result = await callGemini(TEST_BODY);
+
+            expect(fetch).toHaveBeenCalledTimes(2);
+            expect(result.ok).toBe(true);
+            expect(result.data).toEqual(directResponse);
+            const directUrl = vi.mocked(fetch).mock.calls[1]![0] as string;
+            expect(directUrl).toContain('generativelanguage.googleapis.com');
+        });
+
+        it('falls back to direct key on proxy 401 error', async () => {
+            vi.stubEnv('VITE_CLOUD_FUNCTIONS_URL', 'https://fn.example.com');
+            vi.stubEnv('VITE_GEMINI_API_KEY', 'fallback-key');
+
+            const directResponse = geminiJsonResponse('Auth fallback');
+            vi.mocked(fetch)
+                .mockResolvedValueOnce({
+                    ok: false, status: 401,
+                    json: () => Promise.resolve({ error: { message: 'Unauthorized' } }),
+                } as Response)
+                .mockResolvedValueOnce({
+                    ok: true, status: 200,
+                    json: () => Promise.resolve(directResponse),
+                } as Response);
+
+            const result = await callGemini(TEST_BODY);
+
+            expect(fetch).toHaveBeenCalledTimes(2);
+            expect(result.ok).toBe(true);
+        });
+
+        it('does not fall back on proxy transient error when no direct key', async () => {
+            vi.stubEnv('VITE_CLOUD_FUNCTIONS_URL', 'https://fn.example.com');
+
+            vi.mocked(fetch).mockResolvedValueOnce({
+                ok: false, status: 502,
+                json: () => Promise.resolve({ error: { message: 'Bad gateway' } }),
+            } as Response);
+
+            const result = await callGemini(TEST_BODY);
+
+            expect(fetch).toHaveBeenCalledTimes(1);
+            expect(result.ok).toBe(false);
+            expect(result.status).toBe(502);
         });
     });
 
