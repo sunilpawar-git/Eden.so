@@ -17,6 +17,14 @@ export const slashCommands: SlashCommand[] = [
         keywords: ['ai', 'generate', 'create', 'write'],
         prefix: 'ai',
     },
+    {
+        id: 'insert-image',
+        labelKey: 'slashCommands.insertImage.label',
+        descriptionKey: 'slashCommands.insertImage.description',
+        icon: '🖼️',
+        keywords: ['image', 'photo', 'picture', 'img', 'upload'],
+        prefix: 'image',
+    },
 ];
 
 /**

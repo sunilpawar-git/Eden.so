@@ -13,6 +13,8 @@ import { useLinkPreviewRetry } from '../../hooks/useLinkPreviewRetry';
 import { useBarPlacement } from '../../hooks/useBarPlacement';
 import { useBarPinOpen } from '../../hooks/useBarPinOpen';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
+import { useImageInsert } from '../../hooks/useImageInsert';
+import { useNodeImageUpload } from '../../hooks/useNodeImageUpload';
 import { NodeUtilsBar } from './NodeUtilsBar';
 import { NodeResizeButtons } from './NodeResizeButtons';
 import { NodeHeading, type NodeHeadingHandle } from './NodeHeading';
@@ -75,15 +77,19 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     });
 
     const calendar = useIdeaCardCalendar({ nodeId: id, calendarEvent });
+    const imageUploadFn = useNodeImageUpload(id);
 
-    const slashHandler = useCallback((c: string) => {
-        if (c === 'ai-generate') useCanvasStore.getState().setInputMode('ai');
-    }, []);
     const { editor, getMarkdown, setContent, submitHandlerRef } = useIdeaCardEditor({
         isEditing: useCanvasStore((s) => s.editingNodeId === id),
         output, getEditableContent, placeholder, saveContent,
         onExitEditing: useCallback((): void => { useCanvasStore.getState().stopEditing(); }, []),
     });
+
+    const { triggerFilePicker } = useImageInsert(editor, imageUploadFn);
+    const slashHandler = useCallback((c: string) => {
+        if (c === 'ai-generate') useCanvasStore.getState().setInputMode('ai');
+        if (c === 'insert-image') triggerFilePicker();
+    }, [triggerFilePicker]);
 
     const {
         handleDelete: rawDelete, handleRegenerate, handleConnectClick, handleTransform,

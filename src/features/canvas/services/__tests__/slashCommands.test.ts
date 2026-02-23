@@ -18,10 +18,17 @@ describe('slashCommands', () => {
 
         it('has ai-generate command', () => {
             const targetId = 'ai-generate';
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test validates command exists
             const aiCommand = slashCommands.find(cmd => cmd.id === targetId);
             expect(aiCommand).toBeDefined();
             expect(aiCommand?.id).toBe(targetId);
+        });
+
+        it('has insert-image command', () => {
+            const targetId = 'insert-image';
+            const imgCommand = slashCommands.find(cmd => cmd.id === targetId);
+            expect(imgCommand).toBeDefined();
+            expect(imgCommand?.icon).toBe('🖼️');
+            expect(imgCommand?.prefix).toBe('image');
         });
 
         it('all commands have required fields', () => {
@@ -47,7 +54,6 @@ describe('slashCommands', () => {
 
         it('ai-generate command has prefix "ai"', () => {
             const targetId = 'ai-generate';
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test validates command exists
             const aiCommand = slashCommands.find(cmd => cmd.id === targetId);
             expect(aiCommand?.prefix).toBe('ai');
         });
@@ -63,7 +69,6 @@ describe('slashCommands', () => {
             const targetId = 'ai-generate';
             const result = filterCommands('ai');
             expect(result.length).toBeGreaterThan(0);
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test validates filtering works
             expect(result.some(cmd => cmd.id === targetId)).toBe(true);
         });
 
@@ -71,8 +76,17 @@ describe('slashCommands', () => {
             const targetId = 'ai-generate';
             const result = filterCommands('gen');
             expect(result.length).toBeGreaterThan(0);
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test validates filtering works
             expect(result.some(cmd => cmd.id === targetId)).toBe(true);
+        });
+
+        it('filters by keyword prefix "image"', () => {
+            const result = filterCommands('image');
+            expect(result.some(cmd => cmd.id === 'insert-image')).toBe(true);
+        });
+
+        it('filters by keyword prefix "photo"', () => {
+            const result = filterCommands('photo');
+            expect(result.some(cmd => cmd.id === 'insert-image')).toBe(true);
         });
 
         it('returns empty array for no match', () => {
@@ -90,15 +104,13 @@ describe('slashCommands', () => {
         });
 
         it('matches keyword start, not substring', () => {
-            // "ai" should match because "ai" keyword starts with "ai"
             const aiResult = filterCommands('ai');
             expect(aiResult.length).toBeGreaterThan(0);
             
-            // "i" should not match "ai" (not at start)
-            // But might match other keywords starting with "i" if any
-            // For now, we only have ai-generate, so "i" should not match
+            // "i" matches "image" keyword (insert-image) but not "ai"
             const iResult = filterCommands('i');
-            expect(iResult.length).toBe(0);
+            expect(iResult.some(cmd => cmd.id === 'insert-image')).toBe(true);
+            expect(iResult.some(cmd => cmd.id === 'ai-generate')).toBe(false);
         });
     });
 
