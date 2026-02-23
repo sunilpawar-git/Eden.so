@@ -130,7 +130,6 @@ export const strings = {
         focusShortcut: 'F',
         exitFocus: 'Exit focus',
         image: 'Image',
-        imageShortcut: '⌘⇧I',
     },
     tooltip: {
         shortcutSeparator: ' ',

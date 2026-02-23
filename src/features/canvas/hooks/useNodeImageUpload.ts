@@ -6,7 +6,7 @@ import { useCallback } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { uploadNodeImage } from '../services/imageUploadService';
-import type { ImageUploadFn } from './useImageInsert';
+import type { ImageUploadFn } from '../services/imageInsertService';
 
 export function useNodeImageUpload(nodeId: string): ImageUploadFn {
     return useCallback(async (file: File): Promise<string> => {

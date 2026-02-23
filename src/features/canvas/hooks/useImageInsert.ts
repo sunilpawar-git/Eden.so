@@ -11,8 +11,6 @@ import {
     type ImageUploadFn,
 } from '../services/imageInsertService';
 
-export { ensureEditorFocus, insertImageIntoEditor, type ImageUploadFn };
-
 /** Accept attribute for file picker input (derived from SSOT constants) */
 const FILE_ACCEPT = IMAGE_ACCEPTED_MIME_TYPES.join(',');
 

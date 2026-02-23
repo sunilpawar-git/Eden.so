@@ -84,7 +84,6 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
                     <TooltipButton
                         label={strings.nodeUtils.image}
                         tooltipText={strings.nodeUtils.image}
-                        shortcut={strings.nodeUtils.imageShortcut}
                         icon="🖼️"
                         onClick={onImageClick}
                         disabled={disabled}

@@ -41,6 +41,10 @@ export function buildNodeImagePath(
 /**
  * Upload a node image: validate, compress, store in Firebase Storage.
  * @returns The public download URL for the uploaded image.
+ *
+ * NOTE: compressImage always outputs JPEG, which destroys PNG transparency
+ * and GIF animation. This is a known limitation of the shared KB compressor.
+ * Tracked as a future enhancement.
  */
 export async function uploadNodeImage(
     userId: string,
