@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { CanvasView } from '../CanvasView';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { useFocusStore } from '../../stores/focusStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { ReactFlow, ConnectionLineType } from '@xyflow/react';
 
@@ -25,6 +26,11 @@ vi.mock('@xyflow/react', async (importOriginal) => {
 // Mock ZoomControls import
 vi.mock('../ZoomControls', () => ({
     ZoomControls: () => <div data-testid="mock-zoom-controls" />,
+}));
+
+// Mock FocusOverlay import
+vi.mock('../FocusOverlay', () => ({
+    FocusOverlay: () => <div data-testid="mock-focus-overlay" />,
 }));
 
 describe('CanvasView', () => {
@@ -376,6 +382,45 @@ describe('CanvasView', () => {
         it('should render ZoomControls', () => {
             render(<CanvasView />);
             expect(screen.getByTestId('mock-zoom-controls')).toBeInTheDocument();
+        });
+    });
+
+    describe('Focus mode integration', () => {
+        beforeEach(() => {
+            useFocusStore.setState({ focusedNodeId: null });
+        });
+
+        it('should render FocusOverlay component', () => {
+            render(<CanvasView />);
+            expect(screen.getByTestId('mock-focus-overlay')).toBeInTheDocument();
+        });
+
+        it('should disable canvas interactions when a node is focused', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+
+            expect(props.nodesDraggable).toBe(false);
+            expect(props.elementsSelectable).toBe(false);
+            expect(props.nodesConnectable).toBe(false);
+            expect(props.panOnDrag).toBe(false);
+            expect(props.zoomOnScroll).toBe(false);
+            expect(props.panOnScroll).toBe(false);
+        });
+
+        it('should not disable canvas interactions when no node is focused', () => {
+            useFocusStore.setState({ focusedNodeId: null });
+            render(<CanvasView />);
+
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+
+            expect(props.nodesDraggable).toBe(true);
+            expect(props.elementsSelectable).toBe(true);
+            expect(props.nodesConnectable).toBe(true);
+            expect(props.panOnDrag).toBe(true);
         });
     });
 });

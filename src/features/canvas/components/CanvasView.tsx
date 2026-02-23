@@ -23,11 +23,13 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useCanvasStore } from '../stores/canvasStore';
+import { useFocusStore } from '../stores/focusStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { IdeaCard } from './nodes/IdeaCard';
 import { DeletableEdge } from './edges/DeletableEdge';
 import { ZoomControls } from './ZoomControls';
+import { FocusOverlay } from './FocusOverlay';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
@@ -61,6 +63,8 @@ export function CanvasView() {
     const canvasGrid = useSettingsStore((s) => s.canvasGrid);
     const canvasScrollMode = useSettingsStore((s) => s.canvasScrollMode);
     const isCanvasLocked = useSettingsStore((s) => s.isCanvasLocked);
+    const isFocused = useFocusStore((s) => s.focusedNodeId !== null);
+    const isInteractionDisabled = isCanvasLocked || isFocused;
     const isNavigateMode = canvasScrollMode === 'navigate';
 
     // RAF throttling for resize events (performance optimization)
@@ -85,7 +89,7 @@ export function CanvasView() {
         selected: selectedNodeIds.has(node.id),
         // Pinned nodes cannot be dragged (Phase R: bug fix)
         // Also disabled if canvas is fully locked
-        draggable: !isCanvasLocked && !node.data.isPinned,
+        draggable: !isInteractionDisabled && !node.data.isPinned,
         // Use dimensions from store (persisted from Firestore)
         ...(node.width && { width: node.width }),
         ...(node.height && { height: node.height }),
@@ -230,19 +234,20 @@ export function CanvasView() {
                 snapGrid={[16, 16]}
                 minZoom={0.1}
                 maxZoom={2}
-                zoomOnScroll={!isCanvasLocked && !isNavigateMode}
-                panOnScroll={!isCanvasLocked && isNavigateMode}
-                panOnDrag={!isCanvasLocked}
-                nodesDraggable={!isCanvasLocked}
-                elementsSelectable={!isCanvasLocked}
-                nodesConnectable={!isCanvasLocked}
+                zoomOnScroll={!isInteractionDisabled && !isNavigateMode}
+                panOnScroll={!isInteractionDisabled && isNavigateMode}
+                panOnDrag={!isInteractionDisabled}
+                nodesDraggable={!isInteractionDisabled}
+                elementsSelectable={!isInteractionDisabled}
+                nodesConnectable={!isInteractionDisabled}
                 {...(isNavigateMode && { panOnScrollMode: PanOnScrollMode.Free })}
-                selectionOnDrag={!isCanvasLocked}
+                selectionOnDrag={!isInteractionDisabled}
                 selectionMode={SelectionMode.Partial}
             >
                 {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1} />}
                 <ZoomControls />
             </ReactFlow>
+            <FocusOverlay />
         </div>
     );
 }
