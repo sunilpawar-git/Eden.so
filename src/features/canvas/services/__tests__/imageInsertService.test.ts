@@ -48,8 +48,9 @@ describe('ensureEditorFocus — edge cases', () => {
 });
 
 describe('insertImageIntoEditor — error handling', () => {
-    it('shows toast on upload failure', async () => {
+    it('shows generic toast on unknown upload failure', async () => {
         const { toast } = await import('@/shared/stores/toastStore');
+        const { strings } = await import('@/shared/localization/strings');
         const editor = makeMockEditor(true);
         const failFn = vi.fn().mockRejectedValue(new Error('Network error'));
         const file = new File(['x'], 'fail.png', { type: 'image/png' });
@@ -57,7 +58,35 @@ describe('insertImageIntoEditor — error handling', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
         await insertImageIntoEditor(editor as any, file, failFn);
 
-        expect(toast.error).toHaveBeenCalled();
+        expect(toast.error).toHaveBeenCalledWith(strings.canvas.imageUploadFailed);
+    });
+
+    it('surfaces specific error for oversized files', async () => {
+        const { toast } = await import('@/shared/stores/toastStore');
+        const { strings } = await import('@/shared/localization/strings');
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const failFn = vi.fn().mockRejectedValue(new Error(strings.canvas.imageFileTooLarge));
+        const file = new File(['x'], 'big.jpg', { type: 'image/jpeg' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, failFn);
+
+        expect(toast.error).toHaveBeenCalledWith(strings.canvas.imageFileTooLarge);
+    });
+
+    it('surfaces specific error for unsupported type', async () => {
+        const { toast } = await import('@/shared/stores/toastStore');
+        const { strings } = await import('@/shared/localization/strings');
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const failFn = vi.fn().mockRejectedValue(new Error(strings.canvas.imageUnsupportedType));
+        const file = new File(['x'], 'bad.svg', { type: 'image/svg+xml' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, failFn);
+
+        expect(toast.error).toHaveBeenCalledWith(strings.canvas.imageUnsupportedType);
     });
 
     it('does nothing when editor is destroyed', async () => {

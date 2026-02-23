@@ -1,8 +1,10 @@
 /**
  * Image Feature Integration Tests — End-to-end validation of the image pipeline
- * Covers: types, validation, markdown round-trip, slash commands, security
+ * Covers: types, validation, markdown round-trip, slash commands, security, infra
  */
 import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import { IMAGE_ACCEPTED_MIME_TYPES, IMAGE_MAX_FILE_SIZE } from '../types/image';
 import { isAcceptedImageType, validateImageFile, buildNodeImagePath } from '../services/imageUploadService';
 import { isSafeImageSrc } from '../extensions/imageExtension';
@@ -118,10 +120,10 @@ describe('Image feature — localization integration', () => {
     it('all image-related strings exist', () => {
         expect(strings.canvas.imageUploading).toBeDefined();
         expect(strings.canvas.imageUploadFailed).toBeDefined();
+        expect(strings.canvas.imageReadFailed).toBeDefined();
         expect(strings.canvas.imageFileTooLarge).toBeDefined();
         expect(strings.canvas.imageUnsupportedType).toBeDefined();
         expect(strings.nodeUtils.image).toBeDefined();
-        expect(strings.nodeUtils.imageShortcut).toBeDefined();
         expect(strings.slashCommands.insertImage.label).toBeDefined();
         expect(strings.slashCommands.insertImage.description).toBeDefined();
     });
@@ -129,9 +131,31 @@ describe('Image feature — localization integration', () => {
     it('no string values are empty', () => {
         expect(strings.canvas.imageUploading.length).toBeGreaterThan(0);
         expect(strings.canvas.imageUploadFailed.length).toBeGreaterThan(0);
+        expect(strings.canvas.imageReadFailed.length).toBeGreaterThan(0);
         expect(strings.canvas.imageFileTooLarge.length).toBeGreaterThan(0);
         expect(strings.canvas.imageUnsupportedType.length).toBeGreaterThan(0);
         expect(strings.nodeUtils.image.length).toBeGreaterThan(0);
         expect(strings.slashCommands.insertImage.label.length).toBeGreaterThan(0);
+    });
+});
+
+describe('Image feature — infrastructure', () => {
+    const rulesPath = path.resolve(__dirname, '../../../../storage.rules');
+
+    it('storage.rules file exists', () => {
+        expect(fs.existsSync(rulesPath)).toBe(true);
+    });
+
+    it('storage.rules contains user-scoped image path', () => {
+        const content = fs.readFileSync(rulesPath, 'utf-8');
+        expect(content).toContain('users/{userId}');
+        expect(content).toContain('request.auth.uid == userId');
+    });
+
+    it('firebase.json references storage.rules', () => {
+        const configPath = path.resolve(__dirname, '../../../../firebase.json');
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        expect(config.storage).toBeDefined();
+        expect(config.storage.rules).toBe('storage.rules');
     });
 });

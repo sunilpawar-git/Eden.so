@@ -25,9 +25,24 @@ function readAsDataUrl(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error(strings.canvas.imageUploadFailed));
+        reader.onerror = () => reject(new Error(strings.canvas.imageReadFailed));
         reader.readAsDataURL(file);
     });
+}
+
+/** Known localized error messages that should be shown as-is */
+const KNOWN_ERROR_MESSAGES = new Set([
+    strings.canvas.imageFileTooLarge,
+    strings.canvas.imageUnsupportedType,
+    strings.canvas.imageReadFailed,
+]);
+
+/** Extract a user-facing message from an upload error */
+function getUploadErrorMessage(error: unknown): string {
+    if (error instanceof Error && KNOWN_ERROR_MESSAGES.has(error.message)) {
+        return error.message;
+    }
+    return strings.canvas.imageUploadFailed;
 }
 
 /**
@@ -51,9 +66,9 @@ export async function insertImageIntoEditor(
     try {
         const permanentUrl = await uploadFn(file);
         replaceImageSrc(editor, dataUrl, permanentUrl);
-    } catch {
+    } catch (error: unknown) {
         removeImageBySrc(editor, dataUrl);
-        toast.error(strings.canvas.imageUploadFailed);
+        toast.error(getUploadErrorMessage(error));
     }
 }
 
