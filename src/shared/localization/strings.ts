@@ -125,6 +125,9 @@ export const strings = {
         collapse: 'Collapse',
         collapseShortcut: 'C',
         expand: 'Expand',
+        focus: 'Focus',
+        focusShortcut: 'F',
+        exitFocus: 'Exit focus',
     },
     tooltip: {
         shortcutSeparator: ' ',

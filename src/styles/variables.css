@@ -167,6 +167,12 @@
   --node-utils-hover-delay-in: 80ms;
   --node-utils-hover-delay-out: 150ms;
   --node-utils-proximity-threshold: 80px;
+
+  /* Focus Mode */
+  --focus-backdrop-bg: hsla(0, 0%, 0%, 0.5);
+  --focus-panel-shadow: 0 24px 48px hsla(220, 13%, 13%, 0.2);
+  --focus-panel-max-width: 900px;
+  --focus-panel-radius: var(--radius-xl);
 }
 
 /* Compact Mode - Reduced spacing and smaller fonts */
