@@ -82,18 +82,18 @@ export async function callGemini(body: GeminiRequestBody): Promise<GeminiCallRes
         try {
             const result = await callViaProxy(body);
             if (!result.ok && PROXY_TRANSIENT_STATUSES.has(result.status) && getDirectApiKey()) {
-                return callDirect(body);
+                return await callDirect(body);
             }
             return result;
         } catch {
             if (getDirectApiKey()) {
-                return callDirect(body);
+                return await callDirect(body);
             }
             return { ok: false, status: 0, data: null };
         }
     }
     if (getDirectApiKey()) {
-        return callDirect(body);
+        return await callDirect(body);
     }
     return { ok: false, status: 0, data: null };
 }
