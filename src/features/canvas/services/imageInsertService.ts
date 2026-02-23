@@ -64,6 +64,7 @@ export async function insertImageIntoEditor(
     editor.chain().focus().setImage({ src: dataUrl, alt: file.name }).run();
 
     try {
+        toast.info(strings.canvas.imageUploading);
         const permanentUrl = await uploadFn(file);
         replaceImageSrc(editor, dataUrl, permanentUrl);
     } catch (error: unknown) {

@@ -13,11 +13,3 @@ export const IMAGE_ACCEPTED_MIME_TYPES = [
 
 /** Max image file size in bytes (5 MB) */
 export const IMAGE_MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-/** Upload state for progressive image insertion */
-export type ImageUploadState =
-    | 'idle'
-    | 'compressing'
-    | 'uploading'
-    | 'done'
-    | 'error';

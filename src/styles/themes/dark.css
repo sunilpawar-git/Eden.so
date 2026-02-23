@@ -64,7 +64,4 @@
   --offline-banner-bg: hsl(38, 40%, 18%);
   --offline-banner-text: hsl(38, 60%, 80%);
   --offline-banner-border: hsl(38, 30%, 28%);
-
-  /* Node Images - Dark */
-  --node-image-overlay-bg: hsla(220, 13%, 13%, 0.75);
 }

@@ -17,18 +17,6 @@ describe('NodeImage.module.css', () => {
         expect(cssContent).toContain('--color-primary-light');
     });
 
-    it('uses --color-primary for spinner accent', () => {
-        expect(cssContent).toContain('--color-primary');
-    });
-
-    it('uses --color-border for spinner base', () => {
-        expect(cssContent).toContain('--color-border');
-    });
-
-    it('uses --node-image-overlay-bg for upload overlay', () => {
-        expect(cssContent).toContain('--node-image-overlay-bg');
-    });
-
     it('does not contain hardcoded color values', () => {
         const lines = cssContent.split('\n');
         const codeLines = lines.filter(l =>
@@ -46,10 +34,6 @@ describe('NodeImage.module.css', () => {
 
     it('uses --space-xs for image margin', () => {
         expect(cssContent).toContain('--space-xs');
-    });
-
-    it('uses --radius-full for spinner shape', () => {
-        expect(cssContent).toContain('--radius-full');
     });
 
     it('sets max-width: 100% for responsive images', () => {

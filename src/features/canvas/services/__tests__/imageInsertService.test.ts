@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { ensureEditorFocus, insertImageIntoEditor } from '../imageInsertService';
 
 vi.mock('@/shared/stores/toastStore', () => ({
-    toast: { error: vi.fn(), success: vi.fn() },
+    toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
 }));
 
 function makeMockEditor(focused = true, destroyed = false) {
@@ -44,6 +44,22 @@ describe('ensureEditorFocus — edge cases', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
         expect(() => ensureEditorFocus(editor as any)).not.toThrow();
         expect(editor.commands.focus).not.toHaveBeenCalled();
+    });
+});
+
+describe('insertImageIntoEditor — upload feedback', () => {
+    it('shows uploading toast when upload starts', async () => {
+        const { toast } = await import('@/shared/stores/toastStore');
+        const { strings } = await import('@/shared/localization/strings');
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const uploadFn = vi.fn().mockResolvedValue('https://cdn.example.com/img.jpg');
+        const file = new File(['x'], 'pic.png', { type: 'image/png' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, uploadFn);
+
+        expect(toast.info).toHaveBeenCalledWith(strings.canvas.imageUploading);
     });
 });
 

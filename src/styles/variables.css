@@ -186,7 +186,6 @@
 
   /* Node Images */
   --node-image-radius: var(--radius-md);
-  --node-image-overlay-bg: hsla(0, 0%, 100%, 0.8);
 
   /* Focus Mode */
   --focus-backdrop-bg: hsla(0, 0%, 0%, 0.5);
