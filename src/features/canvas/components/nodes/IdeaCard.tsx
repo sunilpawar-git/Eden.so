@@ -30,6 +30,29 @@ import handleStyles from './IdeaCardHandles.module.css';
 // Proximity threshold for utils bar (CSS variable in px)
 const PROXIMITY_THRESHOLD = 80;
 
+interface ContentAreaProps {
+    isEditing: boolean;
+    isGenerating: boolean;
+    hasContent: boolean;
+    isAICard: boolean;
+    heading: string | undefined;
+    prompt: string;
+    editor: ReturnType<typeof import('../../hooks/useIdeaCardEditor').useIdeaCardEditor>['editor'];
+    handleDoubleClick: () => void;
+    linkPreviews: IdeaNodeData['linkPreviews'];
+}
+
+function renderContentArea(props: ContentAreaProps): React.ReactElement {
+    const { isEditing, isGenerating, hasContent, isAICard, heading, prompt, editor, handleDoubleClick, linkPreviews } = props;
+    if (isEditing) return <EditingContent editor={editor} />;
+    if (isGenerating) return <GeneratingContent />;
+    if (hasContent && isAICard && !heading?.trim()) {
+        return <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} />;
+    }
+    if (hasContent) return <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} />;
+    return <PlaceholderContent onDoubleClick={handleDoubleClick} />;
+}
+
 export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews, calendarEvent } = data as IdeaNodeData;
     const promptSource = (heading?.trim() ?? prompt) || ''; // Heading is SSOT for prompts; legacy fallback
@@ -148,11 +171,11 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`}
                         data-testid="content-area" ref={contentRef} tabIndex={selected || isEditing ? 0 : -1}
                         onKeyDown={selected || isEditing ? onKeyDownReact : undefined}>
-                        {isEditing ? <EditingContent editor={editor} /> :
-                            isGenerating ? <GeneratingContent /> :
-                                hasContent && isAICard && !heading?.trim() ? <AICardContent prompt={prompt} editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
-                                    hasContent ? <SimpleCardContent editor={editor} onDoubleClick={handleDoubleClick} linkPreviews={linkPreviews} /> :
-                                        <PlaceholderContent onDoubleClick={handleDoubleClick} />}
+                        {renderContentArea({
+                            isEditing, isGenerating: isGenerating ?? false,
+                            hasContent, isAICard, heading, prompt,
+                            editor, handleDoubleClick, linkPreviews,
+                        })}
                     </div>
                 )}
                 {!isCollapsed && (showTagInput || tagIds.length > 0) && (
