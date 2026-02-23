@@ -117,9 +117,9 @@ describe('htmlToMarkdown', () => {
 });
 
 describe('htmlToMarkdown multi-block', () => {
-    it('separates heading from paragraph with newline', () => {
+    it('separates heading from paragraph with blank line', () => {
         const html = '<h2>Title</h2><p>Body text</p>';
-        expect(htmlToMarkdown(html)).toBe('## Title\nBody text');
+        expect(htmlToMarkdown(html)).toBe('## Title\n\nBody text');
     });
 
     it('separates multiple paragraphs with blank line', () => {
@@ -130,12 +130,12 @@ describe('htmlToMarkdown multi-block', () => {
     it('separates heading + paragraph + list + blockquote', () => {
         const html = '<h2>Notes</h2><p>Some text</p><ul><li><p>Item 1</p></li><li><p>Item 2</p></li></ul><blockquote><p>A quote</p></blockquote>';
         const md = htmlToMarkdown(html);
-        expect(md).toBe('## Notes\nSome text\n- Item 1\n- Item 2\n> A quote');
+        expect(md).toBe('## Notes\n\nSome text\n\n- Item 1\n- Item 2\n\n> A quote');
     });
 
     it('separates heading from list', () => {
         const html = '<h1>Tasks</h1><ul><li><p>Do this</p></li><li><p>Do that</p></li></ul>';
-        expect(htmlToMarkdown(html)).toBe('# Tasks\n- Do this\n- Do that');
+        expect(htmlToMarkdown(html)).toBe('# Tasks\n\n- Do this\n- Do that');
     });
 });
 
@@ -284,8 +284,24 @@ describe('round-trip', () => {
     });
 
     it('preserves multi-block document', () => {
-        const md = '## Title\nBody with **bold** and *italic*\n- Item 1\n- Item 2\n> A quote';
+        const md = '## Title\n\nBody with **bold** and *italic*\n\n- Item 1\n- Item 2\n\n> A quote';
         expect(htmlToMarkdown(markdownToHtml(md))).toBe(md);
+    });
+
+    it('preserves AI output with bold paragraphs and bullet lists', () => {
+        const md = [
+            '**1. Self-Assessment: Where Are You Now?**',
+            '',
+            '- **Quadrants:** Assess your current state',
+            '- **Levels:** Identify your dominant level',
+            '',
+            '**2. Targeted Development:**',
+            '',
+            '- **Prioritize:** Developing your weakest quadrant',
+            '- **Actionable Steps:** Choose one specific goal',
+        ].join('\n');
+        const result = htmlToMarkdown(markdownToHtml(md));
+        expect(result).toBe(md);
     });
 
     it('preserves loose ordered list numbering through round-trip', () => {

@@ -59,22 +59,18 @@ function nodeToMarkdown(node: Node): string {
     return elementToMarkdown(el, tag, childMd);
 }
 
-/** Join block-level children with newline separators */
+/** Join block-level children with blank-line separators for unambiguous markdown */
 function joinBlockChildren(el: Element): string {
     const parts: string[] = [];
-    let prevTag = '';
     for (const child of Array.from(el.childNodes)) {
         const md = nodeToMarkdown(child);
         if (!md) continue;
         if (child.nodeType !== Node.ELEMENT_NODE) { parts.push(md); continue; }
         const tag = (child as Element).tagName.toLowerCase();
         if (BLOCK_TAGS.has(tag) && parts.length > 0) {
-            // Consecutive paragraphs need blank line (markdown paragraph break)
-            const sep = tag === 'p' && prevTag === 'p' ? '\n\n' : '\n';
-            parts.push(sep);
+            parts.push('\n\n');
         }
         parts.push(md);
-        prevTag = tag;
     }
     return parts.join('');
 }

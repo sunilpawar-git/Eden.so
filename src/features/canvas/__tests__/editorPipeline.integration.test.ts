@@ -217,7 +217,7 @@ describe('Markdown round-trip fidelity (real TipTap)', () => {
         ['ordered list', '1. first\n2. second\n3. third'],
         ['blockquote', '> quoted text'],
         ['code block', '```\nconst x = 1;\nconsole.log(x);\n```'],
-        ['mixed content', '# Title\nSome **bold** and *italic* text.\n- List item\n- Another item'],
+        ['mixed content', '# Title\n\nSome **bold** and *italic* text.\n\n- List item\n- Another item'],
     ])('%s survives round-trip', (_label, markdown) => {
         const result = roundTrip(markdown);
         // Normalize trailing newlines for comparison
