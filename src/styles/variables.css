@@ -168,11 +168,30 @@
   --node-utils-hover-delay-out: 150ms;
   --node-utils-proximity-threshold: 80px;
 
+  /* Dropdown Menus (TransformMenu, etc.) */
+  --dropdown-min-width: 120px;
+  --menu-item-v-padding: 10px;
+  --menu-item-h-padding: 14px;
+
+  /* BubbleMenu (floating toolbar on text selection) */
+  --bubble-menu-bg: var(--color-surface);
+  --bubble-menu-border: var(--color-border);
+  --bubble-menu-shadow: var(--shadow-dropdown);
+  --bubble-menu-radius: var(--radius-md);
+  --bubble-menu-btn-size: 28px;
+  --bubble-menu-gap: var(--space-xxs);
+
+  /* Opacity tokens */
+  --opacity-disabled: 0.5;
+  --opacity-hover-subtle: 0.9;
+
   /* Focus Mode */
   --focus-backdrop-bg: hsla(0, 0%, 0%, 0.5);
   --focus-panel-shadow: 0 24px 48px hsla(220, 13%, 13%, 0.2);
   --focus-panel-max-width: 900px;
   --focus-panel-radius: var(--radius-xl);
+  --focus-panel-inset: 40px;
+  --focus-close-size: 32px;
 }
 
 /* Compact Mode - Reduced spacing and smaller fonts */

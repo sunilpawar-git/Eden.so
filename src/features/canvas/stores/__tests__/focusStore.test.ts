@@ -37,13 +37,13 @@ describe('focusStore', () => {
         expect(useFocusStore.getState().focusedNodeId).toBeNull();
     });
 
-    it('isFocused selector returns true when a node is focused', () => {
+    it('focusedNodeId is non-null when a node is focused', () => {
         useFocusStore.getState().enterFocus('node-1');
         const isFocused = useFocusStore.getState().focusedNodeId !== null;
         expect(isFocused).toBe(true);
     });
 
-    it('isFocused selector returns false when no node is focused', () => {
+    it('focusedNodeId is null when no node is focused', () => {
         const isFocused = useFocusStore.getState().focusedNodeId !== null;
         expect(isFocused).toBe(false);
     });

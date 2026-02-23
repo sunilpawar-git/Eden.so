@@ -256,6 +256,16 @@ export const strings = {
         pinTooltip: 'Keep sidebar always visible',
         unpinTooltip: 'Collapse sidebar; hover to reveal',
     },
+    formatting: {
+        bold: 'Bold',
+        italic: 'Italic',
+        strikethrough: 'Strikethrough',
+        code: 'Code',
+        boldDisplay: 'B',
+        italicDisplay: 'I',
+        strikethroughDisplay: 'S',
+        codeDisplay: '</>',
+    },
     knowledgeBank: knowledgeBankStrings,
     calendar: calendarStrings,
 } as const;

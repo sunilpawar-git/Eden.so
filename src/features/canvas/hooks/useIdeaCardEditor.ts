@@ -54,8 +54,8 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
     const handleBlur = useCallback((markdown: string) => {
         saveContent(markdown);
         onExitEditing();
-        setContent(output ?? '');
-    }, [saveContent, onExitEditing, setContent, output]);
+        setContent(markdown);
+    }, [saveContent, onExitEditing, setContent]);
 
     useEffect(() => { blurRef.current = handleBlur; }, [handleBlur]);
 

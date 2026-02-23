@@ -1,6 +1,7 @@
 /**
  * TransformMenu Styles
  * Dropdown menu for AI text transformations
+ * All dimensions from CSS variables (no hardcoded values)
  */
 
 .transformMenuWrapper {
@@ -11,10 +12,10 @@
 .transformButton {
     background: none;
     border: none;
-    padding: 6px 8px;
+    padding: var(--space-sm);
     cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.15s ease;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast);
     color: var(--color-text-secondary);
 }
 
@@ -23,38 +24,38 @@
 }
 
 .transformButton:disabled {
-    opacity: 0.5;
+    opacity: var(--opacity-disabled);
     cursor: not-allowed;
 }
 
 .icon {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 .dropdownMenu {
     position: fixed;
     transform: translate(-50%, -100%);
-    margin-top: -4px;
+    margin-top: calc(-1 * var(--space-xs));
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-dropdown);
-    min-width: 120px;
-    z-index: 10000;
+    min-width: var(--dropdown-min-width);
+    z-index: var(--z-suggestion-popup);
     overflow: hidden;
 }
 
 .menuItem {
     display: block;
     width: 100%;
-    padding: 10px 14px;
+    padding: var(--menu-item-v-padding) var(--menu-item-h-padding);
     text-align: left;
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     color: var(--color-text-primary);
-    transition: background-color 0.15s ease;
+    transition: background-color var(--transition-fast);
 }
 
 .menuItem:hover {
@@ -62,9 +63,9 @@
 }
 
 .menuItem:first-child {
-    border-radius: 7px 7px 0 0;
+    border-radius: calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px) 0 0;
 }
 
 .menuItem:last-child {
-    border-radius: 0 0 7px 7px;
+    border-radius: 0 0 calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px);
 }

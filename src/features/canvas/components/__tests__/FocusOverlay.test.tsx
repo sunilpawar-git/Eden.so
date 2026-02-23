@@ -1,19 +1,21 @@
 /**
- * FocusOverlay Tests - TDD: RED phase first
- * Tests for the focus mode overlay panel
+ * FocusOverlay Tests
+ * Covers rendering, interaction, editing, ARIA, and edge cases.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { FocusOverlay } from '../FocusOverlay';
 import { useFocusStore } from '../../stores/focusStore';
 import { useCanvasStore } from '../../stores/canvasStore';
-import { useSidebarStore } from '@/shared/stores/sidebarStore';
+import { strings } from '@/shared/localization/strings';
 import type { CanvasNode } from '../../types/node';
+
+const mockGetMarkdown = vi.fn(() => 'edited content');
 
 vi.mock('../../hooks/useIdeaCardEditor', () => ({
     useIdeaCardEditor: () => ({
         editor: null,
-        getMarkdown: vi.fn(() => ''),
+        getMarkdown: mockGetMarkdown,
         setContent: vi.fn(),
         submitHandlerRef: { current: null },
     }),
@@ -30,9 +32,11 @@ vi.mock('../../hooks/useTipTapEditor', () => ({
 vi.mock('../nodes/NodeHeading', async () => {
     const React = await import('react');
     return {
-        NodeHeading: React.forwardRef(({ heading }: { heading: string }, _ref: unknown) => (
-            React.createElement('div', { 'data-testid': 'focus-heading' }, heading)
-        )),
+        NodeHeading: React.forwardRef(
+            ({ heading, onDoubleClick }: { heading: string; onDoubleClick?: () => void }, _ref: unknown) => (
+                React.createElement('div', { 'data-testid': 'focus-heading', onDoubleClick }, heading)
+            ),
+        ),
     };
 });
 
@@ -76,19 +80,28 @@ const mockNode: CanvasNode = {
     updatedAt: new Date('2024-01-01'),
 };
 
+const mockNodeNoTags: CanvasNode = {
+    ...mockNode,
+    id: 'node-no-tags',
+    data: { ...mockNode.data, tags: [], heading: '' },
+};
+
+function setCanvasDefaults() {
+    useCanvasStore.setState({
+        nodes: [mockNode, mockNodeNoTags],
+        edges: [],
+        selectedNodeIds: new Set(),
+        editingNodeId: null,
+        draftContent: null,
+        inputMode: 'note',
+    });
+}
+
 describe('FocusOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         useFocusStore.setState({ focusedNodeId: null });
-        useCanvasStore.setState({
-            nodes: [mockNode],
-            edges: [],
-            selectedNodeIds: new Set(),
-            editingNodeId: null,
-            draftContent: null,
-            inputMode: 'note',
-        });
-        useSidebarStore.setState({ isPinned: false, isHoverOpen: false });
+        setCanvasDefaults();
     });
 
     it('does not render when focusedNodeId is null', () => {
@@ -140,7 +153,8 @@ describe('FocusOverlay', () => {
     it('uses string resources for close button label', () => {
         useFocusStore.setState({ focusedNodeId: 'node-1' });
         render(<FocusOverlay />);
-        expect(screen.getByTestId('focus-close-button')).toHaveAttribute('aria-label', 'Exit focus');
+        expect(screen.getByTestId('focus-close-button'))
+            .toHaveAttribute('aria-label', strings.nodeUtils.exitFocus);
     });
 
     it('has correct ARIA attributes', () => {
@@ -148,12 +162,68 @@ describe('FocusOverlay', () => {
         render(<FocusOverlay />);
         const dialog = screen.getByRole('dialog');
         expect(dialog).toHaveAttribute('aria-modal', 'true');
-        expect(dialog).toHaveAttribute('aria-label', 'Focus');
+        expect(dialog).toHaveAttribute('aria-label', strings.nodeUtils.focus);
     });
 
     it('does not render when focused node does not exist', () => {
         useFocusStore.setState({ focusedNodeId: 'non-existent' });
         render(<FocusOverlay />);
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    describe('Editing', () => {
+        it('calls startEditing when overlay mounts with a focused node', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
+        });
+
+        it('double-clicking content area calls startEditing', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            act(() => { useCanvasStore.setState({ editingNodeId: null }); });
+            fireEvent.doubleClick(screen.getByTestId('focus-content-area'));
+            expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
+        });
+
+        it('double-clicking heading calls startEditing', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            act(() => { useCanvasStore.setState({ editingNodeId: null }); });
+            fireEvent.doubleClick(screen.getByTestId('focus-heading'));
+            expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
+        });
+    });
+
+    describe('Save on exit', () => {
+        it('saves content to store when close button is clicked', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            fireEvent.click(screen.getByTestId('focus-close-button'));
+            const node = useCanvasStore.getState().nodes.find(n => n.id === 'node-1');
+            expect(node?.data.output).toBe('edited content');
+        });
+
+        it('saves content to store when backdrop is clicked', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            fireEvent.click(screen.getByTestId('focus-backdrop'));
+            const node = useCanvasStore.getState().nodes.find(n => n.id === 'node-1');
+            expect(node?.data.output).toBe('edited content');
+        });
+    });
+
+    describe('Edge cases', () => {
+        it('renders with empty heading', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-no-tags' });
+            render(<FocusOverlay />);
+            expect(screen.getByTestId('focus-heading')).toHaveTextContent('');
+        });
+
+        it('hides tags section when node has no tags', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-no-tags' });
+            render(<FocusOverlay />);
+            expect(screen.queryByTestId('focus-tags')).not.toBeInTheDocument();
+        });
     });
 });

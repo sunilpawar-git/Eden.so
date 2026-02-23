@@ -150,4 +150,21 @@ describe('Focus Mode Integration', () => {
             expect(node?.data.tags).toEqual(['tag-1', 'tag-2', 'tag-3']);
         });
     });
+
+    describe('Content edits persist on exit', () => {
+        it('output changes via store persist after exitFocus', () => {
+            const { result } = renderHook(() => useFocusMode());
+
+            act(() => { result.current.enterFocus('node-a'); });
+
+            act(() => {
+                useCanvasStore.getState().updateNodeOutput('node-a', 'Updated body content');
+            });
+
+            act(() => { result.current.exitFocus(); });
+
+            const node = useCanvasStore.getState().nodes.find(n => n.id === 'node-a');
+            expect(node?.data.output).toBe('Updated body content');
+        });
+    });
 });

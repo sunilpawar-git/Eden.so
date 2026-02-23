@@ -17,7 +17,7 @@
 .panel {
     position: relative;
     width: min(70%, var(--focus-panel-max-width));
-    max-height: min(80vh, calc(100vh - 80px));
+    max-height: min(80vh, calc(100vh - var(--focus-panel-inset) * 2));
     background: var(--color-surface-elevated);
     border: 1px solid var(--color-border);
     border-radius: var(--focus-panel-radius);
@@ -33,8 +33,8 @@
     top: var(--space-sm);
     right: var(--space-sm);
     z-index: 1;
-    width: 32px;
-    height: 32px;
+    width: var(--focus-close-size);
+    height: var(--focus-close-size);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -55,7 +55,7 @@
 .headingSection {
     flex-shrink: 0;
     padding: var(--space-lg) var(--space-lg) 0;
-    padding-right: calc(var(--space-lg) + 40px);
+    padding-right: calc(var(--space-lg) + var(--focus-close-size) + var(--space-sm));
 }
 
 .divider {

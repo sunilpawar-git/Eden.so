@@ -60,6 +60,15 @@ describe('useIdeaCardEditor', () => {
             expect(opts.saveContent).toHaveBeenCalledWith('saved text');
             expect(opts.onExitEditing).toHaveBeenCalled();
         });
+
+        it('sets editor content to the saved markdown, not stale output', () => {
+            const opts = { ...defaultOptions(), output: 'old content', isEditing: true };
+            renderHook(() => useIdeaCardEditor(opts));
+
+            act(() => { latestOnBlur?.('new content'); });
+            expect(mockSetContent).toHaveBeenCalledWith('new content');
+            expect(mockSetContent).not.toHaveBeenCalledWith('old content');
+        });
     });
 
     describe('output sync', () => {
