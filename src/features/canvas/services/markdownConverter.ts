@@ -41,7 +41,7 @@ const HEADING_PREFIXES: Record<string, string> = {
 
 /** Tags that represent block-level elements requiring newline separation */
 const BLOCK_TAGS = new Set([
-    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre', 'img',
+    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre', 'img', 'hr',
 ]);
 
 /** Recursively convert DOM node tree to markdown */
@@ -66,9 +66,13 @@ function joinBlockChildren(el: Element): string {
     const parts: string[] = [];
     for (const child of Array.from(el.childNodes)) {
         const md = nodeToMarkdown(child);
-        if (!md) continue;
+        if (!md && child.nodeType !== Node.ELEMENT_NODE) continue;
         if (child.nodeType !== Node.ELEMENT_NODE) { parts.push(md); continue; }
         const tag = (child as Element).tagName.toLowerCase();
+
+        // Skip empty elements that aren't inherently self-closing/empty like hr or img
+        if (!md && tag !== 'hr' && tag !== 'br' && tag !== 'img') continue;
+
         if (BLOCK_TAGS.has(tag) && parts.length > 0) {
             parts.push('\n\n');
         }
@@ -90,6 +94,7 @@ function elementToMarkdown(el: Element, tag: string, childMd: string): string {
     if (tag === 'ol') return convertList(el, true);
     if (tag === 'li') return childMd.replace(/^\n+|\n+$/g, '');
     if (tag === 'br') return '\n';
+    if (tag === 'hr') return '---';
     return childMd;
 }
 

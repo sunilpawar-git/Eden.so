@@ -68,6 +68,15 @@
     color: var(--color-text-secondary);
 }
 
+/* Line Divider (hr) */
+.tiptapEditor :global(.ProseMirror hr) {
+    border: none;
+    border-top: 2px solid var(--color-border);
+    margin: var(--space-md) 0;
+    width: 100%;
+}
+
+
 /* Code blocks */
 .tiptapEditor :global(.ProseMirror pre) {
     background: var(--color-surface);
