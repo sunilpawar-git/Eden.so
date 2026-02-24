@@ -16,14 +16,17 @@ describe('CanvasSection', () => {
     const mockToggleCanvasGrid = vi.fn();
     const mockSetAutoSave = vi.fn();
     const mockSetCanvasScrollMode = vi.fn();
+    const mockSetConnectorStyle = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(useSettingsStore).mockImplementation((selector) => {
             const state = createMockSettingsState({
+                connectorStyle: 'solid' as const,
                 toggleCanvasGrid: mockToggleCanvasGrid,
                 setAutoSave: mockSetAutoSave,
                 setCanvasScrollMode: mockSetCanvasScrollMode,
+                setConnectorStyle: mockSetConnectorStyle,
             });
             return typeof selector === 'function' ? selector(state) : state;
         });
@@ -78,5 +81,32 @@ describe('CanvasSection', () => {
         const zoomOption = screen.getByLabelText(strings.settings.canvasScrollZoom);
         fireEvent.click(zoomOption);
         expect(mockSetCanvasScrollMode).toHaveBeenCalledWith('zoom');
+    });
+
+    it('should render connector style section', () => {
+        render(<CanvasSection />);
+        expect(screen.getByText(strings.settings.connectorStyle)).toBeInTheDocument();
+    });
+
+    it('should display solid, subtle, thick, dashed, and dotted connector options', () => {
+        render(<CanvasSection />);
+        expect(screen.getByLabelText(strings.settings.connectorSolid)).toBeInTheDocument();
+        expect(screen.getByLabelText(strings.settings.connectorSubtle)).toBeInTheDocument();
+        expect(screen.getByLabelText(strings.settings.connectorThick)).toBeInTheDocument();
+        expect(screen.getByLabelText(strings.settings.connectorDashed)).toBeInTheDocument();
+        expect(screen.getByLabelText(strings.settings.connectorDotted)).toBeInTheDocument();
+    });
+
+    it('should have solid style selected by default', () => {
+        render(<CanvasSection />);
+        const solidOption = screen.getByLabelText(strings.settings.connectorSolid);
+        expect(solidOption).toBeChecked();
+    });
+
+    it('should call setConnectorStyle when thick is selected', () => {
+        render(<CanvasSection />);
+        const thickOption = screen.getByLabelText(strings.settings.connectorThick);
+        fireEvent.click(thickOption);
+        expect(mockSetConnectorStyle).toHaveBeenCalledWith('thick');
     });
 });

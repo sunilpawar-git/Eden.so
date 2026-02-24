@@ -2,7 +2,7 @@
  * Canvas Section - Canvas grid, auto-save, and scroll mode settings
  */
 import { strings } from '@/shared/localization/strings';
-import { useSettingsStore, type CanvasScrollMode } from '@/shared/stores/settingsStore';
+import { useSettingsStore, type CanvasScrollMode, type ConnectorStyle } from '@/shared/stores/settingsStore';
 import styles from '../SettingsPanel.module.css';
 
 interface ScrollModeOption {
@@ -10,9 +10,22 @@ interface ScrollModeOption {
     label: string;
 }
 
+interface ConnectorStyleOption {
+    value: ConnectorStyle;
+    label: string;
+}
+
 const SCROLL_MODE_OPTIONS: readonly ScrollModeOption[] = [
     { value: 'zoom', label: strings.settings.canvasScrollZoom },
     { value: 'navigate', label: strings.settings.canvasScrollNavigate },
+];
+
+const CONNECTOR_STYLE_OPTIONS: readonly ConnectorStyleOption[] = [
+    { value: 'solid', label: strings.settings.connectorSolid },
+    { value: 'subtle', label: strings.settings.connectorSubtle },
+    { value: 'thick', label: strings.settings.connectorThick },
+    { value: 'dashed', label: strings.settings.connectorDashed },
+    { value: 'dotted', label: strings.settings.connectorDotted },
 ];
 
 export function CanvasSection() {
@@ -22,6 +35,8 @@ export function CanvasSection() {
     const setAutoSave = useSettingsStore((state) => state.setAutoSave);
     const canvasScrollMode = useSettingsStore((state) => state.canvasScrollMode);
     const setCanvasScrollMode = useSettingsStore((state) => state.setCanvasScrollMode);
+    const connectorStyle = useSettingsStore((state) => state.connectorStyle);
+    const setConnectorStyle = useSettingsStore((state) => state.setConnectorStyle);
 
     return (
         <div className={styles.section}>
@@ -45,6 +60,23 @@ export function CanvasSection() {
                             value={option.value}
                             checked={canvasScrollMode === option.value}
                             onChange={() => setCanvasScrollMode(option.value)}
+                            aria-label={option.label}
+                        />
+                        <span>{option.label}</span>
+                    </label>
+                ))}
+            </div>
+
+            <h3 className={styles.sectionTitle}>{strings.settings.connectorStyle}</h3>
+            <div className={styles.optionGroup}>
+                {CONNECTOR_STYLE_OPTIONS.map((option) => (
+                    <label key={option.value} className={styles.radioLabel}>
+                        <input
+                            type="radio"
+                            name="connectorStyle"
+                            value={option.value}
+                            checked={connectorStyle === option.value}
+                            onChange={() => setConnectorStyle(option.value)}
                             aria-label={option.label}
                         />
                         <span>{option.label}</span>

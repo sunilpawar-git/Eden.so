@@ -82,6 +82,12 @@ export const strings = {
         canvasScrollMode: 'Scroll behavior',
         canvasScrollZoom: 'Canvas Zoom',
         canvasScrollNavigate: 'Canvas Navigation',
+        connectorStyle: 'Connector style',
+        connectorSolid: 'Solid',
+        connectorSubtle: 'Subtle',
+        connectorThick: 'Thick',
+        connectorDashed: 'Dashed',
+        connectorDotted: 'Dotted',
         close: 'Close',
     },
     shortcuts: {

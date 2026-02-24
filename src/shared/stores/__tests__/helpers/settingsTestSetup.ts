@@ -41,6 +41,8 @@ export const DEFAULT_SETTINGS_STATE = {
     autoSaveInterval: 30,
     compactMode: false,
     canvasScrollMode: 'zoom' as const,
+    connectorStyle: 'solid' as const,
+    isCanvasLocked: false,
 };
 
 /** Resets the settings store to default state */

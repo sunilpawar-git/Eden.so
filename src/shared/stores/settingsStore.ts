@@ -12,10 +12,12 @@ type ResolvedTheme = 'light' | 'dark' | 'sepia' | 'grey' | 'darkBlack';
 const DIRECT_THEMES: ReadonlySet<string> = new Set(['light', 'dark', 'sepia', 'grey', 'darkBlack']);
 
 export type CanvasScrollMode = 'zoom' | 'navigate';
+export type ConnectorStyle = 'solid' | 'subtle' | 'thick' | 'dashed' | 'dotted';
 
 /** Allow-lists for validated storage reads (defense-in-depth) */
 const VALID_THEMES: readonly ThemeOption[] = ['light', 'dark', 'system', 'sepia', 'grey', 'darkBlack'];
 const VALID_SCROLL_MODES: readonly CanvasScrollMode[] = ['zoom', 'navigate'];
+const VALID_CONNECTOR_STYLES: readonly ConnectorStyle[] = ['solid', 'subtle', 'thick', 'dashed', 'dotted'];
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -25,6 +27,7 @@ const STORAGE_KEYS = {
     autoSaveInterval: 'settings-autoSaveInterval',
     compactMode: 'settings-compactMode',
     canvasScrollMode: 'settings-canvasScrollMode',
+    connectorStyle: 'settings-connectorStyle',
     isCanvasLocked: 'settings-isCanvasLocked',
 } as const;
 
@@ -40,6 +43,7 @@ interface SettingsState {
     autoSaveInterval: number;
     compactMode: boolean;
     canvasScrollMode: CanvasScrollMode;
+    connectorStyle: ConnectorStyle;
     isCanvasLocked: boolean;
     setTheme: (theme: ThemeOption) => void;
     toggleCanvasGrid: () => void;
@@ -47,6 +51,7 @@ interface SettingsState {
     setAutoSaveInterval: (seconds: number) => void;
     toggleCompactMode: () => void;
     setCanvasScrollMode: (mode: CanvasScrollMode) => void;
+    setConnectorStyle: (style: ConnectorStyle) => void;
     toggleCanvasLocked: () => void;
     getResolvedTheme: () => ResolvedTheme;
     loadFromStorage: () => void;
@@ -63,6 +68,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     autoSaveInterval: getStorageItem<number>(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT),
     compactMode: getStorageItem<boolean>(STORAGE_KEYS.compactMode, false),
     canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
+    connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
     isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
 
     setTheme: (theme: ThemeOption) => {
@@ -98,6 +104,11 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
         setStorageItem(STORAGE_KEYS.canvasScrollMode, mode);
     },
 
+    setConnectorStyle: (style: ConnectorStyle) => {
+        set({ connectorStyle: style });
+        setStorageItem(STORAGE_KEYS.connectorStyle, style);
+    },
+
     toggleCanvasLocked: () => {
         const newValue = !get().isCanvasLocked;
         set({ isCanvasLocked: newValue });
@@ -122,6 +133,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
             autoSaveInterval: getStorageItem<number>(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT),
             compactMode: getStorageItem<boolean>(STORAGE_KEYS.compactMode, false),
             canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
+            connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
             isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
         });
     },

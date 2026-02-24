@@ -32,6 +32,7 @@ describe('SettingsStore', () => {
             expect(state.autoSaveInterval).toBe(30);
             expect(state.compactMode).toBe(false);
             expect(state.canvasScrollMode).toBe('zoom');
+            expect(state.connectorStyle).toBe('solid');
         });
     });
 
@@ -81,6 +82,34 @@ describe('SettingsStore', () => {
             });
             useSettingsStore.getState().loadFromStorage();
             expect(useSettingsStore.getState().canvasScrollMode).toBe('navigate');
+        });
+    });
+
+    describe('connector style', () => {
+        it('should default to solid style', () => {
+            expect(useSettingsStore.getState().connectorStyle).toBe('solid');
+        });
+
+        it('should set connector style to thick', () => {
+            useSettingsStore.getState().setConnectorStyle('thick');
+            expect(useSettingsStore.getState().connectorStyle).toBe('thick');
+        });
+
+        it('should persist connectorStyle to localStorage', () => {
+            useSettingsStore.getState().setConnectorStyle('dashed');
+            expect(localStorageMock.setItem).toHaveBeenCalledWith(
+                'settings-connectorStyle',
+                'dashed'
+            );
+        });
+
+        it('should load connectorStyle from storage', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-connectorStyle') return 'dotted';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().connectorStyle).toBe('dotted');
         });
     });
 
@@ -171,6 +200,15 @@ describe('SettingsStore', () => {
             });
             useSettingsStore.getState().loadFromStorage();
             expect(useSettingsStore.getState().canvasScrollMode).toBe('zoom');
+        });
+
+        it('should fall back to default connector style for invalid stored value', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-connectorStyle') return 'zigzag';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().connectorStyle).toBe('solid');
         });
 
         it('should reject XSS payload in theme value', () => {
