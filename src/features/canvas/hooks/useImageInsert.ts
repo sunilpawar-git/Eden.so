@@ -19,7 +19,7 @@ const FILE_ACCEPT = IMAGE_ACCEPTED_MIME_TYPES.join(',');
  * The returned `triggerFilePicker` opens the native file dialog,
  * then inserts the selected image via progressive upload.
  */
-export function useImageInsert(editor: Editor | null, uploadFn: ImageUploadFn) {
+export function useImageInsert(editor: Editor | null, uploadFn: ImageUploadFn, onAfterInsert?: () => void) {
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     const triggerFilePicker = useCallback(() => {
@@ -35,10 +35,10 @@ export function useImageInsert(editor: Editor | null, uploadFn: ImageUploadFn) {
         input.value = '';
         input.onchange = () => {
             const file = input.files?.[0];
-            if (file) void insertImageIntoEditor(editor, file, uploadFn);
+            if (file) void insertImageIntoEditor(editor, file, uploadFn, onAfterInsert);
         };
         input.click();
-    }, [editor, uploadFn]);
+    }, [editor, uploadFn, onAfterInsert]);
 
     return { triggerFilePicker };
 }

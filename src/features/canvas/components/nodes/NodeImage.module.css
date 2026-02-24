@@ -5,6 +5,9 @@
 
 :global(.node-image) {
     max-width: 100%;
+    height: auto;
+    max-height: var(--node-image-max-height, 400px);
+    object-fit: contain;
     border-radius: var(--node-image-radius, var(--radius-md));
     display: block;
     margin: var(--space-xs) 0;

@@ -30,6 +30,7 @@ import type { IdeaNodeData } from '../../types/node';
 import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT } from '../../types/node';
 import styles from './IdeaCard.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
+import './NodeImage.module.css';
 
 // Proximity threshold for utils bar (CSS variable in px)
 const PROXIMITY_THRESHOLD = 80;
@@ -87,7 +88,12 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         imageUploadFn,
     });
 
-    const { triggerFilePicker } = useImageInsert(editor, imageUploadFn);
+    const handleAfterImageInsert = useCallback(() => {
+        const md = getMarkdown();
+        if (md) useCanvasStore.getState().updateNodeOutput(id, md);
+    }, [id, getMarkdown]);
+
+    const { triggerFilePicker } = useImageInsert(editor, imageUploadFn, handleAfterImageInsert);
     const slashHandler = useCallback((c: string) => {
         if (c === 'ai-generate') useCanvasStore.getState().setInputMode('ai');
         if (c === 'insert-image') triggerFilePicker();

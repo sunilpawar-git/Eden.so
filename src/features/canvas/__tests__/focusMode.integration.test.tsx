@@ -151,6 +151,35 @@ describe('Focus Mode Integration', () => {
         });
     });
 
+    describe('stopEditing clears editing state after content save', () => {
+        it('updateNodeOutput then stopEditing persists content and clears editingNodeId', () => {
+            act(() => {
+                useCanvasStore.setState({ editingNodeId: 'node-a' });
+            });
+            expect(useCanvasStore.getState().editingNodeId).toBe('node-a');
+
+            act(() => {
+                useCanvasStore.getState().updateNodeOutput('node-a', 'saved content');
+                useCanvasStore.getState().stopEditing();
+            });
+
+            expect(useCanvasStore.getState().editingNodeId).toBeNull();
+            const node = useCanvasStore.getState().nodes.find(n => n.id === 'node-a');
+            expect(node?.data.output).toBe('saved content');
+        });
+
+        it('stopEditing is idempotent — calling twice does not throw', () => {
+            act(() => {
+                useCanvasStore.setState({ editingNodeId: 'node-a' });
+            });
+            act(() => {
+                useCanvasStore.getState().stopEditing();
+                useCanvasStore.getState().stopEditing();
+            });
+            expect(useCanvasStore.getState().editingNodeId).toBeNull();
+        });
+    });
+
     describe('Content edits persist on exit', () => {
         it('output changes via store persist after exitFocus', () => {
             const { result } = renderHook(() => useFocusMode());

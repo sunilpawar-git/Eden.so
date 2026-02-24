@@ -86,6 +86,31 @@ export function rehypeFixOlContinuity() {
 }
 
 /**
+ * Unwraps <img> from surrounding <p> when <p> contains only an image.
+ * TipTap's block-level Image extension (inline: false) requires <img> at
+ * block level, not inside <p>. remark-rehype always wraps standalone images
+ * in <p>. This plugin corrects that for TipTap compatibility.
+ *
+ * Only operates on root-level children. Paragraphs with mixed content untouched.
+ */
+export function rehypeUnwrapImages() {
+    return (tree: Root): void => {
+        const next: typeof tree.children = [];
+        for (const child of tree.children) {
+            const onlyChild = child.type === 'element' && child.tagName === 'p' && child.children.length === 1
+                ? child.children[0]
+                : undefined;
+            if (onlyChild?.type === 'element' && onlyChild.tagName === 'img') {
+                next.push(onlyChild);
+            } else {
+                next.push(child);
+            }
+        }
+        tree.children = next;
+    };
+}
+
+/**
  * Strips whitespace-only text nodes from block containers.
  * Unified/remark-rehype adds \n text nodes between block elements;
  * TipTap and existing tests expect compact HTML without these.

@@ -115,11 +115,32 @@ describe('Image feature — markdown round-trip integration', () => {
         expect(htmlToMarkdown(markdownToHtml(md))).toBe(md);
     });
 
+    it('produces block-level <img> without <p> wrapper', () => {
+        const md = '![pic](https://x.com/img.jpg)';
+        const html = markdownToHtml(md);
+        expect(html).not.toMatch(/<p><img/);
+        expect(html).toContain('<img');
+    });
+
+    it('preserves image width attribute through round-trip', () => {
+        const html = '<img src="https://cdn.example.com/photo.jpg" alt="pic" width="250">';
+        const md = htmlToMarkdown(html);
+        const roundTripped = markdownToHtml(md);
+        expect(roundTripped).toContain('width="250"');
+    });
+
     it('sanitizes brackets in alt text to prevent markdown injection', () => {
         const html = '<img src="https://x.com/img.jpg" alt="[evil](https://xss.com)" />';
         const md = htmlToMarkdown(html);
         expect(md).not.toContain('[evil]');
         expect(md).toBe('![evil(https://xss.com)](https://x.com/img.jpg)');
+    });
+});
+
+describe('Image feature — post-upload persistence', () => {
+    it('onAfterInsert callback parameter is accepted by insertImageIntoEditor', async () => {
+        const { insertImageIntoEditor } = await import('../services/imageInsertService');
+        expect(insertImageIntoEditor.length).toBeGreaterThanOrEqual(3);
     });
 });
 

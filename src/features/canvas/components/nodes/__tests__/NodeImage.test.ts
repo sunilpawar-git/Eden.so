@@ -1,9 +1,12 @@
 /**
- * NodeImage Styling Tests — Validates CSS uses only design tokens
+ * NodeImage Styling Tests — Validates CSS uses only design tokens and is loaded
  */
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+
+const ideaCardPath = path.resolve(__dirname, '../IdeaCard.tsx');
+const ideaCardContent = fs.readFileSync(ideaCardPath, 'utf-8');
 
 const cssPath = path.resolve(__dirname, '../NodeImage.module.css');
 const cssContent = fs.readFileSync(cssPath, 'utf-8');
@@ -38,5 +41,21 @@ describe('NodeImage.module.css', () => {
 
     it('sets max-width: 100% for responsive images', () => {
         expect(cssContent).toContain('max-width: 100%');
+    });
+
+    it('sets height: auto to preserve aspect ratio', () => {
+        expect(cssContent).toContain('height: auto');
+    });
+
+    it('constrains max-height via --node-image-max-height token', () => {
+        expect(cssContent).toContain('--node-image-max-height');
+    });
+
+    it('uses object-fit: contain to show full image without cropping', () => {
+        expect(cssContent).toContain('object-fit: contain');
+    });
+
+    it('is imported by IdeaCard.tsx so styles are loaded at runtime', () => {
+        expect(ideaCardContent).toMatch(/import\s.*NodeImage\.module\.css/);
     });
 });

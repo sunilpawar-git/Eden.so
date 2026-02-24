@@ -119,6 +119,70 @@ describe('insertImageIntoEditor — error handling', () => {
         expect(toast.error).toHaveBeenCalledWith(strings.canvas.imageUnsafeUrl);
     });
 
+    it('calls onAfterInsert on successful upload', async () => {
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const uploadFn = vi.fn().mockResolvedValue('https://cdn.example.com/img.jpg');
+        const onAfterInsert = vi.fn();
+        const file = new File(['x'], 'pic.png', { type: 'image/png' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, uploadFn, onAfterInsert);
+
+        expect(onAfterInsert).toHaveBeenCalledOnce();
+    });
+
+    it('does not call onAfterInsert on upload failure', async () => {
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const failFn = vi.fn().mockRejectedValue(new Error('fail'));
+        const onAfterInsert = vi.fn();
+        const file = new File(['x'], 'pic.png', { type: 'image/png' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, failFn, onAfterInsert);
+
+        expect(onAfterInsert).not.toHaveBeenCalled();
+    });
+
+    it('does not call onAfterInsert when URL is unsafe', async () => {
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const uploadFn = vi.fn().mockResolvedValue('http://insecure.com/img.jpg');
+        const onAfterInsert = vi.fn();
+        const file = new File(['x'], 'pic.png', { type: 'image/png' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, uploadFn, onAfterInsert);
+
+        expect(onAfterInsert).not.toHaveBeenCalled();
+    });
+
+    it('does not show error toast when onAfterInsert throws', async () => {
+        const { toast } = await import('@/shared/stores/toastStore');
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const uploadFn = vi.fn().mockResolvedValue('https://cdn.example.com/img.jpg');
+        const onAfterInsert = vi.fn().mockImplementation(() => { throw new Error('callback failed'); });
+        const file = new File(['x'], 'pic.png', { type: 'image/png' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, uploadFn, onAfterInsert);
+
+        expect(onAfterInsert).toHaveBeenCalledOnce();
+        expect(toast.error).not.toHaveBeenCalled();
+    });
+
+    it('works without onAfterInsert (backward compat)', async () => {
+        vi.clearAllMocks();
+        const editor = makeMockEditor(true);
+        const uploadFn = vi.fn().mockResolvedValue('https://cdn.example.com/img.jpg');
+        const file = new File(['x'], 'pic.png', { type: 'image/png' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await expect(insertImageIntoEditor(editor as any, file, uploadFn)).resolves.not.toThrow();
+    });
+
     it('does nothing when editor is destroyed', async () => {
         const editor = makeMockEditor(true, true);
         const uploadFn = vi.fn();

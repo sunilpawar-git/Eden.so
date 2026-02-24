@@ -54,6 +54,7 @@ export function useFocusOverlayActions({ nodeId, output, isEditing, onExit }: Us
     const saveBeforeExit = useCallback(() => {
         if (!nodeId) return;
         saveContent(getMarkdown());
+        useCanvasStore.getState().stopEditing();
     }, [nodeId, getMarkdown, saveContent]);
 
     useEffect(() => {

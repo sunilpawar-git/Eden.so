@@ -56,6 +56,7 @@ export async function insertImageIntoEditor(
     editor: Editor | null,
     file: File,
     uploadFn: ImageUploadFn,
+    onAfterInsert?: () => void,
 ): Promise<void> {
     if (!editor || editor.isDestroyed) return;
 
@@ -73,6 +74,7 @@ export async function insertImageIntoEditor(
             return;
         }
         replaceImageSrc(editor, dataUrl, permanentUrl);
+        try { onAfterInsert?.(); } catch { /* callback error must not trigger upload-failure path */ }
     } catch (error: unknown) {
         removeImageBySrc(editor, dataUrl);
         toast.error(getUploadErrorMessage(error));

@@ -7,16 +7,18 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
-import { rehypeWrapListItems, rehypeFixOlContinuity, rehypeCompact } from './rehypePlugins';
+import { rehypeWrapListItems, rehypeFixOlContinuity, rehypeCompact, rehypeUnwrapImages } from './rehypePlugins';
+import { isSafeImageSrc } from '../extensions/imageExtension';
 
 /** Unified processor — built once, reused for every conversion */
 const processor = unified()
     .use(remarkParse)
-    .use(remarkRehype)
+    .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeCompact)           // Strip whitespace text nodes first
+    .use(rehypeUnwrapImages)      // Unwrap <img> from <p> for TipTap block compatibility
     .use(rehypeWrapListItems)     // Then wrap bare <li> content in <p>
     .use(rehypeFixOlContinuity)   // Then fix sequential <ol> numbering
-    .use(rehypeStringify);
+    .use(rehypeStringify, { allowDangerousHtml: true });
 
 /** Convert markdown string to HTML for TipTap consumption */
 export function markdownToHtml(markdown: string): string {
@@ -97,12 +99,24 @@ function codeToMarkdown(el: Element, childMd: string): string {
     return `\`${childMd}\``;
 }
 
-/** Convert img element to markdown image syntax */
+/** Regex to validate width is numeric-only (prevents injection) */
+const NUMERIC_ONLY = /^\d+$/;
+
+/** Escape HTML special characters in attribute values to prevent injection */
+function escapeAttr(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Convert img element to markdown — preserves width via raw HTML when present */
 function imageToMarkdown(el: Element): string {
     const src = el.getAttribute('src') ?? '';
     const rawAlt = el.getAttribute('alt') ?? '';
-    if (!src) return '';
+    if (!src || !isSafeImageSrc(src)) return '';
     const safeAlt = rawAlt.replace(/[[\]]/g, '');
+    const width = el.getAttribute('width');
+    if (width && NUMERIC_ONLY.test(width)) {
+        return `<img src="${src}" alt="${escapeAttr(safeAlt)}" width="${width}">`;
+    }
     return `![${safeAlt}](${src})`;
 }
 

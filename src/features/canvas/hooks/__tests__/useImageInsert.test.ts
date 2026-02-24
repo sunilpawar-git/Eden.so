@@ -93,4 +93,16 @@ describe('insertImageIntoEditor', () => {
         await insertImageIntoEditor(null, new File([], 'x.png'), uploadFn);
         expect(uploadFn).not.toHaveBeenCalled();
     });
+
+    it('threads onAfterInsert callback to insertImageIntoEditor', async () => {
+        const editor = makeMockEditor(true);
+        const uploadFn = vi.fn().mockResolvedValue('https://cdn.example.com/img.jpg');
+        const onAfterInsert = vi.fn();
+        const file = new File(['test'], 'test.png', { type: 'image/png' });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test mock
+        await insertImageIntoEditor(editor as any, file, uploadFn, onAfterInsert);
+
+        expect(onAfterInsert).toHaveBeenCalledOnce();
+    });
 });

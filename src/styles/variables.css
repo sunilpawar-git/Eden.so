@@ -186,6 +186,7 @@
 
   /* Node Images */
   --node-image-radius: var(--radius-md);
+  --node-image-max-height: 400px;
 
   /* Focus Mode */
   --focus-backdrop-bg: hsla(0, 0%, 0%, 0.5);
@@ -222,6 +223,7 @@
   --editor-min-height: 48px;
   --blockquote-border-width: 2px;
   --code-inline-v-padding: 1px;
+  --node-image-max-height: 300px;
 
   /* Sidebar */
   --sidebar-width: 220px;
