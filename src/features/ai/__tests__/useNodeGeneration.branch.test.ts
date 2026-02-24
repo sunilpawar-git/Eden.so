@@ -8,6 +8,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useNodeGeneration } from '../hooks/useNodeGeneration';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import type { IdeaNodeData } from '@/features/canvas/types/node';
+import { GRID_PADDING } from '@/features/canvas/services/gridLayoutService';
 
 vi.mock('../services/geminiService', () => ({
     generateContent: vi.fn(),
@@ -41,7 +42,7 @@ describe('useNodeGeneration - branchFromNode', () => {
         expect(state.edges[0]?.sourceNodeId).toBe('idea-source');
     });
 
-    it('should position new node to the right of source', () => {
+    it('should position new node at next masonry grid slot (not hardcoded offset)', () => {
         const sourceNode = createTestIdeaNode('idea-source', 'Source');
         sourceNode.position = { x: 100, y: 200 };
         useCanvasStore.getState().addNode(sourceNode);
@@ -50,8 +51,37 @@ describe('useNodeGeneration - branchFromNode', () => {
 
         act(() => { result.current.branchFromNode('idea-source'); });
 
-        const newNode = useCanvasStore.getState().nodes[1];
-        expect(newNode?.position.x).toBeGreaterThan(100);
-        expect(newNode?.position.y).toBe(200);
+        const newNode = useCanvasStore.getState().nodes[1]!;
+        const isHardcodedOffset = newNode.position.x === 100 + 350 && newNode.position.y === 200;
+        expect(isHardcodedOffset).toBe(false);
+    });
+
+    it('should place branch at grid padding when canvas has single node', () => {
+        const sourceNode = createTestIdeaNode('idea-source', 'Source');
+        sourceNode.position = { x: GRID_PADDING, y: GRID_PADDING };
+        useCanvasStore.getState().addNode(sourceNode);
+
+        const { result } = renderHook(() => useNodeGeneration());
+
+        act(() => { result.current.branchFromNode('idea-source'); });
+
+        const state = useCanvasStore.getState();
+        expect(state.nodes).toHaveLength(2);
+        const newNode = state.nodes[1];
+        expect(newNode?.position.y).toBe(GRID_PADDING);
+        expect(newNode?.position.x).toBeGreaterThan(GRID_PADDING);
+    });
+
+    it('should create edge between source and branch', () => {
+        useCanvasStore.getState().addNode(createTestIdeaNode('idea-source', 'Source'));
+
+        const { result } = renderHook(() => useNodeGeneration());
+
+        act(() => { result.current.branchFromNode('idea-source'); });
+
+        const edges = useCanvasStore.getState().edges;
+        expect(edges).toHaveLength(1);
+        expect(edges[0]?.sourceNodeId).toBe('idea-source');
+        expect(edges[0]?.relationshipType).toBe('related');
     });
 });

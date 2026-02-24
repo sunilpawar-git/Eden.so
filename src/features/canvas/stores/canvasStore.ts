@@ -107,9 +107,10 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
     addNode: (node) => set((s) => ({ nodes: [...s.nodes, node] })),
 
     duplicateNode: (nodeId) => {
-        const node = get().nodes.find((n) => n.id === nodeId);
+        const nodes = get().nodes;
+        const node = nodes.find((n) => n.id === nodeId);
         if (!node) return undefined;
-        const newNode = cloneNode(node);
+        const newNode = cloneNode(node, nodes);
         set((s) => ({ nodes: [...s.nodes, newNode] }));
         return newNode.id;
     },

@@ -46,13 +46,16 @@ describe('Duplicate Flow', () => {
         useCanvasStore.setState({ nodes: [makeNode()], edges: [], selectedNodeIds: new Set() });
     });
 
-    it('creates new node at +50px Y offset via store', () => {
+    it('places duplicate at next masonry grid slot (not overlapping source)', () => {
         const result = useCanvasStore.getState().duplicateNode('idea-1');
         expect(result).toBeDefined();
         const nodes = useCanvasStore.getState().nodes;
         expect(nodes).toHaveLength(2);
-        const newNode = nodes.find((n) => n.id === result);
-        expect(newNode?.position).toEqual({ x: 100, y: 250 });
+        const source = nodes.find((n) => n.id === 'idea-1');
+        const dup = nodes.find((n) => n.id === result);
+        const overlapsX = dup!.position.x === source!.position.x;
+        const overlapsY = Math.abs(dup!.position.y - source!.position.y) < (source!.height ?? 220);
+        expect(overlapsX && overlapsY).toBe(false);
     });
 
     it('preserves and deep clones link previews', () => {
@@ -117,7 +120,7 @@ describe('Data Integrity Edge Cases', () => {
         const node = makeNode({
             data: { heading: 'H', output: undefined, isGenerating: false, isPromptCollapsed: false },
         } as Partial<CanvasNode>);
-        const result = duplicateNode(node);
+        const result = duplicateNode(node, []);
         expect('output' in result.data).toBe(false);
     });
 
@@ -144,7 +147,7 @@ describe('Data Integrity Edge Cases', () => {
 describe('Mutation Isolation', () => {
     it('mutating source tags after duplicate does not affect the copy', () => {
         const source = makeNode();
-        const result = duplicateNode(source);
+        const result = duplicateNode(source, []);
         source.data.tags!.push('tag-3');
         expect(result.data.tags).toEqual(['tag-1', 'tag-2']);
     });

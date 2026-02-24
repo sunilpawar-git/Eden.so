@@ -49,11 +49,13 @@ describe('canvasStore.duplicateNode', () => {
         expect(useCanvasStore.getState().nodes).toHaveLength(0);
     });
 
-    it('new node has offset position', () => {
+    it('places duplicate at masonry grid position (not overlapping source)', () => {
         useCanvasStore.setState({ nodes: [makeNode()] });
         useCanvasStore.getState().duplicateNode('idea-1');
-        const newNode = useCanvasStore.getState().nodes[1];
-        expect(newNode?.position).toEqual({ x: 0, y: 50 });
+        const [source, dup] = useCanvasStore.getState().nodes;
+        const sameSpot = dup?.position.x === source?.position.x
+            && dup?.position.y === source?.position.y;
+        expect(sameSpot).toBe(false);
     });
 
     it('preserves content in the duplicate', () => {

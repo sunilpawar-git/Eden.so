@@ -8,12 +8,11 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '../stores/aiStore';
 import { generateContentWithContext } from '../services/geminiService';
 import { createIdeaNode } from '@/features/canvas/types/node';
+import { calculateMasonryPosition } from '@/features/canvas/services/gridLayoutService';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
 import { processCalendarIntent } from '@/features/calendar/services/calendarIntentHandler';
-
-const BRANCH_OFFSET_X = 350;
 
 /**
  * Hook for generating AI content from IdeaCard nodes
@@ -92,14 +91,12 @@ export function useNodeGeneration() {
             const sourceNode = freshNodes.find((n) => n.id === sourceNodeId);
             if (!sourceNode) return;
 
+            const position = calculateMasonryPosition(freshNodes);
             const newNode = createIdeaNode(
                 `idea-${Date.now()}`,
                 sourceNode.workspaceId,
-                {
-                    x: sourceNode.position.x + BRANCH_OFFSET_X,
-                    y: sourceNode.position.y,
-                },
-                '' // Empty prompt for user to fill
+                position,
+                ''
             );
 
             addNode(newNode);
