@@ -39,7 +39,7 @@ export function applyResponsiveConstraints(dom: HTMLElement): void {
     wrapper.style.minWidth = '0';
     wrapper.style.overflow = 'hidden';
 
-    const img = wrapper.querySelector('img') as HTMLImageElement | null;
+    const img = wrapper.querySelector('img');
     if (img) {
         img.style.maxWidth = '100%';
         img.style.height = 'auto';
@@ -53,9 +53,7 @@ export const NodeImage = Image.extend({
 
         return (props: Parameters<typeof parentFactory>[0]) => {
             const nodeView = parentFactory(props);
-            if (nodeView && 'dom' in nodeView) {
-                applyResponsiveConstraints(nodeView.dom as HTMLElement);
-            }
+            applyResponsiveConstraints(nodeView.dom as HTMLElement);
             return nodeView;
         };
     },
