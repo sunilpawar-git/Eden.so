@@ -1,0 +1,89 @@
+/**
+ * ShareMenu Styles — Portal-based dropdown for workspace selection
+ * Follows TransformMenu pattern; all dimensions from CSS variables.
+ */
+
+.shareMenuWrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.shareButton {
+    background: none;
+    border: none;
+    padding: var(--space-sm);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast);
+    color: var(--color-text-secondary);
+}
+
+.shareButton:hover:not(:disabled) {
+    background-color: var(--color-hover);
+}
+
+.shareButton:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+}
+
+.icon {
+    font-size: var(--font-size-sm);
+}
+
+.dropdownMenu {
+    position: fixed;
+    transform: translate(-50%, -100%);
+    margin-top: calc(-1 * var(--space-xs));
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-dropdown);
+    min-width: var(--dropdown-min-width);
+    z-index: var(--z-suggestion-popup);
+    overflow: hidden;
+    max-height: var(--dropdown-max-height);
+    overflow-y: auto;
+}
+
+.menuItem {
+    display: block;
+    width: 100%;
+    padding: var(--menu-item-v-padding) var(--menu-item-h-padding);
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    transition: background-color var(--transition-fast);
+}
+
+.menuItem:hover:not(:disabled) {
+    background-color: var(--color-hover);
+}
+
+.menuItem:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: wait;
+}
+
+.menuItem:first-child {
+    border-radius: calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px) 0 0;
+}
+
+.menuItem:last-child {
+    border-radius: 0 0 calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px);
+}
+
+.emptyMessage {
+    padding: var(--menu-item-v-padding) var(--menu-item-h-padding);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.sharing {
+    opacity: var(--opacity-disabled);
+    cursor: wait;
+}

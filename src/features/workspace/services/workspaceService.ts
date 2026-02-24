@@ -8,21 +8,7 @@ import { createWorkspace, createDivider } from '../types/workspace';
 import { strings } from '@/shared/localization/strings';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
-
-/** Remove undefined values recursively (Firebase rejects undefined at any depth) */
-function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
-    return Object.fromEntries(
-        Object.entries(obj)
-            .filter(([, v]) => v !== undefined)
-            .map(([k, v]) => [
-                k,
-                // Recursively clean nested plain objects (skip arrays, Dates, primitives)
-                typeof v === 'object' && v && !Array.isArray(v) && !(v instanceof Date)
-                    ? removeUndefined(v as Record<string, unknown>)
-                    : v,
-            ])
-    ) as T;
-}
+import { removeUndefined } from '@/shared/utils/firebaseUtils';
 
 /** Get Firestore path for workspace subcollection */
 const getSubcollectionRef = (userId: string, workspaceId: string, subcollection: string) =>
@@ -170,23 +156,28 @@ export async function loadUserWorkspaces(userId: string): Promise<Workspace[]> {
     return workspaces;
 }
 
+/** Append a single node to a workspace without disturbing existing nodes */
+export async function appendNode(userId: string, workspaceId: string, node: CanvasNode): Promise<void> {
+    const sanitizedData = removeUndefined(node.data as Record<string, unknown>);
+    const nodeDoc = removeUndefined({
+        id: node.id, type: node.type, data: sanitizedData, position: node.position,
+        width: node.width, height: node.height, createdAt: node.createdAt, updatedAt: serverTimestamp(),
+    });
+    await setDoc(getSubcollectionDocRef(userId, workspaceId, 'nodes', node.id), nodeDoc);
+}
+
 /** Save nodes to Firestore using batch write with delete sync */
 export async function saveNodes(userId: string, workspaceId: string, nodes: CanvasNode[]): Promise<void> {
     const nodesRef = getSubcollectionRef(userId, workspaceId, 'nodes');
     const existingSnapshot = await getDocs(nodesRef);
     const existingIds = new Set(existingSnapshot.docs.map((d) => d.id));
     const currentIds = new Set(nodes.map((n) => n.id));
-
     const batch = writeBatch(db);
-
-    // Delete nodes that no longer exist locally
     existingIds.forEach((existingId) => {
         if (!currentIds.has(existingId)) {
             batch.delete(getSubcollectionDocRef(userId, workspaceId, 'nodes', existingId));
         }
     });
-
-    // Save current nodes (sanitize undefined values for Firebase)
     nodes.forEach((node) => {
         const sanitizedData = removeUndefined(node.data as Record<string, unknown>);
         const nodeDoc = removeUndefined({
@@ -195,7 +186,6 @@ export async function saveNodes(userId: string, workspaceId: string, nodes: Canv
         });
         batch.set(getSubcollectionDocRef(userId, workspaceId, 'nodes', node.id), nodeDoc);
     });
-
     await batch.commit();
 }
 
@@ -205,17 +195,12 @@ export async function saveEdges(userId: string, workspaceId: string, edges: Canv
     const existingSnapshot = await getDocs(edgesRef);
     const existingIds = new Set(existingSnapshot.docs.map((d) => d.id));
     const currentIds = new Set(edges.map((e) => e.id));
-
     const batch = writeBatch(db);
-
-    // Delete edges that no longer exist locally
     existingIds.forEach((existingId) => {
         if (!currentIds.has(existingId)) {
             batch.delete(getSubcollectionDocRef(userId, workspaceId, 'edges', existingId));
         }
     });
-
-    // Save current edges
     edges.forEach((edge) => {
         batch.set(getSubcollectionDocRef(userId, workspaceId, 'edges', edge.id), {
             id: edge.id, sourceNodeId: edge.sourceNodeId,

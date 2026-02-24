@@ -6,6 +6,7 @@
 import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { TransformMenu } from './TransformMenu';
+import { ShareMenu } from './ShareMenu';
 import { TooltipButton } from './TooltipButton';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import type { BarPlacement } from '../../hooks/useBarPlacement';
@@ -18,6 +19,9 @@ interface NodeUtilsBarProps {
     onAIClick?: () => void;
     onConnectClick: () => void;
     onCopyClick?: () => void;
+    onDuplicateClick?: () => void;
+    onShareClick?: (targetWorkspaceId: string) => Promise<void>;
+    isSharing?: boolean;
     onFocusClick?: () => void;
     onDelete: () => void;
     onTransform?: (type: TransformationType) => void;
@@ -42,6 +46,9 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
     onAIClick,
     onConnectClick,
     onCopyClick,
+    onDuplicateClick,
+    onShareClick,
+    isSharing = false,
     onFocusClick,
     onDelete,
     onTransform,
@@ -124,6 +131,24 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
                         icon="📋"
                         onClick={onCopyClick}
                         disabled={disabled || !hasContent}
+                        tooltipPlacement={tooltipSide}
+                    />
+                )}
+                {onDuplicateClick && (
+                    <TooltipButton
+                        label={strings.nodeUtils.duplicate}
+                        tooltipText={strings.nodeUtils.duplicate}
+                        icon="📑"
+                        onClick={onDuplicateClick}
+                        disabled={disabled}
+                        tooltipPlacement={tooltipSide}
+                    />
+                )}
+                {onShareClick && (
+                    <ShareMenu
+                        onShare={onShareClick}
+                        isSharing={isSharing}
+                        disabled={disabled}
                         tooltipPlacement={tooltipSide}
                     />
                 )}

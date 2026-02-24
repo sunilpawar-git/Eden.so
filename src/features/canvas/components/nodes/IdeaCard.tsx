@@ -8,6 +8,8 @@ import { useIdeaCardEditor } from '../../hooks/useIdeaCardEditor';
 import { useNodeInput, type NodeShortcutMap } from '../../hooks/useNodeInput';
 import { useNodeShortcuts } from '../../hooks/useNodeShortcuts';
 import { useIdeaCardActions } from '../../hooks/useIdeaCardActions';
+import { useIdeaCardDuplicateAction } from '../../hooks/useIdeaCardDuplicateAction';
+import { useIdeaCardShareAction } from '../../hooks/useIdeaCardShareAction';
 import { useIdeaCardState } from '../../hooks/useIdeaCardState';
 import { useLinkPreviewRetry } from '../../hooks/useLinkPreviewRetry';
 import { useBarPlacement } from '../../hooks/useBarPlacement';
@@ -109,6 +111,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
         handleDelete: rawDelete, handleRegenerate, handleConnectClick, handleTransform,
         handleHeadingChange, handleCopy, handleTagsChange, isTransforming,
     } = useIdeaCardActions({ nodeId: id, getEditableContent, contentRef });
+    const { handleDuplicate } = useIdeaCardDuplicateAction(id);
+    const { handleShare, isSharing } = useIdeaCardShareAction(id);
 
     const handleDelete = useCallback(() => { calendar.cleanupOnDelete(); rawDelete(); }, [calendar, rawDelete]);
 
@@ -216,7 +220,9 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
             </div>
             <NodeUtilsBar onTagClick={handleTagOpen} onImageClick={handleImageClick}
                 onConnectClick={handleConnectClick}
-                onCopyClick={handleCopy} onFocusClick={handleFocusClick}
+                onCopyClick={handleCopy} onDuplicateClick={handleDuplicate}
+                onShareClick={handleShare} isSharing={isSharing}
+                onFocusClick={handleFocusClick}
                 onDelete={handleDelete} onTransform={handleTransform}
                 onRegenerate={handleRegenerate} onPinToggle={handlePinToggle}
                 onCollapseToggle={handleCollapseToggle} hasContent={hasContent}

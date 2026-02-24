@@ -167,8 +167,9 @@
   --node-utils-hover-delay-in: 80ms;
   --node-utils-hover-delay-out: 150ms;
 
-  /* Dropdown Menus (TransformMenu, etc.) */
+  /* Dropdown Menus (TransformMenu, ShareMenu, etc.) */
   --dropdown-min-width: 120px;
+  --dropdown-max-height: 240px;
   --menu-item-v-padding: 10px;
   --menu-item-h-padding: 14px;
 
