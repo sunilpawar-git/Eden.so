@@ -67,6 +67,10 @@ vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 describe('IdeaCard Dual-Mode Input', () => {
     const defaultProps = defaultTestProps;
 

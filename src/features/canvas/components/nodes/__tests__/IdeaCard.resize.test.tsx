@@ -96,6 +96,10 @@ vi.mock('../NodeDivider', () => ({
     NodeDivider: () => <div data-testid="node-divider" />,
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 describe('IdeaCard Resize Integration', () => {
     const defaultData: IdeaNodeData = {
         prompt: 'Test prompt',

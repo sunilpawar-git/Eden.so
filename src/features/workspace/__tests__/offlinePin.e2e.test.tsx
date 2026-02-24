@@ -116,7 +116,10 @@ describe('Offline Pin - E2E Integration', () => {
     });
 
     it.skip('FULL FLOW: Pin → Cache → Offline → Load from cache', async () => {
-        // TODO: Fix KB mocking - loader hangs waiting for KB
+        // SKIP REASON: Firebase SDK initialises a real gRPC connection during dynamic import of
+        // knowledgeBankService inside useWorkspaceLoader, even when the service itself is mocked.
+        // Requires Firebase Emulator or full module isolation to run correctly.
+        // Track: set up Firebase Emulator in CI before enabling this test.
         // STEP 1: User is online, loads workspace from Firestore
         mockLoadNodes.mockResolvedValue(testNodes);
         mockLoadEdges.mockResolvedValue(testEdges);
@@ -203,7 +206,8 @@ describe('Offline Pin - E2E Integration', () => {
     });
 
     it.skip('CACHE HIT: Loads from cache first, then validates with Firestore', async () => {
-        // TODO: Fix KB mocking - loader hangs waiting for KB
+        // SKIP REASON: Same Firebase gRPC bleed-through as 'FULL FLOW' test above.
+        // Track: set up Firebase Emulator in CI before enabling this test.
         // Workspace is pinned and cached
         mockIdbGet.mockResolvedValue({
             nodes: testNodes,

@@ -14,6 +14,10 @@ vi.mock('../services/geminiService', () => ({
     generateContentWithContext: vi.fn(),
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 // Mock KB context hook
 const mockGetKBContext = vi.fn(() => '');
 vi.mock('@/features/knowledgeBank/hooks/useKnowledgeBankContext', () => ({

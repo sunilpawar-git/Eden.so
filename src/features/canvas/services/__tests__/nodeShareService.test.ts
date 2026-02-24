@@ -1,10 +1,11 @@
 /**
- * nodeShareService tests — cross-workspace sharing with smart positioning
+ * nodeShareService tests — cross-workspace sharing with masonry positioning
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { CanvasNode } from '../../types/node';
-import { shareNodeToWorkspace, computeSharePosition } from '../nodeShareService';
+import { shareNodeToWorkspace } from '../nodeShareService';
 import { loadNodes, appendNode, updateWorkspaceNodeCount } from '@/features/workspace/services/workspaceService';
+import { GRID_PADDING } from '../gridLayoutService';
 
 vi.mock('@/features/workspace/services/workspaceService', () => ({
     loadNodes: vi.fn(),
@@ -37,25 +38,6 @@ const makeNode = (overrides?: Partial<CanvasNode>): CanvasNode => ({
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     ...overrides,
-});
-
-describe('computeSharePosition', () => {
-    it('returns (100, 100) for empty workspace', () => {
-        expect(computeSharePosition([])).toEqual({ x: 100, y: 100 });
-    });
-
-    it('offsets from the bottommost-rightmost node', () => {
-        const nodes = [
-            makeNode({ position: { x: 200, y: 300 } }),
-            makeNode({ position: { x: 100, y: 100 } }),
-        ];
-        expect(computeSharePosition(nodes)).toEqual({ x: 280, y: 380 });
-    });
-
-    it('handles single-node workspace', () => {
-        const nodes = [makeNode({ position: { x: 50, y: 50 } })];
-        expect(computeSharePosition(nodes)).toEqual({ x: 130, y: 130 });
-    });
 });
 
 describe('shareNodeToWorkspace', () => {
@@ -115,17 +97,18 @@ describe('shareNodeToWorkspace', () => {
         expect(sharedNode.data.isPromptCollapsed).toBe(false);
     });
 
-    it('smart positions at offset from existing nodes', async () => {
-        mockLoadNodes.mockResolvedValue([makeNode({ position: { x: 200, y: 300 } })]);
+    it('places shared node at masonry grid padding for empty target workspace', async () => {
         await shareNodeToWorkspace('user-1', makeNode(), 'ws-target');
         const sharedNode = mockAppendNode.mock.calls[0]?.[2] as CanvasNode;
-        expect(sharedNode.position).toEqual({ x: 280, y: 380 });
+        expect(sharedNode.position).toEqual({ x: GRID_PADDING, y: GRID_PADDING });
     });
 
-    it('defaults to (100, 100) for empty workspace', async () => {
+    it('places shared node in next masonry column when target has nodes', async () => {
+        mockLoadNodes.mockResolvedValue([makeNode({ position: { x: GRID_PADDING, y: GRID_PADDING }, height: 220 })]);
         await shareNodeToWorkspace('user-1', makeNode(), 'ws-target');
         const sharedNode = mockAppendNode.mock.calls[0]?.[2] as CanvasNode;
-        expect(sharedNode.position).toEqual({ x: 100, y: 100 });
+        expect(sharedNode.position.y).toBe(GRID_PADDING);
+        expect(sharedNode.position.x).toBeGreaterThan(GRID_PADDING);
     });
 
     it('returns the new node ID', async () => {

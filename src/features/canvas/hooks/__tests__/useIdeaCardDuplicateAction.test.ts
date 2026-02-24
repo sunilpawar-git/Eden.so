@@ -11,6 +11,11 @@ vi.mock('@/shared/stores/toastStore', () => ({
     toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+const mockPanToPosition = vi.fn();
+vi.mock('../usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: mockPanToPosition }),
+}));
+
 const makeNode = () => ({
     id: 'idea-1',
     workspaceId: 'ws-1',
@@ -45,5 +50,21 @@ describe('useIdeaCardDuplicateAction', () => {
         const { result } = renderHook(() => useIdeaCardDuplicateAction('nonexistent'));
         act(() => result.current.handleDuplicate());
         expect(toast.error).toHaveBeenCalledWith('Failed to duplicate node');
+    });
+
+    it('pans to the new node position after successful duplicate', () => {
+        useCanvasStore.setState({ nodes: [makeNode()] });
+        const { result } = renderHook(() => useIdeaCardDuplicateAction('idea-1'));
+        act(() => result.current.handleDuplicate());
+        expect(mockPanToPosition).toHaveBeenCalledOnce();
+        const [x, y] = mockPanToPosition.mock.calls[0] as [number, number];
+        expect(typeof x).toBe('number');
+        expect(typeof y).toBe('number');
+    });
+
+    it('does not pan when node is not found', () => {
+        const { result } = renderHook(() => useIdeaCardDuplicateAction('nonexistent'));
+        act(() => result.current.handleDuplicate());
+        expect(mockPanToPosition).not.toHaveBeenCalled();
     });
 });

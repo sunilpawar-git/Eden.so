@@ -52,20 +52,20 @@ describe('duplicateNode', () => {
         expect(a.id).not.toBe(b.id);
     });
 
-    it('positions duplicate at next masonry grid slot (not overlapping source)', () => {
-        const source = makeNode({ position: { x: GRID_PADDING, y: GRID_PADDING } });
-        const result = duplicateNode(source, [source]);
-        expect(result.position.x).not.toBe(source.position.x);
-        expect(result.position.y).not.toBe(source.position.y + 50);
-    });
-
     it('places duplicate at grid padding when canvas is empty', () => {
         const source = makeNode();
         const result = duplicateNode(source, []);
         expect(result.position).toEqual({ x: GRID_PADDING, y: GRID_PADDING });
     });
 
-    it('places duplicate in shortest column with existing nodes', () => {
+    it('places duplicate in second column when first column has one node', () => {
+        const source = makeNode({ position: { x: GRID_PADDING, y: GRID_PADDING } });
+        const result = duplicateNode(source, [source]);
+        expect(result.position.y).toBe(GRID_PADDING);
+        expect(result.position.x).toBeGreaterThan(GRID_PADDING);
+    });
+
+    it('places duplicate in shortest column (shortest-column masonry rule)', () => {
         const node1 = makeNode({ id: 'n1', position: { x: GRID_PADDING, y: GRID_PADDING }, height: 300 });
         const node2 = makeNode({
             id: 'n2',

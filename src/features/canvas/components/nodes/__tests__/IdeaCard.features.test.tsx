@@ -97,6 +97,10 @@ vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 describe('IdeaCard Features', () => {
     const defaultData: IdeaNodeData = {
         prompt: 'Test prompt content',

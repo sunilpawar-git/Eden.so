@@ -129,6 +129,10 @@ vi.mock('@/features/tags', () => ({
     TagInput: vi.fn(() => null),
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 describe('IdeaCard - Proximity Hover', () => {
     const mockNodeProps = {
         id: 'test-node',

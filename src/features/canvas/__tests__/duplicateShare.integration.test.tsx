@@ -4,9 +4,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useCanvasStore } from '../stores/canvasStore';
 import { duplicateNode } from '../services/nodeDuplicationService';
-import { shareNodeToWorkspace, computeSharePosition } from '../services/nodeShareService';
+import { shareNodeToWorkspace } from '../services/nodeShareService';
 import type { CanvasNode } from '../types/node';
 import { loadNodes, appendNode, updateWorkspaceNodeCount } from '@/features/workspace/services/workspaceService';
+import { GRID_PADDING } from '../services/gridLayoutService';
 
 vi.mock('@/features/workspace/services/workspaceService', () => ({
     loadNodes: vi.fn(),
@@ -96,17 +97,18 @@ describe('Share Flow', () => {
         expect(mockAppendNode).toHaveBeenCalledWith('user-1', 'ws-target', expect.objectContaining({ type: 'idea' }));
     });
 
-    it('positions at smart offset from existing nodes', async () => {
-        mockLoadNodes.mockResolvedValue([makeNode({ position: { x: 200, y: 300 } })]);
+    it('positions shared node at next masonry column when target has nodes', async () => {
+        mockLoadNodes.mockResolvedValue([makeNode({ position: { x: GRID_PADDING, y: GRID_PADDING }, height: 220 })]);
         await shareNodeToWorkspace('user-1', makeNode(), 'ws-target');
         const sharedNode = mockAppendNode.mock.calls[0]?.[2] as CanvasNode;
-        expect(sharedNode.position).toEqual({ x: 280, y: 380 });
+        expect(sharedNode.position.y).toBe(GRID_PADDING);
+        expect(sharedNode.position.x).toBeGreaterThan(GRID_PADDING);
     });
 
-    it('falls back to (100, 100) for empty target workspace', async () => {
+    it('places shared node at grid padding for empty target workspace', async () => {
         await shareNodeToWorkspace('user-1', makeNode(), 'ws-target');
         const sharedNode = mockAppendNode.mock.calls[0]?.[2] as CanvasNode;
-        expect(sharedNode.position).toEqual({ x: 100, y: 100 });
+        expect(sharedNode.position).toEqual({ x: GRID_PADDING, y: GRID_PADDING });
     });
 
     it('rejects when userId is empty', async () => {
@@ -135,12 +137,14 @@ describe('Data Integrity Edge Cases', () => {
         expect(sharedNode.data.linkPreviews?.['https://example.com']?.title).toBe('Ex');
     });
 
-    it('smart positioning handles single-node workspace', () => {
-        expect(computeSharePosition([makeNode({ position: { x: 50, y: 50 } })])).toEqual({ x: 130, y: 130 });
-    });
-
-    it('smart positioning handles empty workspace', () => {
-        expect(computeSharePosition([])).toEqual({ x: 100, y: 100 });
+    it('shared node positioning is layout-aware (via calculateMasonryPosition)', async () => {
+        mockLoadNodes.mockResolvedValue([]);
+        mockAppendNode.mockResolvedValue(undefined);
+        mockUpdateNodeCount.mockResolvedValue(undefined);
+        const source = makeNode();
+        await shareNodeToWorkspace('user-1', source, 'ws-target');
+        const sharedNode = mockAppendNode.mock.calls[0]?.[2] as CanvasNode;
+        expect(sharedNode.position).toEqual({ x: GRID_PADDING, y: GRID_PADDING });
     });
 });
 

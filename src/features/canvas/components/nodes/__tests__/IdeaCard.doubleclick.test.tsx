@@ -65,6 +65,10 @@ vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 describe('IdeaCard Double-Click Edit Pattern - Phase 2', () => {
     const defaultData = defaultTestData;
     const defaultProps = defaultTestProps;

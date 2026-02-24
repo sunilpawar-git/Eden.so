@@ -66,6 +66,10 @@ vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 describe('IdeaCard Editing', () => {
     const defaultData = defaultTestData;
     const defaultProps = defaultTestProps;

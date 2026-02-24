@@ -9,6 +9,7 @@ import { useAIStore } from '../stores/aiStore';
 import { generateContentWithContext } from '../services/geminiService';
 import { createIdeaNode } from '@/features/canvas/types/node';
 import { calculateMasonryPosition } from '@/features/canvas/services/gridLayoutService';
+import { usePanToNode } from '@/features/canvas/hooks/usePanToNode';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
@@ -21,6 +22,7 @@ export function useNodeGeneration() {
     const { addNode } = useCanvasStore();
     const { startGeneration, completeGeneration, setError } = useAIStore();
     const { getKBContext } = useKnowledgeBankContext();
+    const { panToPosition } = usePanToNode();
 
     /**
      * Generate AI output from an IdeaCard node
@@ -93,17 +95,18 @@ export function useNodeGeneration() {
 
             const position = calculateMasonryPosition(freshNodes);
             const newNode = createIdeaNode(
-                `idea-${Date.now()}`,
+                `idea-${crypto.randomUUID()}`,
                 sourceNode.workspaceId,
                 position,
                 ''
             );
 
             addNode(newNode);
+            panToPosition(position.x, position.y);
 
             // Connect source to new node
             useCanvasStore.getState().addEdge({
-                id: `edge-${Date.now()}`,
+                id: `edge-${crypto.randomUUID()}`,
                 workspaceId: sourceNode.workspaceId,
                 sourceNodeId,
                 targetNodeId: newNode.id,
@@ -112,7 +115,7 @@ export function useNodeGeneration() {
 
             return newNode.id;
         },
-        [addNode]
+        [addNode, panToPosition]
     );
 
     return {

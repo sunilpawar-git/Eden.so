@@ -37,6 +37,10 @@ vi.mock('@/shared/stores/toastStore', () => ({
     toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() },
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 // eslint-disable-next-line import-x/first
 import { useNodeGeneration } from '../hooks/useNodeGeneration';
 // eslint-disable-next-line import-x/first

@@ -15,6 +15,11 @@ vi.mock('../services/geminiService', () => ({
     generateContentWithContext: vi.fn(),
 }));
 
+const mockPanToPosition = vi.fn();
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: mockPanToPosition }),
+}));
+
 const createTestIdeaNode = (id: string, prompt: string, output?: string) => ({
     id, workspaceId: 'ws-1', type: 'idea' as const,
     data: { prompt, output, isGenerating: false, isPromptCollapsed: false } as IdeaNodeData,
@@ -25,6 +30,7 @@ describe('useNodeGeneration - branchFromNode', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         useCanvasStore.setState({ nodes: [], edges: [], selectedNodeIds: new Set() });
+        mockPanToPosition.mockReset();
     });
 
     it('should create new IdeaCard connected to source', () => {
@@ -83,5 +89,39 @@ describe('useNodeGeneration - branchFromNode', () => {
         expect(edges).toHaveLength(1);
         expect(edges[0]?.sourceNodeId).toBe('idea-source');
         expect(edges[0]?.relationshipType).toBe('related');
+    });
+
+    it('pans to the new branch node after creation', () => {
+        useCanvasStore.getState().addNode(createTestIdeaNode('idea-source', 'Source'));
+
+        const { result } = renderHook(() => useNodeGeneration());
+
+        act(() => { result.current.branchFromNode('idea-source'); });
+
+        expect(mockPanToPosition).toHaveBeenCalledOnce();
+        const [x, y] = mockPanToPosition.mock.calls[0] as [number, number];
+        expect(typeof x).toBe('number');
+        expect(typeof y).toBe('number');
+    });
+
+    it('node and edge IDs are collision-safe UUIDs (not Date.now)', () => {
+        useCanvasStore.getState().addNode(createTestIdeaNode('idea-source', 'Source'));
+
+        const { result } = renderHook(() => useNodeGeneration());
+
+        act(() => { result.current.branchFromNode('idea-source'); });
+        act(() => { result.current.branchFromNode('idea-source'); });
+
+        const nodes = useCanvasStore.getState().nodes;
+        const edges = useCanvasStore.getState().edges;
+
+        const nodeIds = nodes.slice(1).map((n) => n.id);
+        const edgeIds = edges.map((e) => e.id);
+
+        expect(new Set(nodeIds).size).toBe(nodeIds.length);
+        expect(new Set(edgeIds).size).toBe(edgeIds.length);
+
+        nodeIds.forEach((id) => expect(id).toMatch(/^idea-[0-9a-f-]{36}$/));
+        edgeIds.forEach((id) => expect(id).toMatch(/^edge-[0-9a-f-]{36}$/));
     });
 });

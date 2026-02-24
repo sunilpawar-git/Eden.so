@@ -18,6 +18,10 @@ vi.mock('@/features/knowledgeBank/hooks/useKnowledgeBankContext', () => ({
     useKnowledgeBankContext: () => ({ getKBContext: vi.fn(() => '') }),
 }));
 
+vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
+    usePanToNode: () => ({ panToPosition: vi.fn() }),
+}));
+
 const createTestIdeaNode = (id: string, prompt: string, output?: string, heading?: string) => ({
     id,
     workspaceId: 'ws-1',
