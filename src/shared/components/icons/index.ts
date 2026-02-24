@@ -12,3 +12,4 @@ export * from './EditIcon';
 export * from './PinIcon';
 export * from './DragHandleIcon';
 export * from './ChevronDownIcon';
+export * from './FreeFlowIcon';

@@ -1,17 +1,16 @@
 /**
- * WorkspaceControls Tests - Consolidated UI Ribbon Component
- * Tests for: Add Node, Clear Canvas, Delete Workspace functionality
+ * WorkspaceControls Tests - Add Node, Arrange, Free Flow, Clear Canvas
+ * Delete Workspace tests are in WorkspaceControls.delete.test.tsx
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { WorkspaceControls } from '../WorkspaceControls';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '../../stores/workspaceStore';
+import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import { strings } from '@/shared/localization/strings';
-// Mock workspace service
-import { deleteWorkspace } from '../../services/workspaceService';
 
 vi.mock('../../services/workspaceService', () => ({
     deleteWorkspace: vi.fn().mockResolvedValue(undefined),
@@ -31,9 +30,6 @@ vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
         panToPosition: mockPanToPosition,
     }),
 }));
-
-
-
 
 // Mock toast store
 vi.mock('@/shared/stores/toastStore', () => ({
@@ -85,33 +81,29 @@ describe('WorkspaceControls', () => {
             selectedNodeIds: new Set(),
         });
 
+        // Reset settings store
+        useSettingsStore.setState({ canvasFreeFlow: false });
+
         // Reset mockConfirm to default (cancel/false)
         mockConfirm.mockResolvedValue(false);
     });
 
     describe('rendering', () => {
-        it('should render all three action buttons', () => {
+        it('should render all action buttons', () => {
             render(<WorkspaceControls />);
 
-            // Check for Add Node button
             expect(screen.getByTitle(strings.workspace.addNodeTooltip)).toBeInTheDocument();
-
-            // Check for Auto Arrange button
             expect(screen.getByTitle(strings.workspace.arrangeNodesTooltip)).toBeInTheDocument();
-
-            // Check for Clear Canvas button
+            expect(screen.getByTitle(strings.workspace.freeFlowTooltip)).toBeInTheDocument();
             expect(screen.getByTitle(strings.canvas.clearCanvas)).toBeInTheDocument();
-
-            // Check for Delete Workspace button
             expect(screen.getByTitle(strings.workspace.deleteWorkspaceTooltip)).toBeInTheDocument();
         });
 
-        it('should render two dividers between buttons', () => {
+        it('should render dividers between buttons', () => {
             const { container } = render(<WorkspaceControls />);
 
-            // There should be 3 dividers (between 4 buttons)
             const dividers = container.querySelectorAll('[class*="divider"]');
-            expect(dividers.length).toBe(3);
+            expect(dividers.length).toBe(4);
         });
     });
 
@@ -195,194 +187,37 @@ describe('WorkspaceControls', () => {
         });
     });
 
-    describe('Clear Canvas button', () => {
-        it('should be disabled when there are no nodes', () => {
-            useCanvasStore.setState({ nodes: [] });
-
+    describe('Free Flow toggle button', () => {
+        it('should render the free flow button', () => {
             render(<WorkspaceControls />);
-
-            const clearButton = screen.getByTitle(strings.canvas.clearCanvas);
-            expect(clearButton).toBeDisabled();
+            expect(screen.getByTitle(strings.workspace.freeFlowTooltip)).toBeInTheDocument();
         });
 
-        it('should be enabled when there are nodes', () => {
-            useCanvasStore.setState({
-                nodes: [
-                    {
-                        id: 'node-1',
-                        workspaceId: 'workspace-1',
-                        type: 'idea',
-                        position: { x: 0, y: 0 },
-                        data: { content: '', prompt: '', output: '', isGenerating: false, isPromptCollapsed: false },
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    },
-                ],
-            });
-
+        it('should show inactive state by default', () => {
             render(<WorkspaceControls />);
-
-            const clearButton = screen.getByTitle(strings.canvas.clearCanvas);
-            expect(clearButton).not.toBeDisabled();
+            const button = screen.getByTitle(strings.workspace.freeFlowTooltip);
+            expect(button.getAttribute('aria-pressed')).toBe('false');
         });
 
-        it('should show confirmation dialog when clicked', async () => {
-            useCanvasStore.setState({
-                nodes: [
-                    {
-                        id: 'node-1',
-                        workspaceId: 'workspace-1',
-                        type: 'idea',
-                        position: { x: 0, y: 0 },
-                        data: { content: '', prompt: '', output: '', isGenerating: false, isPromptCollapsed: false },
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    },
-                ],
-            });
-
+        it('should toggle canvasFreeFlow when clicked', () => {
             render(<WorkspaceControls />);
-
-            const clearButton = screen.getByTitle(strings.canvas.clearCanvas);
-            await act(async () => {
-                fireEvent.click(clearButton);
-            });
-
-            expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({
-                message: strings.canvas.clearConfirm,
-                isDestructive: true,
-            }));
+            const button = screen.getByTitle(strings.workspace.freeFlowTooltip);
+            fireEvent.click(button);
+            expect(useSettingsStore.getState().canvasFreeFlow).toBe(true);
         });
 
-        it('should clear canvas when confirmed', async () => {
-            useCanvasStore.setState({
-                nodes: [
-                    {
-                        id: 'node-1',
-                        workspaceId: 'workspace-1',
-                        type: 'idea',
-                        position: { x: 0, y: 0 },
-                        data: { content: '', prompt: '', output: '', isGenerating: false, isPromptCollapsed: false },
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    },
-                ],
-            });
-
-            mockConfirm.mockResolvedValue(true);
-
+        it('should show active state when canvasFreeFlow is true', () => {
+            useSettingsStore.setState({ canvasFreeFlow: true });
             render(<WorkspaceControls />);
-
-            const clearButton = screen.getByTitle(strings.canvas.clearCanvas);
-            await act(async () => {
-                fireEvent.click(clearButton);
-            });
-
-            const { nodes } = useCanvasStore.getState();
-            expect(nodes).toHaveLength(0);
+            const button = screen.getByTitle(strings.workspace.freeFlowTooltip);
+            expect(button.getAttribute('aria-pressed')).toBe('true');
         });
 
-        it('should not clear canvas when cancelled', async () => {
-            useCanvasStore.setState({
-                nodes: [
-                    {
-                        id: 'node-1',
-                        workspaceId: 'workspace-1',
-                        type: 'idea',
-                        position: { x: 0, y: 0 },
-                        data: { content: '', prompt: '', output: '', isGenerating: false, isPromptCollapsed: false },
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    },
-                ],
-            });
-
-            mockConfirm.mockResolvedValue(false);
-
+        it('should have accessible label from string resource', () => {
             render(<WorkspaceControls />);
-
-            const clearButton = screen.getByTitle(strings.canvas.clearCanvas);
-            await act(async () => {
-                fireEvent.click(clearButton);
-            });
-
-            const { nodes } = useCanvasStore.getState();
-            expect(nodes).toHaveLength(1);
+            const button = screen.getByLabelText(strings.workspace.freeFlowTooltip);
+            expect(button).toBeInTheDocument();
         });
     });
 
-    describe('Delete Workspace button', () => {
-        it('should show error toast when trying to delete default workspace', async () => {
-            const { toast } = await import('@/shared/stores/toastStore');
-            useWorkspaceStore.setState({ currentWorkspaceId: DEFAULT_WORKSPACE_ID });
-
-            render(<WorkspaceControls />);
-
-            const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            await act(async () => {
-                fireEvent.click(deleteButton);
-            });
-
-            expect(toast.error).toHaveBeenCalledWith(strings.workspace.deleteDefaultError);
-        });
-
-        it('should show confirmation dialog when deleting non-default workspace', async () => {
-            render(<WorkspaceControls />);
-
-            const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            await act(async () => {
-                fireEvent.click(deleteButton);
-            });
-
-            expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({
-                message: strings.workspace.deleteConfirm,
-                isDestructive: true,
-            }));
-        });
-
-        it('should not delete workspace when confirmation is cancelled', async () => {
-            mockConfirm.mockResolvedValue(false);
-
-            render(<WorkspaceControls />);
-
-            const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            await act(async () => {
-                fireEvent.click(deleteButton);
-            });
-
-            expect(deleteWorkspace).not.toHaveBeenCalled();
-        });
-
-        it('should delete workspace when confirmed', async () => {
-            const { toast } = await import('@/shared/stores/toastStore');
-            mockConfirm.mockResolvedValue(true);
-
-            render(<WorkspaceControls />);
-
-            const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            await act(async () => {
-                fireEvent.click(deleteButton);
-            });
-
-            await waitFor(() => {
-                expect(deleteWorkspace).toHaveBeenCalledWith('test-user-id', 'workspace-1');
-            });
-
-            await waitFor(() => {
-                expect(toast.success).toHaveBeenCalledWith(strings.workspace.deleteSuccess);
-            });
-        });
-
-        it('should not work when user is not authenticated', () => {
-            useAuthStore.setState({ user: null, isAuthenticated: false });
-
-            render(<WorkspaceControls />);
-
-            const deleteButton = screen.getByTitle(strings.workspace.deleteWorkspaceTooltip);
-            fireEvent.click(deleteButton);
-
-            // Should not show confirmation or call delete
-            expect(mockConfirm).not.toHaveBeenCalled();
-        });
-    });
 });

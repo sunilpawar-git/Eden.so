@@ -6,9 +6,11 @@
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useAIStore } from '../stores/aiStore';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { generateContentWithContext } from '../services/geminiService';
 import { createIdeaNode } from '@/features/canvas/types/node';
 import { calculateMasonryPosition } from '@/features/canvas/services/gridLayoutService';
+import { calculateBranchPlacement } from '@/features/canvas/services/freeFlowPlacementService';
 import { usePanToNode } from '@/features/canvas/hooks/usePanToNode';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
@@ -93,7 +95,10 @@ export function useNodeGeneration() {
             const sourceNode = freshNodes.find((n) => n.id === sourceNodeId);
             if (!sourceNode) return;
 
-            const position = calculateMasonryPosition(freshNodes);
+            const isFreeFlow = useSettingsStore.getState().canvasFreeFlow;
+            const position = isFreeFlow
+                ? calculateBranchPlacement(sourceNode, freshNodes)
+                : calculateMasonryPosition(freshNodes);
             const newNode = createIdeaNode(
                 `idea-${crypto.randomUUID()}`,
                 sourceNode.workspaceId,

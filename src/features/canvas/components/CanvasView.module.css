@@ -77,6 +77,11 @@
     color: var(--color-primary);
 }
 
+/* Arrange animation: nodes glide to new positions */
+.canvasContainer[data-arranging="true"] :global(.react-flow__node) {
+    transition: transform 0.4s ease-out;
+}
+
 /* Workspace switching transition */
 .canvasContainer {
     transition: opacity 0.15s ease-out;

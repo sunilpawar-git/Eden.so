@@ -12,6 +12,7 @@ export const workspaceStrings = {
     deleteDefaultError: 'Cannot delete the default workspace',
     addNodeTooltip: 'Add New Node',
     arrangeNodesTooltip: 'Auto Arrange (Grid)',
+    freeFlowTooltip: 'Toggle Free Flowing nodes (Disables auto-grid alignment)',
     deleteWorkspaceTooltip: 'Delete Workspace',
     switching: 'Switching workspace...',
     switchError: 'Failed to switch workspace',

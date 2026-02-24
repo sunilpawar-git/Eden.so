@@ -14,6 +14,7 @@ vi.mock('@/shared/stores/settingsStore', () => ({
 
 describe('CanvasSection', () => {
     const mockToggleCanvasGrid = vi.fn();
+    const mockToggleCanvasFreeFlow = vi.fn();
     const mockSetAutoSave = vi.fn();
     const mockSetCanvasScrollMode = vi.fn();
     const mockSetConnectorStyle = vi.fn();
@@ -24,12 +25,50 @@ describe('CanvasSection', () => {
             const state = createMockSettingsState({
                 connectorStyle: 'solid' as const,
                 toggleCanvasGrid: mockToggleCanvasGrid,
+                toggleCanvasFreeFlow: mockToggleCanvasFreeFlow,
                 setAutoSave: mockSetAutoSave,
                 setCanvasScrollMode: mockSetCanvasScrollMode,
                 setConnectorStyle: mockSetConnectorStyle,
             });
             return typeof selector === 'function' ? selector(state) : state;
         });
+    });
+
+    it('should render free flow toggle', () => {
+        render(<CanvasSection />);
+        expect(screen.getByText(strings.settings.freeFlow)).toBeInTheDocument();
+    });
+
+    it('should reflect canvasFreeFlow state in checkbox', () => {
+        vi.mocked(useSettingsStore).mockImplementation((selector) => {
+            const state = createMockSettingsState({
+                canvasFreeFlow: true,
+                toggleCanvasFreeFlow: mockToggleCanvasFreeFlow,
+                toggleCanvasGrid: mockToggleCanvasGrid,
+                setAutoSave: mockSetAutoSave,
+                setCanvasScrollMode: mockSetCanvasScrollMode,
+                setConnectorStyle: mockSetConnectorStyle,
+            });
+            return typeof selector === 'function' ? selector(state) : state;
+        });
+
+        render(<CanvasSection />);
+        const checkboxes = screen.getAllByRole('checkbox');
+        const freeFlowCheckbox = checkboxes.find(
+            (cb) => cb.closest('label')?.textContent?.includes(strings.settings.freeFlow)
+        );
+        expect(freeFlowCheckbox).toBeChecked();
+    });
+
+    it('should call toggleCanvasFreeFlow when free flow checkbox is clicked', () => {
+        render(<CanvasSection />);
+        const checkboxes = screen.getAllByRole('checkbox');
+        const freeFlowCheckbox = checkboxes.find(
+            (cb) => cb.closest('label')?.textContent?.includes(strings.settings.freeFlow)
+        );
+        expect(freeFlowCheckbox).toBeDefined();
+        fireEvent.click(freeFlowCheckbox!);
+        expect(mockToggleCanvasFreeFlow).toHaveBeenCalledOnce();
     });
 
     it('should render canvas grid toggle', () => {

@@ -214,7 +214,7 @@ export function CanvasView() {
     );
 
     return (
-        <div className={getContainerClassName(isSwitching)}>
+        <div className={getContainerClassName(isSwitching)} data-canvas-container>
             <ReactFlow
                 nodes={rfNodes}
                 edges={rfEdges}

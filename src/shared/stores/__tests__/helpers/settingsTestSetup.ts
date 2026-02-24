@@ -43,6 +43,7 @@ export const DEFAULT_SETTINGS_STATE = {
     canvasScrollMode: 'zoom' as const,
     connectorStyle: 'solid' as const,
     isCanvasLocked: false,
+    canvasFreeFlow: false,
 };
 
 /** Resets the settings store to default state */

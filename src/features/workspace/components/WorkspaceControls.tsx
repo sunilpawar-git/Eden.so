@@ -3,11 +3,13 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '../stores/workspaceStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { deleteWorkspace } from '../services/workspaceService';
-import { PlusIcon, TrashIcon, EraserIcon, GridIcon } from '@/shared/components/icons';
+import { PlusIcon, TrashIcon, EraserIcon, GridIcon, FreeFlowIcon } from '@/shared/components/icons';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import { useConfirm } from '@/shared/stores/confirmStore';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { useAddNode } from '@/features/canvas/hooks/useAddNode';
+import { useArrangeAnimation } from '@/features/canvas/hooks/useArrangeAnimation';
 import styles from './WorkspaceControls.module.css';
 
 // eslint-disable-next-line max-lines-per-function -- workspace toolbar with multiple actions
@@ -18,20 +20,24 @@ export function WorkspaceControls() {
     // Use unified node creation hook (single source of truth)
     const handleAddNode = useAddNode();
 
-    // Optimize store selectors to avoid unnecessary re-renders
+    const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
+    const toggleCanvasFreeFlow = useSettingsStore((s) => s.toggleCanvasFreeFlow);
+
     const clearCanvas = useCanvasStore((s) => s.clearCanvas);
     const arrangeNodes = useCanvasStore((s) => s.arrangeNodes);
     const nodes = useCanvasStore((s) => s.nodes);
     const nodeCount = nodes.length;
+
+    const { animatedArrange } = useArrangeAnimation(null, arrangeNodes);
 
     const [isDeleting, setIsDeleting] = useState(false);
     const confirm = useConfirm();
 
     const handleArrangeNodes = useCallback(() => {
         if (nodeCount === 0) return;
-        arrangeNodes();
-        toast.success('Nodes arranged in grid');
-    }, [arrangeNodes, nodeCount]);
+        animatedArrange();
+        toast.success(strings.layout.arrangeSuccess);
+    }, [animatedArrange, nodeCount]);
 
     const handleClearCanvas = useCallback(async () => {
         if (nodeCount === 0) return;
@@ -107,6 +113,16 @@ export function WorkspaceControls() {
                 title={strings.workspace.arrangeNodesTooltip}
             >
                 <GridIcon size={20} />
+            </button>
+            <div className={styles.divider} />
+            <button
+                className={`${styles.button} ${canvasFreeFlow ? styles.buttonActive : ''}`}
+                onClick={toggleCanvasFreeFlow}
+                aria-pressed={canvasFreeFlow}
+                aria-label={strings.workspace.freeFlowTooltip}
+                title={strings.workspace.freeFlowTooltip}
+            >
+                <FreeFlowIcon size={20} />
             </button>
             <div className={styles.divider} />
             <button

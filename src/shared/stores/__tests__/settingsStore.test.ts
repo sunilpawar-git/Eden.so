@@ -162,6 +162,71 @@ describe('SettingsStore', () => {
         });
     });
 
+    describe('canvas locked', () => {
+        it('should default to unlocked', () => {
+            expect(useSettingsStore.getState().isCanvasLocked).toBe(false);
+        });
+
+        it('should toggle isCanvasLocked setting', () => {
+            expect(useSettingsStore.getState().isCanvasLocked).toBe(false);
+            useSettingsStore.getState().toggleCanvasLocked();
+            expect(useSettingsStore.getState().isCanvasLocked).toBe(true);
+            useSettingsStore.getState().toggleCanvasLocked();
+            expect(useSettingsStore.getState().isCanvasLocked).toBe(false);
+        });
+
+        it('should persist isCanvasLocked to localStorage', () => {
+            useSettingsStore.getState().toggleCanvasLocked();
+            expect(localStorageMock.setItem).toHaveBeenCalledWith('settings-isCanvasLocked', 'true');
+        });
+
+        it('should load isCanvasLocked from storage', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-isCanvasLocked') return 'true';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().isCanvasLocked).toBe(true);
+        });
+    });
+
+    describe('canvas free flow', () => {
+        it('should default to false', () => {
+            expect(useSettingsStore.getState().canvasFreeFlow).toBe(false);
+        });
+
+        it('should toggle canvasFreeFlow setting', () => {
+            expect(useSettingsStore.getState().canvasFreeFlow).toBe(false);
+            useSettingsStore.getState().toggleCanvasFreeFlow();
+            expect(useSettingsStore.getState().canvasFreeFlow).toBe(true);
+            useSettingsStore.getState().toggleCanvasFreeFlow();
+            expect(useSettingsStore.getState().canvasFreeFlow).toBe(false);
+        });
+
+        it('should persist canvasFreeFlow to localStorage', () => {
+            useSettingsStore.getState().toggleCanvasFreeFlow();
+            expect(localStorageMock.setItem).toHaveBeenCalledWith('settings-canvasFreeFlow', 'true');
+        });
+
+        it('should load canvasFreeFlow from storage', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-canvasFreeFlow') return 'true';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().canvasFreeFlow).toBe(true);
+        });
+
+        it('should reject invalid canvasFreeFlow localStorage value', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-canvasFreeFlow') return 'hacked';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().canvasFreeFlow).toBe(false);
+        });
+    });
+
     describe('localStorage persistence', () => {
         it('should load theme from localStorage via loadFromStorage', () => {
             localStorageMock.getItem.mockImplementation((key: string) => {

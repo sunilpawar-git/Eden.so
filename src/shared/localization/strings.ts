@@ -88,6 +88,7 @@ export const strings = {
         connectorThick: 'Thick',
         connectorDashed: 'Dashed',
         connectorDotted: 'Dotted',
+        freeFlow: 'Free flow mode',
         close: 'Close',
     },
     shortcuts: {
@@ -220,6 +221,7 @@ export const strings = {
     layout: {
         arrangeNodes: 'Auto Arrange',
         arrangeTooltip: 'Arrange nodes in masonry grid',
+        arrangeSuccess: 'Nodes arranged in grid',
         arrangingNodes: 'Arranging nodes...',
         neighborAwareLayout: 'Neighbor-aware layout',
         incrementalRearrange: 'Incremental rearrange',

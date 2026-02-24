@@ -31,6 +31,8 @@ const CONNECTOR_STYLE_OPTIONS: readonly ConnectorStyleOption[] = [
 export function CanvasSection() {
     const canvasGrid = useSettingsStore((state) => state.canvasGrid);
     const toggleCanvasGrid = useSettingsStore((state) => state.toggleCanvasGrid);
+    const canvasFreeFlow = useSettingsStore((state) => state.canvasFreeFlow);
+    const toggleCanvasFreeFlow = useSettingsStore((state) => state.toggleCanvasFreeFlow);
     const autoSave = useSettingsStore((state) => state.autoSave);
     const setAutoSave = useSettingsStore((state) => state.setAutoSave);
     const canvasScrollMode = useSettingsStore((state) => state.canvasScrollMode);
@@ -48,6 +50,15 @@ export function CanvasSection() {
                     onChange={toggleCanvasGrid}
                 />
                 <span>{strings.settings.canvasGrid}</span>
+            </label>
+
+            <label className={styles.toggleLabel}>
+                <input
+                    type="checkbox"
+                    checked={canvasFreeFlow}
+                    onChange={toggleCanvasFreeFlow}
+                />
+                <span>{strings.settings.freeFlow}</span>
             </label>
 
             <h3 className={styles.sectionTitle}>{strings.settings.canvasScrollMode}</h3>

@@ -5,21 +5,27 @@
 import { useCallback } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { useFocusStore } from '../stores/focusStore';
 import { createIdeaNode } from '../types/node';
 import { calculateNextNodePosition } from '../stores/canvasStoreHelpers';
+import { calculateSmartPlacement } from '../services/freeFlowPlacementService';
 import { usePanToNode } from './usePanToNode';
 
 export function useAddNode() {
     const addNode = useCanvasStore((s) => s.addNode);
     const nodes = useCanvasStore((s) => s.nodes);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
+    const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
     const { panToPosition } = usePanToNode();
 
     const handleAddNode = useCallback(() => {
         if (!currentWorkspaceId) return;
 
-        // Calculate next grid position for consistency
-        const position = calculateNextNodePosition(nodes);
+        const position = canvasFreeFlow
+            ? calculateSmartPlacement(nodes, focusedNodeId ?? undefined)
+            : calculateNextNodePosition(nodes);
 
         const newNode = createIdeaNode(
             `idea-${Date.now()}`,
@@ -28,10 +34,8 @@ export function useAddNode() {
         );
 
         addNode(newNode);
-
-        // Pan to the new node to ensure it's visible
         panToPosition(position.x, position.y);
-    }, [addNode, nodes, currentWorkspaceId, panToPosition]);
+    }, [addNode, nodes, currentWorkspaceId, canvasFreeFlow, focusedNodeId, panToPosition]);
 
     return handleAddNode;
 }

@@ -29,6 +29,7 @@ const STORAGE_KEYS = {
     canvasScrollMode: 'settings-canvasScrollMode',
     connectorStyle: 'settings-connectorStyle',
     isCanvasLocked: 'settings-isCanvasLocked',
+    canvasFreeFlow: 'settings-canvasFreeFlow',
 } as const;
 
 // Constants
@@ -45,6 +46,7 @@ interface SettingsState {
     canvasScrollMode: CanvasScrollMode;
     connectorStyle: ConnectorStyle;
     isCanvasLocked: boolean;
+    canvasFreeFlow: boolean;
     setTheme: (theme: ThemeOption) => void;
     toggleCanvasGrid: () => void;
     setAutoSave: (enabled: boolean) => void;
@@ -53,6 +55,7 @@ interface SettingsState {
     setCanvasScrollMode: (mode: CanvasScrollMode) => void;
     setConnectorStyle: (style: ConnectorStyle) => void;
     toggleCanvasLocked: () => void;
+    toggleCanvasFreeFlow: () => void;
     getResolvedTheme: () => ResolvedTheme;
     loadFromStorage: () => void;
 }
@@ -70,6 +73,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
     connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
     isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
+    canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
 
     setTheme: (theme: ThemeOption) => {
         set({ theme });
@@ -115,6 +119,12 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
         setStorageItem(STORAGE_KEYS.isCanvasLocked, newValue);
     },
 
+    toggleCanvasFreeFlow: () => {
+        const newValue = !get().canvasFreeFlow;
+        set({ canvasFreeFlow: newValue });
+        setStorageItem(STORAGE_KEYS.canvasFreeFlow, newValue);
+    },
+
     getResolvedTheme: (): ResolvedTheme => {
         const { theme } = get();
         if (DIRECT_THEMES.has(theme)) return theme as ResolvedTheme;
@@ -135,6 +145,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
             canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
             connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
             isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
+            canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
         });
     },
 
