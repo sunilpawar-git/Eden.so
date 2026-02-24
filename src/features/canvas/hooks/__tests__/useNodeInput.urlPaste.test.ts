@@ -5,12 +5,60 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCanvasStore } from '../../stores/canvasStore';
-import { useNodeInput } from '../useNodeInput';
+import { useNodeInput, extractUrls } from '../useNodeInput';
 import { NODE_ID, createMockNode, createMockEditor } from './nodeInputTestHelpers';
 
 vi.mock('../useLinkPreviewFetch', () => ({
     useLinkPreviewFetch: vi.fn(),
 }));
+
+describe('extractUrls', () => {
+    it('extracts http and https URLs', () => {
+        expect(extractUrls('Visit https://example.com and http://test.org')).toEqual([
+            'https://example.com', 'http://test.org',
+        ]);
+    });
+
+    it('deduplicates identical URLs', () => {
+        expect(extractUrls('https://a.com and https://a.com again')).toEqual(['https://a.com']);
+    });
+
+    it('returns empty array for null or no-URL text', () => {
+        expect(extractUrls(null)).toEqual([]);
+        expect(extractUrls('plain text')).toEqual([]);
+    });
+
+    it('excludes URLs inside markdown image syntax ![alt](url)', () => {
+        const md = '![photo](https://firebasestorage.googleapis.com/v0/b/proj/img.png?alt=media)';
+        expect(extractUrls(md)).toEqual([]);
+    });
+
+    it('excludes Firebase Storage image URLs but keeps regular links', () => {
+        const md = 'Visit https://example.com\n\n![img](https://firebasestorage.googleapis.com/v0/b/proj/pic.jpg)';
+        expect(extractUrls(md)).toEqual(['https://example.com']);
+    });
+
+    it('excludes data:image base64 URLs that appear in markdown images', () => {
+        const md = '![inline](data:image/png;base64,iVBOR) and https://real-link.com';
+        expect(extractUrls(md)).toEqual(['https://real-link.com']);
+    });
+
+    it('handles multiple images and links mixed together', () => {
+        const md = [
+            'See https://blog.com/post',
+            '![a](https://storage.example.com/a.jpg)',
+            'Also https://docs.example.com',
+            '![b](https://storage.example.com/b.png)',
+        ].join('\n');
+        expect(extractUrls(md)).toEqual(['https://blog.com/post', 'https://docs.example.com']);
+    });
+
+    it('handles image URL that also appears as standalone link', () => {
+        const url = 'https://firebasestorage.googleapis.com/v0/b/proj/img.png';
+        const md = `![photo](${url})\n\nDirect link: ${url}`;
+        expect(extractUrls(md)).toEqual([]);
+    });
+});
 
 describe('useNodeInput URL detection', () => {
     let mockEditor: ReturnType<typeof createMockEditor>;

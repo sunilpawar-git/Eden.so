@@ -161,14 +161,8 @@ describe('Paste → draft update pipeline (real TipTap)', () => {
         dom.removeEventListener('paste', onPaste);
     });
 
-    it('URL extraction from draft content detects URLs correctly', () => {
-        // This tests the same regex used in useNodeInput
-        const URL_REGEX = /https?:\/\/[^\s)]+/g;
-        const extractUrls = (text: string | null): string[] => {
-            if (!text) return [];
-            const matches = text.match(URL_REGEX);
-            return matches ? [...new Set(matches)] : [];
-        };
+    it('URL extraction from draft content detects URLs correctly', async () => {
+        const { extractUrls } = await import('../hooks/useNodeInput');
 
         const urls = extractUrls('Visit https://example.com and http://test.org/path?q=1 today');
         expect(urls).toEqual(['https://example.com', 'http://test.org/path?q=1']);
@@ -180,6 +174,16 @@ describe('Paste → draft update pipeline (real TipTap)', () => {
         // No URLs
         expect(extractUrls('plain text')).toEqual([]);
         expect(extractUrls(null)).toEqual([]);
+    });
+
+    it('excludes markdown image URLs from extraction', async () => {
+        const { extractUrls } = await import('../hooks/useNodeInput');
+
+        const md = 'Check this out\n\n![photo](https://firebasestorage.googleapis.com/v0/b/proj/image.png?alt=media)';
+        expect(extractUrls(md)).toEqual([]);
+
+        const mixed = 'Visit https://example.com\n\n![img](https://firebasestorage.googleapis.com/v0/b/proj/pic.jpg)';
+        expect(extractUrls(mixed)).toEqual(['https://example.com']);
     });
 });
 

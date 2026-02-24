@@ -13,11 +13,26 @@ import { GLOBAL_SHORTCUT_KEYS } from '@/shared/constants/shortcutKeys';
 /** Regex to extract http/https URLs from text */
 const URL_REGEX = /https?:\/\/[^\s)]+/g;
 
-/** Extract unique URLs from text content */
-function extractUrls(text: string | null): string[] {
+/** Matches markdown image syntax: ![alt](url) */
+const MD_IMAGE_REGEX = /!\[[^\]]*\]\(([^)]+)\)/g;
+
+/**
+ * Extract unique URLs from text content, excluding URLs that are
+ * markdown image sources (e.g. `![alt](https://firebasestorage...)`)
+ * since those are embedded images, not user-visible links.
+ */
+export function extractUrls(text: string | null): string[] {
     if (!text) return [];
-    const matches = text.match(URL_REGEX);
-    return matches ? [...new Set(matches)] : [];
+
+    const imageUrls = new Set<string>();
+    let match: RegExpExecArray | null;
+    while ((match = MD_IMAGE_REGEX.exec(text)) !== null) {
+        if (match[1]) imageUrls.add(match[1]);
+    }
+
+    const allUrls = text.match(URL_REGEX);
+    if (!allUrls) return [];
+    return [...new Set(allUrls)].filter((url) => !imageUrls.has(url));
 }
 
 /** Map of single-character keys to shortcut callbacks (view mode only) */
