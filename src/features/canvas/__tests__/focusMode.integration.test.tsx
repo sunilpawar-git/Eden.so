@@ -196,4 +196,23 @@ describe('Focus Mode Integration', () => {
             expect(node?.data.output).toBe('Updated body content');
         });
     });
+
+    describe('Link previews accessible on focusedNode (SSOT)', () => {
+        it('linkPreviews from store are accessible on focusedNode', () => {
+            const previews = {
+                'https://x.com/post/1': { url: 'https://x.com/post/1', title: 'X Post', domain: 'x.com', fetchedAt: Date.now() },
+            };
+            act(() => {
+                useCanvasStore.getState().addLinkPreview('node-a', 'https://x.com/post/1', previews['https://x.com/post/1']);
+            });
+
+            const { result } = renderHook(() => useFocusMode());
+            act(() => { result.current.enterFocus('node-a'); });
+
+            expect(result.current.focusedNode?.data.linkPreviews).toBeDefined();
+            expect(result.current.focusedNode?.data.linkPreviews?.['https://x.com/post/1']).toEqual(
+                expect.objectContaining({ url: 'https://x.com/post/1', title: 'X Post' }),
+            );
+        });
+    });
 });

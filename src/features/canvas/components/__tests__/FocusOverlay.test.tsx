@@ -56,6 +56,17 @@ vi.mock('@/features/tags', async () => {
     };
 });
 
+vi.mock('../nodes/LinkPreviewCard', async () => {
+    const React = await import('react');
+    return {
+        LinkPreviewList: ({ previews }: { previews: Record<string, unknown> }) => {
+            const count = Object.keys(previews).length;
+            if (count === 0) return null;
+            return React.createElement('div', { 'data-testid': 'link-preview-list' }, `${count} preview(s)`);
+        },
+    };
+});
+
 vi.mock('../../hooks/useHeadingEditor', () => ({
     useHeadingEditor: () => ({
         editor: null,
@@ -74,6 +85,14 @@ const mockNode: CanvasNode = {
         isGenerating: false,
         isPromptCollapsed: false,
         tags: ['tag-1', 'tag-2'],
+        linkPreviews: {
+            'https://x.com/post/123': {
+                url: 'https://x.com/post/123',
+                title: 'X Post',
+                domain: 'x.com',
+                fetchedAt: Date.now(),
+            },
+        },
     },
     position: { x: 100, y: 200 },
     createdAt: new Date('2024-01-01'),
@@ -83,7 +102,7 @@ const mockNode: CanvasNode = {
 const mockNodeNoTags: CanvasNode = {
     ...mockNode,
     id: 'node-no-tags',
-    data: { ...mockNode.data, tags: [], heading: '' },
+    data: { ...mockNode.data, tags: [], heading: '', linkPreviews: undefined },
 };
 
 function setCanvasDefaults() {
@@ -224,6 +243,21 @@ describe('FocusOverlay', () => {
             useFocusStore.setState({ focusedNodeId: 'node-no-tags' });
             render(<FocusOverlay />);
             expect(screen.queryByTestId('focus-tags')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Link previews (SSOT parity with IdeaCard)', () => {
+        it('renders link preview list when node has linkPreviews', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            expect(screen.getByTestId('link-preview-list')).toBeInTheDocument();
+            expect(screen.getByTestId('link-preview-list')).toHaveTextContent('1 preview(s)');
+        });
+
+        it('does not render link preview list when node has no linkPreviews', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-no-tags' });
+            render(<FocusOverlay />);
+            expect(screen.queryByTestId('link-preview-list')).not.toBeInTheDocument();
         });
     });
 });

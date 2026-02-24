@@ -13,6 +13,7 @@ import { useFocusOverlayActions } from '../hooks/useFocusOverlayActions';
 import { NodeHeading } from './nodes/NodeHeading';
 import { TagInput } from '@/features/tags';
 import { TipTapEditor } from './nodes/TipTapEditor';
+import { LinkPreviewList } from './nodes/LinkPreviewCard';
 import styles from './FocusOverlay.module.css';
 
 export const FocusOverlay = React.memo(function FocusOverlay() {
@@ -22,6 +23,7 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
     const heading = focusedNode?.data.heading ?? '';
     const output = focusedNode?.data.output;
     const tagIds = focusedNode?.data.tags ?? [];
+    const linkPreviews = focusedNode?.data.linkPreviews;
     const isEditing = useCanvasStore((s) => s.editingNodeId === nodeId && nodeId !== '');
 
     const { editor, handleDoubleClick, handleHeadingChange, handleTagsChange, saveBeforeExit } =
@@ -66,6 +68,7 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
                 <div className={styles.contentArea} data-testid="focus-content-area"
                     onDoubleClick={!isEditing ? handleDoubleClick : undefined}>
                     <TipTapEditor editor={editor} isEditable={isEditing} data-testid="focus-editor" />
+                    <LinkPreviewList previews={linkPreviews ?? {}} />
                 </div>
                 {tagIds.length > 0 && (
                     <div className={styles.tagsSection}>
