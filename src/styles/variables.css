@@ -186,7 +186,10 @@
 
   /* Node Images */
   --node-image-radius: var(--radius-md);
-  --node-image-max-height: 400px;
+  --node-image-max-height: 180px;
+  --node-image-focus-max-height: min(60vh, 600px);
+  /* Context-aware max-height: overridden per-container (e.g. focus panel sets focus value) */
+  --node-image-applied-max-height: var(--node-image-max-height);
 
   /* Focus Mode */
   --focus-backdrop-bg: hsla(0, 0%, 0%, 0.5);
@@ -223,12 +226,11 @@
   --editor-min-height: 48px;
   --blockquote-border-width: 2px;
   --code-inline-v-padding: 1px;
-  --node-image-max-height: 300px;
+  --node-image-max-height: 140px;
 
   /* Sidebar */
   --sidebar-width: 220px;
   --sidebar-hover-trigger-width: 10px;
 }
-
 
 /* Theme overrides are in src/styles/themes/*.css */

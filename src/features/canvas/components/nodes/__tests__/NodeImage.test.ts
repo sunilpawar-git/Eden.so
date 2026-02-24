@@ -47,8 +47,8 @@ describe('NodeImage.module.css', () => {
         expect(cssContent).toContain('height: auto');
     });
 
-    it('constrains max-height via --node-image-max-height token', () => {
-        expect(cssContent).toContain('--node-image-max-height');
+    it('constrains max-height via --node-image-applied-max-height token', () => {
+        expect(cssContent).toContain('--node-image-applied-max-height');
     });
 
     it('uses object-fit: contain to show full image without cropping', () => {

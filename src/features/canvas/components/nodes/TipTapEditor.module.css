@@ -94,3 +94,9 @@
     padding: 0;
     border-radius: 0;
 }
+
+/* View mode: images scale proportionally even if TipTap committed inline height.
+ * Scoped to [contenteditable="false"] so active resize drags are unaffected. */
+.tiptapEditor :global([contenteditable="false"] .node-image) {
+    height: auto !important;
+}

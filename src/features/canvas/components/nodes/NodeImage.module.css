@@ -6,11 +6,11 @@
 :global(.node-image) {
     max-width: 100%;
     height: auto;
-    max-height: var(--node-image-max-height, 400px);
+    max-height: var(--node-image-applied-max-height, 180px);
     object-fit: contain;
     border-radius: var(--node-image-radius, var(--radius-md));
     display: block;
-    margin: var(--space-xs) 0;
+    margin: var(--space-xs) auto;
     transition: box-shadow var(--transition-fast);
 }
 

@@ -2,7 +2,7 @@
  * Image Extension Tests — Validates TipTap Image configuration and URL safety
  */
 import { describe, it, expect } from 'vitest';
-import { isSafeImageSrc, NodeImage } from '../imageExtension';
+import { isSafeImageSrc, NodeImage, applyResponsiveConstraints } from '../imageExtension';
 
 describe('isSafeImageSrc', () => {
     it('accepts HTTPS URLs', () => {
@@ -57,5 +57,57 @@ describe('NodeImage extension', () => {
         expect(resize).not.toBe(false);
         expect(typeof resize === 'object' && resize.enabled).toBe(true);
         expect(typeof resize === 'object' && resize.alwaysPreserveAspectRatio).toBe(true);
+    });
+});
+
+describe('applyResponsiveConstraints', () => {
+    function createResizableDom(): HTMLDivElement {
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        const img = document.createElement('img');
+        img.style.width = '1920px';
+        img.style.height = '1080px';
+        wrapper.appendChild(img);
+        container.appendChild(wrapper);
+        return container;
+    }
+
+    it('sets overflow hidden on the container', () => {
+        const dom = createResizableDom();
+        applyResponsiveConstraints(dom);
+        expect(dom.style.overflow).toBe('hidden');
+    });
+
+    it('constrains wrapper with max-width 100% and min-width 0', () => {
+        const dom = createResizableDom();
+        applyResponsiveConstraints(dom);
+        const wrapper = dom.firstElementChild as HTMLElement;
+        expect(wrapper.style.maxWidth).toBe('100%');
+        expect(wrapper.style.minWidth).toBe('0');
+        expect(wrapper.style.overflow).toBe('hidden');
+    });
+
+    it('sets max-width 100% and height auto on the img', () => {
+        const dom = createResizableDom();
+        applyResponsiveConstraints(dom);
+        const img = dom.querySelector('img') as HTMLImageElement;
+        expect(img.style.maxWidth).toBe('100%');
+        expect(img.style.height).toBe('auto');
+    });
+
+    it('handles container with no children gracefully', () => {
+        const dom = document.createElement('div');
+        expect(() => applyResponsiveConstraints(dom)).not.toThrow();
+        expect(dom.style.overflow).toBe('hidden');
+    });
+
+    it('handles wrapper with no img gracefully', () => {
+        const dom = document.createElement('div');
+        const wrapper = document.createElement('div');
+        dom.appendChild(wrapper);
+        expect(() => applyResponsiveConstraints(dom)).not.toThrow();
+        expect(wrapper.style.maxWidth).toBe('100%');
     });
 });
