@@ -15,31 +15,22 @@ import { strings } from '@/shared/localization/strings';
 import styles from './DeletableEdge.module.css';
 
 /**
- * Returns dynamic SVG style properties based on the chosen ConnectorStyle.
+ * Returns dynamic CSS class name based on the chosen ConnectorStyle.
  */
-function getEdgeStyle(styleOption: ConnectorStyle, baseStyle: React.CSSProperties = {}): React.CSSProperties {
-    const computedStyle = { ...baseStyle };
+function getEdgeClassName(styleOption: ConnectorStyle): string {
     switch (styleOption) {
         case 'subtle':
-            computedStyle.opacity = 0.5;
-            computedStyle.strokeWidth = 1;
-            break;
+            return styles.edgeSubtle ?? '';
         case 'thick':
-            computedStyle.strokeWidth = 4;
-            break;
+            return styles.edgeThick ?? '';
         case 'dashed':
-            computedStyle.strokeDasharray = '6,6';
-            break;
+            return styles.edgeDashed ?? '';
         case 'dotted':
-            computedStyle.strokeDasharray = '2,6';
-            computedStyle.strokeLinecap = 'round';
-            break;
+            return styles.edgeDotted ?? '';
         case 'solid':
         default:
-            // Base styles are usually defined in CSS, so solid requires no overrides
-            break;
+            return styles.edgeSolid ?? '';
     }
-    return computedStyle;
 }
 
 export const DeletableEdge = React.memo(function DeletableEdge({
@@ -73,11 +64,11 @@ export const DeletableEdge = React.memo(function DeletableEdge({
     const handleMouseEnter = useCallback(() => setIsHovered(true), []);
     const handleMouseLeave = useCallback(() => setIsHovered(false), []);
 
-    const dynamicStyle = getEdgeStyle(connectorStyle, style);
+    const edgeClass = getEdgeClassName(connectorStyle);
 
     return (
         <>
-            <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={dynamicStyle} />
+            <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} className={edgeClass} />
             {/* Wider invisible path for hover detection */}
             <path
                 d={edgePath}
