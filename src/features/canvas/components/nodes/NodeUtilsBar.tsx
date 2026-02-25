@@ -1,13 +1,17 @@
 /**
- * NodeUtilsBar — Floating pill action bar tucked behind node
- * Uses TooltipButton for portal-based tooltips with keyboard shortcut hints.
+ * NodeUtilsBar — Floating pill action bar tucked behind node.
+ * Primary actions always visible; secondary actions in inline overflow.
+ * Auto-opens overflow after 600ms hover (closes on leave if auto-opened).
  * Memoized per CLAUDE.md performance rules (500+ node canvases).
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { TransformMenu } from './TransformMenu';
 import { ShareMenu } from './ShareMenu';
 import { TooltipButton } from './TooltipButton';
+import { OverflowMenu } from './OverflowMenu';
+import { useOverflowAutoOpen } from '../../hooks/useOverflowAutoOpen';
+import type { OverflowMenuItem } from './OverflowMenu';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import type { BarPlacement } from '../../hooks/useBarPlacement';
 import styles from './NodeUtilsBar.module.css';
@@ -40,6 +44,7 @@ interface NodeUtilsBarProps {
     placement?: BarPlacement;
 }
 
+// eslint-disable-next-line max-lines-per-function -- NodeUtilsBar orchestrates many conditional buttons
 export const NodeUtilsBar = React.memo(function NodeUtilsBar({
     onTagClick,
     onImageClick,
@@ -65,8 +70,12 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
     placement = 'right',
 }: NodeUtilsBarProps) {
     const isLeft = placement === 'left';
-    const tooltipSide = placement; // tooltips appear on same side as bar
+    const tooltipSide = placement;
     const isShown = visible || isPinnedOpen;
+
+    const { isOpen: overflowOpen, toggle: toggleOverflow, handleMouseEnter, handleMouseLeave } =
+        useOverflowAutoOpen();
+
     const containerClasses = [styles.container];
     if (isLeft) containerClasses.push(styles.containerLeft);
     if (isPinnedOpen) containerClasses.push(styles.containerPinnedOpen);
@@ -75,28 +84,38 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
     const peekClasses = [styles.peekIndicator];
     if (isLeft) peekClasses.push(styles.peekIndicatorLeft);
 
+    const overflowItems = useMemo<OverflowMenuItem[]>(() => {
+        const items: OverflowMenuItem[] = [
+            { id: 'tags', label: strings.nodeUtils.tags, icon: '🏷️', onClick: onTagClick },
+        ];
+        if (onImageClick) {
+            items.push({ id: 'image', label: strings.nodeUtils.image, icon: '🖼️', onClick: onImageClick });
+        }
+        if (onDuplicateClick) {
+            items.push({ id: 'duplicate', label: strings.nodeUtils.duplicate, icon: '📑', onClick: onDuplicateClick });
+        }
+        if (onFocusClick) {
+            items.push({ id: 'focus', label: strings.nodeUtils.focus, icon: '🔍', onClick: onFocusClick });
+        }
+        if (onCollapseToggle) {
+            const label = isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse;
+            const icon = isCollapsed ? '▴' : '▾';
+            items.push({ id: 'collapse', label, icon, onClick: onCollapseToggle });
+        }
+        return items;
+    }, [onTagClick, onImageClick, onDuplicateClick, onFocusClick, onCollapseToggle, isCollapsed]);
+
+    const hasOverflow = overflowItems.length > 0 || !!onShareClick;
+
     return (
         <>
-            <div className={containerClasses.join(' ')}>
-                <TooltipButton
-                    label={strings.nodeUtils.tags}
-                    tooltipText={strings.nodeUtils.tags}
-                    shortcut={strings.nodeUtils.tagsShortcut}
-                    icon="🏷️"
-                    onClick={onTagClick}
-                    disabled={disabled}
-                    tooltipPlacement={tooltipSide}
-                />
-                {onImageClick && (
-                    <TooltipButton
-                        label={strings.nodeUtils.image}
-                        tooltipText={strings.nodeUtils.image}
-                        icon="🖼️"
-                        onClick={onImageClick}
-                        disabled={disabled}
-                        tooltipPlacement={tooltipSide}
-                    />
-                )}
+            <div
+                className={containerClasses.join(' ')}
+                role="toolbar"
+                aria-label={strings.canvas.nodeActionsLabel}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
                 {onTransform ? (
                     <TransformMenu
                         onTransform={onTransform}
@@ -134,52 +153,12 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
                         tooltipPlacement={tooltipSide}
                     />
                 )}
-                {onDuplicateClick && (
-                    <TooltipButton
-                        label={strings.nodeUtils.duplicate}
-                        tooltipText={strings.nodeUtils.duplicate}
-                        icon="📑"
-                        onClick={onDuplicateClick}
-                        disabled={disabled}
-                        tooltipPlacement={tooltipSide}
-                    />
-                )}
-                {onShareClick && (
-                    <ShareMenu
-                        onShare={onShareClick}
-                        isSharing={isSharing}
-                        disabled={disabled}
-                        tooltipPlacement={tooltipSide}
-                    />
-                )}
-                {onFocusClick && (
-                    <TooltipButton
-                        label={strings.nodeUtils.focus}
-                        tooltipText={strings.nodeUtils.focus}
-                        shortcut={strings.nodeUtils.focusShortcut}
-                        icon="🔍"
-                        onClick={onFocusClick}
-                        disabled={disabled}
-                        tooltipPlacement={tooltipSide}
-                    />
-                )}
                 {onPinToggle && (
                     <TooltipButton
                         label={isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
                         tooltipText={isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
                         icon={isPinned ? '📍' : '📌'}
                         onClick={onPinToggle}
-                        disabled={disabled}
-                        tooltipPlacement={tooltipSide}
-                    />
-                )}
-                {onCollapseToggle && (
-                    <TooltipButton
-                        label={isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse}
-                        tooltipText={isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse}
-                        shortcut={strings.nodeUtils.collapseShortcut}
-                        icon={isCollapsed ? '▴' : '▾'}
-                        onClick={onCollapseToggle}
                         disabled={disabled}
                         tooltipPlacement={tooltipSide}
                     />
@@ -194,6 +173,24 @@ export const NodeUtilsBar = React.memo(function NodeUtilsBar({
                     className={buttonStyles.deleteButton}
                     tooltipPlacement={tooltipSide}
                 />
+                {hasOverflow && (
+                    <OverflowMenu
+                        items={overflowItems}
+                        isOpen={overflowOpen}
+                        onToggle={toggleOverflow}
+                        disabled={disabled}
+                        tooltipPlacement={tooltipSide}
+                    >
+                        {onShareClick && (
+                            <ShareMenu
+                                onShare={onShareClick}
+                                isSharing={isSharing}
+                                disabled={disabled}
+                                tooltipPlacement={tooltipSide}
+                            />
+                        )}
+                    </OverflowMenu>
+                )}
             </div>
             <div className={peekClasses.join(' ')} aria-hidden="true" />
         </>

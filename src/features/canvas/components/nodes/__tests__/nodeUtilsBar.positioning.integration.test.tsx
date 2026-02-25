@@ -93,31 +93,33 @@ describe('NodeUtilsBar Positioning', () => {
         expect(bar).not.toHaveClass('containerVisible');
     });
 
-    describe('regression: all existing button tests still pass', () => {
-        it('renders all action buttons', () => {
+    describe('regression: primary buttons still pass', () => {
+        it('renders primary action buttons directly in bar', () => {
             render(<NodeUtilsBar {...defaultProps} />);
 
-            expect(screen.getByLabelText('Tags')).toBeInTheDocument();
             expect(screen.getByLabelText('AI Actions')).toBeInTheDocument();
             expect(screen.getByLabelText('Connect')).toBeInTheDocument();
             expect(screen.getByLabelText('Delete')).toBeInTheDocument();
         });
 
-        it('calls callbacks when buttons clicked', () => {
+        it('calls callbacks when primary buttons clicked', () => {
             render(<NodeUtilsBar {...defaultProps} />);
-
-            fireEvent.click(screen.getByLabelText('Tags'));
-            expect(defaultProps.onTagClick).toHaveBeenCalledTimes(1);
 
             fireEvent.click(screen.getByLabelText('Delete'));
             expect(defaultProps.onDelete).toHaveBeenCalledTimes(1);
         });
 
-        it('disables buttons when disabled prop is true', () => {
+        it('disables primary buttons when disabled prop is true', () => {
             render(<NodeUtilsBar {...defaultProps} disabled={true} />);
 
-            expect(screen.getByLabelText('Tags')).toBeDisabled();
+            expect(screen.getByLabelText('More actions')).toBeDisabled();
             expect(screen.getByLabelText('Delete')).toBeDisabled();
+        });
+
+        it('Tags is in overflow — opens after clicking •••', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            fireEvent.click(screen.getByLabelText('More actions'));
+            expect(screen.getByLabelText('Tags')).toBeInTheDocument();
         });
     });
 });

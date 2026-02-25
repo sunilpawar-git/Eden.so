@@ -1,5 +1,6 @@
 export const canvasStrings = {
     addNode: 'Add node',
+    nodeActionsLabel: 'Node actions',
     promptPlaceholder: 'Type a prompt (e.g. Create a LinkedIn post about discipline)',
     generating: 'Generating...',
     regenerate: 'Regenerate',

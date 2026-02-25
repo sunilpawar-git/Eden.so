@@ -1,10 +1,12 @@
 /**
- * NodeUtilsBar Share integration tests — ShareMenu rendering via props
+ * NodeUtilsBar Share integration tests — ShareMenu renders inside overflow menu.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+
+const openOverflow = () => fireEvent.click(screen.getByLabelText('More actions'));
 
 describe('NodeUtilsBar — ShareMenu integration', () => {
     const baseProps = {
@@ -23,20 +25,23 @@ describe('NodeUtilsBar — ShareMenu integration', () => {
         });
     });
 
-    it('renders ShareMenu when onShareClick is provided', () => {
+    it('renders ShareMenu inside overflow when onShareClick is provided', () => {
         const onShareClick = vi.fn().mockResolvedValue(undefined);
         render(<NodeUtilsBar {...baseProps} onShareClick={onShareClick} />);
+        openOverflow();
         expect(screen.getByLabelText('Share')).toBeInTheDocument();
     });
 
     it('does not render ShareMenu when onShareClick is not provided', () => {
         render(<NodeUtilsBar {...baseProps} />);
+        openOverflow();
         expect(screen.queryByLabelText('Share')).not.toBeInTheDocument();
     });
 
-    it('passes isSharing prop to ShareMenu', () => {
+    it('passes isSharing prop to ShareMenu — Share button is disabled', () => {
         const onShareClick = vi.fn().mockResolvedValue(undefined);
         render(<NodeUtilsBar {...baseProps} onShareClick={onShareClick} isSharing />);
+        openOverflow();
         expect(screen.getByLabelText('Share')).toBeDisabled();
     });
 });

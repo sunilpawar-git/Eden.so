@@ -119,6 +119,7 @@ export const strings = {
     nodeUtils: {
         aiActions: 'AI Actions',
         collapse: 'Collapse',
+        more: 'More actions',
         collapseShortcut: 'C',
         connect: 'Connect',
         copy: 'Copy',

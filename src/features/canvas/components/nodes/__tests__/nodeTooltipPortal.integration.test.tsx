@@ -1,5 +1,5 @@
 /**
- * Tooltip Portal Integration Tests — TDD RED phase
+ * Tooltip Portal Integration Tests — TDD
  * Validates that NodeUtilsBar uses PortalTooltip (not CSS ::after),
  * and that data-tooltip attributes are removed after migration.
  */
@@ -58,14 +58,14 @@ describe('Tooltip Portal Integration', () => {
         expect(buttonsWithTooltip.length).toBe(0);
     });
 
-    it('hovering Tags button shows portal tooltip with correct text', () => {
+    it('hovering Connect button shows portal tooltip with correct text', () => {
         render(<NodeUtilsBar {...defaultProps} />);
 
-        fireEvent.mouseEnter(screen.getByLabelText('Tags'));
+        fireEvent.mouseEnter(screen.getByLabelText('Connect'));
 
         const tooltip = screen.getByTestId('portal-tooltip');
         expect(tooltip).toBeInTheDocument();
-        expect(tooltip).toHaveAttribute('data-tooltip-text', 'Tags');
+        expect(tooltip).toHaveAttribute('data-tooltip-text', 'Connect');
     });
 
     it('hovering Delete button shows tooltip with shortcut hint', () => {
@@ -82,19 +82,16 @@ describe('Tooltip Portal Integration', () => {
     it('tooltip disappears when mouse leaves button', () => {
         render(<NodeUtilsBar {...defaultProps} />);
 
-        const tagsBtn = screen.getByLabelText('Tags');
-        fireEvent.mouseEnter(tagsBtn);
+        const connectBtn = screen.getByLabelText('Connect');
+        fireEvent.mouseEnter(connectBtn);
         expect(screen.getByTestId('portal-tooltip')).toBeInTheDocument();
 
-        fireEvent.mouseLeave(tagsBtn);
+        fireEvent.mouseLeave(connectBtn);
         expect(screen.queryByTestId('portal-tooltip')).not.toBeInTheDocument();
     });
 
-    it('all existing button callbacks still work', () => {
+    it('primary button callbacks work', () => {
         render(<NodeUtilsBar {...defaultProps} />);
-
-        fireEvent.click(screen.getByLabelText('Tags'));
-        expect(defaultProps.onTagClick).toHaveBeenCalledTimes(1);
 
         fireEvent.click(screen.getByLabelText('Connect'));
         expect(defaultProps.onConnectClick).toHaveBeenCalledTimes(1);
