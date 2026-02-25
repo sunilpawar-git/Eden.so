@@ -74,7 +74,7 @@ export const OverflowMenu = React.memo(function OverflowMenu({
                 disabled={disabled}
                 aria-label={strings.nodeUtils.more}
                 aria-expanded={isOpen}
-                aria-haspopup="true"
+                aria-haspopup="menu"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >

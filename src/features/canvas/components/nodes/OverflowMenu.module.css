@@ -6,7 +6,7 @@
 
 /* ••• trigger lit-up state when overflow is open */
 .triggerActive {
-    background: var(--color-primary-light) !important;
-    color: var(--color-primary) !important;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
     box-shadow: 0 0 0 2px var(--color-primary);
 }
