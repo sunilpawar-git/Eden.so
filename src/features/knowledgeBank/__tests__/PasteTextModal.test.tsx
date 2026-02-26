@@ -1,6 +1,8 @@
 /**
  * PasteTextModal Tests — Verifies modal behavior
  */
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PasteTextModal } from '../components/PasteTextModal';
@@ -89,5 +91,21 @@ describe('PasteTextModal', () => {
             target: { value: 'Hello' },
         });
         expect(screen.getByText('5 / 10,000')).toBeDefined();
+    });
+
+    describe('defensive memoization (prevents cascade rerenders)', () => {
+        it('is wrapped in React.memo', () => {
+            const src = readFileSync(
+                resolve(__dirname, '../components/PasteTextModal.tsx'), 'utf-8'
+            );
+            expect(src).toMatch(/React\.memo/);
+        });
+
+        it('KnowledgeBankAddButton uses stable callback for useOutsideClick', () => {
+            const src = readFileSync(
+                resolve(__dirname, '../components/KnowledgeBankAddButton.tsx'), 'utf-8'
+            );
+            expect(src).not.toMatch(/useOutsideClick\([^,]+,\s*[^,]+,\s*\(\)/);
+        });
     });
 });

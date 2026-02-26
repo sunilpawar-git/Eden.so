@@ -24,11 +24,13 @@ export function KnowledgeBankAddButton() {
     const setPanelOpen = useKnowledgeBankStore((s) => s.setPanelOpen);
     const { processFile, isProcessing } = useFileProcessor();
     const handlePasteSave = usePasteTextHandler(useCallback(() => setModalOpen(false), []));
+    const handleModalClose = useCallback(() => setModalOpen(false), []);
 
     const isMaxReached = entryCount >= KB_MAX_ENTRIES;
     const kb = strings.knowledgeBank;
 
-    useOutsideClick(containerRef, isDropdownOpen, () => setDropdownOpen(false));
+    const handleOutsideClick = useCallback(() => setDropdownOpen(false), []);
+    useOutsideClick(containerRef, isDropdownOpen, handleOutsideClick);
 
     const handleUploadClick = useCallback(() => {
         setDropdownOpen(false);
@@ -85,7 +87,7 @@ export function KnowledgeBankAddButton() {
             />
             <PasteTextModal
                 isOpen={isModalOpen}
-                onClose={() => setModalOpen(false)}
+                onClose={handleModalClose}
                 onSave={handlePasteSave}
             />
         </>

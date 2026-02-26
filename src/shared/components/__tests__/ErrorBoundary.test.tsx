@@ -136,8 +136,15 @@ describe('ErrorBoundary', () => {
 
         expect(consoleSpy).toHaveBeenCalledWith(
             '[ErrorBoundary] Caught error:',
-            expect.any(Error),
-            expect.any(Object)
+            'Test error message'
+        );
+        expect(consoleSpy).toHaveBeenCalledWith(
+            '[ErrorBoundary] Component stack:',
+            expect.stringContaining('ErrorThrower')
+        );
+        expect(consoleSpy).toHaveBeenCalledWith(
+            '[ErrorBoundary] Error stack:',
+            expect.stringContaining('Test error message')
         );
     });
 });

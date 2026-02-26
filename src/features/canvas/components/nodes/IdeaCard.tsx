@@ -2,7 +2,7 @@
 import React, { useCallback, useMemo, useState, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
-import { useCanvasStore } from '../../stores/canvasStore';
+import { useCanvasStore, getNodeMap } from '../../stores/canvasStore';
 import { useFocusStore } from '../../stores/focusStore';
 import { useIdeaCardEditor } from '../../hooks/useIdeaCardEditor';
 import { useNodeInput, type NodeShortcutMap } from '../../hooks/useNodeInput';
@@ -12,7 +12,7 @@ import { useIdeaCardDuplicateAction } from '../../hooks/useIdeaCardDuplicateActi
 import { useIdeaCardShareAction } from '../../hooks/useIdeaCardShareAction';
 import { useIdeaCardState } from '../../hooks/useIdeaCardState';
 import { useLinkPreviewRetry } from '../../hooks/useLinkPreviewRetry';
-import { useBarPlacement } from '../../hooks/useBarPlacement';
+import { useProximityBar } from '../../hooks/useProximityBar';
 import { useBarPinOpen } from '../../hooks/useBarPinOpen';
 import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useImageInsert } from '../../hooks/useImageInsert';
@@ -28,14 +28,18 @@ import {
 } from './IdeaCardContent';
 import { CalendarBadge } from '@/features/calendar/components/CalendarBadge';
 import { useIdeaCardCalendar } from '@/features/calendar/hooks/useIdeaCardCalendar';
-import type { IdeaNodeData } from '../../types/node';
-import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT } from '../../types/node';
+import type { IdeaNodeData, NodeColorKey } from '../../types/node';
+import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT, normalizeNodeColorKey } from '../../types/node';
 import styles from './IdeaCard.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
 import './NodeImage.module.css';
 
-// Proximity threshold for utils bar (CSS variable in px)
-const PROXIMITY_THRESHOLD = 80;
+const COLOR_CLASS: Record<NodeColorKey, string> = {
+    default: styles.colorDefault ?? '',
+    primary: styles.colorPrimary ?? '',
+    success: styles.colorSuccess ?? '',
+    warning: styles.colorWarning ?? '',
+};
 
 interface ContentAreaProps {
     isEditing: boolean;
@@ -60,31 +64,35 @@ function renderContentArea(props: ContentAreaProps): React.ReactElement {
     return <PlaceholderContent onDoubleClick={handleDoubleClick} />;
 }
 
-export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
+export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- nodes may be absent in test mocks
+    const storeData = useCanvasStore((s) => s.nodes ? getNodeMap(s.nodes).get(id)?.data : undefined);
+    const resolvedData = (storeData ?? rfData) as IdeaNodeData;
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field, heading is SSOT
-    const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews, calendarEvent } = data as IdeaNodeData;
+    const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews, calendarEvent } = resolvedData;
+    const nodeColorKey = normalizeNodeColorKey(resolvedData.colorKey);
     const promptSource = (heading?.trim() ?? prompt) || ''; // Heading is SSOT for prompts; legacy fallback
     const isAICard = Boolean(promptSource && output && promptSource !== output);
     const [showTagInput, setShowTagInput] = useState(false);
-    const [isNearEdge, setIsNearEdge] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
     const cardWrapperRef = useRef<HTMLDivElement>(null);
+    const barContainerRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<NodeHeadingHandle>(null);
-    const barPlacement = useBarPlacement(cardWrapperRef, isNearEdge);
+    useProximityBar(cardWrapperRef, barContainerRef);
     const { isPinnedOpen, handlers: pinOpenHandlers } = useBarPinOpen();
 
-    const { generateFromPrompt } = useNodeGeneration();
+    const { generateFromPrompt, branchFromNode } = useNodeGeneration();
     const { getEditableContent, saveContent, placeholder, onSubmitAI } = useIdeaCardState({
         nodeId: id, prompt, output, isAICard,
         generateFromPrompt, // eslint-disable-line @typescript-eslint/no-misused-promises -- async, consumed by useIdeaCardState
     });
 
     const calendar = useIdeaCardCalendar({ nodeId: id, calendarEvent });
+    const isEditing = useCanvasStore((s) => s.editingNodeId === id);
     const imageUploadFn = useNodeImageUpload(id);
 
     const { editor, getMarkdown, setContent, submitHandlerRef } = useIdeaCardEditor({
-        isEditing: useCanvasStore((s) => s.editingNodeId === id),
+        isEditing,
         output, getEditableContent, placeholder, saveContent,
         onExitEditing: useCallback((): void => { useCanvasStore.getState().stopEditing(); }, []),
         imageUploadFn,
@@ -110,7 +118,7 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const {
         handleDelete: rawDelete, handleRegenerate, handleConnectClick, handleTransform,
         handleHeadingChange, handleCopy, handleTagsChange, isTransforming,
-    } = useIdeaCardActions({ nodeId: id, getEditableContent, contentRef });
+    } = useIdeaCardActions({ nodeId: id, getEditableContent, contentRef, generateFromPrompt, branchFromNode });
     const { handleDuplicate } = useIdeaCardDuplicateAction(id);
     const { handleShare, isSharing } = useIdeaCardShareAction(id);
 
@@ -120,6 +128,9 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
 
     const handlePinToggle = useCallback(() => { useCanvasStore.getState().toggleNodePinned(id); }, [id]);
     const handleCollapseToggle = useCallback(() => { useCanvasStore.getState().toggleNodeCollapsed(id); }, [id]);
+    const handleColorChange = useCallback((colorKey: NodeColorKey) => {
+        useCanvasStore.getState().updateNodeColor(id, colorKey);
+    }, [id]);
     const handleTagOpen = useCallback(() => { setShowTagInput(true); }, []);
     const handleFocusClick = useCallback(() => { useFocusStore.getState().enterFocus(id); }, [id]);
 
@@ -140,8 +151,8 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- selected can be undefined from NodeProps */
     useNodeShortcuts(selected ?? false, nodeShortcuts);
 
-    const { isEditing, handleKeyDown, handleDoubleClick } = useNodeInput({
-        nodeId: id, editor, getMarkdown, setContent, getEditableContent, saveContent,
+    const { handleKeyDown, handleDoubleClick } = useNodeInput({
+        nodeId: id, isEditing, editor, getMarkdown, setContent, getEditableContent, saveContent,
         submitHandlerRef,
         isGenerating: Boolean(isGenerating),
         isNewEmptyNode: !prompt && !output, focusHeading,
@@ -152,46 +163,17 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
     const onTagsChange = useCallback((ids: string[]) => { handleTagsChange(ids); if (ids.length === 0) setShowTagInput(false); }, [handleTagsChange]);
     const onKeyDownReact = useCallback((e: React.KeyboardEvent) => handleKeyDown(e.nativeEvent), [handleKeyDown]);
 
-    // Proximity-based hover: Show utils bar only when cursor is near edge
-    // Resize buttons: Show when hovered anywhere on the node
-    const handleMouseEnter = useCallback(() => {
-        setIsHovered(true);
-    }, []);
-
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
-        const wrapper = cardWrapperRef.current;
-        if (!wrapper) return;
-
-        const rect = wrapper.getBoundingClientRect();
-        const isLeft = barPlacement === 'left';
-
-        // Calculate distance from relevant edge
-        const distanceFromEdge = isLeft
-            ? e.clientX - rect.left  // Distance from left edge
-            : rect.right - e.clientX; // Distance from right edge
-
-        setIsNearEdge(distanceFromEdge <= PROXIMITY_THRESHOLD);
-    }, [barPlacement]);
-
-    const handleMouseLeave = useCallback(() => {
-        setIsNearEdge(false);
-        setIsHovered(false);
-    }, []);
-
     return (
         <div ref={cardWrapperRef}
             className={`${styles.cardWrapper} ${handleStyles.resizerWrapper} ${isCollapsed ? styles.cardWrapperCollapsed : ''}`}
-            onMouseEnter={handleMouseEnter}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
             onContextMenu={pinOpenHandlers.onContextMenu}
             onTouchStart={pinOpenHandlers.onTouchStart} onTouchEnd={pinOpenHandlers.onTouchEnd}>
             <NodeResizer minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}
                 minHeight={MIN_NODE_HEIGHT} maxHeight={MAX_NODE_HEIGHT} isVisible={selected && !isCollapsed} />
-            <NodeResizeButtons nodeId={id} visible={isHovered} />
+            <NodeResizeButtons nodeId={id} />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
-            <div className={`${styles.ideaCard} ${isNearEdge ? styles.ideaCardHovered : ''} ${isCollapsed ? styles.collapsed : ''}`}>
+            <div className={`${styles.ideaCard} ${COLOR_CLASS[nodeColorKey]} ${isCollapsed ? styles.collapsed : ''}`}>
                 <div className={styles.headingSection}>
                     <NodeHeading ref={headingRef} heading={heading ?? ''} isEditing={isEditing}
                         onHeadingChange={handleHeadingChange} onEnterKey={focusBody}
@@ -218,18 +200,19 @@ export const IdeaCard = React.memo(({ id, data, selected }: NodeProps) => {
                     <div className={styles.tagsSection}><TagInput selectedTagIds={tagIds} onChange={onTagsChange} compact /></div>
                 )}
             </div>
-            <NodeUtilsBar onTagClick={handleTagOpen} onImageClick={handleImageClick}
+            <NodeUtilsBar ref={barContainerRef}
+                onTagClick={handleTagOpen} onImageClick={handleImageClick}
                 onConnectClick={handleConnectClick}
                 onCopyClick={handleCopy} onDuplicateClick={handleDuplicate}
                 onShareClick={handleShare} isSharing={isSharing}
                 onFocusClick={handleFocusClick}
                 onDelete={handleDelete} onTransform={handleTransform}
                 onRegenerate={handleRegenerate} onPinToggle={handlePinToggle}
+                onColorChange={handleColorChange} nodeColorKey={nodeColorKey}
                 onCollapseToggle={handleCollapseToggle} hasContent={hasContent}
                 isTransforming={isTransforming} isPinned={isPinned ?? false}
                 isCollapsed={isCollapsed ?? false} disabled={isGenerating ?? false}
-                visible={isNearEdge} isPinnedOpen={isPinnedOpen}
-                placement={barPlacement} />
+                isPinnedOpen={isPinnedOpen} />
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />
         </div>

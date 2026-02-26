@@ -162,6 +162,7 @@ describe('submitHandlerRef cleanup on unmount', () => {
                 submitHandlerRef,
                 isGenerating: false,
                 isNewEmptyNode: false,
+                isEditing: true,
             }),
         );
 

@@ -13,7 +13,6 @@ import { calculateSmartPlacement } from '../services/freeFlowPlacementService';
 import { usePanToNode } from './usePanToNode';
 
 export function useAddNode() {
-    const addNode = useCanvasStore((s) => s.addNode);
     const nodes = useCanvasStore((s) => s.nodes);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
@@ -33,9 +32,9 @@ export function useAddNode() {
             position
         );
 
-        addNode(newNode);
+        useCanvasStore.getState().addNode(newNode);
         panToPosition(position.x, position.y);
-    }, [addNode, nodes, currentWorkspaceId, canvasFreeFlow, focusedNodeId, panToPosition]);
+    }, [nodes, currentWorkspaceId, canvasFreeFlow, focusedNodeId, panToPosition]);
 
     return handleAddNode;
 }

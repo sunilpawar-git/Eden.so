@@ -6,7 +6,6 @@ import { useCallback, useEffect } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { useCanvasStore } from '../stores/canvasStore';
-import { useNodeGeneration } from '@/features/ai/hooks/useNodeGeneration';
 import { useNodeTransformation, type TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 import { FOCUS_NODE_EVENT, type FocusNodeEvent } from './useQuickCapture';
 
@@ -14,25 +13,27 @@ interface UseIdeaCardActionsOptions {
     nodeId: string;
     getEditableContent: () => string;
     contentRef: React.RefObject<HTMLDivElement | null>;
+    generateFromPrompt: (nodeId: string) => void | Promise<void>;
+    branchFromNode: (nodeId: string) => string | undefined;
 }
 
 /** Encapsulates delete, copy, regenerate, transform, connect, tags, scroll, and focus handlers */
 export function useIdeaCardActions(options: UseIdeaCardActionsOptions) {
-    const { nodeId, getEditableContent, contentRef } = options;
-    const { deleteNode, updateNodeHeading, updateNodeTags } = useCanvasStore();
-    const { generateFromPrompt, branchFromNode } = useNodeGeneration();
+    const { nodeId, getEditableContent, contentRef, generateFromPrompt, branchFromNode } = options;
     const { transformNodeContent, isTransforming } = useNodeTransformation();
 
-    const handleDelete = useCallback(() => deleteNode(nodeId), [nodeId, deleteNode]);
-    const handleRegenerate = useCallback(() => generateFromPrompt(nodeId), [nodeId, generateFromPrompt]);
+    const handleDelete = useCallback(() => {
+        useCanvasStore.getState().deleteNode(nodeId);
+    }, [nodeId]);
+    const handleRegenerate = useCallback(() => { void generateFromPrompt(nodeId); }, [nodeId, generateFromPrompt]);
     const handleConnectClick = useCallback(() => { void branchFromNode(nodeId); }, [nodeId, branchFromNode]);
     const handleTransform = useCallback((type: TransformationType) => {
         void transformNodeContent(nodeId, type);
     }, [nodeId, transformNodeContent]);
 
     const handleHeadingChange = useCallback((h: string) => {
-        updateNodeHeading(nodeId, h);
-    }, [nodeId, updateNodeHeading]);
+        useCanvasStore.getState().updateNodeHeading(nodeId, h);
+    }, [nodeId]);
 
     const handleCopy = useCallback(async () => {
         try {
@@ -45,8 +46,8 @@ export function useIdeaCardActions(options: UseIdeaCardActionsOptions) {
     }, [getEditableContent, contentRef]);
 
     const handleTagsChange = useCallback((ids: string[]) => {
-        updateNodeTags(nodeId, ids);
-    }, [nodeId, updateNodeTags]);
+        useCanvasStore.getState().updateNodeTags(nodeId, ids);
+    }, [nodeId]);
 
     // Wheel stop propagation for scrollable content
     useEffect(() => {

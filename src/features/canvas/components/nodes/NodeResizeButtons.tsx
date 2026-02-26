@@ -9,12 +9,10 @@ import styles from './NodeResizeButtons.module.css';
 
 interface NodeResizeButtonsProps {
     nodeId: string;
-    visible: boolean;
 }
 
 export const NodeResizeButtons = React.memo(function NodeResizeButtons({
     nodeId,
-    visible,
 }: NodeResizeButtonsProps) {
     const {
         expandWidth, expandHeight, shrinkWidth, shrinkHeight,
@@ -45,19 +43,17 @@ export const NodeResizeButtons = React.memo(function NodeResizeButtons({
         shrinkHeight();
     }, [shrinkHeight]);
 
-    const visibleClass = visible ? styles.visible : '';
-
     return (
         <div className={styles.resizeButtonsContainer}>
             {/* Width Controls (Top Right) */}
             <div className={styles.widthControls}>
                 {canShrinkWidth && (
                     <button
-                        className={`${styles.resizeButton} ${visibleClass}`}
+                        className={styles.resizeButton}
                         onClick={handleShrinkWidth}
                         onMouseDown={handleMouseDown}
-                        aria-label="Reduce width"
-                        title="Reduce width"
+                        aria-label={strings.resize.reduceWidth}
+                        title={strings.resize.reduceWidth}
                         type="button"
                     >
                         ←
@@ -65,7 +61,7 @@ export const NodeResizeButtons = React.memo(function NodeResizeButtons({
                 )}
                 {canExpandWidth && (
                     <button
-                        className={`${styles.resizeButton} ${visibleClass}`}
+                        className={styles.resizeButton}
                         onClick={handleExpandWidth}
                         onMouseDown={handleMouseDown}
                         aria-label={strings.resize.expandWidth}
@@ -81,11 +77,11 @@ export const NodeResizeButtons = React.memo(function NodeResizeButtons({
             <div className={styles.heightControls}>
                 {canShrinkHeight && (
                     <button
-                        className={`${styles.resizeButton} ${visibleClass}`}
+                        className={styles.resizeButton}
                         onClick={handleShrinkHeight}
                         onMouseDown={handleMouseDown}
-                        aria-label="Reduce height"
-                        title="Reduce height"
+                        aria-label={strings.resize.reduceHeight}
+                        title={strings.resize.reduceHeight}
                         type="button"
                     >
                         ↑
@@ -93,7 +89,7 @@ export const NodeResizeButtons = React.memo(function NodeResizeButtons({
                 )}
                 {canExpandHeight && (
                     <button
-                        className={`${styles.resizeButton} ${visibleClass}`}
+                        className={styles.resizeButton}
                         onClick={handleExpandHeight}
                         onMouseDown={handleMouseDown}
                         aria-label={strings.resize.expandHeight}

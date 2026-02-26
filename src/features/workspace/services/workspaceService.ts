@@ -7,6 +7,7 @@ import type { Workspace } from '../types/workspace';
 import { createWorkspace, createDivider } from '../types/workspace';
 import { strings } from '@/shared/localization/strings';
 import type { CanvasNode } from '@/features/canvas/types/node';
+import { normalizeNodeColorKey } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import { removeUndefined } from '@/shared/utils/firebaseUtils';
 
@@ -219,7 +220,14 @@ export async function loadNodes(userId: string, workspaceId: string): Promise<Ca
         const data = docSnapshot.data();
         /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- Firestore DocumentData fields */
         return {
-            id: data.id, workspaceId, type: data.type, data: data.data, position: data.position,
+            id: data.id,
+            workspaceId,
+            type: data.type,
+            data: {
+                ...(data.data as CanvasNode['data']),
+                colorKey: normalizeNodeColorKey((data.data as CanvasNode['data']).colorKey),
+            },
+            position: data.position,
             width: data.width, height: data.height,
             createdAt: data.createdAt?.toDate?.() ?? new Date(),
             updatedAt: data.updatedAt?.toDate?.() ?? new Date(),

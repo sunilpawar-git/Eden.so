@@ -1,7 +1,12 @@
 /**
  * NodeUtilsBar Styles — Pill bar tucked behind node
  * Slides out on hover with intent delay; uses design tokens only
+ * Visibility driven by parent data-bar-proximity / data-bar-focused attributes
  */
+
+.barWrapper {
+    display: contents;
+}
 
 .container {
     position: absolute;
@@ -28,8 +33,9 @@
         box-shadow 200ms ease;
 }
 
-/* Slide out: full pill visible to the right of the node (micro-bounce) */
-.containerVisible {
+/* Slide out when parent has data-bar-proximity="near" or data-bar-focused="true" */
+:global([data-bar-proximity="near"]) .container,
+:global([data-bar-focused="true"]) .container {
     opacity: 1;
     visibility: visible;
     transform: translateY(-50%) translateX(100%);
@@ -45,13 +51,14 @@
 }
 
 /* Left-side variant: slide out to the left when near viewport right edge */
-.containerLeft {
+:global([data-bar-placement="left"]) .container {
     right: auto;
     left: 0;
     transform: translateY(-50%) translateX(calc(-100% + var(--node-utils-bar-peek)));
 }
 
-.containerLeft.containerVisible {
+:global([data-bar-placement="left"][data-bar-proximity="near"]) .container,
+:global([data-bar-placement="left"][data-bar-focused="true"]) .container {
     transform: translateY(-50%) translateX(-100%);
 }
 
@@ -66,12 +73,12 @@
     transition: none;
 }
 
-.containerLeft.containerPinnedOpen {
+:global([data-bar-placement="left"]) .containerPinnedOpen {
     transform: translateY(-50%) translateX(-100%);
 }
 
 /* Left-side peek indicator */
-.peekIndicatorLeft {
+:global([data-bar-placement="left"]) .peekIndicator {
     right: auto;
     left: calc(-1 * var(--node-utils-bar-peek));
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);

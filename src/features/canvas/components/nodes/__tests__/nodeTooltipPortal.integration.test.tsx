@@ -24,12 +24,10 @@ vi.mock('@/shared/components/PortalTooltip', () => ({
 // Mock CSS modules
 vi.mock('../NodeUtilsBar.module.css', () => ({
     default: {
+        barWrapper: 'barWrapper',
         container: 'container',
-        containerVisible: 'containerVisible',
-        containerLeft: 'containerLeft',
         containerPinnedOpen: 'containerPinnedOpen',
         peekIndicator: 'peekIndicator',
-        peekIndicatorLeft: 'peekIndicatorLeft',
     },
 }));
 
@@ -48,7 +46,6 @@ describe('Tooltip Portal Integration', () => {
         onConnectClick: vi.fn(),
         onDelete: vi.fn(),
         disabled: false,
-        visible: true,
     };
 
     it('data-tooltip attributes no longer exist on buttons', () => {

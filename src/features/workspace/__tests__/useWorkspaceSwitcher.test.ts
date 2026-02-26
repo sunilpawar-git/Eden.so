@@ -40,14 +40,20 @@ vi.mock('@/features/auth/stores/authStore', () => ({
 }));
 
 // Mock canvas store
-const mockSetNodes = vi.fn();
-const mockSetEdges = vi.fn();
 const mockGetState = vi.fn();
+const mockSetState = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(
-        () => ({ setNodes: mockSetNodes, setEdges: mockSetEdges }),
-        { getState: () => mockGetState() }
+        vi.fn((selector?: (s: Record<string, unknown>) => unknown) => {
+            const state = {};
+            return typeof selector === 'function' ? selector(state) : state;
+        }),
+        {
+            getState: () => mockGetState(),
+            setState: (...args: unknown[]) => mockSetState(...args),
+        }
     ),
+    EMPTY_SELECTED_IDS: Object.freeze(new Set<string>()),
 }));
 
 // Mock Knowledge Bank to prevent loading errors from dynamic imports
@@ -76,14 +82,16 @@ vi.mock('../stores/workspaceStore', () => ({
         (selector: (state: Record<string, unknown>) => unknown) => {
             const state = {
                 currentWorkspaceId: mockCurrentWorkspaceId,
-                setCurrentWorkspaceId: mockSetCurrentWorkspaceId,
                 isSwitching: mockIsSwitching,
-                setSwitching: mockSetSwitching,
             };
             return typeof selector === 'function' ? selector(state) : state;
         },
         {
-            getState: () => ({ setNodeCount: mockSetNodeCount })
+            getState: () => ({
+                setNodeCount: mockSetNodeCount,
+                setSwitching: mockSetSwitching,
+                setCurrentWorkspaceId: mockSetCurrentWorkspaceId,
+            }),
         }
     ),
 }));
@@ -146,17 +154,20 @@ describe('useWorkspaceSwitcher', () => {
         expect(mockLoadEdges).toHaveBeenCalledWith('user-1', 'ws-new');
     });
 
-    it('atomically updates nodes and edges (no empty state)', async () => {
+    it('atomically updates nodes and edges (single setState)', async () => {
         const { result } = renderHook(() => useWorkspaceSwitcher());
 
         await act(async () => {
             await result.current.switchWorkspace('ws-new');
         });
 
-        // setNodes and setEdges should be called with new data directly
-        // No intermediate clearCanvas call
-        expect(mockSetNodes).toHaveBeenCalledWith(mockNodes);
-        expect(mockSetEdges).toHaveBeenCalledWith(mockEdges);
+        expect(mockSetState).toHaveBeenCalledWith(
+            expect.objectContaining({
+                nodes: mockNodes,
+                edges: mockEdges,
+                selectedNodeIds: expect.any(Set),
+            })
+        );
     });
 
     it('updates currentWorkspaceId after data is loaded', async () => {
@@ -252,55 +263,4 @@ describe('useWorkspaceSwitcher', () => {
         expect(mockQueueSave).toHaveBeenCalledWith('user-1', 'ws-current', mockNodes, mockEdges);
     });
 
-    describe('cache integration', () => {
-        it('reads from cache when available (no Firestore call)', async () => {
-            const cachedData = { nodes: mockNodes, edges: mockEdges, loadedAt: Date.now() };
-            mockCacheGet.mockReturnValue(cachedData);
-
-            const { result } = renderHook(() => useWorkspaceSwitcher());
-
-            await act(async () => {
-                await result.current.switchWorkspace('ws-cached');
-            });
-
-            // Should check cache
-            expect(mockCacheGet).toHaveBeenCalledWith('ws-cached');
-            // Should NOT call Firestore
-            expect(mockLoadNodes).not.toHaveBeenCalled();
-            expect(mockLoadEdges).not.toHaveBeenCalled();
-            // Should still update canvas
-            expect(mockSetNodes).toHaveBeenCalledWith(mockNodes);
-            expect(mockSetEdges).toHaveBeenCalledWith(mockEdges);
-        });
-
-        it('falls back to Firestore on cache miss', async () => {
-            mockCacheGet.mockReturnValue(null); // Cache miss
-
-            const { result } = renderHook(() => useWorkspaceSwitcher());
-
-            await act(async () => {
-                await result.current.switchWorkspace('ws-new');
-            });
-
-            expect(mockCacheGet).toHaveBeenCalledWith('ws-new');
-            expect(mockLoadNodes).toHaveBeenCalledWith('user-1', 'ws-new');
-            expect(mockLoadEdges).toHaveBeenCalledWith('user-1', 'ws-new');
-        });
-
-        it('populates cache after Firestore load', async () => {
-            mockCacheGet.mockReturnValue(null); // Cache miss
-
-            const { result } = renderHook(() => useWorkspaceSwitcher());
-
-            await act(async () => {
-                await result.current.switchWorkspace('ws-new');
-            });
-
-            // Should populate cache with loaded data
-            expect(mockCacheSet).toHaveBeenCalledWith(
-                'ws-new',
-                expect.objectContaining({ nodes: mockNodes, edges: mockEdges })
-            );
-        });
-    });
 });

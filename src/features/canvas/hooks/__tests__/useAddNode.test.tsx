@@ -143,6 +143,7 @@ describe('useAddNode', () => {
             isPromptCollapsed: false,
             isPinned: false,
             isCollapsed: false,
+            colorKey: 'default',
         });
         expect(node?.width).toBe(280); // DEFAULT_NODE_WIDTH
         expect(node?.height).toBe(220); // DEFAULT_NODE_HEIGHT

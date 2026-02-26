@@ -355,72 +355,25 @@ describe('IdeaCard Resize Integration', () => {
             expect(screen.getByRole('button', { name: /expand height/i })).toBeInTheDocument();
         });
 
-        it('renders resize buttons when node is hovered in center (not just edges)', () => {
+        it('sets data-hovered on cardWrapper when hovered anywhere', () => {
             render(<IdeaCard {...defaultProps} />);
 
             const contentArea = screen.getByTestId('content-area');
             const cardWrapper = contentArea.parentElement?.parentElement as HTMLElement;
 
-            // Mock getBoundingClientRect
-            vi.spyOn(cardWrapper, 'getBoundingClientRect').mockReturnValue({
-                left: 100, right: 500, top: 100, bottom: 300, width: 400, height: 200, x: 100, y: 100, toJSON: () => ({})
-            });
-
-            // Hover center of node (200px from left) - this is > 80px threshold
-            // Current implementation uses isNearEdge (80px), so this fails if not changed
-            fireEvent.mouseEnter(cardWrapper); // Trigger hover state
-            fireEvent.mouseMove(cardWrapper, { clientX: 300, clientY: 200 });
-
-            const widthButton = screen.getByRole('button', { name: /expand width/i });
-            expect(widthButton.className).toContain('visible');
-        });
-
-        it('resize buttons have visible class when near right edge', () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const contentArea = screen.getByTestId('content-area');
-            const ideaCard = contentArea.parentElement;
-            const cardWrapper = ideaCard?.parentElement as HTMLElement;
-
-            // Mock getBoundingClientRect to simulate node bounds
-            vi.spyOn(cardWrapper, 'getBoundingClientRect').mockReturnValue({
-                left: 100,
-                right: 500,
-                top: 100,
-                bottom: 300,
-                width: 400,
-                height: 200,
-                x: 100,
-                y: 100,
-                toJSON: () => ({}),
-            });
-
-            // Hover near right edge (within 80px threshold)
-            fireEvent.mouseEnter(cardWrapper); // Trigger hover state
-            fireEvent.mouseMove(cardWrapper, { clientX: 450, clientY: 200 });
-
-            const widthButton = screen.getByRole('button', { name: /expand width/i });
-            expect(widthButton.className).toContain('visible');
-        });
-
-        it('resize buttons lose visible class when leaving proximity', () => {
-            render(<IdeaCard {...defaultProps} />);
-
-            const contentArea = screen.getByTestId('content-area');
-            const ideaCard = contentArea.parentElement;
-            const cardWrapper = ideaCard?.parentElement as HTMLElement;
-
-            vi.spyOn(cardWrapper, 'getBoundingClientRect').mockReturnValue({
-                left: 100, right: 500, top: 100, bottom: 300, width: 400, height: 200, x: 100, y: 100, toJSON: () => ({})
-            });
-
-            // First hover
             fireEvent.mouseEnter(cardWrapper);
-            // Then leave
-            fireEvent.mouseLeave(cardWrapper);
+            expect(cardWrapper.getAttribute('data-hovered')).toBe('true');
+        });
 
-            const widthButton = screen.getByRole('button', { name: /expand width/i });
-            expect(widthButton.className).not.toContain('visible');
+        it('removes data-hovered when mouse leaves', () => {
+            render(<IdeaCard {...defaultProps} />);
+
+            const contentArea = screen.getByTestId('content-area');
+            const cardWrapper = contentArea.parentElement?.parentElement as HTMLElement;
+
+            fireEvent.mouseEnter(cardWrapper);
+            fireEvent.mouseLeave(cardWrapper);
+            expect(cardWrapper.getAttribute('data-hovered')).toBeNull();
         });
 
         it('clicking expand width button increases node width in store', () => {

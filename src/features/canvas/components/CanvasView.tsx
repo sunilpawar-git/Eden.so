@@ -2,7 +2,7 @@
  * Canvas View - ReactFlow wrapper component
  * Store is the single source of truth, ReactFlow syncs to it
  */
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useMemo, memo } from 'react';
 import {
     ReactFlow,
     Background,
@@ -22,7 +22,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { useCanvasStore } from '../stores/canvasStore';
+import { useCanvasStore, EMPTY_SELECTED_IDS } from '../stores/canvasStore';
 import { useFocusStore } from '../stores/focusStore';
 import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
@@ -30,6 +30,8 @@ import { IdeaCard } from './nodes/IdeaCard';
 import { DeletableEdge } from './edges/DeletableEdge';
 import { ZoomControls } from './ZoomControls';
 import { FocusOverlay } from './FocusOverlay';
+import { buildRfNodes, cleanupDataShells, type PrevRfNodes } from './buildRfNodes';
+import { applyPositionAndRemoveChanges } from './canvasChangeHelpers';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
@@ -38,26 +40,21 @@ function getContainerClassName(isSwitching: boolean): string {
     return isSwitching ? `${base} ${switchingClass}` : base;
 }
 
-// Memoized node types for performance
-const nodeTypes = {
-    idea: IdeaCard,
-};
+const nodeTypes = { idea: IdeaCard };
+const edgeTypes = { deletable: DeletableEdge };
 
-// Memoized edge types for performance (custom edges with delete button)
-const edgeTypes = {
-    deletable: DeletableEdge,
+const DEFAULT_EDGE_OPTIONS = {
+    type: 'deletable' as const,
+    markerEnd: { type: MarkerType.ArrowClosed },
 };
+const DEFAULT_VIEWPORT = { x: 32, y: 32, zoom: 1 };
+const SNAP_GRID: [number, number] = [16, 16];
 
 // eslint-disable-next-line max-lines-per-function -- main ReactFlow integration component
-export function CanvasView() {
+function CanvasViewInner() {
     const nodes = useCanvasStore((s) => s.nodes);
     const edges = useCanvasStore((s) => s.edges);
     const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
-    const setNodes = useCanvasStore((s) => s.setNodes);
-    const setEdges = useCanvasStore((s) => s.setEdges);
-    const updateNodeDimensions = useCanvasStore((s) => s.updateNodeDimensions);
-    const selectNode = useCanvasStore((s) => s.selectNode);
-    const clearSelection = useCanvasStore((s) => s.clearSelection);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
     const canvasGrid = useSettingsStore((s) => s.canvasGrid);
@@ -70,6 +67,7 @@ export function CanvasView() {
     // RAF throttling for resize events (performance optimization)
     const pendingResize = useRef<{ id: string; width: number; height: number } | null>(null);
     const rafId = useRef<number | null>(null);
+    const prevRfNodesRef = useRef<PrevRfNodes>({ arr: [], map: new Map() });
 
     // Cleanup RAF on unmount
     useEffect(() => {
@@ -80,23 +78,16 @@ export function CanvasView() {
         };
     }, []);
 
-    // Convert store nodes to ReactFlow format (width/height from store)
-    const rfNodes: Node[] = nodes.map((node) => ({
-        id: node.id,
-        type: node.type, // 'idea' is the primary type now
-        position: node.position,
-        data: node.data,
-        selected: selectedNodeIds.has(node.id),
-        // Pinned nodes cannot be dragged (Phase R: bug fix)
-        // Also disabled if canvas is fully locked
-        draggable: !isInteractionDisabled && !node.data.isPinned,
-        // Use dimensions from store (persisted from Firestore)
-        ...(node.width && { width: node.width }),
-        ...(node.height && { height: node.height }),
-    }));
+    const rfNodes: Node[] = useMemo(
+        () => buildRfNodes(nodes, selectedNodeIds, isInteractionDisabled, prevRfNodesRef),
+        [nodes, selectedNodeIds, isInteractionDisabled],
+    );
 
-    // Convert store edges to ReactFlow format
-    const rfEdges: Edge[] = edges.map((edge) => ({
+    useEffect(() => {
+        cleanupDataShells(new Set(nodes.map((n) => n.id)));
+    }, [nodes]);
+
+    const rfEdges: Edge[] = useMemo(() => edges.map((edge) => ({
         id: edge.id,
         source: edge.sourceNodeId,
         target: edge.targetNodeId,
@@ -104,36 +95,26 @@ export function CanvasView() {
         targetHandle: `${edge.targetNodeId}-target`,
         type: 'deletable',
         animated: edge.relationshipType === 'derived',
-    }));
+    })), [edges]);
 
-    // Handle node changes (position, selection, dimensions)
     const onNodesChange: OnNodesChange = useCallback(
         (changes: NodeChange[]) => {
-            if (isCanvasLocked) return; // Prevent changes when locked
+            if (isCanvasLocked) return;
 
-            let needsUpdate = false;
-            const updatedNodes = nodes.map((node) => ({ ...node }));
-
+            let hasPositionOrRemove = false;
             for (const change of changes) {
-                if (change.type === 'position' && change.position) {
-                    const nodeIndex = updatedNodes.findIndex((n) => n.id === change.id);
-                    if (nodeIndex !== -1 && updatedNodes[nodeIndex]) {
-                        updatedNodes[nodeIndex].position = change.position;
-                        needsUpdate = true;
-                    }
+                if ((change.type === 'position' && change.position) || change.type === 'remove') {
+                    hasPositionOrRemove = true;
                 }
-                // Save dimensions to store for persistence (resizing)
-                // Use RAF throttling to batch updates during drag
                 if (change.type === 'dimensions' && change.dimensions && change.resizing) {
                     pendingResize.current = {
                         id: change.id,
                         width: change.dimensions.width,
                         height: change.dimensions.height,
                     };
-
                     rafId.current ??= requestAnimationFrame(() => {
                         if (pendingResize.current) {
-                            updateNodeDimensions(
+                            useCanvasStore.getState().updateNodeDimensions(
                                 pendingResize.current.id,
                                 pendingResize.current.width,
                                 pendingResize.current.height
@@ -143,46 +124,32 @@ export function CanvasView() {
                         rafId.current = null;
                     });
                 }
-                // Handle node removal
-                if (change.type === 'remove') {
-                    const nodeIndex = updatedNodes.findIndex((n) => n.id === change.id);
-                    if (nodeIndex !== -1) {
-                        updatedNodes.splice(nodeIndex, 1);
-                        needsUpdate = true;
-                    }
-                }
             }
 
-            if (needsUpdate) {
-                setNodes(updatedNodes);
-            }
+            if (!hasPositionOrRemove) return;
+
+            useCanvasStore.setState((state) => {
+                const result = applyPositionAndRemoveChanges(state.nodes, changes);
+                return result !== state.nodes ? { nodes: result } : {};
+            });
         },
-        [nodes, setNodes, updateNodeDimensions, isCanvasLocked]
+        [isCanvasLocked]
     );
 
-    // Handle edge changes (removal)
     const onEdgesChange: OnEdgesChange = useCallback(
         (changes: EdgeChange[]) => {
-            if (isCanvasLocked) return; // Prevent changes when locked
+            if (isCanvasLocked) return;
 
-            let needsUpdate = false;
-            const updatedEdges = [...edges];
+            const removals = changes.filter((c) => c.type === 'remove');
+            if (removals.length === 0) return;
 
-            for (const change of changes) {
-                if (change.type === 'remove') {
-                    const edgeIndex = updatedEdges.findIndex((e) => e.id === change.id);
-                    if (edgeIndex !== -1) {
-                        updatedEdges.splice(edgeIndex, 1);
-                        needsUpdate = true;
-                    }
-                }
-            }
-
-            if (needsUpdate) {
-                setEdges(updatedEdges);
-            }
+            useCanvasStore.setState((state) => {
+                const removeIds = new Set(removals.map((c) => c.id));
+                const filtered = state.edges.filter((e) => !removeIds.has(e.id));
+                return filtered.length !== state.edges.length ? { edges: filtered } : {};
+            });
         },
-        [edges, setEdges, isCanvasLocked]
+        [isCanvasLocked]
     );
 
     const onConnect: OnConnect = useCallback(
@@ -205,12 +172,22 @@ export function CanvasView() {
 
     const onSelectionChange: OnSelectionChangeFunc = useCallback(
         ({ nodes: selectedNodes }) => {
-            if (isCanvasLocked) return; // Prevent selection changes when locked
+            if (isCanvasLocked) return;
 
-            clearSelection();
-            selectedNodes.forEach((node) => selectNode(node.id));
+            const current = useCanvasStore.getState().selectedNodeIds;
+
+            if (selectedNodes.length === 0) {
+                if (current.size === 0) return;
+                useCanvasStore.setState({ selectedNodeIds: EMPTY_SELECTED_IDS as Set<string> });
+                return;
+            }
+
+            const newIds = new Set(selectedNodes.map((n) => n.id));
+            if (newIds.size === current.size &&
+                [...newIds].every((id) => current.has(id))) return;
+            useCanvasStore.setState({ selectedNodeIds: newIds });
         },
-        [clearSelection, selectNode, isCanvasLocked]
+        [isCanvasLocked]
     );
 
     return (
@@ -218,6 +195,7 @@ export function CanvasView() {
             <ReactFlow
                 nodes={rfNodes}
                 edges={rfEdges}
+                onlyRenderVisibleElements
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
@@ -225,13 +203,10 @@ export function CanvasView() {
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 connectionLineType={ConnectionLineType.Bezier}
-                defaultEdgeOptions={{
-                    type: 'deletable',
-                    markerEnd: { type: MarkerType.ArrowClosed },
-                }}
-                defaultViewport={{ x: 32, y: 32, zoom: 1 }}
+                defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
+                defaultViewport={DEFAULT_VIEWPORT}
                 snapToGrid
-                snapGrid={[16, 16]}
+                snapGrid={SNAP_GRID}
                 minZoom={0.1}
                 maxZoom={2}
                 zoomOnScroll={!isInteractionDisabled && !isNavigateMode}
@@ -251,3 +226,5 @@ export function CanvasView() {
         </div>
     );
 }
+
+export const CanvasView = memo(CanvasViewInner);

@@ -163,6 +163,13 @@ describe('NodeUtilsBar', () => {
             expect(screen.getByLabelText('Collapse')).toBeInTheDocument();
         });
 
+        it('renders Color in overflow when onColorChange is provided', () => {
+            const onColorChange = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
+            fireEvent.click(screen.getByLabelText('More actions'));
+            expect(screen.getByLabelText('Color')).toBeInTheDocument();
+        });
+
         it('renders Expand (not Collapse) in overflow when isCollapsed is true', () => {
             const onCollapseToggle = vi.fn();
             render(
@@ -236,6 +243,35 @@ describe('NodeUtilsBar', () => {
         it('does not render Pin button when onPinToggle is not provided', () => {
             render(<NodeUtilsBar {...defaultProps} />);
             expect(screen.queryByLabelText('Pin')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('interaction stability regression', () => {
+        it('handles rapid overflow/submenu interactions without update-depth errors', () => {
+            const onColorChange = vi.fn();
+            const onTransform = vi.fn();
+            const onShare = vi.fn().mockResolvedValue(undefined);
+            render(
+                <NodeUtilsBar
+                    {...defaultProps}
+                    hasContent={true}
+                    onTransform={onTransform}
+                    onColorChange={onColorChange}
+                    onShareClick={onShare}
+                />
+            );
+
+            for (let i = 0; i < 5; i += 1) {
+                fireEvent.click(screen.getByLabelText('More actions'));
+                fireEvent.click(screen.getByLabelText('Color'));
+                fireEvent.click(screen.getByText('Blue'));
+                fireEvent.click(screen.getByLabelText('Transform'));
+                fireEvent.click(screen.getByText('Refine'));
+                fireEvent.mouseDown(document.body);
+            }
+
+            expect(onColorChange).toHaveBeenCalled();
+            expect(onTransform).toHaveBeenCalled();
         });
     });
 });

@@ -58,14 +58,17 @@ vi.mock('@/features/auth/stores/authStore', () => ({
     useAuthStore: () => ({ user: mockUser }),
 }));
 
-// Mock canvas store
-const mockSetNodes = vi.fn();
-const mockSetEdges = vi.fn();
+// Mock canvas store — uses setState for atomic updates
+const mockCanvasSetState = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(
-        () => ({ setNodes: mockSetNodes, setEdges: mockSetEdges }),
-        { getState: () => ({ nodes: [], edges: [], editingNodeId: null }) }
+        vi.fn(() => ({})),
+        {
+            getState: () => ({ nodes: [], edges: [], editingNodeId: null }),
+            setState: (...args: unknown[]) => mockCanvasSetState(...args),
+        }
     ),
+    EMPTY_SELECTED_IDS: Object.freeze(new Set<string>()),
 }));
 
 describe('useWorkspaceLoader', () => {
@@ -114,8 +117,9 @@ describe('useWorkspaceLoader', () => {
         renderHook(() => useWorkspaceLoader('ws-1'));
 
         await waitFor(() => {
-            expect(mockSetNodes).toHaveBeenCalledWith(mockNodes);
-            expect(mockSetEdges).toHaveBeenCalledWith(mockEdges);
+            expect(mockCanvasSetState).toHaveBeenCalledWith(
+                expect.objectContaining({ nodes: mockNodes, edges: mockEdges })
+            );
         });
     });
 
@@ -175,8 +179,9 @@ describe('useWorkspaceLoader', () => {
             });
 
             // Should set cached data into store immediately
-            expect(mockSetNodes).toHaveBeenCalledWith(cachedNodes);
-            expect(mockSetEdges).toHaveBeenCalledWith(cachedEdges);
+            expect(mockCanvasSetState).toHaveBeenCalledWith(
+                expect.objectContaining({ nodes: cachedNodes, edges: cachedEdges })
+            );
         });
 
         it('background-refreshes from Firestore after cache hit when online', async () => {
@@ -256,6 +261,16 @@ describe('useWorkspaceLoader', () => {
             });
 
             consoleSpy.mockRestore();
+        });
+    });
+
+    describe('atomic canvas updates (prevents StoreUpdater cascade)', () => {
+        it('uses useCanvasStore.setState for atomic updates', () => {
+            const src = readFileSync(
+                resolve(__dirname, '../hooks/useWorkspaceLoader.ts'), 'utf-8'
+            );
+            expect(src).not.toMatch(/useCanvasStore\(\s*\)/);
+            expect(src).toMatch(/useCanvasStore\.setState\(/);
         });
     });
 

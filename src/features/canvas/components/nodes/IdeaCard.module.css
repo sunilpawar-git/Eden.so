@@ -31,6 +31,29 @@
     overflow: hidden;
 }
 
+.colorDefault {
+    background: var(--color-surface-elevated);
+}
+
+.colorDefault .contentArea {
+    background: var(--output-bg);
+}
+
+.colorPrimary {
+    background: color-mix(in srgb, var(--color-primary-light) 60%, var(--color-surface-elevated));
+    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+}
+
+.colorSuccess {
+    background: color-mix(in srgb, var(--color-success-bg) 16%, var(--color-surface-elevated));
+    border-color: color-mix(in srgb, var(--color-success-bg) 36%, var(--color-border));
+}
+
+.colorWarning {
+    background: color-mix(in srgb, var(--color-warning-bg) 18%, var(--color-surface-elevated));
+    border-color: color-mix(in srgb, var(--color-warning-bg) 38%, var(--color-border));
+}
+
 .ideaCard:hover {
     box-shadow: var(--card-shadow-hover);
     transform: translateY(-1px);
@@ -46,7 +69,7 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
     padding: var(--space-md);
-    background: var(--output-bg);
+    background: transparent;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     display: flex;
     flex-direction: column;
@@ -192,8 +215,8 @@
     }
 }
 
-/* NodeUtilsBar visibility is driven by the visible prop + CSS transition.
- * The cardWrapper hover state sets isHovered -> visible prop on NodeUtilsBar.
+/* NodeUtilsBar visibility is driven by data-bar-proximity / data-bar-focused
+ * attributes set on cardWrapper by useProximityBar (direct DOM manipulation).
  * Focus-within ensures keyboard/tab users can also access the bar (a11y). */
 
 /* Tags Section */

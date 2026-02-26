@@ -65,13 +65,19 @@ describe('nodeSerializer', () => {
 
             expect(rt.id).toBe(orig.id);
             expect(rt.position).toEqual(orig.position);
-            expect(rt.data).toEqual(orig.data);
+            expect(rt.data).toEqual({ ...orig.data, colorKey: 'default' });
             expect(rt.createdAt.getTime()).toBe(orig.createdAt.getTime());
             expect(rt.updatedAt.getTime()).toBe(orig.updatedAt.getTime());
         });
 
         it('should handle empty array', () => {
             expect(deserializeNodes([])).toEqual([]);
+        });
+
+        it('normalizes invalid colorKey to default', () => {
+            const serialized = serializeNodes([makeNode({ data: { prompt: 'x', colorKey: 'unknown' as never } })]);
+            const first = deserializeNodes(serialized)[0]!;
+            expect(first.data.colorKey).toBe('default');
         });
     });
 });

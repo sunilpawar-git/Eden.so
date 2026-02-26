@@ -293,10 +293,11 @@ describe('handleEditModeKey is a no-op (Bug 4 regression guard)', () => {
                 submitHandlerRef,
                 isGenerating: false,
                 isNewEmptyNode: false,
+                isEditing: true,
             }),
         );
 
-        expect(result.current.isEditing).toBe(true);
+        expect(useCanvasStore.getState().editingNodeId).toBe('test-node-noop');
 
         // Simulate Enter keydown reaching the React handler
         const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
@@ -334,7 +335,7 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
 
         // Phase 1: Editor is null (first render from useEditor)
         const { rerender } = renderHook(
-            (props: { editor: import('@tiptap/react').Editor | null }) =>
+            (props: { editor: import('@tiptap/react').Editor | null; isEditing: boolean }) =>
                 useNodeInput({
                     nodeId: 'new-node-1',
                     editor: props.editor,
@@ -345,8 +346,9 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
                     submitHandlerRef,
                     isGenerating: false,
                     isNewEmptyNode: true,
+                    isEditing: props.isEditing,
                 }),
-            { initialProps: { editor: null } },
+            { initialProps: { editor: null, isEditing: false } },
         );
 
         // With null editor, editing should NOT have started
@@ -362,7 +364,7 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
             },
         } as unknown as import('@tiptap/react').Editor;
 
-        act(() => { (rerender as unknown as (props: Record<string, unknown>) => void)({ editor: mockEditor }); });
+        act(() => { (rerender as unknown as (props: Record<string, unknown>) => void)({ editor: mockEditor, isEditing: true }); });
 
         // Now auto-edit should have triggered
         expect(useCanvasStore.getState().editingNodeId).toBe('new-node-1');
@@ -377,7 +379,7 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
         focusSpy.mockClear();
         setContent.mockClear();
 
-        act(() => { (rerender as unknown as (props: Record<string, unknown>) => void)({ editor: mockEditor }); });
+        act(() => { (rerender as unknown as (props: Record<string, unknown>) => void)({ editor: mockEditor, isEditing: true }); });
 
         // autoEditRef should have been set to false — no re-trigger
         expect(setContent).not.toHaveBeenCalled();
@@ -410,6 +412,7 @@ describe('Auto-edit lifecycle (Bug 1 regression guard)', () => {
                 submitHandlerRef: { current: null },
                 isGenerating: false,
                 isNewEmptyNode: false,
+                isEditing: false,
             }),
         );
 

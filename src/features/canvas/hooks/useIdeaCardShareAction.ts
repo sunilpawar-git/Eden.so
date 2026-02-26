@@ -7,7 +7,7 @@
  * (avoids breaking React.memo on NodeUtilsBar / ShareMenu on 500+ node canvases).
  */
 import { useState, useCallback, useRef } from 'react';
-import { useCanvasStore } from '../stores/canvasStore';
+import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { shareNodeToWorkspace } from '../services/nodeShareService';
 import { toast } from '@/shared/stores/toastStore';
@@ -25,7 +25,7 @@ export function useIdeaCardShareAction(nodeId: string) {
             const userId = useAuthStore.getState().user?.id;
             if (!userId) throw new Error('Not authenticated');
 
-            const node = useCanvasStore.getState().nodes.find((n) => n.id === nodeId);
+            const node = getNodeMap(useCanvasStore.getState().nodes).get(nodeId);
             if (!node) throw new Error('Node not found');
 
             await shareNodeToWorkspace(userId, node, targetWorkspaceId);

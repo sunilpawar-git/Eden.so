@@ -5,7 +5,7 @@
  */
 import { useEffect, useCallback } from 'react';
 import { useFocusStore } from '../stores/focusStore';
-import { useCanvasStore } from '../stores/canvasStore';
+import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import type { CanvasNode } from '../types/node';
 
 interface FocusModeResult {
@@ -18,22 +18,19 @@ interface FocusModeResult {
 
 export function useFocusMode(): FocusModeResult {
     const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
-    const enterFocusAction = useFocusStore((s) => s.enterFocus);
-    const exitFocusAction = useFocusStore((s) => s.exitFocus);
-
     const focusedNode = useCanvasStore((s) =>
-        focusedNodeId ? s.nodes.find((n) => n.id === focusedNodeId) ?? null : null,
+        focusedNodeId ? getNodeMap(s.nodes).get(focusedNodeId) ?? null : null,
     );
     const isFocused = focusedNodeId !== null;
 
     const exitFocus = useCallback(() => {
-        exitFocusAction();
+        useFocusStore.getState().exitFocus();
         useCanvasStore.getState().stopEditing();
-    }, [exitFocusAction]);
+    }, []);
 
     const enterFocus = useCallback((nodeId: string) => {
-        enterFocusAction(nodeId);
-    }, [enterFocusAction]);
+        useFocusStore.getState().enterFocus(nodeId);
+    }, []);
 
     useEffect(() => {
         if (!isFocused) return;

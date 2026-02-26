@@ -42,13 +42,27 @@ vi.mock('@/features/auth/stores/authStore', () => ({
     useAuthStore: () => ({ user: { id: 'user-1', email: 'test@test.com' } }),
 }));
 
-const mockSetNodes = vi.fn();
-const mockSetEdges = vi.fn();
+// Avoid real KB service async side effects during loader tests.
+const mockSetKBEntries = vi.fn();
+vi.mock('@/features/knowledgeBank/services/knowledgeBankService', () => ({
+    loadKBEntries: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('@/features/knowledgeBank/stores/knowledgeBankStore', () => ({
+    useKnowledgeBankStore: {
+        getState: () => ({ setEntries: mockSetKBEntries }),
+    },
+}));
+
+const mockCanvasSetState = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(
-        () => ({ setNodes: mockSetNodes, setEdges: mockSetEdges }),
-        { getState: () => ({ nodes: [], edges: [], editingNodeId: null }) }
+        vi.fn(() => ({})),
+        {
+            getState: () => ({ nodes: [], edges: [], editingNodeId: null }),
+            setState: (...args: unknown[]) => mockCanvasSetState(...args),
+        }
     ),
+    EMPTY_SELECTED_IDS: Object.freeze(new Set<string>()),
 }));
 
 describe('useWorkspaceLoader - hasOfflineData', () => {

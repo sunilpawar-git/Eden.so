@@ -2,7 +2,7 @@
  * Canvas Store Helpers - Pure functions for node/edge operations
  * Extracted from canvasStore.ts to reduce store callback size
  */
-import type { CanvasNode, NodePosition } from '../types/node';
+import type { CanvasNode, NodePosition, NodeColorKey } from '../types/node';
 import { clampNodeDimensions } from '../types/node';
 import type { CanvasEdge } from '../types/edge';
 import {
@@ -140,6 +140,7 @@ export function getUpstreamNodesFromArrays(
     edges: CanvasEdge[],
     nodeId: string
 ): CanvasNode[] {
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     const visited = new Set<string>();
     const queue: string[] = [nodeId];
     const upstream: CanvasNode[] = [];
@@ -151,7 +152,7 @@ export function getUpstreamNodesFromArrays(
 
         const incomingEdges = edges.filter((e) => e.targetNodeId === currentId);
         for (const edge of incomingEdges) {
-            const sourceNode = nodes.find((n) => n.id === edge.sourceNodeId);
+            const sourceNode = nodeMap.get(edge.sourceNodeId);
             if (sourceNode && !visited.has(sourceNode.id)) {
                 upstream.push(sourceNode);
                 queue.push(sourceNode.id);
@@ -223,6 +224,23 @@ export function toggleNodeCollapsedInArray(
     return nodes.map((node) =>
         node.id === nodeId
             ? { ...node, data: { ...node.data, isCollapsed: !node.data.isCollapsed }, updatedAt: new Date() }
+            : node
+    );
+}
+
+/**
+ * Sets node color in an idempotent way (no-op when unchanged or missing node).
+ */
+export function setNodeColorInArray(
+    nodes: CanvasNode[],
+    nodeId: string,
+    colorKey: NodeColorKey
+): CanvasNode[] {
+    const target = nodes.find((node) => node.id === nodeId);
+    if (!target || target.data.colorKey === colorKey) return nodes;
+    return nodes.map((node) =>
+        node.id === nodeId
+            ? { ...node, data: { ...node.data, colorKey }, updatedAt: new Date() }
             : node
     );
 }

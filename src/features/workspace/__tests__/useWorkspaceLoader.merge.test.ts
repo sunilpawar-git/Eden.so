@@ -49,16 +49,19 @@ vi.mock('@/features/auth/stores/authStore', () => ({
     useAuthStore: () => ({ user: mockUser }),
 }));
 
-const mockSetNodes = vi.fn();
-const mockSetEdges = vi.fn();
+const mockCanvasSetState = vi.fn();
 let mockStoreNodes: unknown[] = [];
 let mockStoreEdges: unknown[] = [];
 let mockEditingNodeId: string | null = null;
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(
-        () => ({ setNodes: mockSetNodes, setEdges: mockSetEdges }),
-        { getState: () => ({ nodes: mockStoreNodes, edges: mockStoreEdges, editingNodeId: mockEditingNodeId }) }
+        vi.fn(() => ({})),
+        {
+            getState: () => ({ nodes: mockStoreNodes, edges: mockStoreEdges, editingNodeId: mockEditingNodeId }),
+            setState: (...args: unknown[]) => mockCanvasSetState(...args),
+        }
     ),
+    EMPTY_SELECTED_IDS: Object.freeze(new Set<string>()),
 }));
 
 describe('useWorkspaceLoader – background refresh merge', () => {
@@ -101,12 +104,15 @@ describe('useWorkspaceLoader – background refresh merge', () => {
         });
 
         await waitFor(() => {
-            const bgRefreshCall = mockSetNodes.mock.calls.find(
-                (call: unknown[]) => call[0] !== mockCacheGet.mock.results[0]?.value?.nodes
+            const bgRefreshCall = mockCanvasSetState.mock.calls.find(
+                (call: unknown[]) => {
+                    const arg = call[0] as Record<string, unknown>;
+                    return arg.nodes !== mockCacheGet.mock.results[0]?.value?.nodes;
+                }
             );
             if (bgRefreshCall) {
-                const merged = bgRefreshCall[0] as Array<{ id: string; data: { output: string } }>;
-                const editedNode = merged.find((n) => n.id === 'editing-node');
+                const arg = bgRefreshCall[0] as { nodes: Array<{ id: string; data: { output: string } }> };
+                const editedNode = arg.nodes.find((n) => n.id === 'editing-node');
                 expect(editedNode?.data.output).toBe('my draft');
             }
         });
@@ -140,10 +146,10 @@ describe('useWorkspaceLoader – background refresh merge', () => {
         });
 
         await waitFor(() => {
-            const bgCalls = mockSetNodes.mock.calls;
+            const bgCalls = mockCanvasSetState.mock.calls;
             const lastCall = bgCalls[bgCalls.length - 1] as unknown[];
-            const nodes = lastCall[0] as Array<{ id: string; data: { output: string } }>;
-            const updated = nodes.find((n) => n.id === 'stale-node');
+            const arg = lastCall[0] as { nodes: Array<{ id: string; data: { output: string } }> };
+            const updated = arg.nodes.find((n) => n.id === 'stale-node');
             expect(updated?.data.output).toBe('updated from server');
         });
     });
@@ -214,11 +220,11 @@ describe('useWorkspaceLoader – background refresh merge', () => {
         });
 
         await waitFor(() => {
-            const bgCalls = mockSetNodes.mock.calls;
+            const bgCalls = mockCanvasSetState.mock.calls;
             const lastCall = bgCalls[bgCalls.length - 1] as unknown[];
-            const nodes = lastCall[0] as Array<{ id: string }>;
-            expect(nodes.find((n) => n.id === 'new-unsaved')).toBeDefined();
-            expect(nodes.find((n) => n.id === 'shared')).toBeDefined();
+            const arg = lastCall[0] as { nodes: Array<{ id: string }> };
+            expect(arg.nodes.find((n) => n.id === 'new-unsaved')).toBeDefined();
+            expect(arg.nodes.find((n) => n.id === 'shared')).toBeDefined();
         });
     });
 
@@ -255,11 +261,11 @@ describe('useWorkspaceLoader – background refresh merge', () => {
         });
 
         await waitFor(() => {
-            const bgCalls = mockSetEdges.mock.calls;
+            const bgCalls = mockCanvasSetState.mock.calls;
             const lastCall = bgCalls[bgCalls.length - 1] as unknown[];
-            const edges = lastCall[0] as Array<{ id: string }>;
-            expect(edges.find((e) => e.id === 'local-edge')).toBeDefined();
-            expect(edges.find((e) => e.id === 'remote-edge')).toBeDefined();
+            const arg = lastCall[0] as { edges: Array<{ id: string }> };
+            expect(arg.edges.find((e) => e.id === 'local-edge')).toBeDefined();
+            expect(arg.edges.find((e) => e.id === 'remote-edge')).toBeDefined();
         });
     });
 });

@@ -18,4 +18,14 @@ export const canvasStrings = {
     imageUnsafeUrl: 'Image URL failed security validation.',
     imageFileTooLarge: 'Image exceeds 5 MB size limit.',
     imageUnsupportedType: 'Unsupported image format. Use JPEG, PNG, GIF, or WebP.',
+    resize: {
+        resizeNode: 'Resize node',
+        resizeHandle: 'Drag to resize',
+        corner: 'Corner resize handle',
+        edge: 'Edge resize handle',
+        expandWidth: 'Expand width',
+        expandHeight: 'Expand height',
+        reduceWidth: 'Reduce width',
+        reduceHeight: 'Reduce height',
+    },
 };

@@ -3,11 +3,12 @@
  */
 import { useState, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useCanvasStore, EMPTY_SELECTED_IDS } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '../stores/workspaceStore';
 import { loadNodes, loadEdges } from '../services/workspaceService';
 import { workspaceCache } from '../services/workspaceCache';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
+import { loadWorkspaceKB } from '../services/workspaceSwitchHelpers';
 import { strings } from '@/shared/localization/strings';
 
 interface UseWorkspaceSwitcherResult {
@@ -19,11 +20,8 @@ interface UseWorkspaceSwitcherResult {
 
 export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
     const { user } = useAuthStore();
-    const { setNodes, setEdges } = useCanvasStore();
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
-    const setCurrentWorkspaceId = useWorkspaceStore((s) => s.setCurrentWorkspaceId);
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
-    const setSwitching = useWorkspaceStore((s) => s.setSwitching);
 
     const [error, setError] = useState<string | null>(null);
     const switchingRef = useRef(false);
@@ -41,7 +39,7 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
         }
 
         switchingRef.current = true;
-        setSwitching(true);
+        useWorkspaceStore.getState().setSwitching(true);
         setError(null);
         const startTime = performance.now();
 
@@ -78,36 +76,29 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
             const loadTime = performance.now() - startTime;
             console.info(`[WorkspaceSwitcher] Switch completed in ${loadTime.toFixed(2)}ms (cache ${cacheHit ? 'HIT' : 'MISS'})`);
 
-            // 3. Atomic swap: update nodes/edges directly (no clearCanvas)
-            setNodes(newNodes);
-            setEdges(newEdges);
+            // 3. Atomic swap: single setState to prevent cascading re-renders
+            useCanvasStore.setState({
+                nodes: newNodes,
+                edges: newEdges,
+                selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
+            });
 
             // Phase R3: Sync node count explicitly to UI store
             useWorkspaceStore.getState().setNodeCount(workspaceId, newNodes.length);
 
             // 4. Update workspace ID last
-            setCurrentWorkspaceId(workspaceId);
+            useWorkspaceStore.getState().setCurrentWorkspaceId(workspaceId);
 
-            // 5. Load Knowledge Bank entries for new workspace (non-blocking)
-            void (async () => {
-                try {
-                    const { loadKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');
-                    const { useKnowledgeBankStore } = await import('@/features/knowledgeBank/stores/knowledgeBankStore');
-                    const kbEntries = await loadKBEntries(user.id, workspaceId);
-                    useKnowledgeBankStore.getState().setEntries(kbEntries);
-                } catch (err: unknown) {
-                    console.error('[useWorkspaceSwitcher] KB load failed:', err);
-                }
-            })();
+            void loadWorkspaceKB(user.id, workspaceId);
         } catch (err) {
             const message = err instanceof Error ? err.message : strings.workspace.switchError;
             setError(message);
             console.error('[useWorkspaceSwitcher]', err);
         } finally {
-            setSwitching(false);
+            useWorkspaceStore.getState().setSwitching(false);
             switchingRef.current = false;
         }
-    }, [user, currentWorkspaceId, setNodes, setEdges, setCurrentWorkspaceId, setSwitching]);
+    }, [user, currentWorkspaceId]);
 
     return { isSwitching, error, switchWorkspace };
 }

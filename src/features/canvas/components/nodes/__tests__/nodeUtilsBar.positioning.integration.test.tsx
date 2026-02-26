@@ -1,20 +1,18 @@
 /**
  * NodeUtilsBar Positioning Integration Tests
- * Validates pill-behind-node positioning, left variant, and pinned-open state
+ * Validates pill-behind-node positioning and pinned-open state.
+ * Visibility and placement are now CSS-driven via parent data attributes.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
 
-// Mock CSS modules — complete set of positioning + button classes
 vi.mock('../NodeUtilsBar.module.css', () => ({
     default: {
+        barWrapper: 'barWrapper',
         container: 'container',
-        containerVisible: 'containerVisible',
-        containerLeft: 'containerLeft',
         containerPinnedOpen: 'containerPinnedOpen',
         peekIndicator: 'peekIndicator',
-        peekIndicatorLeft: 'peekIndicatorLeft',
     },
 }));
 
@@ -33,27 +31,18 @@ describe('NodeUtilsBar Positioning', () => {
         onConnectClick: vi.fn(),
         onDelete: vi.fn(),
         disabled: false,
-        visible: false,
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('has default (hidden) CSS class when visible is false', () => {
-        const { container } = render(<NodeUtilsBar {...defaultProps} visible={false} />);
-        const bar = container.querySelector('[class*="container"]') as HTMLElement;
+    it('has default (hidden) CSS class by default', () => {
+        const { container } = render(<NodeUtilsBar {...defaultProps} />);
+        const bar = container.querySelector('[role="toolbar"]') as HTMLElement;
 
         expect(bar).toHaveClass('container');
-        expect(bar).not.toHaveClass('containerVisible');
-    });
-
-    it('has visible CSS class when visible is true', () => {
-        const { container } = render(<NodeUtilsBar {...defaultProps} visible={true} />);
-        const bar = container.querySelector('[class*="container"]') as HTMLElement;
-
-        expect(bar).toHaveClass('container');
-        expect(bar).toHaveClass('containerVisible');
+        expect(bar).not.toHaveClass('containerPinnedOpen');
     });
 
     it('renders peek indicator as sibling of container', () => {
@@ -68,29 +57,12 @@ describe('NodeUtilsBar Positioning', () => {
         expect(bar?.contains(peek)).toBe(false);
     });
 
-    it('applies containerLeft class when placement is left', () => {
-        const { container } = render(
-            <NodeUtilsBar {...defaultProps} placement="left" />
-        );
-        const bar = container.querySelector('[class*="container"]') as HTMLElement;
-        expect(bar).toHaveClass('containerLeft');
-    });
-
-    it('applies peekIndicatorLeft class when placement is left', () => {
-        const { container } = render(
-            <NodeUtilsBar {...defaultProps} placement="left" />
-        );
-        const peek = container.querySelector('.peekIndicator');
-        expect(peek).toHaveClass('peekIndicatorLeft');
-    });
-
-    it('applies containerPinnedOpen instead of containerVisible when isPinnedOpen', () => {
+    it('applies containerPinnedOpen when isPinnedOpen', () => {
         const { container } = render(
             <NodeUtilsBar {...defaultProps} isPinnedOpen={true} />
         );
-        const bar = container.querySelector('[class*="container"]') as HTMLElement;
+        const bar = container.querySelector('[role="toolbar"]') as HTMLElement;
         expect(bar).toHaveClass('containerPinnedOpen');
-        expect(bar).not.toHaveClass('containerVisible');
     });
 
     describe('regression: primary buttons still pass', () => {

@@ -269,6 +269,27 @@ describe('WorkspaceService', () => {
             expect(node.width).toBeUndefined();
             expect(node.height).toBeUndefined();
         });
+
+        it('normalizes invalid node colorKey to default', async () => {
+            const mockTimestamp = { toDate: () => new Date('2024-01-01') };
+            mockGetDocs.mockResolvedValue({
+                docs: [
+                    {
+                        data: () => ({
+                            id: 'node-1',
+                            type: 'idea',
+                            data: { prompt: 'Test', colorKey: 'invalid-color' },
+                            position: { x: 0, y: 0 },
+                            createdAt: mockTimestamp,
+                            updatedAt: mockTimestamp,
+                        }),
+                    },
+                ],
+            });
+
+            const result = await loadNodes('user-1', 'ws-1');
+            expect(result[0]?.data.colorKey).toBe('default');
+        });
     });
 
     describe('loadEdges', () => {

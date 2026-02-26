@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { SubmitKeymapHandler } from '../extensions/submitKeymap';
-import { useCanvasStore } from '../stores/canvasStore';
+import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import { useLinkPreviewFetch } from './useLinkPreviewFetch';
 import { GLOBAL_SHORTCUT_KEYS } from '@/shared/constants/shortcutKeys';
 
@@ -40,6 +40,7 @@ export type NodeShortcutMap = Record<string, () => void>;
 
 export interface UseNodeInputOptions {
     nodeId: string;
+    isEditing: boolean;
     editor: Editor | null;
     getMarkdown: () => string;
     setContent: (markdown: string) => void;
@@ -57,28 +58,22 @@ export interface UseNodeInputOptions {
 }
 
 export interface UseNodeInputReturn {
-    isEditing: boolean;
     handleKeyDown: (e: KeyboardEvent) => void;
     handleDoubleClick: () => void;
 }
 
 export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     const {
-        nodeId, editor, getMarkdown, setContent,
+        nodeId, isEditing, editor, getMarkdown, setContent,
         getEditableContent, saveContent,
         submitHandlerRef,
         isGenerating, isNewEmptyNode, focusHeading,
         shortcuts,
     } = options;
 
-    const isEditing = useCanvasStore((s) => s.editingNodeId === nodeId);
-    const draftContent = useCanvasStore((s) => s.draftContent);
+    const draftContent = useCanvasStore((s) => isEditing ? s.draftContent : null);
 
-    // Detect URLs from draft content (editing) or persisted output (view mode)
-    const nodeOutput = useCanvasStore((s) => {
-        const node = s.nodes.find((n) => n.id === nodeId);
-        return node?.data.output;
-    });
+    const nodeOutput = useCanvasStore((s) => getNodeMap(s.nodes).get(nodeId)?.data.output);
     const detectedUrls = useMemo(
         () => extractUrls(isEditing ? draftContent : (nodeOutput ?? null)),
         [isEditing, draftContent, nodeOutput],
@@ -201,5 +196,5 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         if (!isGenerating) enterEditing();
     }, [isGenerating, enterEditing]);
 
-    return { isEditing, handleKeyDown, handleDoubleClick };
+    return { handleKeyDown, handleDoubleClick };
 }

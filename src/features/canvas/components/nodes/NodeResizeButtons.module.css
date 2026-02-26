@@ -56,11 +56,11 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.resizeButton.visible {
+:global([data-hovered="true"]) .resizeButton {
     opacity: 0.8;
 }
 
-.resizeButton.visible:hover {
+:global([data-hovered="true"]) .resizeButton:hover {
     opacity: 1;
     transform: scale(1.1);
     background: var(--color-surface-hover);

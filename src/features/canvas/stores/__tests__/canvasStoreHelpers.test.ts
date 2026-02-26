@@ -14,6 +14,7 @@ import {
     getConnectedNodeIds,
     getUpstreamNodesFromArrays,
     arrangeNodesAfterResize,
+    setNodeColorInArray,
 } from '../canvasStoreHelpers';
 import type { CanvasNode } from '../../types/node';
 import type { CanvasEdge } from '../../types/edge';
@@ -243,6 +244,20 @@ describe('canvasStoreHelpers', () => {
         it('should return empty array for empty input', () => {
             const result = arrangeNodesAfterResize([], 'any-id');
             expect(result).toHaveLength(0);
+        });
+    });
+
+    describe('setNodeColorInArray', () => {
+        it('sets node color when changed', () => {
+            const nodes = [createMockNode('n1', { data: { prompt: '', output: '', tags: [], colorKey: 'default' } })];
+            const result = setNodeColorInArray(nodes, 'n1', 'primary');
+            expect(result[0]?.data.colorKey).toBe('primary');
+        });
+
+        it('returns original array when color is unchanged', () => {
+            const nodes = [createMockNode('n1', { data: { prompt: '', output: '', tags: [], colorKey: 'default' } })];
+            const result = setNodeColorInArray(nodes, 'n1', 'default');
+            expect(result).toBe(nodes);
         });
     });
 });

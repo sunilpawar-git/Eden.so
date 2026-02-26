@@ -1,6 +1,8 @@
 /**
  * IdeaCard Style Tests - Verify CSS classes are applied correctly
  */
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -156,5 +158,23 @@ describe('IdeaCard styles', () => {
         // AI card shows prompt with promptText class
         const promptElement = screen.getByRole('button', { name: /AI prompt/i });
         expect(promptElement).toHaveClass('promptText');
+    });
+
+    describe('node color — contentArea inherits color (no --output-bg masking)', () => {
+        it('contentArea uses transparent background so parent color shows through', () => {
+            const css = readFileSync(
+                resolve(__dirname, '../IdeaCard.module.css'), 'utf-8'
+            );
+            const contentMatch = /^\.contentArea\s*\{[^}]*background:\s*([^;]+);/m.exec(css);
+            expect(contentMatch).toBeTruthy();
+            expect(contentMatch![1]!.trim()).toBe('transparent');
+        });
+
+        it('colorDefault scopes --output-bg to contentArea', () => {
+            const css = readFileSync(
+                resolve(__dirname, '../IdeaCard.module.css'), 'utf-8'
+            );
+            expect(css).toMatch(/\.colorDefault\s+\.contentArea/);
+        });
     });
 });

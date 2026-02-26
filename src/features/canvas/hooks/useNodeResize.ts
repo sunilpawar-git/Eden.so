@@ -3,7 +3,7 @@
  * Provides expand actions and canExpand flags for width/height
  */
 import { useCallback } from 'react';
-import { useCanvasStore } from '../stores/canvasStore';
+import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import {
     RESIZE_INCREMENT_PX,
@@ -30,9 +30,7 @@ export interface UseNodeResizeResult {
  * @returns Expand actions and canExpand boolean flags
  */
 export function useNodeResize(nodeId: string): UseNodeResizeResult {
-    const node = useCanvasStore((s) => s.nodes.find((n) => n.id === nodeId));
-    const updateNodeDimensions = useCanvasStore((s) => s.updateNodeDimensions);
-    const arrangeAfterResize = useCanvasStore((s) => s.arrangeAfterResize);
+    const node = useCanvasStore((s) => getNodeMap(s.nodes).get(nodeId));
     const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
 
     const currentWidth = node?.width ?? DEFAULT_NODE_WIDTH;
@@ -45,31 +43,35 @@ export function useNodeResize(nodeId: string): UseNodeResizeResult {
 
     const expandWidth = useCallback(() => {
         if (canExpandWidth) {
-            updateNodeDimensions(nodeId, currentWidth + RESIZE_INCREMENT_PX, currentHeight);
-            if (!canvasFreeFlow) arrangeAfterResize(nodeId);
+            const store = useCanvasStore.getState();
+            store.updateNodeDimensions(nodeId, currentWidth + RESIZE_INCREMENT_PX, currentHeight);
+            if (!canvasFreeFlow) store.arrangeAfterResize(nodeId);
         }
-    }, [nodeId, currentWidth, currentHeight, canExpandWidth, canvasFreeFlow, updateNodeDimensions, arrangeAfterResize]);
+    }, [nodeId, currentWidth, currentHeight, canExpandWidth, canvasFreeFlow]);
 
     const expandHeight = useCallback(() => {
         if (canExpandHeight) {
-            updateNodeDimensions(nodeId, currentWidth, currentHeight + RESIZE_INCREMENT_PX);
-            if (!canvasFreeFlow) arrangeAfterResize(nodeId);
+            const store = useCanvasStore.getState();
+            store.updateNodeDimensions(nodeId, currentWidth, currentHeight + RESIZE_INCREMENT_PX);
+            if (!canvasFreeFlow) store.arrangeAfterResize(nodeId);
         }
-    }, [nodeId, currentWidth, currentHeight, canExpandHeight, canvasFreeFlow, updateNodeDimensions, arrangeAfterResize]);
+    }, [nodeId, currentWidth, currentHeight, canExpandHeight, canvasFreeFlow]);
 
     const shrinkWidth = useCallback(() => {
         if (canShrinkWidth) {
-            updateNodeDimensions(nodeId, currentWidth - RESIZE_INCREMENT_PX, currentHeight);
-            if (!canvasFreeFlow) arrangeAfterResize(nodeId);
+            const store = useCanvasStore.getState();
+            store.updateNodeDimensions(nodeId, currentWidth - RESIZE_INCREMENT_PX, currentHeight);
+            if (!canvasFreeFlow) store.arrangeAfterResize(nodeId);
         }
-    }, [nodeId, currentWidth, currentHeight, canShrinkWidth, canvasFreeFlow, updateNodeDimensions, arrangeAfterResize]);
+    }, [nodeId, currentWidth, currentHeight, canShrinkWidth, canvasFreeFlow]);
 
     const shrinkHeight = useCallback(() => {
         if (canShrinkHeight) {
-            updateNodeDimensions(nodeId, currentWidth, currentHeight - RESIZE_INCREMENT_PX);
-            if (!canvasFreeFlow) arrangeAfterResize(nodeId);
+            const store = useCanvasStore.getState();
+            store.updateNodeDimensions(nodeId, currentWidth, currentHeight - RESIZE_INCREMENT_PX);
+            if (!canvasFreeFlow) store.arrangeAfterResize(nodeId);
         }
-    }, [nodeId, currentWidth, currentHeight, canShrinkHeight, canvasFreeFlow, updateNodeDimensions, arrangeAfterResize]);
+    }, [nodeId, currentWidth, currentHeight, canShrinkHeight, canvasFreeFlow]);
 
     return { expandWidth, expandHeight, shrinkWidth, shrinkHeight, canExpandWidth, canExpandHeight, canShrinkWidth, canShrinkHeight };
 }

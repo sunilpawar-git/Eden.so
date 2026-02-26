@@ -22,6 +22,23 @@ describe('canvasStore', () => {
         useCanvasStore.getState().clearCanvas();
     });
 
+    describe('clearSelection idempotency', () => {
+        it('does not create new state when selection is already empty', () => {
+            const stateBefore = useCanvasStore.getState();
+            expect(stateBefore.selectedNodeIds.size).toBe(0);
+            useCanvasStore.getState().clearSelection();
+            const stateAfter = useCanvasStore.getState();
+            expect(stateAfter.selectedNodeIds).toBe(stateBefore.selectedNodeIds);
+        });
+
+        it('clears selection when nodes are selected', () => {
+            useCanvasStore.getState().selectNode('n1');
+            expect(useCanvasStore.getState().selectedNodeIds.size).toBe(1);
+            useCanvasStore.getState().clearSelection();
+            expect(useCanvasStore.getState().selectedNodeIds.size).toBe(0);
+        });
+    });
+
     describe('arrangeNodes', () => {
         it('should update node positions in the store', () => {
             const baseDate = new Date('2024-01-01');

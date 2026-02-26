@@ -2,7 +2,7 @@
  * Node Type Tests - Unit tests for node creation functions
  */
 import { describe, it, expect } from 'vitest';
-import { createIdeaNode, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '../node';
+import { createIdeaNode, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, normalizeNodeColorKey } from '../node';
 
 describe('createIdeaNode', () => {
     const testId = 'test-node-1';
@@ -47,5 +47,18 @@ describe('createIdeaNode', () => {
         expect(node.createdAt.getTime()).toBeGreaterThanOrEqual(beforeCreate.getTime());
         expect(node.createdAt.getTime()).toBeLessThanOrEqual(afterCreate.getTime());
         expect(node.updatedAt).toEqual(node.createdAt);
+    });
+
+    it('assigns default color key on create', () => {
+        const node = createIdeaNode(testId, testWorkspaceId, testPosition);
+        expect(node.data.colorKey).toBe('default');
+    });
+});
+
+describe('normalizeNodeColorKey', () => {
+    it('returns known keys and defaults unknown values', () => {
+        expect(normalizeNodeColorKey('primary')).toBe('primary');
+        expect(normalizeNodeColorKey('unknown')).toBe('default');
+        expect(normalizeNodeColorKey(undefined)).toBe('default');
     });
 });
