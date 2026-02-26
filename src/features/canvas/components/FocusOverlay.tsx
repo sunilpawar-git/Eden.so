@@ -10,6 +10,7 @@ import { strings } from '@/shared/localization/strings';
 import { useFocusMode } from '../hooks/useFocusMode';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useFocusOverlayActions } from '../hooks/useFocusOverlayActions';
+import { normalizeNodeColorKey } from '../types/node';
 import { NodeHeading } from './nodes/NodeHeading';
 import { TagInput } from '@/features/tags';
 import { TipTapEditor } from './nodes/TipTapEditor';
@@ -24,6 +25,7 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
     const output = focusedNode?.data.output;
     const tagIds = focusedNode?.data.tags ?? [];
     const linkPreviews = focusedNode?.data.linkPreviews;
+    const colorKey = normalizeNodeColorKey(focusedNode?.data.colorKey);
     const isEditing = useCanvasStore((s) => s.editingNodeId === nodeId && nodeId !== '');
 
     const { editor, handleDoubleClick, handleHeadingChange, handleTagsChange, saveBeforeExit } =
@@ -47,7 +49,7 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
             className={styles.backdrop}
             onClick={handleExit}
         >
-            <div data-testid="focus-panel" className={styles.panel} onClick={handlePanelClick}>
+            <div data-testid="focus-panel" className={styles.panel} data-color={colorKey} onClick={handlePanelClick}>
                 <button
                     data-testid="focus-close-button"
                     className={styles.closeButton}

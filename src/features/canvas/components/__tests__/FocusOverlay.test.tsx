@@ -105,9 +105,21 @@ const mockNodeNoTags: CanvasNode = {
     data: { ...mockNode.data, tags: [], heading: '', linkPreviews: undefined },
 };
 
+const mockNodeDanger: CanvasNode = {
+    ...mockNode,
+    id: 'node-danger',
+    data: { ...mockNode.data, colorKey: 'danger' },
+};
+
+const mockNodeLegacy: CanvasNode = {
+    ...mockNode,
+    id: 'node-legacy',
+    data: { ...mockNode.data, colorKey: 'primary' as never },
+};
+
 function setCanvasDefaults() {
     useCanvasStore.setState({
-        nodes: [mockNode, mockNodeNoTags],
+        nodes: [mockNode, mockNodeNoTags, mockNodeDanger, mockNodeLegacy],
         edges: [],
         selectedNodeIds: new Set(),
         editingNodeId: null,
@@ -243,6 +255,26 @@ describe('FocusOverlay', () => {
             useFocusStore.setState({ focusedNodeId: 'node-no-tags' });
             render(<FocusOverlay />);
             expect(screen.queryByTestId('focus-tags')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Node color propagation', () => {
+        it('applies data-color attribute matching node colorKey', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-danger' });
+            render(<FocusOverlay />);
+            expect(screen.getByTestId('focus-panel')).toHaveAttribute('data-color', 'danger');
+        });
+
+        it('defaults to "default" when node has no colorKey', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            expect(screen.getByTestId('focus-panel')).toHaveAttribute('data-color', 'default');
+        });
+
+        it('normalises legacy colorKey values', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-legacy' });
+            render(<FocusOverlay />);
+            expect(screen.getByTestId('focus-panel')).toHaveAttribute('data-color', 'danger');
         });
     });
 

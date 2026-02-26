@@ -28,6 +28,21 @@
     animation: panelScaleIn var(--transition-normal) ease forwards;
 }
 
+.panel[data-color="danger"] {
+    background: color-mix(in srgb, var(--node-status-danger-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-danger-border);
+}
+
+.panel[data-color="warning"] {
+    background: color-mix(in srgb, var(--node-status-warning-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-warning-border);
+}
+
+.panel[data-color="success"] {
+    background: color-mix(in srgb, var(--node-status-success-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-success-border);
+}
+
 .closeButton {
     position: absolute;
     top: var(--space-sm);
