@@ -13,7 +13,6 @@ import styles from './KnowledgeBankPanel.module.css';
 export function KnowledgeBankPanel() {
     const isPanelOpen = useKnowledgeBankStore((s) => s.isPanelOpen);
     const entries = useKnowledgeBankStore((s) => s.entries);
-    const setPanelOpen = useKnowledgeBankStore((s) => s.setPanelOpen);
     const searchQuery = useKnowledgeBankStore((s) => s.searchQuery);
     const typeFilter = useKnowledgeBankStore((s) => s.typeFilter);
     const selectedTag = useKnowledgeBankStore((s) => s.selectedTag);
@@ -25,7 +24,7 @@ export function KnowledgeBankPanel() {
         [entries, searchQuery, typeFilter, selectedTag]
     );
 
-    useEscapeClose(isPanelOpen, () => setPanelOpen(false));
+    useEscapeClose(isPanelOpen, () => useKnowledgeBankStore.getState().setPanelOpen(false));
 
     if (!isPanelOpen) return null;
 
@@ -35,7 +34,7 @@ export function KnowledgeBankPanel() {
 
     return (
         <div className={styles.panel}>
-            <PanelHeader onClose={() => setPanelOpen(false)} />
+            <PanelHeader onClose={() => useKnowledgeBankStore.getState().setPanelOpen(false)} />
             {entries.length > 0 && <KBSearchBar />}
             <KBEntryList
                 showEmpty={showEmpty}

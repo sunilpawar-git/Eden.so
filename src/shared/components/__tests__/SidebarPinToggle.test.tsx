@@ -14,17 +14,20 @@ vi.mock('@/features/auth/stores/authStore', () => ({ useAuthStore: vi.fn() }));
 
 const mockTogglePin = vi.fn();
 let mockIsPinned = true;
-vi.mock('@/shared/stores/sidebarStore', () => ({
-    useSidebarStore: vi.fn((selector: (state: Record<string, unknown>) => unknown) => {
-        const state = {
-            isPinned: mockIsPinned,
-            isHoverOpen: false,
-            togglePin: mockTogglePin,
-            setHoverOpen: vi.fn(),
-        };
-        return typeof selector === 'function' ? selector(state) : state;
-    }),
-}));
+const buildSidebarState = () => ({
+    isPinned: mockIsPinned,
+    isHoverOpen: false,
+    togglePin: mockTogglePin,
+    setHoverOpen: vi.fn(),
+});
+
+vi.mock('@/shared/stores/sidebarStore', () => {
+    const selectorFn = vi.fn((selector: (state: Record<string, unknown>) => unknown) => {
+        return typeof selector === 'function' ? selector(buildSidebarState()) : buildSidebarState();
+    });
+    Object.assign(selectorFn, { getState: () => buildSidebarState() });
+    return { useSidebarStore: selectorFn };
+});
 
 const mockGetState = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({

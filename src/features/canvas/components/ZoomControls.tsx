@@ -1,6 +1,7 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { strings } from '@/shared/localization/strings';
 import styles from './ZoomControls.module.css';
 
 /**
@@ -11,15 +12,21 @@ import styles from './ZoomControls.module.css';
 export const ZoomControls = memo(function ZoomControls() {
     const { zoomIn, zoomOut, fitView } = useReactFlow();
     const isCanvasLocked = useSettingsStore((s) => s.isCanvasLocked);
-    const toggleCanvasLocked = useSettingsStore((s) => s.toggleCanvasLocked);
+
+    const handleToggleLock = useCallback(() => {
+        useSettingsStore.getState().toggleCanvasLocked();
+    }, []);
+
+    const zc = strings.canvas.zoomControls;
+    const lockLabel = isCanvasLocked ? zc.unlockCanvas : zc.lockCanvas;
 
     return (
         <div className={styles.container} data-testid="zoom-controls">
             <button
                 className={styles.button}
                 onClick={() => zoomIn()}
-                aria-label="Zoom In"
-                title="Zoom In"
+                aria-label={zc.zoomIn}
+                title={zc.zoomIn}
             >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="5" x2="12" y2="19" />
@@ -29,8 +36,8 @@ export const ZoomControls = memo(function ZoomControls() {
             <button
                 className={styles.button}
                 onClick={() => zoomOut()}
-                aria-label="Zoom Out"
-                title="Zoom Out"
+                aria-label={zc.zoomOut}
+                title={zc.zoomOut}
             >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -39,8 +46,8 @@ export const ZoomControls = memo(function ZoomControls() {
             <button
                 className={styles.button}
                 onClick={() => fitView()}
-                aria-label="Fit View"
-                title="Fit View"
+                aria-label={zc.fitView}
+                title={zc.fitView}
             >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
@@ -48,9 +55,9 @@ export const ZoomControls = memo(function ZoomControls() {
             </button>
             <button
                 className={`${styles.button} ${isCanvasLocked ? styles.active : ''}`}
-                onClick={toggleCanvasLocked}
-                aria-label={isCanvasLocked ? "Unlock Canvas" : "Lock Canvas"}
-                title={isCanvasLocked ? "Unlock Canvas" : "Lock Canvas"}
+                onClick={handleToggleLock}
+                aria-label={lockLabel}
+                title={lockLabel}
                 data-testid="lock-button"
             >
                 {isCanvasLocked ? (

@@ -47,6 +47,17 @@ describe('CanvasView React.memo', () => {
         expect(handlersSrc).toMatch(/change\.type\s*===\s*'dimensions'\s*&&\s*change\.dimensions\s*&&\s*change\.resizing/);
     });
 
+    it('buildRfNodes useMemo does NOT depend on isInteractionDisabled', () => {
+        const memoBlocks = canvasViewSrc.match(/useMemo\([\s\S]*?\]\s*,?\s*\)/g) ?? [];
+        const buildMemo = memoBlocks.find((b) => b.includes('buildRfNodes'));
+        expect(buildMemo).toBeDefined();
+        expect(buildMemo).not.toContain('isInteractionDisabled');
+    });
+
+    it('relies on ReactFlow nodesDraggable prop for global drag disable', () => {
+        expect(canvasViewSrc).toMatch(/nodesDraggable=\{!isInteractionDisabled\}/);
+    });
+
     it('cleanupDataShells runs in useEffect, not useMemo', () => {
         expect(canvasViewSrc).toMatch(/cleanupDataShells/);
         expect(canvasViewSrc).toMatch(/useEffect\(/);

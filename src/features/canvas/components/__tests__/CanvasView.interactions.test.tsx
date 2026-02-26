@@ -161,7 +161,7 @@ describe('CanvasView', () => {
             expect(props.panOnScroll).toBe(false);
         });
 
-        it('should set all nodes to draggable=false when locked', () => {
+        it('per-node draggable only reflects isPinned, global nodesDraggable handles lock', () => {
             useCanvasStore.setState({
                 nodes: [
                     {
@@ -184,7 +184,8 @@ describe('CanvasView', () => {
             const props = mockCalls[0]?.[0] ?? {};
             const nodes = props.nodes ?? [];
 
-            expect(nodes[0]?.draggable).toBe(false);
+            expect(nodes[0]?.draggable).toBe(true);
+            expect(props.nodesDraggable).toBe(false);
         });
 
         it('should render ZoomControls', () => {

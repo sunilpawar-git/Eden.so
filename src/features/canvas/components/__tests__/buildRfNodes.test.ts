@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createRef } from 'react';
-import { buildRfNodes, type PrevRfNodes } from '../buildRfNodes';
+import { buildRfNodes, cleanupDataShells, type PrevRfNodes } from '../buildRfNodes';
 import { createIdeaNode } from '../../types/node';
 
 function makeRef(): React.MutableRefObject<PrevRfNodes> {
@@ -20,7 +20,7 @@ describe('buildRfNodes structural sharing', () => {
     it('creates new RF nodes on first call', () => {
         const ref = makeRef();
         const nodes = [createIdeaNode('a', 'w1', { x: 0, y: 0 })];
-        const result = buildRfNodes(nodes, emptySelection, false, ref);
+        const result = buildRfNodes(nodes, emptySelection, ref);
 
         expect(result).toHaveLength(1);
         expect(result[0]!.id).toBe('a');
@@ -34,8 +34,8 @@ describe('buildRfNodes structural sharing', () => {
             createIdeaNode('b', 'w1', { x: 100, y: 0 }),
         ];
 
-        const first = buildRfNodes(nodes, emptySelection, false, ref);
-        const second = buildRfNodes(nodes, emptySelection, false, ref);
+        const first = buildRfNodes(nodes, emptySelection, ref);
+        const second = buildRfNodes(nodes, emptySelection, ref);
 
         expect(second).toBe(first);
         expect(second[0]).toBe(first[0]);
@@ -46,8 +46,8 @@ describe('buildRfNodes structural sharing', () => {
         const ref = makeRef();
         const nodes = [createIdeaNode('a', 'w1', { x: 0, y: 0 })];
 
-        const first = buildRfNodes(nodes, emptySelection, false, ref);
-        const second = buildRfNodes(nodes, emptySelection, false, ref);
+        const first = buildRfNodes(nodes, emptySelection, ref);
+        const second = buildRfNodes(nodes, emptySelection, ref);
 
         expect(second).toBe(first);
     });
@@ -58,7 +58,7 @@ describe('buildRfNodes structural sharing', () => {
         const nodeB = createIdeaNode('b', 'w1', { x: 100, y: 0 });
         const nodes = [nodeA, nodeB];
 
-        const first = buildRfNodes(nodes, emptySelection, false, ref);
+        const first = buildRfNodes(nodes, emptySelection, ref);
 
         const updatedNodeA = {
             ...nodeA,
@@ -67,9 +67,8 @@ describe('buildRfNodes structural sharing', () => {
         };
         const nodesAfterColorChange = [updatedNodeA, nodeB];
 
-        const second = buildRfNodes(nodesAfterColorChange, emptySelection, false, ref);
+        const second = buildRfNodes(nodesAfterColorChange, emptySelection, ref);
 
-        // Data-only changes should NOT produce new RF nodes — IdeaCard reads from store
         expect(second).toBe(first);
         expect(second[0]).toBe(first[0]);
         expect(second[1]).toBe(first[1]);
@@ -82,8 +81,8 @@ describe('buildRfNodes structural sharing', () => {
             createIdeaNode('b', 'w1', { x: 100, y: 0 }),
         ];
 
-        const first = buildRfNodes(nodes, emptySelection, false, ref);
-        const withSelection = buildRfNodes(nodes, new Set(['a']), false, ref);
+        const first = buildRfNodes(nodes, emptySelection, ref);
+        const withSelection = buildRfNodes(nodes, new Set(['a']), ref);
 
         expect(withSelection).not.toBe(first);
         expect(withSelection[0]).not.toBe(first[0]);
@@ -95,9 +94,9 @@ describe('buildRfNodes structural sharing', () => {
         const ref = makeRef();
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
 
-        const first = buildRfNodes([node], emptySelection, false, ref);
+        const first = buildRfNodes([node], emptySelection, ref);
         const moved = { ...node, position: { x: 50, y: 50 } };
-        const second = buildRfNodes([moved], emptySelection, false, ref);
+        const second = buildRfNodes([moved], emptySelection, ref);
 
         expect(second[0]).not.toBe(first[0]);
         expect(second[0]!.position).toEqual({ x: 50, y: 50 });
@@ -107,9 +106,9 @@ describe('buildRfNodes structural sharing', () => {
         const ref = makeRef();
         const nodeA = createIdeaNode('a', 'w1', { x: 0, y: 0 });
 
-        const first = buildRfNodes([nodeA], emptySelection, false, ref);
+        const first = buildRfNodes([nodeA], emptySelection, ref);
         const nodeB = createIdeaNode('b', 'w1', { x: 100, y: 0 });
-        const second = buildRfNodes([nodeA, nodeB], emptySelection, false, ref);
+        const second = buildRfNodes([nodeA, nodeB], emptySelection, ref);
 
         expect(second).not.toBe(first);
         expect(second[0]).toBe(first[0]);
@@ -121,28 +120,30 @@ describe('buildRfNodes structural sharing', () => {
         const nodeA = createIdeaNode('a', 'w1', { x: 0, y: 0 });
         const nodeB = createIdeaNode('b', 'w1', { x: 100, y: 0 });
 
-        const first = buildRfNodes([nodeA, nodeB], emptySelection, false, ref);
-        const second = buildRfNodes([nodeB], emptySelection, false, ref);
+        const first = buildRfNodes([nodeA, nodeB], emptySelection, ref);
+        const second = buildRfNodes([nodeB], emptySelection, ref);
 
         expect(second).not.toBe(first);
         expect(second[0]).toBe(first[1]);
     });
 
-    it('updates draggable when isInteractionDisabled changes', () => {
+    it('is NOT affected by focus/lock transitions (no isInteractionDisabled param)', () => {
         const ref = makeRef();
-        const nodes = [createIdeaNode('a', 'w1', { x: 0, y: 0 })];
+        const nodes = [
+            createIdeaNode('a', 'w1', { x: 0, y: 0 }),
+            createIdeaNode('b', 'w1', { x: 100, y: 0 }),
+        ];
 
-        const first = buildRfNodes(nodes, emptySelection, false, ref);
+        const first = buildRfNodes(nodes, emptySelection, ref);
+        const second = buildRfNodes(nodes, emptySelection, ref);
+
+        expect(second).toBe(first);
         expect(first[0]!.draggable).toBe(true);
-
-        const second = buildRfNodes(nodes, emptySelection, true, ref);
-        expect(second[0]!.draggable).toBe(false);
-        expect(second[0]).not.toBe(first[0]);
     });
 
     it('returns an empty array for empty nodes input', () => {
         const ref = makeRef();
-        const result = buildRfNodes([], emptySelection, false, ref);
+        const result = buildRfNodes([], emptySelection, ref);
         expect(result).toHaveLength(0);
     });
 
@@ -150,7 +151,7 @@ describe('buildRfNodes structural sharing', () => {
         const ref = makeRef();
         const pinned = createIdeaNode('a', 'w1', { x: 0, y: 0 });
         pinned.data = { ...pinned.data, isPinned: true };
-        const result = buildRfNodes([pinned], emptySelection, false, ref);
+        const result = buildRfNodes([pinned], emptySelection, ref);
         expect(result[0]!.draggable).toBe(false);
     });
 
@@ -159,7 +160,7 @@ describe('buildRfNodes structural sharing', () => {
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
         delete (node as unknown as Record<string, unknown>).width;
         delete (node as unknown as Record<string, unknown>).height;
-        const result = buildRfNodes([node], emptySelection, false, ref);
+        const result = buildRfNodes([node], emptySelection, ref);
         expect(result[0]!).not.toHaveProperty('width');
         expect(result[0]!).not.toHaveProperty('height');
     });
@@ -169,7 +170,7 @@ describe('buildRfNodes structural sharing', () => {
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
         node.width = 0;
         node.height = 0;
-        const result = buildRfNodes([node], emptySelection, false, ref);
+        const result = buildRfNodes([node], emptySelection, ref);
         expect(result[0]!.width).toBe(0);
         expect(result[0]!.height).toBe(0);
     });
@@ -180,9 +181,9 @@ describe('buildRfNodes — render loop prevention (regression)', () => {
         const ref = makeRef();
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
 
-        const first = buildRfNodes([node], emptySelection, false, ref);
+        const first = buildRfNodes([node], emptySelection, ref);
         const moved = { ...node, position: { x: 99, y: 99 } };
-        const second = buildRfNodes([moved], emptySelection, false, ref);
+        const second = buildRfNodes([moved], emptySelection, ref);
 
         expect(first[0]!.data).toBe(second[0]!.data);
     });
@@ -192,14 +193,14 @@ describe('buildRfNodes — render loop prevention (regression)', () => {
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
         node.data = { ...node.data, output: 'long content', heading: 'title', colorKey: 'danger' };
 
-        const result = buildRfNodes([node], emptySelection, false, ref);
+        const result = buildRfNodes([node], emptySelection, ref);
         expect(Object.keys(result[0]!.data as Record<string, unknown>)).toEqual(['id']);
     });
 
     it('is immune to output/heading/tag/color mutations — array stays stable', () => {
         const ref = makeRef();
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
-        const first = buildRfNodes([node], emptySelection, false, ref);
+        const first = buildRfNodes([node], emptySelection, ref);
 
         const mutations = [
             { ...node, data: { ...node.data, output: 'changed' } },
@@ -211,7 +212,7 @@ describe('buildRfNodes — render loop prevention (regression)', () => {
         ];
 
         for (const mutated of mutations) {
-            const result = buildRfNodes([mutated], emptySelection, false, ref);
+            const result = buildRfNodes([mutated], emptySelection, ref);
             expect(result).toBe(first);
         }
     });
@@ -219,12 +220,70 @@ describe('buildRfNodes — render loop prevention (regression)', () => {
     it('updates draggable when isPinned toggles (structural change)', () => {
         const ref = makeRef();
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
-        const first = buildRfNodes([node], emptySelection, false, ref);
+        const first = buildRfNodes([node], emptySelection, ref);
         expect(first[0]!.draggable).toBe(true);
 
         const pinned = { ...node, data: { ...node.data, isPinned: true } };
-        const second = buildRfNodes([pinned], emptySelection, false, ref);
+        const second = buildRfNodes([pinned], emptySelection, ref);
         expect(second[0]!.draggable).toBe(false);
         expect(second[0]).not.toBe(first[0]);
+    });
+});
+
+describe('cleanupDataShells', () => {
+    it('removes data shells for nodes no longer in activeIds', () => {
+        const ref = makeRef();
+        const nodes = [
+            createIdeaNode('x', 'w1', { x: 0, y: 0 }),
+            createIdeaNode('y', 'w1', { x: 50, y: 50 }),
+        ];
+        const first = buildRfNodes(nodes, emptySelection, ref);
+        expect(first).toHaveLength(2);
+
+        cleanupDataShells(new Set(['x']));
+
+        const moved = { ...nodes[1]!, position: { x: 99, y: 99 } };
+        const second = buildRfNodes([nodes[0]!, moved], emptySelection, ref);
+        expect(second[0]!.data).toBe(first[0]!.data);
+        expect(second[1]!.data).not.toBe(first[1]!.data);
+    });
+
+    it('preserves data shells for nodes still active', () => {
+        const ref = makeRef();
+        const nodes = [createIdeaNode('k', 'w1', { x: 0, y: 0 })];
+        const first = buildRfNodes(nodes, emptySelection, ref);
+
+        cleanupDataShells(new Set(['k']));
+
+        const moved = { ...nodes[0]!, position: { x: 5, y: 5 } };
+        const second = buildRfNodes([moved], emptySelection, ref);
+        expect(second[0]!.data).toBe(first[0]!.data);
+    });
+
+    it('handles empty activeIds by removing all shells', () => {
+        const ref = makeRef();
+        const node = createIdeaNode('z', 'w1', { x: 0, y: 0 });
+        const first = buildRfNodes([node], emptySelection, ref);
+
+        cleanupDataShells(new Set());
+
+        const moved = { ...node, position: { x: 1, y: 1 } };
+        const second = buildRfNodes([moved], emptySelection, ref);
+        expect(second[0]!.data).not.toBe(first[0]!.data);
+        expect(second[0]!.data).toEqual({ id: 'z' });
+    });
+
+    it('is safe to call repeatedly without leaks', () => {
+        const ref = makeRef();
+        for (let i = 0; i < 10; i++) {
+            const node = createIdeaNode(`tmp-${i}`, 'w1', { x: i, y: i });
+            buildRfNodes([node], emptySelection, ref);
+        }
+        cleanupDataShells(new Set(['tmp-5']));
+        cleanupDataShells(new Set(['tmp-5']));
+
+        const node = createIdeaNode('tmp-5', 'w1', { x: 99, y: 99 });
+        const result = buildRfNodes([node], emptySelection, ref);
+        expect(result[0]!.data).toEqual({ id: 'tmp-5' });
     });
 });

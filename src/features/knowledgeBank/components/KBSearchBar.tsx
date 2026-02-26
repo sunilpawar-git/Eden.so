@@ -20,24 +20,22 @@ export const KBSearchBar = React.memo(function KBSearchBar() {
     const typeFilter = useKnowledgeBankStore((s) => s.typeFilter);
     const selectedTag = useKnowledgeBankStore((s) => s.selectedTag);
     const entries = useKnowledgeBankStore((s) => s.entries);
-    const setSearchQuery = useKnowledgeBankStore((s) => s.setSearchQuery);
-    const setTypeFilter = useKnowledgeBankStore((s) => s.setTypeFilter);
-    const setSelectedTag = useKnowledgeBankStore((s) => s.setSelectedTag);
 
     const allTags = React.useMemo(() => extractAllTags(entries), [entries]);
 
     const handleSearchChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
-            setSearchQuery(e.target.value);
+            useKnowledgeBankStore.getState().setSearchQuery(e.target.value);
         },
-        [setSearchQuery]
+        []
     );
 
     const handleTagClick = useCallback(
         (tag: string) => {
-            setSelectedTag(selectedTag === tag ? null : tag);
+            const store = useKnowledgeBankStore.getState();
+            store.setSelectedTag(store.selectedTag === tag ? null : tag);
         },
-        [selectedTag, setSelectedTag]
+        []
     );
 
     return (
@@ -55,7 +53,7 @@ export const KBSearchBar = React.memo(function KBSearchBar() {
                     <button
                         key={f.value}
                         className={`${styles.filterPill} ${typeFilter === f.value ? styles.filterPillActive : ''}`}
-                        onClick={() => setTypeFilter(f.value)}
+                        onClick={() => useKnowledgeBankStore.getState().setTypeFilter(f.value)}
                     >
                         {f.label}
                     </button>

@@ -1,37 +1,13 @@
 import { useCallback, useMemo } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
-import { useFocusStore } from '../stores/focusStore';
+import { enterFocusWithEditing } from '../stores/focusStore';
 import { useIdeaCardActions } from './useIdeaCardActions';
 import { useIdeaCardDuplicateAction } from './useIdeaCardDuplicateAction';
 import { useIdeaCardShareAction } from './useIdeaCardShareAction';
 import { useIdeaCardImageHandlers } from './useIdeaCardImageHandlers';
 import { useNodeInput, type NodeShortcutMap } from './useNodeInput';
 import { useNodeShortcuts } from './useNodeShortcuts';
-import type { IdeaNodeData, NodeColorKey } from '../types/node';
-import type { NodeHeadingHandle } from '../components/nodes/NodeHeading';
-import type { SubmitKeymapHandler } from '../extensions/submitKeymap';
-import type { Editor } from '@tiptap/react';
-
-interface UseIdeaCardHandlersParams {
-    id: string;
-    selected: boolean | undefined;
-    setShowTagInput: (v: boolean) => void;
-    contentRef: React.RefObject<HTMLDivElement | null>;
-    headingRef: React.RefObject<NodeHeadingHandle | null>;
-    editor: Editor | null;
-    getMarkdown: () => string;
-    setContent: (md: string) => void;
-    getEditableContent: () => string;
-    saveContent: (md: string) => void;
-    submitHandlerRef: React.MutableRefObject<SubmitKeymapHandler | null>;
-    imageUploadFn: (file: File) => Promise<string>;
-    generateFromPrompt: (nodeId: string) => void | Promise<void>;
-    branchFromNode: (nodeId: string) => string | undefined;
-    calendar: { cleanupOnDelete: () => void; handleRetry: () => void };
-    resolvedData: IdeaNodeData;
-    isEditing: boolean;
-    onSubmitAI: (prompt: string) => void;
-}
+import type { UseIdeaCardHandlersParams, NodeColorKey } from './useIdeaCardHandlers.types';
 
 export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
     const { id, selected, setShowTagInput, contentRef, headingRef, editor, getMarkdown, setContent,
@@ -56,7 +32,7 @@ export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
         useCanvasStore.getState().updateNodeColor(id, colorKey);
     }, [id]);
     const handleTagOpen = useCallback(() => { setShowTagInput(true); }, [setShowTagInput]);
-    const handleFocusClick = useCallback(() => { useFocusStore.getState().enterFocus(id); }, [id]);
+    const handleFocusClick = useCallback(() => { enterFocusWithEditing(id); }, [id]);
 
     const focusBody = useCallback(() => { if (editor) editor.commands.focus(); }, [editor]);
     const focusHeading = useCallback(() => { headingRef.current?.focus(); }, [headingRef]);

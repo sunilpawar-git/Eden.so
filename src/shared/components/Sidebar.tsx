@@ -28,7 +28,6 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
     } = useSidebarWorkspaces();
 
     const isPinned = useSidebarStore((s) => s.isPinned);
-    const togglePin = useSidebarStore((s) => s.togglePin);
     const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -47,7 +46,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             data-open={String(isHoverOpen)}
             aria-label={strings.sidebar.ariaLabel}
         >
-            <SidebarHeader isPinned={isPinned} isHoverOpen={isHoverOpen} onTogglePin={togglePin} />
+            <SidebarHeader isPinned={isPinned} isHoverOpen={isHoverOpen} onTogglePin={() => useSidebarStore.getState().togglePin()} />
 
             <div className={styles.workspaces}>
                 <div className={styles.newWorkspaceWrapper} ref={dropdownRef}>

@@ -21,7 +21,6 @@ export function KnowledgeBankAddButton() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const entryCount = useKnowledgeBankStore((s) => s.entries.length);
-    const setPanelOpen = useKnowledgeBankStore((s) => s.setPanelOpen);
     const { processFile, isProcessing } = useFileProcessor();
     const handlePasteSave = usePasteTextHandler(useCallback(() => setModalOpen(false), []));
     const handleModalClose = useCallback(() => setModalOpen(false), []);
@@ -53,8 +52,8 @@ export function KnowledgeBankAddButton() {
 
     const handleViewClick = useCallback(() => {
         setDropdownOpen(false);
-        setPanelOpen(true);
-    }, [setPanelOpen]);
+        useKnowledgeBankStore.getState().setPanelOpen(true);
+    }, []);
 
     return (
         <>

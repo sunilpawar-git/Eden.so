@@ -13,18 +13,22 @@ vi.mock('@/shared/stores/networkStatusStore', () => ({
         selector({ isOnline: mockIsOnline }),
 }));
 
-// Mock offline queue store
 const mockDrainQueue = vi.fn().mockResolvedValue(undefined);
 let mockPendingCount = 0;
 let mockBgSyncRegistered = false;
-vi.mock('@/features/workspace/stores/offlineQueueStore', () => ({
-    useOfflineQueueStore: (selector: (s: Record<string, unknown>) => unknown) =>
-        selector({
-            drainQueue: mockDrainQueue,
-            pendingCount: mockPendingCount,
-            bgSyncRegistered: mockBgSyncRegistered,
-        }),
-}));
+
+const buildQueueState = () => ({
+    drainQueue: mockDrainQueue,
+    pendingCount: mockPendingCount,
+    bgSyncRegistered: mockBgSyncRegistered,
+});
+
+vi.mock('@/features/workspace/stores/offlineQueueStore', () => {
+    const selectorFn = (selector: (s: Record<string, unknown>) => unknown) =>
+        selector(buildQueueState());
+    Object.assign(selectorFn, { getState: () => buildQueueState() });
+    return { useOfflineQueueStore: selectorFn };
+});
 
 // Mock toast
 vi.mock('@/shared/stores/toastStore', () => ({

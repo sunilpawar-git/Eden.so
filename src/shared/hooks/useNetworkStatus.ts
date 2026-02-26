@@ -7,12 +7,11 @@ import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 
 export function useNetworkStatus() {
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
-    const initialize = useNetworkStatusStore((s) => s.initialize);
 
     useEffect(() => {
-        const cleanup = initialize();
+        const cleanup = useNetworkStatusStore.getState().initialize();
         return cleanup;
-    }, [initialize]);
+    }, []);
 
     return { isOnline };
 }

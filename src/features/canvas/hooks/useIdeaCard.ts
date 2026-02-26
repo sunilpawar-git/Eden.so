@@ -1,5 +1,6 @@
 import { useCallback, useState, useRef } from 'react';
 import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
+import { useFocusStore } from '../stores/focusStore';
 import { useIdeaCardEditor } from './useIdeaCardEditor';
 import { useIdeaCardState } from './useIdeaCardState';
 import { useIdeaCardHandlers } from './useIdeaCardHandlers';
@@ -40,7 +41,8 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
         generateFromPrompt, // eslint-disable-line @typescript-eslint/no-misused-promises -- async, consumed by useIdeaCardState
     });
     const calendar = useIdeaCardCalendar({ nodeId: id, calendarEvent });
-    const isEditing = useCanvasStore((s) => s.editingNodeId === id);
+    const isFocusTarget = useFocusStore((s) => s.focusedNodeId === id);
+    const isEditing = useCanvasStore((s) => s.editingNodeId === id) && !isFocusTarget;
     const imageUploadFn = useNodeImageUpload(id);
 
     const { editor, getMarkdown, setContent, submitHandlerRef } = useIdeaCardEditor({

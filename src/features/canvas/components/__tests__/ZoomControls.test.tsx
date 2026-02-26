@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ZoomControls } from '../ZoomControls';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { strings } from '@/shared/localization/strings';
 import { ReactFlowProvider } from '@xyflow/react';
 
 // Mock useReactFlow
@@ -32,33 +33,35 @@ describe('ZoomControls', () => {
         return render(<ReactFlowProvider>{component}</ReactFlowProvider>);
     };
 
-    it('should render all 4 buttons', () => {
+    const zc = strings.canvas.zoomControls;
+
+    it('should render all 4 buttons with localized labels', () => {
         renderWithProvider(<ZoomControls />);
 
-        expect(screen.getByLabelText('Zoom In')).toBeInTheDocument();
-        expect(screen.getByLabelText('Zoom Out')).toBeInTheDocument();
-        expect(screen.getByLabelText('Fit View')).toBeInTheDocument();
-        expect(screen.getByLabelText(/Lock Canvas|Unlock Canvas/)).toBeInTheDocument();
+        expect(screen.getByLabelText(zc.zoomIn)).toBeInTheDocument();
+        expect(screen.getByLabelText(zc.zoomOut)).toBeInTheDocument();
+        expect(screen.getByLabelText(zc.fitView)).toBeInTheDocument();
+        expect(screen.getByLabelText(new RegExp(`${zc.lockCanvas}|${zc.unlockCanvas}`))).toBeInTheDocument();
     });
 
     it('should call zoomIn when + is clicked', () => {
         renderWithProvider(<ZoomControls />);
 
-        fireEvent.click(screen.getByLabelText('Zoom In'));
+        fireEvent.click(screen.getByLabelText(zc.zoomIn));
         expect(mockZoomIn).toHaveBeenCalledTimes(1);
     });
 
     it('should call zoomOut when - is clicked', () => {
         renderWithProvider(<ZoomControls />);
 
-        fireEvent.click(screen.getByLabelText('Zoom Out'));
+        fireEvent.click(screen.getByLabelText(zc.zoomOut));
         expect(mockZoomOut).toHaveBeenCalledTimes(1);
     });
 
     it('should call fitView when fit button is clicked', () => {
         renderWithProvider(<ZoomControls />);
 
-        fireEvent.click(screen.getByLabelText('Fit View'));
+        fireEvent.click(screen.getByLabelText(zc.fitView));
         expect(mockFitView).toHaveBeenCalledTimes(1);
     });
 
@@ -67,17 +70,13 @@ describe('ZoomControls', () => {
 
         const lockButton = screen.getByTestId('lock-button');
 
-        // Initial state: Unlocked
         expect(useSettingsStore.getState().isCanvasLocked).toBe(false);
-        expect(lockButton).toHaveAttribute('aria-label', 'Lock Canvas');
+        expect(lockButton).toHaveAttribute('aria-label', zc.lockCanvas);
 
-        // Click to Lock
         fireEvent.click(lockButton);
         expect(useSettingsStore.getState().isCanvasLocked).toBe(true);
-        // Re-render to check update
-        expect(lockButton).toHaveAttribute('aria-label', 'Unlock Canvas');
+        expect(lockButton).toHaveAttribute('aria-label', zc.unlockCanvas);
 
-        // Click to Unlock
         fireEvent.click(lockButton);
         expect(useSettingsStore.getState().isCanvasLocked).toBe(false);
     });
@@ -87,6 +86,6 @@ describe('ZoomControls', () => {
         renderWithProvider(<ZoomControls />);
 
         const lockButton = screen.getByTestId('lock-button');
-        expect(lockButton).toHaveAttribute('aria-label', 'Unlock Canvas');
+        expect(lockButton).toHaveAttribute('aria-label', zc.unlockCanvas);
     });
 });

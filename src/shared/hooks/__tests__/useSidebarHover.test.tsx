@@ -10,17 +10,20 @@ let mockIsPinned = true;
 let mockIsHoverOpen = false;
 const mockSetHoverOpen = vi.fn();
 
-vi.mock('@/shared/stores/sidebarStore', () => ({
-    useSidebarStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) => {
-        const state = {
-            isPinned: mockIsPinned,
-            isHoverOpen: mockIsHoverOpen,
-            togglePin: vi.fn(),
-            setHoverOpen: mockSetHoverOpen,
-        };
-        return typeof selector === 'function' ? selector(state) : state;
-    }),
-}));
+const buildSidebarState = () => ({
+    isPinned: mockIsPinned,
+    isHoverOpen: mockIsHoverOpen,
+    togglePin: vi.fn(),
+    setHoverOpen: mockSetHoverOpen,
+});
+
+vi.mock('@/shared/stores/sidebarStore', () => {
+    const selectorFn = vi.fn((selector: (s: Record<string, unknown>) => unknown) => {
+        return typeof selector === 'function' ? selector(buildSidebarState()) : buildSidebarState();
+    });
+    Object.assign(selectorFn, { getState: () => buildSidebarState() });
+    return { useSidebarStore: selectorFn };
+});
 
 function TestWrapper() {
     const { triggerZoneRef } = useSidebarHover();

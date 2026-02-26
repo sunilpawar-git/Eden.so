@@ -1,9 +1,11 @@
 /**
  * Knowledge Bank Context Builder Tests
  * TDD: Tests for buildKBContextBlock utility (with summary + relevance support)
+ * + Selector stability tests for useKnowledgeBankContext hook
  */
 import { describe, it, expect } from 'vitest';
-import { buildKBContextBlock } from '../hooks/useKnowledgeBankContext';
+import { renderHook } from '@testing-library/react';
+import { buildKBContextBlock, useKnowledgeBankContext } from '../hooks/useKnowledgeBankContext';
 import { KB_TOKEN_BUDGETS } from '../types/knowledgeBank';
 
 describe('buildKBContextBlock', () => {
@@ -209,5 +211,32 @@ describe('buildKBContextBlock', () => {
             expect(styleIdx).toBeLessThan(mlIdx);
             expect(mlIdx).toBeLessThan(finIdx);
         });
+    });
+});
+
+describe('useKnowledgeBankContext selector stability', () => {
+    it('returns a stable getKBContext reference across re-renders', () => {
+        const { result, rerender } = renderHook(() => useKnowledgeBankContext());
+        const first = result.current.getKBContext;
+        rerender();
+        const second = result.current.getKBContext;
+        expect(second).toBe(first);
+    });
+
+    it('getKBContext reads fresh entries at call time (not stale closure)', async () => {
+        const { useKnowledgeBankStore } = await import('../stores/knowledgeBankStore');
+        useKnowledgeBankStore.setState({
+            entries: [{ id: '1', workspaceId: 'w1', title: 'A', content: 'Alpha', enabled: true, type: 'text' as const, createdAt: new Date(), updatedAt: new Date() }],
+        });
+        const { result } = renderHook(() => useKnowledgeBankContext());
+        const ctx1 = result.current.getKBContext();
+        expect(ctx1).toContain('Alpha');
+
+        useKnowledgeBankStore.setState({
+            entries: [{ id: '2', workspaceId: 'w1', title: 'B', content: 'Beta', enabled: true, type: 'text' as const, createdAt: new Date(), updatedAt: new Date() }],
+        });
+        const ctx2 = result.current.getKBContext();
+        expect(ctx2).toContain('Beta');
+        expect(ctx2).not.toContain('Alpha');
     });
 });

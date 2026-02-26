@@ -38,8 +38,8 @@ function CanvasViewInner() {
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked);
 
     const rfNodes: Node[] = useMemo(
-        () => buildRfNodes(nodes, selectedNodeIds, isInteractionDisabled, prevRfNodesRef),
-        [nodes, selectedNodeIds, isInteractionDisabled],
+        () => buildRfNodes(nodes, selectedNodeIds, prevRfNodesRef),
+        [nodes, selectedNodeIds],
     );
 
     const rfEdges = useMemo(() => mapCanvasEdgesToRfEdges(edges), [edges]);

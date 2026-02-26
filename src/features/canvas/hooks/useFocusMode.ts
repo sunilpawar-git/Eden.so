@@ -4,7 +4,7 @@
  * ESC is suppressed when a node is in editing mode (TipTap owns ESC there).
  */
 import { useEffect, useCallback } from 'react';
-import { useFocusStore } from '../stores/focusStore';
+import { useFocusStore, enterFocusWithEditing } from '../stores/focusStore';
 import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import type { CanvasNode } from '../types/node';
 
@@ -29,7 +29,7 @@ export function useFocusMode(): FocusModeResult {
     }, []);
 
     const enterFocus = useCallback((nodeId: string) => {
-        useFocusStore.getState().enterFocus(nodeId);
+        enterFocusWithEditing(nodeId);
     }, []);
 
     useEffect(() => {

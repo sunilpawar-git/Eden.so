@@ -7,24 +7,25 @@ import { useSidebarStore } from '@/shared/stores/sidebarStore';
 
 export function useSidebarHover() {
     const isPinned = useSidebarStore((s) => s.isPinned);
-    const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
-    const setHoverOpen = useSidebarStore((s) => s.setHoverOpen);
     const triggerZoneRef = useRef<HTMLDivElement>(null);
 
     const handleMouseEnter = useCallback(() => {
-        if (!isPinned) setHoverOpen(true);
-    }, [isPinned, setHoverOpen]);
+        const state = useSidebarStore.getState();
+        if (!state.isPinned) state.setHoverOpen(true);
+    }, []);
 
     const handleMouseLeave = useCallback(() => {
-        if (!isPinned) setHoverOpen(false);
-    }, [isPinned, setHoverOpen]);
+        const state = useSidebarStore.getState();
+        if (!state.isPinned) state.setHoverOpen(false);
+    }, []);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key !== 'Escape' || isPinned || !isHoverOpen) return;
+        const state = useSidebarStore.getState();
+        if (e.key !== 'Escape' || state.isPinned || !state.isHoverOpen) return;
         const tag = (document.activeElement?.tagName ?? '').toLowerCase();
         if (tag === 'input' || tag === 'textarea') return;
-        setHoverOpen(false);
-    }, [isPinned, isHoverOpen, setHoverOpen]);
+        state.setHoverOpen(false);
+    }, []);
 
     useEffect(() => {
         const el = triggerZoneRef.current;

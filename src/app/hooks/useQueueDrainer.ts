@@ -12,7 +12,6 @@ import { strings } from '@/shared/localization/strings';
 
 export function useQueueDrainer() {
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
-    const drainQueue = useOfflineQueueStore((s) => s.drainQueue);
     const pendingCount = useOfflineQueueStore((s) => s.pendingCount);
     const bgSyncRegistered = useOfflineQueueStore((s) => s.bgSyncRegistered);
     const wasOfflineRef = useRef(false);
@@ -23,20 +22,17 @@ export function useQueueDrainer() {
             return;
         }
 
-        // Only drain if we transitioned from offline → online with pending items
         if (wasOfflineRef.current && pendingCount > 0) {
             toast.info(strings.offline.reconnected);
 
-            // Skip manual drain if Background Sync is handling it
             if (bgSyncRegistered && backgroundSyncService.isBackgroundSyncSupported()) {
                 wasOfflineRef.current = false;
                 return;
             }
 
-            // Fallback: manual drain for browsers without Background Sync
-            void drainQueue();
+            void useOfflineQueueStore.getState().drainQueue();
         }
 
         wasOfflineRef.current = false;
-    }, [isOnline, drainQueue, pendingCount, bgSyncRegistered]);
+    }, [isOnline, pendingCount, bgSyncRegistered]);
 }

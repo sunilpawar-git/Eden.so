@@ -8,8 +8,12 @@
  * To break this cycle, we pass a STABLE data shell to ReactFlow. The shell only
  * contains the node `id` — IdeaCard reads its own content directly from the
  * Zustand store. This means content/color/tag changes NEVER cause a ReactFlow
- * diff. Only structural changes (position, dimensions, selection, draggable)
+ * diff. Only structural changes (position, dimensions, selection, pin-draggable)
  * produce new RF node objects.
+ *
+ * NOTE: Global interaction disabling (focus/lock) is handled by ReactFlow's
+ * `nodesDraggable` prop on CanvasView, NOT per-node draggable here. This avoids
+ * mass object re-creation when toggling focus/lock mode.
  */
 import type { Node } from '@xyflow/react';
 import type { MutableRefObject } from 'react';
@@ -38,7 +42,6 @@ export function cleanupDataShells(activeIds: Set<string>): void {
 export function buildRfNodes(
     nodes: CanvasNode[],
     selectedNodeIds: Set<string>,
-    isInteractionDisabled: boolean,
     ref: MutableRefObject<PrevRfNodes>,
 ): Node[] {
     const { arr: prevArr, map: prevMap } = ref.current;
@@ -46,8 +49,7 @@ export function buildRfNodes(
 
     const result = nodes.map((node, index) => {
         const selected = selectedNodeIds.has(node.id);
-        const isPinned = Boolean(node.data.isPinned);
-        const draggable = !isInteractionDisabled && !isPinned;
+        const draggable = node.data.isPinned !== true;
         const prev = prevMap.get(node.id);
 
         if (prev

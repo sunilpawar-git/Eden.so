@@ -12,15 +12,19 @@ const mockIsPinned = vi.fn().mockReturnValue(false);
 const mockPinWorkspace = vi.fn().mockResolvedValue(true);
 const mockUnpinWorkspace = vi.fn().mockResolvedValue(true);
 
-vi.mock('../../stores/pinnedWorkspaceStore', () => ({
-    usePinnedWorkspaceStore: (selector: (s: Record<string, unknown>) => unknown) =>
-        selector({
-            isPinned: mockIsPinned,
-            pinWorkspace: mockPinWorkspace,
-            unpinWorkspace: mockUnpinWorkspace,
-            pinnedIds: [],
-        }),
-}));
+const buildPinState = () => ({
+    isPinned: mockIsPinned,
+    pinWorkspace: mockPinWorkspace,
+    unpinWorkspace: mockUnpinWorkspace,
+    pinnedIds: [],
+});
+
+vi.mock('../../stores/pinnedWorkspaceStore', () => {
+    const selectorFn = (selector: (s: Record<string, unknown>) => unknown) =>
+        selector(buildPinState());
+    Object.assign(selectorFn, { getState: () => buildPinState() });
+    return { usePinnedWorkspaceStore: selectorFn };
+});
 
 // Mock feature gate as pro user (has access)
 vi.mock('@/features/subscription/hooks/useFeatureGate', () => ({

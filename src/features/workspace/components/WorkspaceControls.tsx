@@ -13,7 +13,6 @@ import styles from './WorkspaceControls.module.css';
 export function WorkspaceControls() {
     const handleAddNode = useAddNode();
     const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
-    const toggleCanvasFreeFlow = useSettingsStore((s) => s.toggleCanvasFreeFlow);
     const nodeCount = useCanvasStore((s) => s.nodes.length);
 
     const arrangeNodes = useCallback(() => { useCanvasStore.getState().arrangeNodes(); }, []);
@@ -46,7 +45,7 @@ export function WorkspaceControls() {
             <div className={styles.divider} />
             <button
                 className={`${styles.button} ${canvasFreeFlow ? styles.buttonActive : ''}`}
-                onClick={toggleCanvasFreeFlow}
+                onClick={() => useSettingsStore.getState().toggleCanvasFreeFlow()}
                 aria-pressed={canvasFreeFlow}
                 aria-label={strings.workspace.freeFlowTooltip}
                 title={strings.workspace.freeFlowTooltip}
