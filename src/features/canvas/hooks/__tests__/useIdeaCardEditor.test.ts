@@ -95,5 +95,30 @@ describe('useIdeaCardEditor', () => {
             rerender({ ...opts, output: 'updated' });
             expect(mockSetContent).not.toHaveBeenCalled();
         });
+
+        it('pushes content into editor when transitioning to editing mode', () => {
+            const content = '- Walong\n- KAziranga\n- Cab';
+            const opts = { ...defaultOptions(), isEditing: false, output: content, getEditableContent: () => content };
+            const { rerender } = renderHook(
+                (props) => useIdeaCardEditor(props),
+                { initialProps: opts },
+            );
+
+            mockSetContent.mockClear();
+            rerender({ ...opts, isEditing: true });
+            expect(mockSetContent).toHaveBeenCalledWith(content);
+        });
+
+        it('does NOT push content when already in editing mode', () => {
+            const opts = { ...defaultOptions(), isEditing: true, output: 'content', getEditableContent: () => 'content' };
+            const { rerender } = renderHook(
+                (props) => useIdeaCardEditor(props),
+                { initialProps: opts },
+            );
+
+            mockSetContent.mockClear();
+            rerender({ ...opts, output: 'content2', getEditableContent: () => 'content2' });
+            expect(mockSetContent).not.toHaveBeenCalled();
+        });
     });
 });
