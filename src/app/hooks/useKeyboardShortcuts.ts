@@ -18,8 +18,6 @@ function hasModifier(e: KeyboardEvent): boolean {
 
 export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
     const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
-    const deleteNode = useCanvasStore((s) => s.deleteNode);
-    const clearSelection = useCanvasStore((s) => s.clearSelection);
     const editingNodeId = useCanvasStore((s) => s.editingNodeId);
     const { onOpenSettings, onAddNode, onQuickCapture } = options;
 
@@ -32,9 +30,9 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
             if (editingNodeId) return;
             if (isEditableTarget(e)) return;
 
-            handlePlainShortcuts(e, onAddNode, selectedNodeIds, deleteNode, clearSelection);
+            handlePlainShortcuts(e, onAddNode, selectedNodeIds);
         },
-        [selectedNodeIds, deleteNode, clearSelection, editingNodeId, onOpenSettings, onAddNode, onQuickCapture]
+        [selectedNodeIds, editingNodeId, onOpenSettings, onAddNode, onQuickCapture]
     );
 
     useEffect(() => {
@@ -75,8 +73,6 @@ function handlePlainShortcuts(
     e: KeyboardEvent,
     onAddNode?: () => void,
     selectedNodeIds?: Set<string>,
-    deleteNode?: (id: string) => void,
-    clearSelection?: () => void,
 ): void {
     if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
@@ -86,12 +82,13 @@ function handlePlainShortcuts(
 
     if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        selectedNodeIds?.forEach((nodeId) => deleteNode?.(nodeId));
-        clearSelection?.();
+        const store = useCanvasStore.getState();
+        selectedNodeIds?.forEach((nodeId) => store.deleteNode(nodeId));
+        store.clearSelection();
         return;
     }
 
     if (e.key === 'Escape') {
-        clearSelection?.();
+        useCanvasStore.getState().clearSelection();
     }
 }

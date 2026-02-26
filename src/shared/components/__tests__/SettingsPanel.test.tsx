@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { SettingsPanel } from '../SettingsPanel';
+import { SettingsPanel } from '@/app/components/SettingsPanel';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
 import { createMockSettingsState } from '@/shared/__tests__/helpers/mockSettingsState';

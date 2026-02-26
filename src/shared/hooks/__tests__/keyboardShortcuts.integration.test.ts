@@ -4,34 +4,34 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
-import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useKeyboardShortcuts } from '@/app/hooks/useKeyboardShortcuts';
+
 import { fireKeyDown } from './keyboardShortcutTestHelpers';
 
+const { mockDeleteNode, mockClearSelection, mockCanvasStore } = vi.hoisted(() => {
+    const mockDeleteNode = vi.fn();
+    const mockClearSelection = vi.fn();
+    const mockCanvasStore = Object.assign(
+        vi.fn((selector?: (state: unknown) => unknown) => {
+            const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
+            return selector ? selector(state) : state;
+        }),
+        { getState: () => ({ deleteNode: mockDeleteNode, clearSelection: mockClearSelection }) },
+    );
+    return { mockDeleteNode, mockClearSelection, mockCanvasStore };
+});
+
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
-    useCanvasStore: vi.fn(),
+    useCanvasStore: mockCanvasStore,
 }));
 
 describe('Keyboard Shortcuts Integration', () => {
-    const mockDeleteNode = vi.fn();
-    const mockClearSelection = vi.fn();
     const mockOnOpenSettings = vi.fn();
     const mockOnAddNode = vi.fn();
     const mockOnQuickCapture = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-            (selector?: (state: unknown) => unknown) => {
-                const state = {
-                    selectedNodeIds: new Set(['node-1']),
-                    deleteNode: mockDeleteNode,
-                    clearSelection: mockClearSelection,
-                    editingNodeId: null,
-                };
-                return selector ? selector(state) : state;
-            }
-        );
     });
 
     afterEach(() => { vi.restoreAllMocks(); });
@@ -131,12 +131,10 @@ describe('Keyboard Shortcuts Integration', () => {
     });
 
     it('shortcuts should be suppressed when editing a node', () => {
-        (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        mockCanvasStore.mockImplementation(
             (selector?: (state: unknown) => unknown) => {
                 const state = {
                     selectedNodeIds: new Set(['node-1']),
-                    deleteNode: mockDeleteNode,
-                    clearSelection: mockClearSelection,
                     editingNodeId: 'node-1',
                 };
                 return selector ? selector(state) : state;

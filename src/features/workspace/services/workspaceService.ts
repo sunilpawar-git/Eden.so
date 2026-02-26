@@ -282,26 +282,4 @@ export async function deleteWorkspace(userId: string, workspaceId: string): Prom
     await batch.commit();
 }
 
-/** Batch update workspace order indices */
-export async function updateWorkspaceOrder(
-    userId: string,
-    updates: Array<{ id: string; orderIndex: number }>
-): Promise<void> {
-    const CHUNK_SIZE = 500;
-
-    // Firestore limits a single write batch to 500 operations
-    for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
-        const chunk = updates.slice(i, i + CHUNK_SIZE);
-        const batch = writeBatch(db);
-
-        chunk.forEach(({ id, orderIndex }) => {
-            const workspaceRef = doc(db, 'users', userId, 'workspaces', id);
-            batch.update(workspaceRef, {
-                orderIndex,
-                updatedAt: serverTimestamp()
-            });
-        });
-
-        await batch.commit();
-    }
-}
+export { updateWorkspaceOrder } from './workspaceOrderService';

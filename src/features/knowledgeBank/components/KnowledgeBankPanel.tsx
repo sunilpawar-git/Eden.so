@@ -2,16 +2,12 @@
  * KnowledgeBankPanel — Slide-out panel for managing KB entries
  * Slides from left edge, non-blocking (canvas remains visible)
  */
-import { useCallback, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useKnowledgeBankStore, filterEntries } from '../stores/knowledgeBankStore';
-import { updateKBEntry, deleteKBEntry } from '../services/knowledgeBankService';
-import { deleteKBFile } from '../services/storageService';
-import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
-import { KnowledgeBankEntryCard } from './KnowledgeBankEntryCard';
+import { useKnowledgeBankPanelHandlers } from '../hooks/useKnowledgeBankPanelHandlers';
 import { KBSearchBar } from './KBSearchBar';
+import { KBEntryList } from './KBEntryList';
 import { strings } from '@/shared/localization/strings';
-import { toast } from '@/shared/stores/toastStore';
 import styles from './KnowledgeBankPanel.module.css';
 
 export function KnowledgeBankPanel() {
@@ -22,71 +18,14 @@ export function KnowledgeBankPanel() {
     const typeFilter = useKnowledgeBankStore((s) => s.typeFilter);
     const selectedTag = useKnowledgeBankStore((s) => s.selectedTag);
     const summarizingEntryIds = useKnowledgeBankStore((s) => s.summarizingEntryIds);
-    const kb = strings.knowledgeBank;
+    const { handleToggle, handlePin, handleUpdate, handleDelete } = useKnowledgeBankPanelHandlers();
 
-    // Derive filtered entries from stable state (avoids infinite re-render)
     const filteredEntries = useMemo(
         () => filterEntries(entries, searchQuery, typeFilter, selectedTag),
         [entries, searchQuery, typeFilter, selectedTag]
     );
 
     useEscapeClose(isPanelOpen, () => setPanelOpen(false));
-
-    const handleToggle = useCallback((entryId: string) => {
-        const userId = useAuthStore.getState().user?.id;
-        const workspaceId = useWorkspaceStore.getState().currentWorkspaceId;
-        if (!userId || !workspaceId) return;
-
-        const current = useKnowledgeBankStore.getState().entries.find((e) => e.id === entryId);
-        if (!current) return;
-        const newEnabled = !current.enabled;
-
-        useKnowledgeBankStore.getState().toggleEntry(entryId);
-        void updateKBEntry(userId, workspaceId, entryId, { enabled: newEnabled });
-    }, []);
-
-    const handlePin = useCallback((entryId: string) => {
-        const userId = useAuthStore.getState().user?.id;
-        const workspaceId = useWorkspaceStore.getState().currentWorkspaceId;
-        if (!userId || !workspaceId) return;
-
-        const current = useKnowledgeBankStore.getState().entries.find((e) => e.id === entryId);
-        if (!current) return;
-        const newPinned = !current.pinned;
-
-        if (newPinned) {
-            useKnowledgeBankStore.getState().pinEntry(entryId);
-        } else {
-            useKnowledgeBankStore.getState().unpinEntry(entryId);
-        }
-        void updateKBEntry(userId, workspaceId, entryId, { pinned: newPinned });
-    }, []);
-
-    const handleUpdate = useCallback((entryId: string, updates: { title: string; content: string; tags: string[] }) => {
-        const userId = useAuthStore.getState().user?.id;
-        const workspaceId = useWorkspaceStore.getState().currentWorkspaceId;
-        if (!userId || !workspaceId) return;
-
-        useKnowledgeBankStore.getState().updateEntry(entryId, updates);
-        void updateKBEntry(userId, workspaceId, entryId, updates);
-    }, []);
-
-    const handleDelete = useCallback(async (entryId: string) => {
-        const userId = useAuthStore.getState().user?.id;
-        const workspaceId = useWorkspaceStore.getState().currentWorkspaceId;
-        if (!userId || !workspaceId) return;
-
-        const entry = useKnowledgeBankStore.getState().entries.find((e) => e.id === entryId);
-        try {
-            if (entry?.originalFileName) {
-                await deleteKBFile(userId, workspaceId, entryId, entry.originalFileName);
-            }
-            await deleteKBEntry(userId, workspaceId, entryId);
-            useKnowledgeBankStore.getState().removeEntry(entryId);
-        } catch {
-            toast.error(kb.errors.deleteFailed);
-        }
-    }, [kb.errors.deleteFailed]);
 
     if (!isPanelOpen) return null;
 
@@ -98,26 +37,20 @@ export function KnowledgeBankPanel() {
         <div className={styles.panel}>
             <PanelHeader onClose={() => setPanelOpen(false)} />
             {entries.length > 0 && <KBSearchBar />}
-            <div className={styles.panelEntries}>
-                {showEmpty && <EmptyState />}
-                {showNoResults && <NoResultsState />}
-                {filteredEntries.map((entry) => (
-                    <KnowledgeBankEntryCard
-                        key={entry.id}
-                        entry={entry}
-                        isSummarizing={summarizingEntryIds.includes(entry.id)}
-                        onToggle={handleToggle}
-                        onPin={handlePin}
-                        onUpdate={handleUpdate}
-                        onDelete={handleDelete}
-                    />
-                ))}
-            </div>
+            <KBEntryList
+                showEmpty={showEmpty}
+                showNoResults={showNoResults}
+                filteredEntries={filteredEntries}
+                summarizingEntryIds={summarizingEntryIds}
+                onToggle={handleToggle}
+                onPin={handlePin}
+                onUpdate={handleUpdate}
+                onDelete={handleDelete}
+            />
         </div>
     );
 }
 
-/** Hook: close on Escape key */
 function useEscapeClose(active: boolean, onClose: () => void) {
     useEffect(() => {
         if (!active) return;
@@ -129,7 +62,6 @@ function useEscapeClose(active: boolean, onClose: () => void) {
     }, [active, onClose]);
 }
 
-/** Sub-component: panel header */
 function PanelHeader({ onClose }: { onClose: () => void }) {
     return (
         <div className={styles.panelHeader}>
@@ -141,27 +73,6 @@ function PanelHeader({ onClose }: { onClose: () => void }) {
             >
                 {strings.common.closeSymbol}
             </button>
-        </div>
-    );
-}
-
-/** Sub-component: empty state */
-function EmptyState() {
-    const kb = strings.knowledgeBank;
-    return (
-        <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📚</div>
-            <p className={styles.emptyText}>{kb.emptyState}</p>
-            <p className={styles.emptyHint}>{kb.emptyStateDescription}</p>
-        </div>
-    );
-}
-
-/** Sub-component: no search results */
-function NoResultsState() {
-    return (
-        <div className={styles.emptyState}>
-            <p className={styles.emptyText}>{strings.knowledgeBank.search.noResults}</p>
         </div>
     );
 }

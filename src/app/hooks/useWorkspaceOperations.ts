@@ -16,7 +16,6 @@ import { useOfflineQueueStore } from '@/features/workspace/stores/offlineQueueSt
 
 export function useWorkspaceOperations() {
     const { user } = useAuthStore();
-    const clearCanvas = useCanvasStore((s) => s.clearCanvas);
     const {
         currentWorkspaceId,
         workspaces,
@@ -44,7 +43,7 @@ export function useWorkspaceOperations() {
             const workspace = await createNewWorkspace(user.id);
             addWorkspace({ ...workspace, nodeCount: 0 });
             setCurrentWorkspaceId(workspace.id);
-            clearCanvas();
+            useCanvasStore.getState().clearCanvas();
             toast.success(`${strings.workspace.created}: ${workspace.name}`);
         } catch (error) {
             console.error('[Sidebar] Failed to create workspace:', error);
@@ -65,7 +64,7 @@ export function useWorkspaceOperations() {
                 const updates = updatedList.map((ws, i) => ({ id: ws.id, orderIndex: i }));
                 await Promise.all([saveWorkspace(user.id, { ...newDivider, orderIndex: targetIndex + 1 }), updateWorkspaceOrder(user.id, updates)]);
             } else { addWorkspace(newDivider); }
-            toast.success('Divider created');
+            toast.success(strings.workspace.addDivider);
         } catch (error) {
             console.error('[Sidebar] Failed to create divider:', error);
             toast.error(strings.errors.generic);

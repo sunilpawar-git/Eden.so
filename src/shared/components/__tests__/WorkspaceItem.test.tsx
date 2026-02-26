@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { WorkspaceItem } from '../WorkspaceItem';
+import { WorkspaceItem } from '@/app/components/WorkspaceItem';
 
 // Mock PinWorkspaceButton to avoid complex dependencies
 vi.mock('@/features/workspace/components/PinWorkspaceButton', () => ({

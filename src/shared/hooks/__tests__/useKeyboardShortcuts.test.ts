@@ -4,33 +4,34 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
-import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useKeyboardShortcuts } from '@/app/hooks/useKeyboardShortcuts';
+
 import { fireKeyDown } from './keyboardShortcutTestHelpers';
 
+const { mockDeleteNode, mockClearSelection, mockCanvasStore } = vi.hoisted(() => {
+    const mockDeleteNode = vi.fn();
+    const mockClearSelection = vi.fn();
+    const mockCanvasStore = Object.assign(
+        vi.fn((selector?: (state: unknown) => unknown) => {
+            const state = { selectedNodeIds: new Set<string>(), editingNodeId: null };
+            return selector ? selector(state) : state;
+        }),
+        { getState: () => ({ deleteNode: mockDeleteNode, clearSelection: mockClearSelection }) },
+    );
+    return { mockDeleteNode, mockClearSelection, mockCanvasStore };
+});
+
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
-    useCanvasStore: vi.fn(),
+    useCanvasStore: mockCanvasStore,
 }));
 
 describe('useKeyboardShortcuts', () => {
-    const mockDeleteNode = vi.fn();
-    const mockClearSelection = vi.fn();
     const mockOnOpenSettings = vi.fn();
     const mockOnAddNode = vi.fn();
     const mockOnQuickCapture = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-            (selector?: (state: unknown) => unknown) => {
-                const state = {
-                    selectedNodeIds: new Set<string>(),
-                    deleteNode: mockDeleteNode,
-                    clearSelection: mockClearSelection,
-                };
-                return selector ? selector(state) : state;
-            }
-        );
     });
 
     afterEach(() => {
@@ -57,10 +58,9 @@ describe('useKeyboardShortcuts', () => {
 
     describe('Delete Node (Delete/Backspace)', () => {
         it('should delete selected nodes when Delete is pressed', () => {
-            const selectedNodeIds = new Set(['node-1', 'node-2']);
-            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+            mockCanvasStore.mockImplementation(
                 (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds, deleteNode: mockDeleteNode, clearSelection: mockClearSelection };
+                    const state = { selectedNodeIds: new Set(['node-1', 'node-2']), editingNodeId: null };
                     return selector ? selector(state) : state;
                 }
             );
@@ -73,10 +73,9 @@ describe('useKeyboardShortcuts', () => {
         });
 
         it('should delete selected nodes when Backspace is pressed', () => {
-            const selectedNodeIds = new Set(['node-1']);
-            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+            mockCanvasStore.mockImplementation(
                 (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds, deleteNode: mockDeleteNode, clearSelection: mockClearSelection };
+                    const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
                     return selector ? selector(state) : state;
                 }
             );
@@ -87,10 +86,9 @@ describe('useKeyboardShortcuts', () => {
         });
 
         it('should preventDefault on Delete to block browser default behavior', () => {
-            const selectedNodeIds = new Set(['node-1']);
-            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+            mockCanvasStore.mockImplementation(
                 (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds, deleteNode: mockDeleteNode, clearSelection: mockClearSelection };
+                    const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
                     return selector ? selector(state) : state;
                 }
             );
@@ -100,10 +98,9 @@ describe('useKeyboardShortcuts', () => {
         });
 
         it('should preventDefault on Backspace to block browser-back navigation', () => {
-            const selectedNodeIds = new Set(['node-1']);
-            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+            mockCanvasStore.mockImplementation(
                 (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds, deleteNode: mockDeleteNode, clearSelection: mockClearSelection };
+                    const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
                     return selector ? selector(state) : state;
                 }
             );

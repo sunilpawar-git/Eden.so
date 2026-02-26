@@ -5,7 +5,8 @@
 import { useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useCanvasStore } from '../stores/canvasStore';
-import { useWorkspaceStore, DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
+import { useWorkspaceContext } from '@/app/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { createIdeaNode } from '../types/node';
 
 // Custom event for focusing a newly created node
@@ -17,11 +18,9 @@ export interface FocusNodeEvent extends CustomEvent {
 
 export function useQuickCapture() {
     const { screenToFlowPosition } = useReactFlow();
-    const addNode = useCanvasStore((s) => s.addNode);
-    const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const { currentWorkspaceId } = useWorkspaceContext();
 
     const handleQuickCapture = useCallback(() => {
-        // Get center of viewport
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
 
@@ -37,16 +36,14 @@ export function useQuickCapture() {
             position
         );
 
-        addNode(newNode);
+        useCanvasStore.getState().addNode(newNode);
 
-        // Dispatch custom event to trigger focus on the new node
-        // Small delay to ensure node is rendered
         setTimeout(() => {
             window.dispatchEvent(
                 new CustomEvent(FOCUS_NODE_EVENT, { detail: { nodeId } })
             );
         }, 50);
-    }, [screenToFlowPosition, addNode, currentWorkspaceId]);
+    }, [screenToFlowPosition, currentWorkspaceId]);
 
     return handleQuickCapture;
 }

@@ -4,7 +4,7 @@
  */
 import type { ReactNode } from 'react';
 import { useCallback } from 'react';
-import { Sidebar } from './Sidebar';
+import { Sidebar } from '@/shared/components/Sidebar';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { OfflineBanner } from './OfflineBanner';
 import { SearchBar } from '@/features/search';
@@ -23,8 +23,6 @@ interface LayoutProps {
 }
 
 export function Layout({ children, onSettingsClick }: LayoutProps) {
-    const selectNode = useCanvasStore((s) => s.selectNode);
-    const clearSelection = useCanvasStore((s) => s.clearSelection);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const isPinned = useSidebarStore((s) => s.isPinned);
     const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
@@ -33,11 +31,12 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
     const handleSearchResultClick = useCallback(
         (nodeId: string, workspaceId: string) => {
             if (workspaceId === currentWorkspaceId) {
-                clearSelection();
-                selectNode(nodeId);
+                const store = useCanvasStore.getState();
+                store.clearSelection();
+                store.selectNode(nodeId);
             }
         },
-        [selectNode, clearSelection, currentWorkspaceId]
+        [currentWorkspaceId]
     );
 
     return (

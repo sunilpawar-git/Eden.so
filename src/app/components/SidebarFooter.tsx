@@ -2,7 +2,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { signOut } from '@/features/auth/services/authService';
 import { strings } from '@/shared/localization/strings';
 import { SettingsIcon } from '@/shared/components/icons';
-import styles from './Sidebar.module.css';
+import styles from '@/shared/components/Sidebar.module.css';
 
 interface SidebarFooterProps {
     onSettingsClick?: () => void;

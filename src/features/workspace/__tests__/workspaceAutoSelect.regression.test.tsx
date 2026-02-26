@@ -11,7 +11,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { loadUserWorkspaces, saveNodes, saveEdges } from '@/features/workspace/services/workspaceService';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
-import { useSidebarWorkspaces } from '@/shared/hooks/useSidebarWorkspaces';
+import { useSidebarWorkspaces } from '@/app/hooks/useSidebarWorkspaces';
 
 // Mock stores and services
 vi.mock('@/features/auth/stores/authStore', () => ({
@@ -37,7 +37,7 @@ vi.mock('@/features/auth/services/authService', () => ({
 }));
 
 // Mock the useSidebarWorkspaces hook completely since the logic moved there
-vi.mock('@/shared/hooks/useSidebarWorkspaces', () => ({
+vi.mock('@/app/hooks/useSidebarWorkspaces', () => ({
     useSidebarWorkspaces: vi.fn(),
 }));
 
@@ -157,10 +157,10 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
         // Actually, let's just render the hook directly to test the regression
         const { renderHook } = await import('@testing-library/react');
-        const { useWorkspaceLoading } = await import('@/shared/hooks/useWorkspaceLoading');
+        const { useWorkspaceLoading } = await import('@/app/hooks/useWorkspaceLoading');
 
         // Unmock the hook so we can test it real implementation
-        vi.unmock('@/shared/hooks/useWorkspaceLoading');
+        vi.unmock('@/app/hooks/useWorkspaceLoading');
 
         renderHook(() => useWorkspaceLoading());
 
@@ -186,7 +186,7 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
         // Test the hook directly
         const { renderHook } = await import('@testing-library/react');
-        const { useWorkspaceLoading } = await import('@/shared/hooks/useWorkspaceLoading');
+        const { useWorkspaceLoading } = await import('@/app/hooks/useWorkspaceLoading');
 
         renderHook(() => useWorkspaceLoading());
 
@@ -201,7 +201,7 @@ describe('Workspace Auto-Selection (Regression)', () => {
         vi.mocked(loadUserWorkspaces).mockResolvedValue([]);
 
         const { renderHook } = await import('@testing-library/react');
-        const { useWorkspaceLoading } = await import('@/shared/hooks/useWorkspaceLoading');
+        const { useWorkspaceLoading } = await import('@/app/hooks/useWorkspaceLoading');
 
         renderHook(() => useWorkspaceLoading());
 

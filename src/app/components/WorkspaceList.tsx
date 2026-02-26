@@ -1,7 +1,7 @@
 import { strings } from '@/shared/localization/strings';
 import { WorkspaceItem } from './WorkspaceItem';
 import type { Workspace } from '@/features/workspace/types/workspace';
-import styles from './Sidebar.module.css';
+import styles from '@/shared/components/Sidebar.module.css';
 import {
     DndContext,
     closestCenter,

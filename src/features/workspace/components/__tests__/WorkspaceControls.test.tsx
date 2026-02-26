@@ -16,6 +16,11 @@ vi.mock('../../services/workspaceService', () => ({
     deleteWorkspace: vi.fn().mockResolvedValue(undefined),
 }));
 
+const mockWorkspaceCtx = { currentWorkspaceId: 'workspace-1' as string | null, isSwitching: false };
+vi.mock('@/app/contexts/WorkspaceContext', () => ({
+    useWorkspaceContext: () => mockWorkspaceCtx,
+}));
+
 // Mock useConfirm — initially returns false (cancel), can be overridden per test
 const mockConfirm = vi.fn().mockResolvedValue(false);
 vi.mock('@/shared/stores/confirmStore', () => ({
@@ -84,8 +89,8 @@ describe('WorkspaceControls', () => {
         // Reset settings store
         useSettingsStore.setState({ canvasFreeFlow: false });
 
-        // Reset mockConfirm to default (cancel/false)
         mockConfirm.mockResolvedValue(false);
+        mockWorkspaceCtx.currentWorkspaceId = 'workspace-1';
     });
 
     describe('rendering', () => {
@@ -154,7 +159,7 @@ describe('WorkspaceControls', () => {
         });
 
         it('should not add node if no workspace is selected', () => {
-            useWorkspaceStore.setState({ currentWorkspaceId: null });
+            mockWorkspaceCtx.currentWorkspaceId = null;
 
             render(<WorkspaceControls />);
 

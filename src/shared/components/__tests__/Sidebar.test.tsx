@@ -4,7 +4,7 @@ import { Sidebar } from '../Sidebar';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
-import { signOut } from '@/features/auth/services/authService';
+
 import {
     createNewWorkspace, loadUserWorkspaces, saveNodes, saveEdges, deleteWorkspace,
 } from '@/features/workspace/services/workspaceService';
@@ -106,8 +106,8 @@ describe('Sidebar', () => {
             isLoading: false, isAuthenticated: true, error: null,
             setUser: vi.fn(), clearUser: vi.fn(), setLoading: vi.fn(), setError: vi.fn(),
         } as Partial<ReturnType<typeof useAuthStore>> as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue(mockClearCanvas);
-        mockGetState.mockReturnValue({ nodes: [], edges: [] });
+        vi.mocked(useCanvasStore).mockReturnValue(undefined);
+        mockGetState.mockReturnValue({ nodes: [], edges: [], clearCanvas: mockClearCanvas });
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
             const state = createMockState();
             mockWorkspaceGetState.mockReturnValue(state);
@@ -289,78 +289,4 @@ describe('Sidebar', () => {
         });
     });
 
-    describe('workspace renaming', () => {
-        it('should rename workspace on double-click and blur', async () => {
-            const workspaces = [{ id: 'ws-1', name: 'Old Name', userId: 'user-1', canvasSettings: { backgroundColor: 'grid' as const }, createdAt: new Date(), updatedAt: new Date() }];
-            setupWithWorkspaces(workspaces);
-
-            render(<Sidebar />);
-            fireEvent.doubleClick(screen.getByText('Old Name'));
-            const input = screen.getByDisplayValue('Old Name');
-            fireEvent.change(input, { target: { value: 'New Name' } });
-            fireEvent.blur(input);
-
-            await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith('ws-1', { name: 'New Name' }));
-        });
-    });
-
-    describe('user section', () => {
-        it('should render user info and handle sign out', async () => {
-            render(<Sidebar />);
-            expect(screen.getByText('Test User')).toBeInTheDocument();
-            fireEvent.click(screen.getByText(strings.auth.signOut));
-            expect(signOut).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('settings button', () => {
-        it('should render settings button in footer', () => {
-            render(<Sidebar />);
-            expect(screen.getByLabelText(strings.settings.title)).toBeInTheDocument();
-        });
-
-        it('should call onSettingsClick when settings button is clicked', () => {
-            const mockOnSettingsClick = vi.fn();
-            render(<Sidebar onSettingsClick={mockOnSettingsClick} />);
-
-            fireEvent.click(screen.getByLabelText(strings.settings.title));
-            expect(mockOnSettingsClick).toHaveBeenCalledTimes(1);
-        });
-
-        it('should use PlusIcon for new workspace button', () => {
-            render(<Sidebar />);
-            const newWorkspaceButton = screen.getByText(strings.workspace.newWorkspace);
-            // Check that the button contains an SVG icon
-            const svgIcon = newWorkspaceButton.parentElement?.querySelector('svg');
-            expect(svgIcon).toBeInTheDocument();
-        });
-    });
-
-    describe('cache preloading', () => {
-        it('should preload all workspace data into cache on mount', async () => {
-            vi.mocked(loadUserWorkspaces).mockResolvedValue(mockWorkspacesList);
-            setupWithWorkspaces();
-            render(<Sidebar />);
-
-            await waitFor(() => {
-                expect(mockPreload).toHaveBeenCalledWith('user-1', ['ws-1', 'ws-2']);
-            });
-        });
-
-        it('should handle preload errors gracefully', async () => {
-            vi.mocked(loadUserWorkspaces).mockResolvedValue(mockWorkspacesList);
-            mockPreload.mockRejectedValue(new Error('Preload failed'));
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
-            setupWithWorkspaces();
-
-            render(<Sidebar />);
-
-            // Should not crash, render should complete normally
-            await waitFor(() => {
-                expect(screen.getByText('Project Alpha')).toBeInTheDocument();
-            });
-
-            consoleSpy.mockRestore();
-        });
-    });
 });

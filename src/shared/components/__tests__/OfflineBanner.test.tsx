@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { OfflineBanner } from '../OfflineBanner';
+import { OfflineBanner } from '@/app/components/OfflineBanner';
 import { strings } from '@/shared/localization/strings';
 
 // Mock network status store

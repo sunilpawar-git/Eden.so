@@ -7,23 +7,23 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
 
+const canvasDir = resolve(__dirname, '../..');
+
 describe('CanvasView React.memo', () => {
-    const src = readFileSync(
-        resolve(__dirname, '../CanvasView.tsx'),
-        'utf-8'
-    );
+    const canvasViewSrc = readFileSync(resolve(__dirname, '../CanvasView.tsx'), 'utf-8');
+    const handlersSrc = readFileSync(resolve(canvasDir, 'hooks/useCanvasHandlers.ts'), 'utf-8');
 
     it('imports memo from React', () => {
-        expect(src).toMatch(/import\s+\{[^}]*\bmemo\b[^}]*\}\s+from\s+['"]react['"]/);
+        expect(canvasViewSrc).toMatch(/import\s+\{[^}]*\bmemo\b[^}]*\}\s+from\s+['"]react['"]/);
     });
 
     it('exports a memo-wrapped component', () => {
-        expect(src).toMatch(/export\s+(const|function)\s+CanvasView\s*=\s*memo\(/);
+        expect(canvasViewSrc).toMatch(/export\s+(const|function)\s+CanvasView\s*=\s*memo\(/);
     });
 
     it('does not accept any props (zero-prop component)', () => {
-        const hasPropsInterface = /interface\s+CanvasViewProps/.test(src);
-        const hasPropsType = /type\s+CanvasViewProps/.test(src);
+        const hasPropsInterface = /interface\s+CanvasViewProps/.test(canvasViewSrc);
+        const hasPropsType = /type\s+CanvasViewProps/.test(canvasViewSrc);
         expect(hasPropsInterface || hasPropsType).toBe(false);
     });
 
@@ -35,22 +35,22 @@ describe('CanvasView React.memo', () => {
         ];
         for (const name of actionNames) {
             const pattern = new RegExp(`useCanvasStore\\(\\s*\\(s\\)\\s*=>\\s*s\\.${name}\\s*\\)`);
-            expect(src, `action "${name}" must not be selected via selector`).not.toMatch(pattern);
+            expect(canvasViewSrc, `action "${name}" must not be selected via selector`).not.toMatch(pattern);
         }
     });
 
     it('uses getState() for store actions inside callbacks', () => {
-        expect(src).toMatch(/useCanvasStore\.getState\(\)/);
+        expect(handlersSrc).toMatch(/useCanvasStore\.getState\(\)/);
     });
 
     it('onNodesChange only processes dimension changes when resizing is true', () => {
-        expect(src).toMatch(/change\.type\s*===\s*'dimensions'\s*&&\s*change\.dimensions\s*&&\s*change\.resizing/);
+        expect(handlersSrc).toMatch(/change\.type\s*===\s*'dimensions'\s*&&\s*change\.dimensions\s*&&\s*change\.resizing/);
     });
 
     it('cleanupDataShells runs in useEffect, not useMemo', () => {
-        expect(src).toMatch(/cleanupDataShells/);
-        expect(src).toMatch(/useEffect\(/);
-        const useMemoBlock = src.match(/useMemo\([\s\S]*?\)\s*;/g) ?? [];
+        expect(canvasViewSrc).toMatch(/cleanupDataShells/);
+        expect(canvasViewSrc).toMatch(/useEffect\(/);
+        const useMemoBlock = canvasViewSrc.match(/useMemo\([\s\S]*?\)\s*;/g) ?? [];
         for (const block of useMemoBlock) {
             expect(block).not.toContain('cleanupDataShells');
         }

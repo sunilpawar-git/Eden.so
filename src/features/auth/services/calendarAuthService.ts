@@ -5,7 +5,7 @@
  */
 import { auth } from '@/config/firebase';
 import { useAuthStore } from '../stores/authStore';
-import { calendarStrings as cs } from '@/features/calendar/localization/calendarStrings';
+import { calendarStrings as cs } from '@/shared/localization/calendarStrings';
 
 const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';

@@ -6,7 +6,7 @@
 import { useSaveStatusStore } from '@/shared/stores/saveStatusStore';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { useOfflineQueueStore } from '@/features/workspace/stores/offlineQueueStore';
-import { useBackgroundSyncStatus } from '@/shared/hooks/useBackgroundSyncStatus';
+import { useBackgroundSyncStatus } from '@/app/hooks/useBackgroundSyncStatus';
 import { strings } from '@/shared/localization/strings';
 import styles from './SyncStatusIndicator.module.css';
 

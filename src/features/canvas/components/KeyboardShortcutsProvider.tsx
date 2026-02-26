@@ -2,7 +2,7 @@
  * KeyboardShortcutsProvider - Bridge component for keyboard shortcuts
  * Must be rendered inside ReactFlowProvider to access viewport methods
  */
-import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
+import { useKeyboardShortcuts } from '@/app/hooks/useKeyboardShortcuts';
 import { useAddNode } from '../hooks/useAddNode';
 import { useQuickCapture } from '../hooks/useQuickCapture';
 

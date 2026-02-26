@@ -16,18 +16,15 @@ interface UseIdeaCardStateOptions {
 }
 
 export function useIdeaCardState({ nodeId, prompt: _prompt, output, isAICard: _isAICard, generateFromPrompt }: UseIdeaCardStateOptions) {
-    const updateNodeOutput = useCanvasStore((s) => s.updateNodeOutput);
     const placeholder = strings.ideaCard.inputPlaceholder;
-    // Always edit the output in the body editor. Heading is the SSOT for AI
-    // prompts — the legacy `prompt` field should never be loaded into the body.
     const getEditableContent = useCallback(() => output ?? '', [output]);
 
     const saveContent = useCallback((md: string) => {
         const t = md.trim();
         if (t && t !== getEditableContent()) {
-            updateNodeOutput(nodeId, t);
+            useCanvasStore.getState().updateNodeOutput(nodeId, t);
         }
-    }, [getEditableContent, nodeId, updateNodeOutput]);
+    }, [getEditableContent, nodeId]);
 
     const onSubmitAI = useCallback((_t: string) => {
         // Heading is SSOT for prompts — already saved via handleHeadingChange.

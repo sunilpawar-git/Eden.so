@@ -1,78 +1,23 @@
-/**
- * useNodeInput - Single input router for IdeaCard nodes
- * Replaces useIdeaCardKeyboard + useIdeaCardEditor keyboard logic
- * Reads editingNodeId from canvasStore (SSOT), routes view/edit keys
- */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Editor } from '@tiptap/react';
-import type { SubmitKeymapHandler } from '../extensions/submitKeymap';
 import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import { useLinkPreviewFetch } from './useLinkPreviewFetch';
-import { GLOBAL_SHORTCUT_KEYS } from '@/shared/constants/shortcutKeys';
+import { extractUrls } from './nodeInputUtils';
+import { getViewModeKeyAction, applyViewModeKeyAction } from './nodeInputKeyHandler';
+import { useSubmitHandlerEffect, usePasteHandlerEffect } from './nodeInputEffects';
+import type { UseNodeInputOptions, UseNodeInputReturn } from './useNodeInput.types';
 
-/** Regex to extract http/https URLs from text */
-const URL_REGEX = /https?:\/\/[^\s)]+/g;
-
-/** Matches markdown image syntax: ![alt](url) */
-const MD_IMAGE_REGEX = /!\[[^\]]*\]\(([^)]+)\)/g;
-
-/**
- * Extract unique URLs from text content, excluding URLs that are
- * markdown image sources (e.g. `![alt](https://firebasestorage...)`)
- * since those are embedded images, not user-visible links.
- */
-export function extractUrls(text: string | null): string[] {
-    if (!text) return [];
-
-    const imageUrls = new Set<string>();
-    let match: RegExpExecArray | null;
-    while ((match = MD_IMAGE_REGEX.exec(text)) !== null) {
-        if (match[1]) imageUrls.add(match[1]);
-    }
-
-    const allUrls = text.match(URL_REGEX);
-    if (!allUrls) return [];
-    return [...new Set(allUrls)].filter((url) => !imageUrls.has(url));
-}
-
-/** Map of single-character keys to shortcut callbacks (view mode only) */
-export type NodeShortcutMap = Record<string, () => void>;
-
-export interface UseNodeInputOptions {
-    nodeId: string;
-    isEditing: boolean;
-    editor: Editor | null;
-    getMarkdown: () => string;
-    setContent: (markdown: string) => void;
-    getEditableContent: () => string;
-    saveContent: (markdown: string) => void;
-    /** Ref for Enter/Escape handlers fed into the SubmitKeymap TipTap extension */
-    submitHandlerRef: React.MutableRefObject<SubmitKeymapHandler | null>;
-    isGenerating: boolean;
-    /** True when the node is freshly created and empty — auto-enters edit mode */
-    isNewEmptyNode: boolean;
-    /** Focus the heading editor instead of body — called for auto-edit of new nodes */
-    focusHeading?: () => void;
-    /** Keyboard shortcuts active in view mode (e.g. { t: onTagClick, c: onCollapse }) */
-    shortcuts?: NodeShortcutMap;
-}
-
-export interface UseNodeInputReturn {
-    handleKeyDown: (e: KeyboardEvent) => void;
-    handleDoubleClick: () => void;
-}
+export type { NodeShortcutMap } from './nodeInputKeyHandler';
+export type { UseNodeInputOptions, UseNodeInputReturn } from './useNodeInput.types';
+export { extractUrls };
 
 export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     const {
         nodeId, isEditing, editor, getMarkdown, setContent,
-        getEditableContent, saveContent,
-        submitHandlerRef,
-        isGenerating, isNewEmptyNode, focusHeading,
-        shortcuts,
+        getEditableContent, saveContent, submitHandlerRef,
+        isGenerating, isNewEmptyNode, focusHeading, shortcuts,
     } = options;
 
-    const draftContent = useCanvasStore((s) => isEditing ? s.draftContent : null);
-
+    const draftContent = useCanvasStore((s) => (isEditing ? s.draftContent : null));
     const nodeOutput = useCanvasStore((s) => getNodeMap(s.nodes).get(nodeId)?.data.output);
     const detectedUrls = useMemo(
         () => extractUrls(isEditing ? draftContent : (nodeOutput ?? null)),
@@ -83,112 +28,32 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     const enterEditing = useCallback(() => {
         setContent(getEditableContent());
         useCanvasStore.getState().startEditing(nodeId);
-         
-        if (editor) editor.setEditable(true);
+        editor?.setEditable(true);
     }, [nodeId, editor, setContent, getEditableContent]);
-
-    // Auto-enter edit mode for freshly created empty nodes
-    const autoEditRef = useRef(isNewEmptyNode);
-    useEffect(() => {
-        if (autoEditRef.current && editor) {
-            autoEditRef.current = false;
-            enterEditing();
-            // Defer focus to ensure editor DOM is ready after state update
-            queueMicrotask(() => {
-                if (focusHeading) focusHeading();
-                else editor.commands.focus();
-            });
-        }
-    }, [editor, enterEditing, focusHeading]);
 
     const exitEditing = useCallback(() => {
         saveContent(getMarkdown());
-         
-        if (editor) editor.setEditable(false);
+        editor?.setEditable(false);
         useCanvasStore.getState().stopEditing();
     }, [saveContent, getMarkdown, editor]);
 
-    // Keep the SubmitKeymap extension's handler ref in sync so that Enter
-    // falls through to StarterKit (notepad behavior) and Escape exits editing.
+    const autoEditRef = useRef(isNewEmptyNode);
     useEffect(() => {
-        submitHandlerRef.current = {
-            onEnter: () => {
-                // Return false: let StarterKit create a new paragraph (notepad behavior).
-                // Content is saved via Escape (onEscape) and blur (useIdeaCardEditor handleBlur).
-                return false;
-            },
-            onEscape: () => {
-                exitEditing();
-                return true;
-            },
-        };
-        return () => { submitHandlerRef.current = null; };
-    }, [submitHandlerRef, exitEditing]);
+        if (!autoEditRef.current || !editor) return;
+        autoEditRef.current = false;
+        enterEditing();
+        queueMicrotask(() => (focusHeading ?? editor.commands.focus)());
+    }, [editor, enterEditing, focusHeading]);
 
-    // Paste handler: immediately update draft for URL detection (no debounce)
-    useEffect(() => {
-        if (!isEditing || !editor) return;
-        const dom = editor.view.dom;
-        const onPaste = () => {
-            // Defer to let TipTap process paste first, then read updated content
-            queueMicrotask(() => {
-                useCanvasStore.getState().updateDraft(getMarkdown());
-            });
-        };
-        dom.addEventListener('paste', onPaste);
-        return () => { dom.removeEventListener('paste', onPaste); };
-    }, [isEditing, editor, getMarkdown]);
+    useSubmitHandlerEffect(submitHandlerRef, exitEditing);
+    usePasteHandlerEffect(isEditing, editor, getMarkdown);
 
     const handleViewModeKey = useCallback((e: KeyboardEvent) => {
         if (isGenerating) return;
-
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            enterEditing();
-            return;
-        }
-
-        // Check shortcuts before falling through to "enter edit + insert char"
-        const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
-        if (isPrintable && shortcuts) {
-            const handler = shortcuts[e.key.toLowerCase()];
-            if (handler) {
-                e.preventDefault();
-                e.stopPropagation();
-                handler();
-                return;
-            }
-        }
-
-        if (isPrintable && GLOBAL_SHORTCUT_KEYS.has(e.key.toLowerCase())) {
-            return;
-        }
-
-        if (isPrintable) {
-            e.preventDefault();
-            e.stopPropagation();
-            enterEditing();
-            // Defer character insertion until editor is ready
-            const char = e.key;
-            queueMicrotask(() => {
-                 
-                if (!editor) return;
-                // Use simulateTextInput so TipTap plugins (e.g. Suggestion) fire.
-                // insertContent() bypasses handleTextInput, breaking slash commands.
-                const { state, dispatch } = editor.view;
-                const { from, to } = state.selection;
-                const tr = state.tr.insertText(char, from, to);
-                dispatch(tr);
-            });
-        }
+        applyViewModeKeyAction(getViewModeKeyAction(e, shortcuts), e, { enterEditing, editor });
     }, [isGenerating, enterEditing, editor, shortcuts]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        // In edit mode, Enter/Escape are handled by SubmitKeymap at the
-        // ProseMirror level (before the event bubbles to this div). We
-        // intentionally do nothing here to avoid false-positive submits
-        // when the Suggestion plugin has already consumed the key.
         if (!isEditing) handleViewModeKey(e);
     }, [isEditing, handleViewModeKey]);
 

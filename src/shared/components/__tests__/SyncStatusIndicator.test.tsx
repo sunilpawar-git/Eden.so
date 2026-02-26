@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { SyncStatusIndicator } from '../SyncStatusIndicator';
+import { SyncStatusIndicator } from '@/app/components/SyncStatusIndicator';
 import { strings } from '@/shared/localization/strings';
 
 // Mock save status store
@@ -30,7 +30,7 @@ vi.mock('@/features/workspace/stores/offlineQueueStore', () => ({
 
 // Mock background sync status hook
 let mockHasPendingSync = false;
-vi.mock('@/shared/hooks/useBackgroundSyncStatus', () => ({
+vi.mock('@/app/hooks/useBackgroundSyncStatus', () => ({
     useBackgroundSyncStatus: () => ({
         isSupported: true,
         hasPendingSync: mockHasPendingSync,

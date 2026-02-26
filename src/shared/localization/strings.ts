@@ -1,8 +1,8 @@
 import { authStrings } from './authStrings';
 import { workspaceStrings } from './workspaceStrings';
 import { canvasStrings } from './canvasStrings';
-import { knowledgeBankStrings } from '@/features/knowledgeBank/localization/knowledgeBankStrings';
-import { calendarStrings } from '@/features/calendar/localization/calendarStrings';
+import { knowledgeBankStrings } from './knowledgeBankStrings';
+import { calendarStrings } from './calendarStrings';
 
 export const strings = {
     app: {

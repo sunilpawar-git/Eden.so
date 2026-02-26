@@ -2,11 +2,11 @@ import { useRef, useState } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSidebarStore } from '@/shared/stores/sidebarStore';
 import { useOutsideClick } from '@/shared/hooks/useOutsideClick';
-import { useSidebarWorkspaces } from '@/shared/hooks/useSidebarWorkspaces';
+import { useSidebarWorkspaces } from '@/app/hooks/useSidebarWorkspaces';
 import { PlusIcon, ChevronDownIcon } from '@/shared/components/icons';
-import { WorkspaceList } from './WorkspaceList';
+import { WorkspaceList } from '@/app/components/WorkspaceList';
 import { SidebarHeader } from './SidebarHeader';
-import { SidebarFooter } from './SidebarFooter';
+import { SidebarFooter } from '@/app/components/SidebarFooter';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
