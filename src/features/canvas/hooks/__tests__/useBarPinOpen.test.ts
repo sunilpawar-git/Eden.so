@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useBarPinOpen } from '../useBarPinOpen';
+import { useBarPinOpen, LONG_PRESS_THRESHOLD_MS } from '../useBarPinOpen';
 import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 
 /** Helper: fire contextmenu on the hook */
@@ -46,20 +46,20 @@ describe('useBarPinOpen', () => {
         expect(result.current.isPinnedOpen).toBe(false);
     });
 
-    it('toggles isPinnedOpen on long-press (400ms)', () => {
+    it(`toggles isPinnedOpen on long-press (${LONG_PRESS_THRESHOLD_MS}ms)`, () => {
         const { result } = renderHook(() => useBarPinOpen());
 
         act(() => { result.current.handlers.onTouchStart(); });
-        act(() => { vi.advanceTimersByTime(400); });
+        act(() => { vi.advanceTimersByTime(LONG_PRESS_THRESHOLD_MS); });
 
         expect(result.current.isPinnedOpen).toBe(true);
     });
 
-    it('does NOT toggle on short press (<400ms)', () => {
+    it(`does NOT toggle on short press (<${LONG_PRESS_THRESHOLD_MS}ms)`, () => {
         const { result } = renderHook(() => useBarPinOpen());
 
         act(() => { result.current.handlers.onTouchStart(); });
-        act(() => { vi.advanceTimersByTime(200); });
+        act(() => { vi.advanceTimersByTime(LONG_PRESS_THRESHOLD_MS / 2); });
         act(() => { result.current.handlers.onTouchEnd(); });
 
         expect(result.current.isPinnedOpen).toBe(false);
@@ -95,8 +95,8 @@ describe('useBarPinOpen', () => {
         act(() => { vi.advanceTimersByTime(200); });
         act(() => { result.current.handlers.onTouchStart(); });
 
-        // Wait for second timer to fire (400ms from second touch)
-        act(() => { vi.advanceTimersByTime(400); });
+        // Wait for second timer to fire (LONG_PRESS_THRESHOLD_MS from second touch)
+        act(() => { vi.advanceTimersByTime(LONG_PRESS_THRESHOLD_MS); });
 
         // Should only toggle once (false -> true), not twice (false -> true -> false)
         expect(result.current.isPinnedOpen).toBe(true);

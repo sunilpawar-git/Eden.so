@@ -120,6 +120,7 @@ export const strings = {
         aiActions: 'AI Actions',
         collapse: 'Collapse',
         more: 'More actions',
+        moreIcon: '•••',
         collapseShortcut: 'C',
         color: 'Color',
         connect: 'Connect',

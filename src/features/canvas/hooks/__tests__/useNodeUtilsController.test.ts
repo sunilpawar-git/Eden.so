@@ -8,6 +8,7 @@ import {
     initialNodeUtilsControllerState,
     nodeUtilsControllerReducer,
     useNodeUtilsController,
+    MORE_BUTTON_EXPAND_DELAY_MS,
 } from '../useNodeUtilsController';
 
 describe('nodeUtilsControllerReducer', () => {
@@ -87,22 +88,38 @@ describe('useNodeUtilsController', () => {
         expect(result.current.state.activeSubmenu).toBe('none');
     });
 
-    it('opens overflow after hover delay', () => {
-        const { result } = renderHook(() => useNodeUtilsController(false, 300));
+    it('container hover (handleHoverEnter) does NOT open overflow', () => {
+        const { result } = renderHook(() => useNodeUtilsController());
         act(() => { result.current.actions.handleHoverEnter(); });
-        act(() => { vi.advanceTimersByTime(299); });
+        act(() => { vi.advanceTimersByTime(2000); });
+        expect(result.current.state.overflowOpen).toBe(false);
+    });
+
+    it('handleMoreHoverEnter opens overflow after MORE_BUTTON_EXPAND_DELAY_MS', () => {
+        const { result } = renderHook(() => useNodeUtilsController());
+        act(() => { result.current.actions.handleMoreHoverEnter(); });
+        act(() => { vi.advanceTimersByTime(MORE_BUTTON_EXPAND_DELAY_MS - 1); });
         expect(result.current.state.overflowOpen).toBe(false);
         act(() => { vi.advanceTimersByTime(1); });
         expect(result.current.state.overflowOpen).toBe(true);
         expect(result.current.state.mode).toBe('auto');
     });
 
-    it('hover leave cancels pending open timer', () => {
+    it('handleMoreHoverLeave cancels pending hover-intent timer', () => {
         const { result } = renderHook(() => useNodeUtilsController());
-        act(() => { result.current.actions.handleHoverEnter(); });
+        act(() => { result.current.actions.handleMoreHoverEnter(); });
+        act(() => { vi.advanceTimersByTime(MORE_BUTTON_EXPAND_DELAY_MS - 200); });
+        act(() => { result.current.actions.handleMoreHoverLeave(); });
+        act(() => { vi.advanceTimersByTime(400); });
+        expect(result.current.state.overflowOpen).toBe(false);
+    });
+
+    it('handleHoverLeave cancels pending hover-intent timer', () => {
+        const { result } = renderHook(() => useNodeUtilsController());
+        act(() => { result.current.actions.handleMoreHoverEnter(); });
         act(() => { vi.advanceTimersByTime(200); });
         act(() => { result.current.actions.handleHoverLeave(); });
-        act(() => { vi.advanceTimersByTime(600); });
+        act(() => { vi.advanceTimersByTime(MORE_BUTTON_EXPAND_DELAY_MS); });
         expect(result.current.state.overflowOpen).toBe(false);
     });
 

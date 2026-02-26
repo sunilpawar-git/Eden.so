@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
+import { PROXIMITY_THRESHOLD_PX } from '../../../hooks/useProximityBar';
 import type { NodeProps } from '@xyflow/react';
 import type { IdeaNodeData } from '../../../types/node';
 
@@ -145,35 +146,40 @@ describe('IdeaCard - Proximity Hover (data-attribute driven)', () => {
         vi.clearAllMocks();
     });
 
-    it('sets data-bar-proximity="near" when mouse is near right edge', () => {
+    it('sets data-bar-proximity="near" when mouse is within PROXIMITY_THRESHOLD_PX of right edge', () => {
         const { container } = render(<IdeaCard {...mockNodeProps} />);
         const cardWrapper = container.querySelector('[class*="cardWrapper"]') as HTMLElement;
 
+        const right = 500;
         vi.spyOn(cardWrapper, 'getBoundingClientRect').mockReturnValue({
-            left: 100, right: 500, top: 100, bottom: 300,
+            left: 100, right, top: 100, bottom: 300,
             width: 400, height: 200, x: 100, y: 100, toJSON: () => ({}),
         });
 
         fireEvent.mouseEnter(cardWrapper);
-        fireEvent.mouseMove(cardWrapper, { clientX: 450, clientY: 200 });
+        // clientX within threshold: right - (threshold - 1) = just inside the zone
+        fireEvent.mouseMove(cardWrapper, { clientX: right - (PROXIMITY_THRESHOLD_PX - 1), clientY: 200 });
 
         expect(cardWrapper.getAttribute('data-bar-proximity')).toBe('near');
     });
 
-    it('removes data-bar-proximity when mouse moves away from edge', () => {
+    it('removes data-bar-proximity when mouse moves outside PROXIMITY_THRESHOLD_PX', () => {
         const { container } = render(<IdeaCard {...mockNodeProps} />);
         const cardWrapper = container.querySelector('[class*="cardWrapper"]') as HTMLElement;
 
+        const right = 500;
         vi.spyOn(cardWrapper, 'getBoundingClientRect').mockReturnValue({
-            left: 100, right: 500, top: 100, bottom: 300,
+            left: 100, right, top: 100, bottom: 300,
             width: 400, height: 200, x: 100, y: 100, toJSON: () => ({}),
         });
 
         fireEvent.mouseEnter(cardWrapper);
-        fireEvent.mouseMove(cardWrapper, { clientX: 450, clientY: 200 });
+        // Move inside threshold
+        fireEvent.mouseMove(cardWrapper, { clientX: right - (PROXIMITY_THRESHOLD_PX - 1), clientY: 200 });
         expect(cardWrapper.getAttribute('data-bar-proximity')).toBe('near');
 
-        fireEvent.mouseMove(cardWrapper, { clientX: 150, clientY: 200 });
+        // Move outside threshold: right - (threshold + 1)
+        fireEvent.mouseMove(cardWrapper, { clientX: right - (PROXIMITY_THRESHOLD_PX + 1), clientY: 200 });
         expect(cardWrapper.getAttribute('data-bar-proximity')).toBeNull();
     });
 

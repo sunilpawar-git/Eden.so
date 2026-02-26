@@ -1,7 +1,8 @@
 /**
  * TooltipButton — Action button with portal-based tooltip on hover
  * Wraps a single icon button and manages tooltip visibility via ref (no useState).
- * Uses CSS :hover for visual states — zero React re-renders on mouse movement.
+ * CSS :hover drives visual button states (no React state for styling).
+ * Tooltip visibility uses useState — isolated to this component by React.memo.
  * Memoized per CLAUDE.md performance rules (500+ node canvases).
  */
 import React, { useRef, useCallback, useId, useState } from 'react';

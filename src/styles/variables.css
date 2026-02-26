@@ -188,6 +188,12 @@
   --node-utils-peek-height: 32px;
   --node-utils-hover-delay-in: 80ms;
   --node-utils-hover-delay-out: 150ms;
+  /* Top-anchor: bar starts at card's content top, expands downward */
+  --node-utils-bar-top-offset: var(--space-md);
+  /* Slide-out transition (ease-in-out cubic) */
+  --node-utils-transition-duration: 200ms;
+  /* Spring-entry transition — slightly longer for the overshoot effect */
+  --node-utils-spring-duration: 220ms;
 
   /* Dropdown Menus (TransformMenu, ShareMenu, etc.) */
   --dropdown-min-width: 120px;

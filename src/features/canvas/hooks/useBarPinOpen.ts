@@ -8,7 +8,7 @@ import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 
 /** Long-press threshold in ms */
-const LONG_PRESS_THRESHOLD_MS = 400;
+export const LONG_PRESS_THRESHOLD_MS = 400;
 
 interface BarPinOpenHandlers {
     onContextMenu: (e: MouseEvent) => void;

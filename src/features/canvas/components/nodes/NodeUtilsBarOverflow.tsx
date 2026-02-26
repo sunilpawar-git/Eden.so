@@ -13,6 +13,9 @@ export interface NodeUtilsBarOverflowProps {
     items: OverflowMenuItem[];
     isOpen: boolean;
     onToggle: () => void;
+    /** Hover-intent callbacks for the ••• (More) button */
+    onMoreHoverEnter: () => void;
+    onMoreHoverLeave: () => void;
     disabled: boolean;
     tooltipPlacement: 'left' | 'right';
     onColorChange?: (colorKey: NodeColorKey) => void;
@@ -30,6 +33,8 @@ export const NodeUtilsBarOverflow = React.memo(function NodeUtilsBarOverflow({
     items,
     isOpen,
     onToggle,
+    onMoreHoverEnter,
+    onMoreHoverLeave,
     disabled,
     tooltipPlacement,
     onColorChange,
@@ -47,6 +52,8 @@ export const NodeUtilsBarOverflow = React.memo(function NodeUtilsBarOverflow({
             items={items}
             isOpen={isOpen}
             onToggle={onToggle}
+            onMoreHoverEnter={onMoreHoverEnter}
+            onMoreHoverLeave={onMoreHoverLeave}
             disabled={disabled}
             tooltipPlacement={tooltipPlacement}
         >

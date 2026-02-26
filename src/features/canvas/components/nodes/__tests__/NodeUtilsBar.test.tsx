@@ -185,35 +185,44 @@ describe('NodeUtilsBar', () => {
         });
     });
 
-    describe('auto-open on hover (600ms timer)', () => {
+    describe('hover-intent on ••• button (1200ms)', () => {
         beforeEach(() => vi.useFakeTimers());
         afterEach(() => vi.useRealTimers());
 
-        it('overflow items appear after 600ms hover on toolbar', () => {
+        it('toolbar container hover alone does NOT auto-open overflow', () => {
             render(<NodeUtilsBar {...defaultProps} />);
             const toolbar = screen.getByRole('toolbar');
             act(() => { fireEvent.mouseEnter(toolbar); });
-            act(() => { vi.advanceTimersByTime(599); });
+            act(() => { vi.advanceTimersByTime(2000); });
+            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
+        });
+
+        it('overflow items appear after 1200ms hover on ••• button', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            const moreBtn = screen.getByLabelText('More actions');
+            act(() => { fireEvent.mouseEnter(moreBtn); });
+            act(() => { vi.advanceTimersByTime(1199); });
             expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
             act(() => { vi.advanceTimersByTime(1); });
             expect(screen.getByLabelText('Tags')).toBeInTheDocument();
         });
 
-        it('overflow does NOT open if mouse leaves before 600ms', () => {
+        it('hover-intent is cancelled if mouse leaves ••• before 1200ms', () => {
             render(<NodeUtilsBar {...defaultProps} />);
-            const toolbar = screen.getByRole('toolbar');
-            act(() => { fireEvent.mouseEnter(toolbar); });
-            act(() => { vi.advanceTimersByTime(400); });
-            act(() => { fireEvent.mouseLeave(toolbar); });
-            act(() => { vi.advanceTimersByTime(200); });
+            const moreBtn = screen.getByLabelText('More actions');
+            act(() => { fireEvent.mouseEnter(moreBtn); });
+            act(() => { vi.advanceTimersByTime(800); });
+            act(() => { fireEvent.mouseLeave(moreBtn); });
+            act(() => { vi.advanceTimersByTime(500); });
             expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
         });
 
-        it('auto-opened overflow closes on mouse leave', () => {
+        it('hover-intent auto-opened overflow closes when mouse leaves toolbar', () => {
             render(<NodeUtilsBar {...defaultProps} />);
             const toolbar = screen.getByRole('toolbar');
-            act(() => { fireEvent.mouseEnter(toolbar); });
-            act(() => { vi.advanceTimersByTime(600); });
+            const moreBtn = screen.getByLabelText('More actions');
+            act(() => { fireEvent.mouseEnter(moreBtn); });
+            act(() => { vi.advanceTimersByTime(1200); });
             expect(screen.getByLabelText('Tags')).toBeInTheDocument();
             act(() => { fireEvent.mouseLeave(toolbar); });
             expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();

@@ -10,8 +10,8 @@
  */
 import { useEffect, type RefObject } from 'react';
 
-const PROXIMITY_THRESHOLD_PX = 80;
-const FLIP_THRESHOLD_PX = 60;
+export const PROXIMITY_THRESHOLD_PX = 80;
+export const FLIP_THRESHOLD_PX = 60;
 
 function recalculatePlacement(card: HTMLElement): void {
     const rect = card.getBoundingClientRect();

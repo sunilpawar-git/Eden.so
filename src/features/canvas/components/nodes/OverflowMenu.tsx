@@ -2,7 +2,7 @@
  * OverflowMenu — Controlled inline expansion for secondary NodeUtilsBar actions.
  *
  * Items render directly inside the bar (no portal/dropdown).
- * isOpen and onToggle are controlled by the parent (NodeUtilsBar via useOverflowAutoOpen).
+ * isOpen and onToggle are controlled by the parent (NodeUtilsBar via useNodeUtilsBar).
  * Trigger shows active state (ring/fill) when isOpen.
  * Hover state uses ref + CSS :hover instead of useState to avoid cascading re-renders.
  */
@@ -28,8 +28,12 @@ interface OverflowMenuProps {
     children?: React.ReactNode;
     /** Controlled open state from parent */
     isOpen: boolean;
-    /** Called when trigger is clicked */
+    /** Called when trigger is clicked (immediate toggle, manual mode) */
     onToggle: () => void;
+    /** Hover-intent: called when mouse enters the ••• button */
+    onMoreHoverEnter?: () => void;
+    /** Hover-intent: called when mouse leaves the ••• button */
+    onMoreHoverLeave?: () => void;
     disabled?: boolean;
     tooltipPlacement?: 'left' | 'right';
 }
@@ -63,6 +67,8 @@ export const OverflowMenu = React.memo(function OverflowMenu({
     children,
     isOpen,
     onToggle,
+    onMoreHoverEnter,
+    onMoreHoverLeave,
     disabled = false,
     tooltipPlacement = 'right',
 }: OverflowMenuProps) {
@@ -90,12 +96,14 @@ export const OverflowMenu = React.memo(function OverflowMenu({
                 ref={buttonRef}
                 className={triggerClass}
                 onClick={onToggle}
+                onMouseEnter={onMoreHoverEnter}
+                onMouseLeave={onMoreHoverLeave}
                 disabled={disabled}
                 aria-label={strings.nodeUtils.more}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
             >
-                <span className={buttonStyles.icon}>•••</span>
+                <span className={buttonStyles.icon}>{strings.nodeUtils.moreIcon}</span>
             </button>
             <PortalTooltip
                 text={strings.nodeUtils.more}

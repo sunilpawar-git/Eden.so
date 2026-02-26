@@ -6,6 +6,9 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 export const NODE_UTILS_PORTAL_ATTR = 'data-node-utils-zone';
 
+/** Delay before overflow auto-opens on ••• hover-intent (ms). */
+export const MORE_BUTTON_EXPAND_DELAY_MS = 1200;
+
 export type NodeUtilsSubmenu = 'none' | 'share' | 'transform' | 'color';
 export type NodeUtilsMode = 'auto' | 'manual';
 
@@ -91,7 +94,7 @@ function isPortalBoundaryTarget(target: EventTarget | null | undefined): boolean
     return Boolean(element?.closest(`[${NODE_UTILS_PORTAL_ATTR}="true"]`));
 }
 
-export function useNodeUtilsController(isPinnedOpen = false, openDelayMs = 600) {
+export function useNodeUtilsController(isPinnedOpen = false) {
     const [state, dispatch] = useReducer(nodeUtilsControllerReducer, initialNodeUtilsControllerState);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isPinnedRef = useRef(isPinnedOpen);
@@ -104,18 +107,32 @@ export function useNodeUtilsController(isPinnedOpen = false, openDelayMs = 600) 
         }
     }, []);
 
+    /** Container enter: cancel any pending intent timer (bar is now visible). */
     const handleHoverEnter = useCallback(() => {
         clearTimer();
-        timerRef.current = setTimeout(() => {
-            dispatch({ type: 'HOVER_OPEN' });
-        }, openDelayMs);
-    }, [clearTimer, openDelayMs]);
+    }, [clearTimer]);
 
     const handleHoverLeave = useCallback((event?: HoverLeaveLike) => {
         clearTimer();
         if (isPinnedRef.current) return;
         if (isPortalBoundaryTarget(event?.relatedTarget)) return;
         dispatch({ type: 'HOVER_LEAVE' });
+    }, [clearTimer]);
+
+    /**
+     * ••• button enter: start hover-intent timer.
+     * Overflow opens in auto mode after MORE_BUTTON_EXPAND_DELAY_MS if mouse stays.
+     */
+    const handleMoreHoverEnter = useCallback(() => {
+        clearTimer();
+        timerRef.current = setTimeout(() => {
+            dispatch({ type: 'HOVER_OPEN' });
+        }, MORE_BUTTON_EXPAND_DELAY_MS);
+    }, [clearTimer]);
+
+    /** ••• button leave before intent fires: cancel the pending open. */
+    const handleMoreHoverLeave = useCallback(() => {
+        clearTimer();
     }, [clearTimer]);
 
     const toggleOverflow = useCallback(() => {
@@ -147,6 +164,8 @@ export function useNodeUtilsController(isPinnedOpen = false, openDelayMs = 600) 
         actions: {
             handleHoverEnter,
             handleHoverLeave,
+            handleMoreHoverEnter,
+            handleMoreHoverLeave,
             toggleOverflow,
             openSubmenu,
             closeSubmenu,

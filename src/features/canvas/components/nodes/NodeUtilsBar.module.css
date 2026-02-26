@@ -1,7 +1,8 @@
 /**
  * NodeUtilsBar Styles — Pill bar tucked behind node
- * Slides out on hover with intent delay; uses design tokens only
- * Visibility driven by parent data-bar-proximity / data-bar-focused attributes
+ * Top-anchored: bar starts at --node-utils-bar-top-offset, expands downward.
+ * Slides out on hover with intent delay; uses design tokens only.
+ * Visibility driven by parent data-bar-proximity / data-bar-focused attributes.
  */
 
 .barWrapper {
@@ -10,9 +11,9 @@
 
 .container {
     position: absolute;
-    top: 50%;
+    top: var(--node-utils-bar-top-offset);
     right: 0;
-    transform: translateY(-50%) translateX(calc(100% - var(--node-utils-bar-peek)));
+    transform: translateX(calc(100% - var(--node-utils-bar-peek)));
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -26,11 +27,11 @@
     z-index: -1;
     pointer-events: none;
     transition:
-        opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
-        transform 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
-        visibility 0s linear calc(200ms + var(--node-utils-hover-delay-out)),
-        z-index 0s linear calc(200ms + var(--node-utils-hover-delay-out)),
-        box-shadow 200ms ease;
+        opacity var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
+        transform var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
+        visibility 0s linear calc(var(--node-utils-transition-duration) + var(--node-utils-hover-delay-out)),
+        z-index 0s linear calc(var(--node-utils-transition-duration) + var(--node-utils-hover-delay-out)),
+        box-shadow var(--node-utils-transition-duration) ease;
 }
 
 /* Slide out when parent has data-bar-proximity="near" or data-bar-focused="true" */
@@ -38,35 +39,35 @@
 :global([data-bar-focused="true"]) .container {
     opacity: 1;
     visibility: visible;
-    transform: translateY(-50%) translateX(100%);
+    transform: translateX(100%);
     z-index: var(--z-dropdown);
     pointer-events: auto;
     box-shadow: var(--card-shadow-hover);
     transition:
-        opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
-        transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--node-utils-hover-delay-in),
+        opacity var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
+        transform var(--node-utils-spring-duration) cubic-bezier(0.34, 1.56, 0.64, 1) var(--node-utils-hover-delay-in),
         visibility 0s linear 0s,
         z-index 0s linear 0s,
-        box-shadow 200ms ease;
+        box-shadow var(--node-utils-transition-duration) ease;
 }
 
 /* Left-side variant: slide out to the left when near viewport right edge */
 :global([data-bar-placement="left"]) .container {
     right: auto;
     left: 0;
-    transform: translateY(-50%) translateX(calc(-100% + var(--node-utils-bar-peek)));
+    transform: translateX(calc(-100% + var(--node-utils-bar-peek)));
 }
 
 :global([data-bar-placement="left"][data-bar-proximity="near"]) .container,
 :global([data-bar-placement="left"][data-bar-focused="true"]) .container {
-    transform: translateY(-50%) translateX(-100%);
+    transform: translateX(-100%);
 }
 
 /* Pinned-open state: same as visible but no transition delay */
 .containerPinnedOpen {
     opacity: 1;
     visibility: visible;
-    transform: translateY(-50%) translateX(100%);
+    transform: translateX(100%);
     z-index: var(--z-dropdown);
     pointer-events: auto;
     box-shadow: var(--card-shadow-hover);
@@ -74,7 +75,7 @@
 }
 
 :global([data-bar-placement="left"]) .containerPinnedOpen {
-    transform: translateY(-50%) translateX(-100%);
+    transform: translateX(-100%);
 }
 
 /* Left-side peek indicator */
@@ -84,12 +85,11 @@
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 
-/* Peek indicator — subtle colored sliver on node's right edge */
+/* Peek indicator — subtle colored sliver on node's right edge, top-aligned with bar */
 .peekIndicator {
     position: absolute;
-    top: 50%;
+    top: var(--node-utils-bar-top-offset);
     right: calc(-1 * var(--node-utils-bar-peek));
-    transform: translateY(-50%);
     width: var(--node-utils-bar-peek);
     height: var(--node-utils-peek-height);
     background: var(--color-primary);
@@ -104,6 +104,13 @@
 @keyframes peekPulse {
     0%, 100% { opacity: 0.3; }
     50% { opacity: 0.6; }
+}
+
+/* Respect user motion preferences — disable continuous animation */
+@media (prefers-reduced-motion: reduce) {
+    .peekIndicator {
+        animation: none;
+    }
 }
 
 /* Button styles (.actionButton, .deleteButton, .icon) are in TooltipButton.module.css */
