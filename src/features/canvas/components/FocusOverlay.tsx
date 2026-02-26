@@ -16,6 +16,7 @@ import { TagInput } from '@/features/tags';
 import { TipTapEditor } from './nodes/TipTapEditor';
 import { LinkPreviewList } from './nodes/LinkPreviewCard';
 import styles from './FocusOverlay.module.css';
+import colorStyles from './nodes/nodeColorStyles.module.css';
 
 export const FocusOverlay = React.memo(function FocusOverlay() {
     const { focusedNode, isFocused, exitFocus } = useFocusMode();
@@ -49,7 +50,8 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
             className={styles.backdrop}
             onClick={handleExit}
         >
-            <div data-testid="focus-panel" className={styles.panel} data-color={colorKey} onClick={handlePanelClick}>
+            <div data-testid="focus-panel" data-color={colorKey}
+                className={`${styles.panel} ${colorStyles.colorContainer}`} onClick={handlePanelClick}>
                 <button
                     data-testid="focus-close-button"
                     className={styles.closeButton}

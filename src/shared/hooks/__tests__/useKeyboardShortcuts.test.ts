@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts } from '@/app/hooks/useKeyboardShortcuts';
+import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 
 import { fireKeyDown } from './keyboardShortcutTestHelpers';
 
@@ -32,6 +33,7 @@ describe('useKeyboardShortcuts', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        _resetEscapeLayer();
     });
 
     afterEach(() => {
@@ -112,6 +114,12 @@ describe('useKeyboardShortcuts', () => {
 
     describe('Clear Selection (Escape)', () => {
         it('should clear selection when Escape is pressed', () => {
+            mockCanvasStore.mockImplementation(
+                (selector?: (state: unknown) => unknown) => {
+                    const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
+                    return selector ? selector(state) : state;
+                }
+            );
             renderHook(() => useKeyboardShortcuts({}));
             fireKeyDown('Escape');
             expect(mockClearSelection).toHaveBeenCalledTimes(1);

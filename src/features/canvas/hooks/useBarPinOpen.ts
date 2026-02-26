@@ -4,6 +4,8 @@
  * Escape key dismisses the pinned state.
  */
 import { useState, useCallback, useRef, useEffect, type MouseEvent } from 'react';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 
 /** Long-press threshold in ms */
 const LONG_PRESS_THRESHOLD_MS = 400;
@@ -44,15 +46,8 @@ export function useBarPinOpen(): UseBarPinOpenResult {
         }
     }, []);
 
-    // Escape key dismisses
-    useEffect(() => {
-        if (!isPinnedOpen) return;
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setIsPinnedOpen(false);
-        };
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isPinnedOpen]);
+    const handleEscapeClose = useCallback(() => setIsPinnedOpen(false), []);
+    useEscapeLayer(ESCAPE_PRIORITY.BAR_PIN, isPinnedOpen, handleEscapeClose);
 
     // Cleanup touch timer on unmount
     useEffect(() => () => {

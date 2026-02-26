@@ -3,9 +3,10 @@
  */
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PasteTextModal } from '../components/PasteTextModal';
+import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 
 describe('PasteTextModal', () => {
     const defaultProps = {
@@ -13,6 +14,10 @@ describe('PasteTextModal', () => {
         onClose: vi.fn(),
         onSave: vi.fn(),
     };
+
+    beforeEach(() => {
+        _resetEscapeLayer();
+    });
 
     it('renders nothing when closed', () => {
         const { container } = render(
@@ -77,6 +82,13 @@ describe('PasteTextModal', () => {
         const backdrop = document.querySelector('[class*="backdrop"]');
         expect(backdrop).toBeDefined();
         if (backdrop) fireEvent.click(backdrop);
+        expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('calls onClose when Escape is pressed', () => {
+        const onClose = vi.fn();
+        render(<PasteTextModal {...defaultProps} onClose={onClose} />);
+        fireEvent.keyDown(document, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledOnce();
     });
 

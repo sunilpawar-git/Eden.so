@@ -1,23 +1,23 @@
 /**
  * useNodeUtilsBarOutsideHandlers — Escape/outside-click handlers for NodeUtilsBar overflow.
- * Extracted for max-lines-per-function lint rule.
+ * Escape is handled via centralized useEscapeLayer; outside-click via document mousedown.
  */
 import { useEffect } from 'react';
 import { NODE_UTILS_PORTAL_ATTR } from './useNodeUtilsController';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 
 export function useNodeUtilsBarOutsideHandlers(
     containerRef: React.RefObject<HTMLDivElement | null>,
-    overflowOpenRef: React.MutableRefObject<boolean>,
+    overflowOpen: boolean,
     onEscape: () => void,
     onOutsidePointer: () => void,
 ) {
+    useEscapeLayer(ESCAPE_PRIORITY.BAR_OVERFLOW, overflowOpen, onEscape);
+
     useEffect(() => {
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (!overflowOpenRef.current) return;
-            if (event.key === 'Escape') onEscape();
-        };
         const onPointerDown = (event: MouseEvent) => {
-            if (!overflowOpenRef.current) return;
+            if (!overflowOpen) return;
             const target = event.target as Node | null;
             if (!target) return;
             const element = target instanceof HTMLElement ? target : null;
@@ -26,11 +26,9 @@ export function useNodeUtilsBarOutsideHandlers(
             if (insideToolbar || insidePortalZone) return;
             onOutsidePointer();
         };
-        document.addEventListener('keydown', onKeyDown);
         document.addEventListener('mousedown', onPointerDown, true);
         return () => {
-            document.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('mousedown', onPointerDown, true);
         };
-    }, [containerRef, overflowOpenRef, onEscape, onOutsidePointer]);
+    }, [containerRef, overflowOpen, onOutsidePointer]);
 }

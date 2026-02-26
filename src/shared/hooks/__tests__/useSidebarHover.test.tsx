@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { useSidebarHover } from '../useSidebarHover';
+import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 
 let mockIsPinned = true;
 let mockIsHoverOpen = false;
@@ -37,6 +38,7 @@ function TestWrapper() {
 describe('useSidebarHover', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        _resetEscapeLayer();
         mockIsPinned = true;
         mockIsHoverOpen = false;
     });
@@ -96,7 +98,7 @@ describe('useSidebarHover', () => {
             expect(mockSetHoverOpen).not.toHaveBeenCalled();
         });
 
-        it('should NOT close sidebar on Escape when focus is in an input', () => {
+        it('should close sidebar on Escape even when focus is in an input (priority-based dismiss)', () => {
             mockIsPinned = false;
             mockIsHoverOpen = true;
             render(
@@ -108,10 +110,10 @@ describe('useSidebarHover', () => {
             const input = screen.getByTestId('text-input');
             input.focus();
             fireEvent.keyDown(document, { key: 'Escape' });
-            expect(mockSetHoverOpen).not.toHaveBeenCalled();
+            expect(mockSetHoverOpen).toHaveBeenCalledWith(false);
         });
 
-        it('should NOT close sidebar on Escape when focus is in a textarea', () => {
+        it('should close sidebar on Escape even when focus is in a textarea (priority-based dismiss)', () => {
             mockIsPinned = false;
             mockIsHoverOpen = true;
             render(
@@ -122,7 +124,7 @@ describe('useSidebarHover', () => {
             );
             screen.getByTestId('text-area').focus();
             fireEvent.keyDown(document, { key: 'Escape' });
-            expect(mockSetHoverOpen).not.toHaveBeenCalled();
+            expect(mockSetHoverOpen).toHaveBeenCalledWith(false);
         });
     });
 

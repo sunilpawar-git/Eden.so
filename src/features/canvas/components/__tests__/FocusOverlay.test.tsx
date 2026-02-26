@@ -8,7 +8,7 @@ import { FocusOverlay } from '../FocusOverlay';
 import { useFocusStore } from '../../stores/focusStore';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { strings } from '@/shared/localization/strings';
-import type { CanvasNode } from '../../types/node';
+import { setCanvasDefaults } from './helpers/focusOverlayFixtures';
 
 const mockGetMarkdown = vi.fn(() => 'edited content');
 
@@ -73,60 +73,6 @@ vi.mock('../../hooks/useHeadingEditor', () => ({
         suggestionActiveRef: { current: false },
     }),
 }));
-
-const mockNode: CanvasNode = {
-    id: 'node-1',
-    workspaceId: 'workspace-1',
-    type: 'idea',
-    data: {
-        heading: 'Test Heading',
-        prompt: 'Test prompt',
-        output: 'Test output content',
-        isGenerating: false,
-        isPromptCollapsed: false,
-        tags: ['tag-1', 'tag-2'],
-        linkPreviews: {
-            'https://x.com/post/123': {
-                url: 'https://x.com/post/123',
-                title: 'X Post',
-                domain: 'x.com',
-                fetchedAt: Date.now(),
-            },
-        },
-    },
-    position: { x: 100, y: 200 },
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-};
-
-const mockNodeNoTags: CanvasNode = {
-    ...mockNode,
-    id: 'node-no-tags',
-    data: { ...mockNode.data, tags: [], heading: '', linkPreviews: undefined },
-};
-
-const mockNodeDanger: CanvasNode = {
-    ...mockNode,
-    id: 'node-danger',
-    data: { ...mockNode.data, colorKey: 'danger' },
-};
-
-const mockNodeLegacy: CanvasNode = {
-    ...mockNode,
-    id: 'node-legacy',
-    data: { ...mockNode.data, colorKey: 'primary' as never },
-};
-
-function setCanvasDefaults() {
-    useCanvasStore.setState({
-        nodes: [mockNode, mockNodeNoTags, mockNodeDanger, mockNodeLegacy],
-        edges: [],
-        selectedNodeIds: new Set(),
-        editingNodeId: null,
-        draftContent: null,
-        inputMode: 'note',
-    });
-}
 
 describe('FocusOverlay', () => {
     beforeEach(() => {
@@ -269,6 +215,18 @@ describe('FocusOverlay', () => {
             useFocusStore.setState({ focusedNodeId: 'node-1' });
             render(<FocusOverlay />);
             expect(screen.getByTestId('focus-panel')).toHaveAttribute('data-color', 'default');
+        });
+
+        it('applies warning color class', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-warning' });
+            render(<FocusOverlay />);
+            expect(screen.getByTestId('focus-panel')).toHaveAttribute('data-color', 'warning');
+        });
+
+        it('applies success color class', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-success' });
+            render(<FocusOverlay />);
+            expect(screen.getByTestId('focus-panel')).toHaveAttribute('data-color', 'success');
         });
 
         it('normalises legacy colorKey values', () => {

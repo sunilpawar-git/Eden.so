@@ -31,27 +31,8 @@
     overflow: hidden;
 }
 
-.colorDefault {
-    background: var(--color-surface-elevated);
-}
-
-.colorDefault .contentArea {
+.ideaCard[data-color="default"] .contentArea {
     background: var(--output-bg);
-}
-
-.colorDanger {
-    background: color-mix(in srgb, var(--node-status-danger-bg) 60%, var(--color-surface-elevated));
-    border-color: var(--node-status-danger-border);
-}
-
-.colorWarning {
-    background: color-mix(in srgb, var(--node-status-warning-bg) 60%, var(--color-surface-elevated));
-    border-color: var(--node-status-warning-border);
-}
-
-.colorSuccess {
-    background: color-mix(in srgb, var(--node-status-success-bg) 60%, var(--color-surface-elevated));
-    border-color: var(--node-status-success-border);
 }
 
 .ideaCard:hover {

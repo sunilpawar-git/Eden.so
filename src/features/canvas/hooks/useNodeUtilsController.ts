@@ -132,7 +132,6 @@ export function useNodeUtilsController(isPinnedOpen = false, openDelayMs = 600) 
     }, []);
 
     const onEscape = useCallback(() => {
-        if (isPinnedRef.current) return;
         dispatch({ type: 'ESCAPE' });
     }, []);
 

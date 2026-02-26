@@ -3,9 +3,11 @@
  * Reads focus state, resolves focused node data, handles ESC-to-close.
  * ESC is suppressed when a node is in editing mode (TipTap owns ESC there).
  */
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useFocusStore, enterFocusWithEditing } from '../stores/focusStore';
 import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import type { CanvasNode } from '../types/node';
 
 interface FocusModeResult {
@@ -32,19 +34,9 @@ export function useFocusMode(): FocusModeResult {
         enterFocusWithEditing(nodeId);
     }, []);
 
-    useEffect(() => {
-        if (!isFocused) return;
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key !== 'Escape') return;
-            const isEditing = useCanvasStore.getState().editingNodeId !== null;
-            if (isEditing) return;
-            exitFocus();
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isFocused, exitFocus]);
+    const editingNodeId = useCanvasStore((s) => s.editingNodeId);
+    const escapeActive = isFocused && editingNodeId === null;
+    useEscapeLayer(ESCAPE_PRIORITY.FOCUS_MODE, escapeActive, exitFocus);
 
     return { focusedNodeId, focusedNode, isFocused, enterFocus, exitFocus };
 }

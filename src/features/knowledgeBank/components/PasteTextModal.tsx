@@ -4,6 +4,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { KB_MAX_CONTENT_SIZE } from '../types/knowledgeBank';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import styles from './PasteTextModal.module.css';
 
 interface PasteTextModalProps {
@@ -17,19 +19,7 @@ export const PasteTextModal = React.memo(function PasteTextModal({ isOpen, onClo
     const [content, setContent] = useState('');
     const wasOpenRef = useRef(false);
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            e.stopPropagation();
-            onClose();
-        }
-    }, [onClose]);
-
-    useEffect(() => {
-        if (isOpen) {
-            document.addEventListener('keydown', handleKeyDown);
-            return () => document.removeEventListener('keydown', handleKeyDown);
-        }
-    }, [isOpen, handleKeyDown]);
+    useEscapeLayer(ESCAPE_PRIORITY.MODAL, isOpen, onClose);
 
     useEffect(() => {
         // Reset fields only on open -> closed transition to avoid update loops.

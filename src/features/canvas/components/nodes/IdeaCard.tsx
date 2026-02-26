@@ -8,17 +8,10 @@ import { IdeaCardHeadingSection } from './IdeaCardHeadingSection';
 import { IdeaCardContentSection } from './IdeaCardContentSection';
 import { IdeaCardTagsSection } from './IdeaCardTagsSection';
 import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT, normalizeNodeColorKey } from '../../types/node';
-import type { NodeColorKey } from '../../types/node';
 import styles from './IdeaCard.module.css';
+import colorStyles from './nodeColorStyles.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
 import './NodeImage.module.css';
-
-const COLOR_CLASS: Record<NodeColorKey, string> = {
-    default: styles.colorDefault ?? '',
-    danger: styles.colorDanger ?? '',
-    warning: styles.colorWarning ?? '',
-    success: styles.colorSuccess ?? '',
-};
 
 export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) => {
     const api = useIdeaCard({ id, rfData: rfData as never, selected });
@@ -43,7 +36,8 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
             <NodeResizeButtons nodeId={id} />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
-            <div className={`${styles.ideaCard} ${COLOR_CLASS[nodeColorKey]} ${isCollapsed ? styles.collapsed : ''}`}>
+            <div className={`${styles.ideaCard} ${colorStyles.colorContainer} ${isCollapsed ? styles.collapsed : ''}`}
+                data-color={nodeColorKey}>
                 <IdeaCardHeadingSection headingRef={headingRef} heading={heading ?? ''} isEditing={isEditing}
                     onHeadingChange={handleHeadingChange} onEnterKey={focusBody}
                     onDoubleClick={handleDoubleClick} onSlashCommand={slashHandler}

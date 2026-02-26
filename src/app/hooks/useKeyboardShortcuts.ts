@@ -5,6 +5,8 @@
 import { useEffect, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { isEditableTarget } from '@/shared/utils/domGuards';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 
 interface KeyboardShortcutsOptions {
     onOpenSettings?: () => void;
@@ -41,6 +43,12 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
             document.removeEventListener('keydown', handleKeyDown, { capture: true });
         };
     }, [handleKeyDown]);
+
+    const escapeActive = !editingNodeId && selectedNodeIds.size > 0;
+    const handleClearSelection = useCallback(() => {
+        useCanvasStore.getState().clearSelection();
+    }, []);
+    useEscapeLayer(ESCAPE_PRIORITY.CLEAR_SELECTION, escapeActive, handleClearSelection);
 }
 
 /** Modifier shortcuts (Cmd/Ctrl+key). Returns true if handled. */
@@ -88,7 +96,4 @@ function handlePlainShortcuts(
         return;
     }
 
-    if (e.key === 'Escape') {
-        useCanvasStore.getState().clearSelection();
-    }
 }

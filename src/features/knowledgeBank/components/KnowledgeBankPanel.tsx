@@ -2,11 +2,13 @@
  * KnowledgeBankPanel — Slide-out panel for managing KB entries
  * Slides from left edge, non-blocking (canvas remains visible)
  */
-import { useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useKnowledgeBankStore, filterEntries } from '../stores/knowledgeBankStore';
 import { useKnowledgeBankPanelHandlers } from '../hooks/useKnowledgeBankPanelHandlers';
 import { KBSearchBar } from './KBSearchBar';
 import { KBEntryList } from './KBEntryList';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import { strings } from '@/shared/localization/strings';
 import styles from './KnowledgeBankPanel.module.css';
 
@@ -24,7 +26,10 @@ export function KnowledgeBankPanel() {
         [entries, searchQuery, typeFilter, selectedTag]
     );
 
-    useEscapeClose(isPanelOpen, () => useKnowledgeBankStore.getState().setPanelOpen(false));
+    const handleEscapeClose = useCallback(() => {
+        useKnowledgeBankStore.getState().setPanelOpen(false);
+    }, []);
+    useEscapeLayer(ESCAPE_PRIORITY.KB_PANEL, isPanelOpen, handleEscapeClose);
 
     if (!isPanelOpen) return null;
 
@@ -48,17 +53,6 @@ export function KnowledgeBankPanel() {
             />
         </div>
     );
-}
-
-function useEscapeClose(active: boolean, onClose: () => void) {
-    useEffect(() => {
-        if (!active) return;
-        const handler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        document.addEventListener('keydown', handler);
-        return () => document.removeEventListener('keydown', handler);
-    }, [active, onClose]);
 }
 
 function PanelHeader({ onClose }: { onClose: () => void }) {

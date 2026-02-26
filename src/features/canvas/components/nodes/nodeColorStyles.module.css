@@ -1,0 +1,24 @@
+/**
+ * Shared node color styles — SSOT for status color backgrounds and borders.
+ * Applied via data-color attribute on the container element.
+ * Used by IdeaCard (canvas) and FocusOverlay (focus mode).
+ * All values from universal theme CSS variables.
+ *
+ * The 60% mix ratio blends the status color with the elevated surface
+ * to keep the tint visible without overwhelming card content readability.
+ */
+
+.colorContainer[data-color="danger"] {
+    background: color-mix(in srgb, var(--node-status-danger-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-danger-border);
+}
+
+.colorContainer[data-color="warning"] {
+    background: color-mix(in srgb, var(--node-status-warning-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-warning-border);
+}
+
+.colorContainer[data-color="success"] {
+    background: color-mix(in srgb, var(--node-status-success-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-success-border);
+}

@@ -4,9 +4,12 @@
  */
 import { useRef, useEffect, useCallback } from 'react';
 import { useSidebarStore } from '@/shared/stores/sidebarStore';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 
 export function useSidebarHover() {
     const isPinned = useSidebarStore((s) => s.isPinned);
+    const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
     const triggerZoneRef = useRef<HTMLDivElement>(null);
 
     const handleMouseEnter = useCallback(() => {
@@ -19,12 +22,8 @@ export function useSidebarHover() {
         if (!state.isPinned) state.setHoverOpen(false);
     }, []);
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        const state = useSidebarStore.getState();
-        if (e.key !== 'Escape' || state.isPinned || !state.isHoverOpen) return;
-        const tag = (document.activeElement?.tagName ?? '').toLowerCase();
-        if (tag === 'input' || tag === 'textarea') return;
-        state.setHoverOpen(false);
+    const handleEscape = useCallback(() => {
+        useSidebarStore.getState().setHoverOpen(false);
     }, []);
 
     useEffect(() => {
@@ -40,11 +39,7 @@ export function useSidebarHover() {
         };
     }, [isPinned, handleMouseEnter, handleMouseLeave]);
 
-    useEffect(() => {
-        if (isPinned) return;
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isPinned, handleKeyDown]);
+    useEscapeLayer(ESCAPE_PRIORITY.SIDEBAR_HOVER, !isPinned && isHoverOpen, handleEscape);
 
     return { triggerZoneRef };
 }

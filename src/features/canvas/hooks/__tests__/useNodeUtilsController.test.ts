@@ -144,12 +144,26 @@ describe('useNodeUtilsController', () => {
         expect(result.current.state.overflowOpen).toBe(false);
     });
 
-    it('isPinnedOpen=true prevents onEscape from closing', () => {
+    it('onEscape closes overflow even when pinned', () => {
         const { result } = renderHook(() => useNodeUtilsController(true));
         act(() => { result.current.actions.toggleOverflow(); });
         expect(result.current.state.overflowOpen).toBe(true);
         act(() => { result.current.actions.onEscape(); });
+        expect(result.current.state.overflowOpen).toBe(false);
+    });
+
+    it('onEscape closes submenu first when pinned, then overflow', () => {
+        const { result } = renderHook(() => useNodeUtilsController(true));
+        act(() => { result.current.actions.toggleOverflow(); });
+        act(() => { result.current.actions.openSubmenu('share'); });
+        expect(result.current.state.activeSubmenu).toBe('share');
+
+        act(() => { result.current.actions.onEscape(); });
+        expect(result.current.state.activeSubmenu).toBe('none');
         expect(result.current.state.overflowOpen).toBe(true);
+
+        act(() => { result.current.actions.onEscape(); });
+        expect(result.current.state.overflowOpen).toBe(false);
     });
 
     it('isPinnedOpen=true prevents onOutsidePointer from closing', () => {

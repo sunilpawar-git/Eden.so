@@ -1,12 +1,14 @@
 /**
  * Settings Panel - Modal with tabbed settings sections
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { AppearanceSection } from './sections/AppearanceSection';
 import { CanvasSection } from './sections/CanvasSection';
 import { AccountSection } from './sections/AccountSection';
 import { KeyboardSection } from './sections/KeyboardSection';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import styles from './SettingsPanel.module.css';
 
 type TabId = 'appearance' | 'canvas' | 'account' | 'keyboard';
@@ -28,22 +30,10 @@ interface SettingsPanelProps {
     onClose: () => void;
 }
 
- 
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     const [activeTab, setActiveTab] = useState<TabId>('appearance');
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            onClose();
-        }
-    }, [onClose]);
-
-    useEffect(() => {
-        if (isOpen) {
-            document.addEventListener('keydown', handleKeyDown);
-            return () => document.removeEventListener('keydown', handleKeyDown);
-        }
-    }, [isOpen, handleKeyDown]);
+    useEscapeLayer(ESCAPE_PRIORITY.SETTINGS_PANEL, isOpen, onClose);
 
     if (!isOpen) return null;
 
@@ -75,7 +65,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                         onClick={onClose}
                         aria-label={strings.settings.close}
                     >
-                        ×
+                        {strings.common.closeSymbol}
                     </button>
                 </div>
                 <div className={styles.content}>

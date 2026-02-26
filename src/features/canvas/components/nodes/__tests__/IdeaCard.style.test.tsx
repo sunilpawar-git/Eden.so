@@ -70,6 +70,10 @@ vi.mock('../IdeaCard.module.css', () => ({
     },
 }));
 
+vi.mock('../nodeColorStyles.module.css', () => ({
+    default: { colorContainer: 'colorContainer' },
+}));
+
 // Helper to wrap component with ReactFlow provider
 const renderWithProvider = (props: Partial<NodeProps>) => {
     const defaultProps: NodeProps = {
@@ -170,11 +174,20 @@ describe('IdeaCard styles', () => {
             expect(contentMatch![1]!.trim()).toBe('transparent');
         });
 
-        it('colorDefault scopes --output-bg to contentArea', () => {
+        it('data-color="default" scopes --output-bg to contentArea', () => {
             const css = readFileSync(
                 resolve(__dirname, '../IdeaCard.module.css'), 'utf-8'
             );
-            expect(css).toMatch(/\.colorDefault\s+\.contentArea/);
+            expect(css).toMatch(/\.ideaCard\[data-color="default"\]\s+\.contentArea/);
+        });
+
+        it('shared nodeColorStyles contains data-color selectors for all status colors', () => {
+            const sharedCss = readFileSync(
+                resolve(__dirname, '../nodeColorStyles.module.css'), 'utf-8'
+            );
+            expect(sharedCss).toMatch(/\[data-color="danger"\]/);
+            expect(sharedCss).toMatch(/\[data-color="warning"\]/);
+            expect(sharedCss).toMatch(/\[data-color="success"\]/);
         });
     });
 });

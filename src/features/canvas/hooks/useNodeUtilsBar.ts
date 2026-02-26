@@ -34,7 +34,6 @@ export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
     } = props;
 
     const containerRef = useRef<HTMLDivElement>(null);
-    const overflowOpenRef = useRef(false);
     const { state, actions: controllerActions } = useNodeUtilsController(isPinnedOpen);
     const {
         onOutsidePointer,
@@ -47,12 +46,11 @@ export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
     } = controllerActions;
 
     const overflowOpen = state.overflowOpen;
-    overflowOpenRef.current = overflowOpen;
     const isShareOpen = state.activeSubmenu === 'share';
     const isTransformOpen = state.activeSubmenu === 'transform';
     const isColorOpen = state.activeSubmenu === 'color';
 
-    useNodeUtilsBarOutsideHandlers(containerRef, overflowOpenRef, onEscape, onOutsidePointer);
+    useNodeUtilsBarOutsideHandlers(containerRef, overflowOpen, onEscape, onOutsidePointer);
 
     const handleShareToggle = useCallback(() => {
         if (isShareOpen) closeSubmenu();

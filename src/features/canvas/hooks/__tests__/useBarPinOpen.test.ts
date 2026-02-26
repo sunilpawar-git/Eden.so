@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useBarPinOpen } from '../useBarPinOpen';
+import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 
 /** Helper: fire contextmenu on the hook */
 function fireContextMenu(result: { current: ReturnType<typeof useBarPinOpen> }) {
@@ -18,6 +19,7 @@ function fireContextMenu(result: { current: ReturnType<typeof useBarPinOpen> }) 
 describe('useBarPinOpen', () => {
     beforeEach(() => {
         vi.useFakeTimers();
+        _resetEscapeLayer();
     });
 
     afterEach(() => {
@@ -70,6 +72,16 @@ describe('useBarPinOpen', () => {
 
         act(() => {
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        });
+        expect(result.current.isPinnedOpen).toBe(false);
+    });
+
+    it('Escape does NOT dismiss when bar is not pinned', () => {
+        const { result } = renderHook(() => useBarPinOpen());
+        expect(result.current.isPinnedOpen).toBe(false);
+
+        act(() => {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         });
         expect(result.current.isPinnedOpen).toBe(false);
     });
