@@ -19,8 +19,6 @@ interface PinWorkspaceButtonProps {
 
 export function PinWorkspaceButton({ workspaceId }: PinWorkspaceButtonProps) {
     const isPinned = usePinnedWorkspaceStore((s) => s.isPinned(workspaceId));
-    const pinWorkspace = usePinnedWorkspaceStore((s) => s.pinWorkspace);
-    const unpinWorkspace = usePinnedWorkspaceStore((s) => s.unpinWorkspace);
     const { hasAccess } = useFeatureGate(GATED_FEATURES.offlinePin);
     const [showUpgrade, setShowUpgrade] = useState(false);
     const [storageLabel, setStorageLabel] = useState<string | null>(null);
@@ -43,12 +41,13 @@ export function PinWorkspaceButton({ workspaceId }: PinWorkspaceButtonProps) {
             setShowUpgrade(true);
             return;
         }
+        const store = usePinnedWorkspaceStore.getState();
         if (isPinned) {
-            await unpinWorkspace(workspaceId);
+            await store.unpinWorkspace(workspaceId);
         } else {
-            await pinWorkspace(workspaceId);
+            await store.pinWorkspace(workspaceId);
         }
-    }, [hasAccess, isPinned, workspaceId, pinWorkspace, unpinWorkspace]);
+    }, [hasAccess, isPinned, workspaceId]);
 
     const label = isPinned
         ? strings.pinning.unpin

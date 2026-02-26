@@ -1,9 +1,11 @@
 /**
  * PasteTextModal — Modal for adding text entries to Knowledge Bank
  */
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { KB_MAX_CONTENT_SIZE } from '../types/knowledgeBank';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import styles from './PasteTextModal.module.css';
 
 interface PasteTextModalProps {
@@ -12,26 +14,21 @@ interface PasteTextModalProps {
     onSave: (title: string, content: string) => void;
 }
 
-export function PasteTextModal({ isOpen, onClose, onSave }: PasteTextModalProps) {
+export const PasteTextModal = React.memo(function PasteTextModal({ isOpen, onClose, onSave }: PasteTextModalProps) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
+    const wasOpenRef = useRef(false);
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            e.stopPropagation();
-            onClose();
-        }
-    }, [onClose]);
+    useEscapeLayer(ESCAPE_PRIORITY.MODAL, isOpen, onClose);
 
     useEffect(() => {
-        if (isOpen) {
-            document.addEventListener('keydown', handleKeyDown);
-            return () => document.removeEventListener('keydown', handleKeyDown);
+        // Reset fields only on open -> closed transition to avoid update loops.
+        if (!isOpen && wasOpenRef.current) {
+            setTitle('');
+            setContent('');
         }
-        // Reset fields when modal closes (M3: prevents stale state on reopen)
-        setTitle('');
-        setContent('');
-    }, [isOpen, handleKeyDown]);
+        wasOpenRef.current = isOpen;
+    }, [isOpen]);
 
     const handleSave = useCallback(() => {
         if (!title.trim() || !content.trim()) return;
@@ -93,4 +90,4 @@ export function PasteTextModal({ isOpen, onClose, onSave }: PasteTextModalProps)
             </div>
         </div>
     );
-}
+});

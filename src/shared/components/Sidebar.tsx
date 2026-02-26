@@ -2,11 +2,11 @@ import { useRef, useState } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSidebarStore } from '@/shared/stores/sidebarStore';
 import { useOutsideClick } from '@/shared/hooks/useOutsideClick';
-import { useSidebarWorkspaces } from '@/shared/hooks/useSidebarWorkspaces';
+import { useSidebarWorkspaces } from '@/app/hooks/useSidebarWorkspaces';
 import { PlusIcon, ChevronDownIcon } from '@/shared/components/icons';
-import { WorkspaceList } from './WorkspaceList';
+import { WorkspaceList } from '@/app/components/WorkspaceList';
 import { SidebarHeader } from './SidebarHeader';
-import { SidebarFooter } from './SidebarFooter';
+import { SidebarFooter } from '@/app/components/SidebarFooter';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -28,7 +28,6 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
     } = useSidebarWorkspaces();
 
     const isPinned = useSidebarStore((s) => s.isPinned);
-    const togglePin = useSidebarStore((s) => s.togglePin);
     const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -47,7 +46,7 @@ export function Sidebar({ onSettingsClick }: SidebarProps) {
             data-open={String(isHoverOpen)}
             aria-label={strings.sidebar.ariaLabel}
         >
-            <SidebarHeader isPinned={isPinned} isHoverOpen={isHoverOpen} onTogglePin={togglePin} />
+            <SidebarHeader isPinned={isPinned} isHoverOpen={isHoverOpen} onTogglePin={() => useSidebarStore.getState().togglePin()} />
 
             <div className={styles.workspaces}>
                 <div className={styles.newWorkspaceWrapper} ref={dropdownRef}>

@@ -20,5 +20,6 @@ export const workspaceStrings = {
     dragHandle: 'Drag to reorder workspace',
     reorderedSuccess: 'Workspaces reordered',
     dragCancel: 'Drag cancelled',
+    addDivider: 'Divider created',
     nodeCount: (count: number) => `(${count})`,
 };

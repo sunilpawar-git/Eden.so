@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { KnowledgeBankPanel } from '../components/KnowledgeBankPanel';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
+import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 import type { KnowledgeBankEntry } from '../types/knowledgeBank';
 
 // Mock Firebase services
@@ -50,6 +51,7 @@ describe('KnowledgeBankPanel', () => {
     beforeEach(() => {
         resetStore();
         mockUpdateKBEntry.mockReset();
+        _resetEscapeLayer();
     });
 
     it('renders nothing when panel is closed', () => {
@@ -82,6 +84,13 @@ describe('KnowledgeBankPanel', () => {
 
         const closeButton = screen.getByLabelText('Close');
         fireEvent.click(closeButton);
+        expect(useKnowledgeBankStore.getState().isPanelOpen).toBe(false);
+    });
+
+    it('closes panel when Escape is pressed', () => {
+        useKnowledgeBankStore.getState().setPanelOpen(true);
+        render(<KnowledgeBankPanel />);
+        fireEvent.keyDown(document, { key: 'Escape' });
         expect(useKnowledgeBankStore.getState().isPanelOpen).toBe(false);
     });
 

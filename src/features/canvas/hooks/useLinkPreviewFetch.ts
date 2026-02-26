@@ -3,7 +3,7 @@
  * Detects new URLs, checks cache, fetches missing, updates canvasStore
  */
 import { useEffect, useMemo, useRef } from 'react';
-import { useCanvasStore } from '../stores/canvasStore';
+import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import { fetchLinkPreview } from '../services/linkPreviewService';
 import { getFromCache, setInCache } from '../services/linkPreviewCache';
 
@@ -28,12 +28,17 @@ export function useLinkPreviewFetch(nodeId: string, urls: string[]): void {
         // Clear previous debounce timer
         if (timerRef.current) clearTimeout(timerRef.current);
 
-        // Prune stale previews whose URLs are no longer in the content
-        pruneStalePreviewsFor(nodeId, stableUrls);
-
-        if (stableUrls.length === 0) return;
+        if (stableUrls.length === 0) {
+            // Prune immediately when all URLs removed (no debounce needed)
+            pruneStalePreviewsFor(nodeId, stableUrls);
+            return;
+        }
 
         timerRef.current = setTimeout(() => {
+            // Prune stale previews INSIDE debounce to avoid synchronous store
+            // updates during the React commit phase (causes cascading re-renders)
+            pruneStalePreviewsFor(nodeId, stableUrls);
+
             // Abort any previous in-flight requests
             abortRef.current?.abort();
             const controller = new AbortController();
@@ -52,7 +57,7 @@ export function useLinkPreviewFetch(nodeId: string, urls: string[]): void {
 /** Remove stored link previews whose URL keys no longer appear in detected URLs */
 function pruneStalePreviewsFor(nodeId: string, currentUrls: string[]): void {
     const store = useCanvasStore.getState();
-    const node = store.nodes.find((n) => n.id === nodeId);
+    const node = getNodeMap(store.nodes).get(nodeId);
     const existing = node?.data.linkPreviews;
     if (!existing) return;
 
@@ -71,7 +76,7 @@ async function processUrls(
     signal: AbortSignal,
 ): Promise<void> {
     const store = useCanvasStore.getState();
-    const node = store.nodes.find((n) => n.id === nodeId);
+    const node = getNodeMap(store.nodes).get(nodeId);
     const existing = node?.data.linkPreviews ?? {};
 
     const toFetch = urls.filter((url) => !existing[url] || existing[url].error);

@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
+import { useKeyboardShortcuts } from '@/app/hooks/useKeyboardShortcuts';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { fireKeyDown } from './keyboardShortcutTestHelpers';
 

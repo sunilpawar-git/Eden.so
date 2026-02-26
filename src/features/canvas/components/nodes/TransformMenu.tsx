@@ -1,7 +1,7 @@
 /**
- * TransformMenu - Dropdown menu for AI text transformations
- * Provides options: Refine, Shorten, Lengthen, Proofread
- * Uses React Portal to escape parent overflow constraints
+ * TransformMenu — Controlled dropdown for AI text transformations.
+ * Open/close is owned by parent controller.
+ * Hover state uses useCssHover to avoid cascading re-renders.
  */
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -9,10 +9,15 @@ import { strings } from '@/shared/localization/strings';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
+import { NODE_UTILS_PORTAL_ATTR } from '../../hooks/useNodeUtilsController';
+import { useCssHover } from '../../hooks/useCssHover';
 import styles from './TransformMenu.module.css';
 
 interface TransformMenuProps {
     onTransform: (type: TransformationType) => void;
+    isOpen: boolean;
+    onToggle: () => void;
+    onClose: () => void;
     onRegenerate?: () => void;
     disabled?: boolean;
     isTransforming?: boolean;
@@ -33,19 +38,19 @@ const TRANSFORM_OPTIONS: Array<{
         { type: 'proofread', labelKey: 'proofread' },
     ];
 
-// eslint-disable-next-line max-lines-per-function -- transform menu with portal positioning
 export const TransformMenu = React.memo(({
     onTransform,
+    isOpen,
+    onToggle,
+    onClose,
     onRegenerate,
     disabled = false,
     isTransforming = false,
     tooltipPlacement,
 }: TransformMenuProps) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
     const buttonRef = useRef<HTMLButtonElement>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const isHovered = useCssHover(buttonRef);
 
     // Calculate menu position when opening
     useEffect(() => {
@@ -58,50 +63,21 @@ export const TransformMenu = React.memo(({
         }
     }, [isOpen]);
 
-    // Close menu when clicking outside (portal-aware)
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
-            const isInsideMenu = menuRef.current?.contains(target);
-            const isInsideButton = buttonRef.current?.contains(target);
-
-            if (!isInsideMenu && !isInsideButton) {
-                setIsOpen(false);
-            }
-        };
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setIsOpen(false);
-            }
-        };
-
-        if (isOpen) {
-            // Use capture phase to intercept event before React Flow stops propagation
-            document.addEventListener('mousedown', handleClickOutside, true);
-            document.addEventListener('keydown', handleKeyDown);
-            return () => {
-                document.removeEventListener('mousedown', handleClickOutside, true);
-                document.removeEventListener('keydown', handleKeyDown);
-            };
-        }
-    }, [isOpen]);
-
     const handleToggle = useCallback(() => {
         if (!disabled && !isTransforming) {
-            setIsOpen((prev) => !prev);
+            onToggle();
         }
-    }, [disabled, isTransforming]);
+    }, [disabled, isTransforming, onToggle]);
 
     const handleSelect = useCallback((type: TransformationType) => {
-        setIsOpen(false);
+        onClose();
         onTransform(type);
-    }, [onTransform]);
+    }, [onClose, onTransform]);
 
     const handleRegenerate = useCallback(() => {
-        setIsOpen(false);
+        onClose();
         onRegenerate?.();
-    }, [onRegenerate]);
+    }, [onClose, onRegenerate]);
 
     const buttonLabel = isTransforming
         ? strings.ideaCard.transforming
@@ -109,10 +85,10 @@ export const TransformMenu = React.memo(({
 
     const dropdownMenu = isOpen ? (
         <div
-            ref={menuRef}
             className={styles.dropdownMenu}
             role="menu"
             data-testid="transform-menu-portal"
+            {...{ [NODE_UTILS_PORTAL_ATTR]: 'true' }}
             style={{ top: menuPosition.top, left: menuPosition.left }}
         >
             {TRANSFORM_OPTIONS.map(({ type, labelKey }) => (
@@ -147,8 +123,6 @@ export const TransformMenu = React.memo(({
                 aria-label={buttonLabel}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
             >
                 <span className={styles.icon}>
                     {isTransforming ? '⏳' : '✨'}

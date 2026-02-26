@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { WorkspaceList } from '../WorkspaceList';
+import { WorkspaceList } from '@/app/components/WorkspaceList';
 import type { Workspace } from '@/features/workspace/types/workspace';
 import { strings } from '@/shared/localization/strings';
 
 // Mock WorkspaceItem since we only care about the list rendering logic here
-vi.mock('../WorkspaceItem', () => ({
+vi.mock('@/app/components/WorkspaceItem', () => ({
     WorkspaceItem: ({ name, isActive, onSelect }: { name: string; isActive: boolean; onSelect: (id: string) => void }) => (
         <div
             data-testid={`workspace-item-${name}`}

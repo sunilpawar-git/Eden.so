@@ -71,11 +71,12 @@ describe('useFocusMode', () => {
         expect(result.current.focusedNode).toBeNull();
     });
 
-    it('enterFocus sets focusedNodeId in store', () => {
+    it('enterFocus sets focusedNodeId and editingNodeId in one transition', () => {
         const { result } = renderHook(() => useFocusMode());
         act(() => { result.current.enterFocus('node-1'); });
         expect(result.current.focusedNodeId).toBe('node-1');
         expect(result.current.isFocused).toBe(true);
+        expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
     });
 
     it('focusedNode returns correct node data from canvasStore', () => {
@@ -91,20 +92,21 @@ describe('useFocusMode', () => {
     });
 
     it('exitFocus clears focusedNodeId and calls stopEditing', () => {
-        useCanvasStore.setState({ editingNodeId: 'node-1' });
         const { result } = renderHook(() => useFocusMode());
         act(() => { result.current.enterFocus('node-1'); });
+        expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
         act(() => { result.current.exitFocus(); });
         expect(result.current.focusedNodeId).toBeNull();
         expect(result.current.isFocused).toBe(false);
         expect(useCanvasStore.getState().editingNodeId).toBeNull();
     });
 
-    it('ESC keydown calls exitFocus when focused', () => {
+    it('ESC keydown calls exitFocus when focused and not editing', () => {
         const { result } = renderHook(() => useFocusMode());
         act(() => { result.current.enterFocus('node-1'); });
         expect(result.current.isFocused).toBe(true);
 
+        act(() => { useCanvasStore.getState().stopEditing(); });
         pressKey('Escape');
         expect(result.current.isFocused).toBe(false);
     });

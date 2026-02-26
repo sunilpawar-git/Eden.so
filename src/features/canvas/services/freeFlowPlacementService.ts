@@ -3,6 +3,7 @@
  * Handles smart placement and branch placement with collision avoidance
  */
 import type { CanvasNode, NodePosition } from '../types/node';
+import { getNodeMap } from '../stores/canvasStore';
 import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '../types/node';
 import { GRID_GAP, GRID_PADDING } from './gridLayoutService';
 
@@ -63,7 +64,7 @@ export function calculateSmartPlacement(
     }
 
     const anchor = focusedNodeId
-        ? nodes.find((n) => n.id === focusedNodeId)
+        ? getNodeMap(nodes).get(focusedNodeId)
         : [...nodes].sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )[0];

@@ -6,9 +6,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAddNode } from '../useAddNode';
 import { useCanvasStore } from '../../stores/canvasStore';
-import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 
-// Mock usePanToNode
+let mockWorkspaceId: string | null = 'test-workspace';
+vi.mock('@/app/contexts/WorkspaceContext', () => ({
+    useWorkspaceContext: () => ({ currentWorkspaceId: mockWorkspaceId, isSwitching: false }),
+}));
+
 vi.mock('../usePanToNode', () => ({
     usePanToNode: () => ({
         panToPosition: vi.fn(),
@@ -17,9 +20,8 @@ vi.mock('../usePanToNode', () => ({
 
 describe('useAddNode', () => {
     beforeEach(() => {
-        // Reset stores
         useCanvasStore.setState({ nodes: [], edges: [], selectedNodeIds: new Set() });
-        useWorkspaceStore.setState({ currentWorkspaceId: 'test-workspace' });
+        mockWorkspaceId = 'test-workspace';
     });
 
     it('should add a new node to the canvas', () => {
@@ -79,7 +81,7 @@ describe('useAddNode', () => {
     });
 
     it('should use current workspace ID', () => {
-        useWorkspaceStore.setState({ currentWorkspaceId: 'my-workspace' });
+        mockWorkspaceId = 'my-workspace';
         const { result } = renderHook(() => useAddNode());
 
         act(() => {
@@ -116,7 +118,7 @@ describe('useAddNode', () => {
     });
 
     it('should not add node if no workspace is selected', () => {
-        useWorkspaceStore.setState({ currentWorkspaceId: null });
+        mockWorkspaceId = null;
         const { result } = renderHook(() => useAddNode());
 
         act(() => {
@@ -143,6 +145,7 @@ describe('useAddNode', () => {
             isPromptCollapsed: false,
             isPinned: false,
             isCollapsed: false,
+            colorKey: 'default',
         });
         expect(node?.width).toBe(280); // DEFAULT_NODE_WIDTH
         expect(node?.height).toBe(220); // DEFAULT_NODE_HEIGHT

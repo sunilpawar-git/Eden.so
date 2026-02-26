@@ -8,7 +8,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useCanvasStore, EMPTY_SELECTED_IDS } from '@/features/canvas/stores/canvasStore';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import { loadNodes, loadEdges } from '../services/workspaceService';
@@ -62,7 +62,6 @@ async function loadFromFirestore(
 
 export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResult {
     const { user } = useAuthStore();
-    const { setNodes, setEdges } = useCanvasStore();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasOfflineData, setHasOfflineData] = useState(false);
@@ -77,10 +76,12 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
         let mounted = true;
 
         const applyIfMounted: UpdateCallback = (nodes, edges) => {
-            if (mounted) {
-                setNodes(nodes);
-                setEdges(edges);
-            }
+            if (!mounted) return;
+            const current = useCanvasStore.getState();
+            if (current.nodes === nodes && current.edges === edges) return;
+            useCanvasStore.setState({
+                nodes, edges, selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
+            });
         };
 
         const mergeIfMounted: MergeCallback = (freshNodes, freshEdges) => {
@@ -90,8 +91,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
             const mergedNodes = mergeNodes(state.nodes, freshNodes, state.editingNodeId);
             const mergedEdges = mergeEdges(state.edges, freshEdges);
 
-            setNodes(mergedNodes);
-            setEdges(mergedEdges);
+            useCanvasStore.setState({ nodes: mergedNodes, edges: mergedEdges });
             workspaceCache.set(workspaceId, {
                 nodes: mergedNodes,
                 edges: mergedEdges,
@@ -158,7 +158,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
         })();
 
         return () => { mounted = false; };
-    }, [user, workspaceId, setNodes, setEdges]);
+    }, [user, workspaceId]);
 
     return { isLoading, error, hasOfflineData };
 }

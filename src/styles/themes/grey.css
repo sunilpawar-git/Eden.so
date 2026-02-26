@@ -41,6 +41,17 @@
   --tooltip-bg: hsl(0, 0%, 18%);
   --tooltip-text: hsl(0, 0%, 96%);
 
+  /* Node status colors - Grey (desaturated) */
+  --node-status-danger: hsl(0, 50%, 48%);
+  --node-status-danger-bg: hsl(0, 30%, 94%);
+  --node-status-danger-border: hsl(0, 25%, 80%);
+  --node-status-warning: hsl(45, 65%, 46%);
+  --node-status-warning-bg: hsl(48, 40%, 93%);
+  --node-status-warning-border: hsl(45, 30%, 78%);
+  --node-status-success: hsl(145, 40%, 40%);
+  --node-status-success-bg: hsl(145, 25%, 93%);
+  --node-status-success-border: hsl(145, 20%, 78%);
+
   /* Toast notification colors - Grey */
   --color-success-bg: hsl(145, 45%, 40%);
   --color-success-text: hsl(0, 0%, 100%);

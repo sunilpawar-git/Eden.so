@@ -8,7 +8,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { subscribeToAuthState } from '@/features/auth/services/authService';
-import { Layout } from '@/shared/components/Layout';
+import { Layout } from '@/app/components/Layout';
 import { CanvasView } from '@/features/canvas/components/CanvasView';
 import { KeyboardShortcutsProvider } from '@/features/canvas/components/KeyboardShortcutsProvider';
 import { ToastContainer } from '@/shared/components/Toast';
@@ -20,11 +20,12 @@ import { OfflineFallback } from '@/shared/components/OfflineFallback';
 import { useThemeApplicator } from '@/shared/hooks/useThemeApplicator';
 import { useCompactMode } from '@/shared/hooks/useCompactMode';
 import { useNetworkStatus } from '@/shared/hooks/useNetworkStatus';
-import { useQueueDrainer } from '@/shared/hooks/useQueueDrainer';
+import { useQueueDrainer } from '@/app/hooks/useQueueDrainer';
 import { useSwRegistration } from '@/shared/hooks/useSwRegistration';
 import { useAutosave } from '@/features/workspace/hooks/useAutosave';
 import { useWorkspaceLoader } from '@/features/workspace/hooks/useWorkspaceLoader';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import { WorkspaceContext } from '@/app/contexts/WorkspaceContext';
 import { usePinnedWorkspaceStore } from '@/features/workspace/stores/pinnedWorkspaceStore';
 import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
@@ -36,12 +37,13 @@ const LoginPage = lazy(() =>
     import('@/features/auth/components/LoginPage').then(m => ({ default: m.LoginPage }))
 );
 const SettingsPanel = lazy(() =>
-    import('@/shared/components/SettingsPanel').then(m => ({ default: m.SettingsPanel }))
+    import('@/app/components/SettingsPanel').then(m => ({ default: m.SettingsPanel }))
 );
 
 function AuthenticatedApp() {
     const { user } = useAuthStore();
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const isSwitching = useWorkspaceStore((s) => s.isSwitching);
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
     const {
         isLoading: initialLoading,
@@ -75,27 +77,30 @@ function AuthenticatedApp() {
     }
 
     // Always keep ReactFlowProvider mounted to prevent blink on workspace switch
+    const wsCtx = { currentWorkspaceId, isSwitching };
     return (
-        <ReactFlowProvider>
-            <KeyboardShortcutsProvider
-                onOpenSettings={() => setIsSettingsOpen(true)}
-            />
-            <Layout onSettingsClick={() => setIsSettingsOpen(true)}>
-                <CanvasView />
-                {initialLoading && (
-                    <div className="canvas-loading-overlay">
-                        <div className="loading-spinner" />
-                        <p>{strings.common.loading}</p>
-                    </div>
-                )}
-            </Layout>
-            <Suspense fallback={null}>
-                <SettingsPanel
-                    isOpen={isSettingsOpen}
-                    onClose={() => setIsSettingsOpen(false)}
+        <WorkspaceContext.Provider value={wsCtx}>
+            <ReactFlowProvider>
+                <KeyboardShortcutsProvider
+                    onOpenSettings={() => setIsSettingsOpen(true)}
                 />
-            </Suspense>
-        </ReactFlowProvider>
+                <Layout onSettingsClick={() => setIsSettingsOpen(true)}>
+                    <CanvasView />
+                    {initialLoading && (
+                        <div className="canvas-loading-overlay">
+                            <div className="loading-spinner" />
+                            <p>{strings.common.loading}</p>
+                        </div>
+                    )}
+                </Layout>
+                <Suspense fallback={null}>
+                    <SettingsPanel
+                        isOpen={isSettingsOpen}
+                        onClose={() => setIsSettingsOpen(false)}
+                    />
+                </Suspense>
+            </ReactFlowProvider>
+        </WorkspaceContext.Provider>
     );
 }
 

@@ -91,6 +91,7 @@ describe('useNodeInput URL detection', () => {
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
+                    isEditing: true,
                 }),
             );
 
@@ -116,6 +117,7 @@ describe('useNodeInput URL detection', () => {
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
+                    isEditing: true,
                 }),
             );
 
@@ -138,6 +140,7 @@ describe('useNodeInput URL detection', () => {
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
+                    isEditing: false,
                 }),
             );
 
@@ -162,6 +165,7 @@ describe('useNodeInput URL detection', () => {
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
+                    isEditing: true,
                 }),
             );
 
@@ -190,6 +194,7 @@ describe('useNodeInput URL detection', () => {
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
+                    isEditing: false,
                 }),
             );
 
@@ -213,6 +218,7 @@ describe('useNodeInput URL detection', () => {
                     isGenerating: false,
                     submitHandlerRef: { current: null },
                     isNewEmptyNode: false,
+                    isEditing: true,
                 }),
             );
 

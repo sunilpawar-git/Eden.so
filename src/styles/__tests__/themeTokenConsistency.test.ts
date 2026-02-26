@@ -194,4 +194,55 @@ describe('Theme Token Consistency', () => {
         expect(VALID_COLOR_TOKENS.length).toBeGreaterThan(25);
         expect(VALID_SHADOW_TOKENS.length).toBeGreaterThan(5);
     });
+
+    describe('Node status color tokens', () => {
+        const NODE_STATUS_TOKENS = [
+            '--node-status-danger',
+            '--node-status-danger-bg',
+            '--node-status-danger-border',
+            '--node-status-warning',
+            '--node-status-warning-bg',
+            '--node-status-warning-border',
+            '--node-status-success',
+            '--node-status-success-bg',
+            '--node-status-success-border',
+        ];
+
+        it('should define all node-status tokens in :root (light theme)', () => {
+            const variablesPath = path.join(srcDir, 'styles/variables.css');
+            const content = fs.readFileSync(variablesPath, 'utf-8');
+
+            for (const token of NODE_STATUS_TOKENS) {
+                const pattern = new RegExp(`:root[^}]*${token}:`, 's');
+                expect(content).toMatch(pattern);
+            }
+        });
+
+        it('should define all node-status tokens in dark theme', () => {
+            const darkPath = path.join(srcDir, 'styles/themes/dark.css');
+            const content = fs.readFileSync(darkPath, 'utf-8');
+
+            for (const token of NODE_STATUS_TOKENS) {
+                const pattern = new RegExp(`\\[data-theme="dark"\\][^}]*${token}:`, 's');
+                expect(content).toMatch(pattern);
+            }
+        });
+
+        it('should define all node-status tokens in all extended themes', () => {
+            const themes = ['sepia', 'grey', 'darkBlack'];
+
+            for (const theme of themes) {
+                const themePath = path.join(srcDir, `styles/themes/${theme}.css`);
+                const content = fs.readFileSync(themePath, 'utf-8');
+
+                for (const token of NODE_STATUS_TOKENS) {
+                    const pattern = new RegExp(
+                        `\\[data-theme="${theme}"\\][^}]*${token}:`,
+                        's'
+                    );
+                    expect(content).toMatch(pattern);
+                }
+            }
+        });
+    });
 });

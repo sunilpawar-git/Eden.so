@@ -2,6 +2,8 @@
  * Tests for useAutosave hook
  * Covers debounced autosave, save status lifecycle, and offline queueing
  */
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAutosave } from '../hooks/useAutosave';
@@ -14,8 +16,17 @@ import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { toast } from '@/shared/stores/toastStore';
 
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
-    useCanvasStore: vi.fn(() => ({ nodes: [], edges: [] })),
+    useCanvasStore: vi.fn(),
 }));
+
+/** Selector-aware mock: applies selector when called with one, returns full state otherwise */
+function setCanvasState(state: { nodes: unknown[]; edges: unknown[] }) {
+    vi.mocked(useCanvasStore).mockImplementation(
+        ((selector?: (s: typeof state) => unknown) =>
+            selector ? selector(state) : state
+        ) as typeof useCanvasStore
+    );
+}
 
 vi.mock('@/features/auth/stores/authStore', () => ({
     useAuthStore: vi.fn(() => ({ user: { id: 'user-123' } })),
@@ -45,6 +56,7 @@ describe('useAutosave', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
+        setCanvasState({ nodes: [], edges: [] });
         useSaveStatusStore.setState({ status: 'idle', lastSavedAt: null, lastError: null });
         useNetworkStatusStore.setState({ isOnline: true });
     });
@@ -55,10 +67,10 @@ describe('useAutosave', () => {
 
     it('should not save when user is not logged in', async () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: null } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(3000); });
@@ -68,10 +80,10 @@ describe('useAutosave', () => {
 
     it('should not save when workspaceId is empty', async () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         renderHook(() => useAutosave(''));
         await act(async () => { vi.advanceTimersByTime(3000); });
@@ -81,10 +93,10 @@ describe('useAutosave', () => {
 
     it('should debounce save calls', async () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         const { rerender } = renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(500); });
@@ -99,10 +111,10 @@ describe('useAutosave', () => {
 
     it('should save after debounce period', async () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [{ id: 'e-1', sourceNodeId: 'n-1', targetNodeId: 'n-2' }],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(2500); });
@@ -114,9 +126,7 @@ describe('useAutosave', () => {
     it('should update cache after successful save', async () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
         const testNodes = [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }];
-        vi.mocked(useCanvasStore).mockReturnValue({
-            nodes: testNodes, edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        setCanvasState({ nodes: testNodes, edges: [] });
 
         renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(2500); });
@@ -126,9 +136,7 @@ describe('useAutosave', () => {
 
     it('should not save when data has not changed', async () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
-            nodes: [], edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        setCanvasState({ nodes: [], edges: [] });
 
         const { rerender } = renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(2500); });
@@ -140,10 +148,10 @@ describe('useAutosave', () => {
 
     it('should set save status to saved after successful save', async () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(2500); });
@@ -155,10 +163,10 @@ describe('useAutosave', () => {
     it('should set save status to error and show toast on failure', async () => {
         vi.mocked(saveNodes).mockRejectedValueOnce(new Error('Network error'));
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(2500); });
@@ -171,10 +179,10 @@ describe('useAutosave', () => {
     it('should queue save when offline instead of calling Firestore', async () => {
         useNetworkStatusStore.setState({ isOnline: false });
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(2500); });
@@ -187,10 +195,10 @@ describe('useAutosave', () => {
     it('should set status to queued when offline', async () => {
         useNetworkStatusStore.setState({ isOnline: false });
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(2500); });
@@ -201,10 +209,10 @@ describe('useAutosave', () => {
     it('should update cache even when queueing offline', async () => {
         useNetworkStatusStore.setState({ isOnline: false });
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         renderHook(() => useAutosave('workspace-1'));
         await act(async () => { vi.advanceTimersByTime(2500); });
@@ -214,13 +222,23 @@ describe('useAutosave', () => {
 
     it('should cleanup timeout on unmount', () => {
         vi.mocked(useAuthStore).mockReturnValue({ user: { id: 'u-1' } } as ReturnType<typeof useAuthStore>);
-        vi.mocked(useCanvasStore).mockReturnValue({
+        setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
             edges: [],
-        } as unknown as ReturnType<typeof useCanvasStore>);
+        });
 
         const { unmount } = renderHook(() => useAutosave('workspace-1'));
         unmount();
         vi.useRealTimers();
+    });
+
+    describe('selector isolation (prevents full-tree rerenders)', () => {
+        it('uses targeted selectors instead of bare useCanvasStore()', () => {
+            const src = readFileSync(
+                resolve(__dirname, '../hooks/useAutosave.ts'), 'utf-8'
+            );
+            expect(src).not.toMatch(/useCanvasStore\(\s*\)/);
+            expect(src).toMatch(/useCanvasStore\(\s*\(\s*s\s*\)/);
+        });
     });
 });

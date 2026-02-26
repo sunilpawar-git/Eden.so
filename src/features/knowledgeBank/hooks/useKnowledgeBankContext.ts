@@ -72,12 +72,10 @@ export function buildKBContextBlock(
  * Accepts an optional prompt to rank entries by relevance.
  */
 export function useKnowledgeBankContext() {
-    const getEnabledEntries = useKnowledgeBankStore((s) => s.getEnabledEntries);
-
     const getKBContext = useCallback((prompt?: string, generationType?: KBGenerationType): string => {
-        const entries = getEnabledEntries();
+        const entries = useKnowledgeBankStore.getState().getEnabledEntries();
         return buildKBContextBlock(entries, prompt, generationType);
-    }, [getEnabledEntries]);
+    }, []);
 
     return { getKBContext };
 }

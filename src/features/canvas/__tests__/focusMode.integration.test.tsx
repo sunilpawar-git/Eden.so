@@ -7,6 +7,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useFocusStore } from '../stores/focusStore';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useFocusMode } from '../hooks/useFocusMode';
+import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 import type { CanvasNode } from '../types/node';
 
 const createNode = (id: string, heading: string): CanvasNode => ({
@@ -37,6 +38,7 @@ describe('Focus Mode Integration', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        _resetEscapeLayer();
         useFocusStore.setState({ focusedNodeId: null });
         useCanvasStore.setState({
             nodes: [nodeA, nodeB],
@@ -67,7 +69,7 @@ describe('Focus Mode Integration', () => {
             const { result } = renderHook(() => useFocusMode());
 
             act(() => { result.current.enterFocus('node-a'); });
-            useCanvasStore.setState({ editingNodeId: null });
+            act(() => { useCanvasStore.setState({ editingNodeId: null }); });
 
             pressKey('Escape');
 

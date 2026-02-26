@@ -1,8 +1,8 @@
 import { authStrings } from './authStrings';
 import { workspaceStrings } from './workspaceStrings';
 import { canvasStrings } from './canvasStrings';
-import { knowledgeBankStrings } from '@/features/knowledgeBank/localization/knowledgeBankStrings';
-import { calendarStrings } from '@/features/calendar/localization/calendarStrings';
+import { knowledgeBankStrings } from './knowledgeBankStrings';
+import { calendarStrings } from './calendarStrings';
 
 export const strings = {
     app: {
@@ -120,7 +120,9 @@ export const strings = {
         aiActions: 'AI Actions',
         collapse: 'Collapse',
         more: 'More actions',
+        moreIcon: '•••',
         collapseShortcut: 'C',
+        color: 'Color',
         connect: 'Connect',
         copy: 'Copy',
         copyError: 'Failed to copy',
@@ -143,6 +145,10 @@ export const strings = {
         shareError: 'Failed to share node',
         shareSuccess: 'Node shared successfully',
         shareToWorkspace: 'Share to workspace',
+        nodeColorDefault: 'Default',
+        nodeColorRed: 'Red (Attention)',
+        nodeColorYellow: 'Yellow (In Progress)',
+        nodeColorGreen: 'Green (Complete)',
         tags: 'Tags',
         tagsShortcut: 'T',
         unpin: 'Unpin',
@@ -153,14 +159,7 @@ export const strings = {
     edge: {
         deleteConnection: 'Delete connection',
     },
-    resize: {
-        resizeNode: 'Resize node',
-        resizeHandle: 'Drag to resize',
-        corner: 'Corner resize handle',
-        edge: 'Edge resize handle',
-        expandWidth: 'Expand width',
-        expandHeight: 'Expand height',
-    },
+    resize: canvasStrings.resize,
     performance: {
         cls: 'Cumulative Layout Shift',
         fcp: 'First Contentful Paint',

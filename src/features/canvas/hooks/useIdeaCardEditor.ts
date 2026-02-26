@@ -72,5 +72,13 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
         }
     }, [output, isEditing, setContent]);
 
+    const wasEditingRef = useRef(isEditing);
+    useEffect(() => {
+        if (isEditing && !wasEditingRef.current) {
+            setContent(getEditableContent());
+        }
+        wasEditingRef.current = isEditing;
+    }, [isEditing, getEditableContent, setContent]);
+
     return { editor, getMarkdown, setContent, submitHandlerRef };
 }

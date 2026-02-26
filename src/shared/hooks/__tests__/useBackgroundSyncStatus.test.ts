@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useBackgroundSyncStatus } from '../useBackgroundSyncStatus';
+import { useBackgroundSyncStatus } from '@/app/hooks/useBackgroundSyncStatus';
 
 // Mock backgroundSyncService
 let mockSupported = false;

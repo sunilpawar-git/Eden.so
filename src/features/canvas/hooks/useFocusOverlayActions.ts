@@ -17,7 +17,9 @@ interface UseFocusOverlayActionsOptions {
 
 export function useFocusOverlayActions({ nodeId, output, isEditing, onExit }: UseFocusOverlayActionsOptions) {
     useEffect(() => {
-        if (nodeId) { useCanvasStore.getState().startEditing(nodeId); }
+        if (nodeId && useCanvasStore.getState().editingNodeId !== nodeId) {
+            useCanvasStore.getState().startEditing(nodeId);
+        }
     }, [nodeId]);
 
     const handleDoubleClick = useCallback(() => {

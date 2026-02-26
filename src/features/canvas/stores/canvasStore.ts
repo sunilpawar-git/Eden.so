@@ -3,7 +3,7 @@
  * Performance: Selection state decoupled from nodes array
  */
 import { create } from 'zustand';
-import type { CanvasNode, NodePosition, LinkPreviewMetadata } from '../types/node';
+import type { CanvasNode, NodePosition, LinkPreviewMetadata, NodeColorKey } from '../types/node';
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
@@ -20,8 +20,24 @@ import {
     arrangeNodesAfterResize,
     toggleNodePinnedInArray,
     toggleNodeCollapsedInArray,
+    setNodeColorInArray,
 } from './canvasStoreHelpers';
 import { duplicateNode as cloneNode } from '../services/nodeDuplicationService';
+
+/** Stable reference for empty selection — prevents spurious re-renders via Object.is */
+export const EMPTY_SELECTED_IDS: ReadonlySet<string> = Object.freeze(new Set<string>());
+
+let _cachedNodes: CanvasNode[] = [];
+let _cachedNodeMap: ReadonlyMap<string, CanvasNode> = new Map();
+
+/** Memoized O(1) lookup map — only rebuilds when nodes array reference changes */
+export function getNodeMap(nodes: CanvasNode[]): ReadonlyMap<string, CanvasNode> {
+    if (nodes !== _cachedNodes) {
+        _cachedNodes = nodes;
+        _cachedNodeMap = new Map(nodes.map((n) => [n.id, n]));
+    }
+    return _cachedNodeMap;
+}
 
 interface CanvasState {
     nodes: CanvasNode[];
@@ -48,6 +64,7 @@ interface CanvasActions {
     updateNodePrompt: (nodeId: string, prompt: string) => void;
     updateNodeOutput: (nodeId: string, output: string) => void;
     updateNodeTags: (nodeId: string, tags: string[]) => void;
+    updateNodeColor: (nodeId: string, colorKey: NodeColorKey) => void;
     appendToNodeOutput: (nodeId: string, chunk: string) => void;
     setNodeGenerating: (nodeId: string, isGenerating: boolean) => void;
     togglePromptCollapsed: (nodeId: string) => void;
@@ -95,7 +112,7 @@ type CanvasStore = CanvasState & CanvasActions;
 const initialState: CanvasState = {
     nodes: [],
     edges: [],
-    selectedNodeIds: new Set(),
+    selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
     editingNodeId: null,
     draftContent: null,
     inputMode: 'note',
@@ -108,7 +125,7 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     duplicateNode: (nodeId) => {
         const nodes = get().nodes;
-        const node = nodes.find((n) => n.id === nodeId);
+        const node = getNodeMap(nodes).get(nodeId);
         if (!node) return undefined;
         const newNode = cloneNode(node, nodes);
         set((s) => ({ nodes: [...s.nodes, newNode] }));
@@ -135,6 +152,9 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     updateNodeTags: (nodeId, tags) =>
         set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'tags', tags) })),
+
+    updateNodeColor: (nodeId, colorKey) =>
+        set((s) => ({ nodes: setNodeColorInArray(s.nodes, nodeId, colorKey) })),
 
     appendToNodeOutput: (nodeId, chunk) =>
         set((s) => ({ nodes: appendToNodeOutputInArray(s.nodes, nodeId, chunk) })),
@@ -179,7 +199,10 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
             return { selectedNodeIds: newSet };
         }),
 
-    clearSelection: () => set({ selectedNodeIds: new Set() }),
+    clearSelection: () => {
+        if (get().selectedNodeIds.size === 0) return;
+        set({ selectedNodeIds: EMPTY_SELECTED_IDS as Set<string> });
+    },
 
     getConnectedNodes: (nodeId) => getConnectedNodeIds(get().edges, nodeId),
 
@@ -193,7 +216,7 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
     setEdges: (edges) => set({ edges }),
 
     clearCanvas: () => set({
-        nodes: [], edges: [], selectedNodeIds: new Set(),
+        nodes: [], edges: [], selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
         editingNodeId: null, draftContent: null, inputMode: 'note',
     }),
 

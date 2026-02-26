@@ -1,7 +1,7 @@
 /**
- * ShareMenu — Portal-based dropdown for cross-workspace node sharing.
- * Lists other workspaces owned by the user, excluding current and dividers.
- * Sources currentWorkspaceId internally from useWorkspaceStore.
+ * ShareMenu — Controlled portal dropdown for cross-workspace node sharing.
+ * Open/close is owned by parent controller.
+ * Hover state uses useCssHover to avoid cascading re-renders.
  */
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -9,10 +9,15 @@ import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
 import { strings } from '@/shared/localization/strings';
+import { NODE_UTILS_PORTAL_ATTR } from '../../hooks/useNodeUtilsController';
+import { useCssHover } from '../../hooks/useCssHover';
 import styles from './ShareMenu.module.css';
 
 interface ShareMenuProps {
     onShare: (targetWorkspaceId: string) => Promise<void>;
+    isOpen: boolean;
+    onToggle: () => void;
+    onClose: () => void;
     isSharing?: boolean;
     disabled?: boolean;
     tooltipPlacement?: PortalTooltipProps['placement'];
@@ -20,15 +25,16 @@ interface ShareMenuProps {
 
 export const ShareMenu = React.memo(function ShareMenu({
     onShare,
+    isOpen,
+    onToggle,
+    onClose,
     isSharing = false,
     disabled = false,
     tooltipPlacement,
 }: ShareMenuProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
     const buttonRef = useRef<HTMLButtonElement>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const isHovered = useCssHover(buttonRef);
 
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const workspaces = useWorkspaceStore((s) => s.workspaces);
@@ -45,51 +51,27 @@ export const ShareMenu = React.memo(function ShareMenu({
         }
     }, [isOpen]);
 
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
-            if (!menuRef.current?.contains(target) && !buttonRef.current?.contains(target)) {
-                setIsOpen(false);
-            }
-        };
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setIsOpen(false);
-        };
-
-        document.addEventListener('mousedown', handleClickOutside, true);
-        document.addEventListener('keydown', handleKeyDown);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside, true);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isOpen]);
-
     const handleToggle = useCallback(() => {
-        if (!disabled && !isSharing) setIsOpen((prev) => !prev);
-    }, [disabled, isSharing]);
+        if (!disabled && !isSharing) onToggle();
+    }, [disabled, isSharing, onToggle]);
 
     const handleSelect = useCallback(
         (workspaceId: string) => {
             if (isSharing) return;
-            setIsOpen(false);
+            onClose();
             void onShare(workspaceId);
         },
-        [onShare, isSharing],
+        [onShare, isSharing, onClose],
     );
-
-    const handleMouseEnter = useCallback(() => setIsHovered(true), []);
-    const handleMouseLeave = useCallback(() => setIsHovered(false), []);
 
     const dropdownMenu = isOpen ? (
         <div
-            ref={menuRef}
             className={`${styles.dropdownMenu} ${isSharing ? styles.sharing : ''}`}
             role="menu"
             aria-busy={isSharing}
             aria-label={strings.nodeUtils.shareToWorkspace}
             data-testid="share-menu-portal"
+            {...{ [NODE_UTILS_PORTAL_ATTR]: 'true' }}
             style={{ top: menuPosition.top, left: menuPosition.left }}
         >
             {otherWorkspaces.length === 0 ? (
@@ -122,8 +104,6 @@ export const ShareMenu = React.memo(function ShareMenu({
                 aria-label={strings.nodeUtils.share}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
             >
                 <span className={styles.icon}>📤</span>
             </button>

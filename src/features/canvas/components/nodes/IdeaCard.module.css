@@ -31,6 +31,10 @@
     overflow: hidden;
 }
 
+.ideaCard[data-color="default"] .contentArea {
+    background: var(--output-bg);
+}
+
 .ideaCard:hover {
     box-shadow: var(--card-shadow-hover);
     transform: translateY(-1px);
@@ -46,7 +50,7 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
     padding: var(--space-md);
-    background: var(--output-bg);
+    background: transparent;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     display: flex;
     flex-direction: column;
@@ -192,8 +196,8 @@
     }
 }
 
-/* NodeUtilsBar visibility is driven by the visible prop + CSS transition.
- * The cardWrapper hover state sets isHovered -> visible prop on NodeUtilsBar.
+/* NodeUtilsBar visibility is driven by data-bar-proximity / data-bar-focused
+ * attributes set on cardWrapper by useProximityBar (direct DOM manipulation).
  * Focus-within ensures keyboard/tab users can also access the bar (a11y). */
 
 /* Tags Section */

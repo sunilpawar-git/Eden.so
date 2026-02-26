@@ -43,5 +43,6 @@ export const buildBaseOpts = (
     isGenerating: false,
     submitHandlerRef: { current: null },
     isNewEmptyNode: false,
+    isEditing: false,
     ...overrides,
 });

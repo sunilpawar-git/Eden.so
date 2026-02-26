@@ -4,6 +4,7 @@
  * Separate from canvasStore to avoid unnecessary re-renders of canvas subscribers
  */
 import { create } from 'zustand';
+import { useCanvasStore } from './canvasStore';
 
 interface FocusState {
     focusedNodeId: string | null;
@@ -23,3 +24,9 @@ export const useFocusStore = create<FocusStore>()((set) => ({
 
     exitFocus: () => set({ focusedNodeId: null }),
 }));
+
+/** SSOT helper: enter focus + start editing in one batched call */
+export function enterFocusWithEditing(nodeId: string): void {
+    useFocusStore.getState().enterFocus(nodeId);
+    useCanvasStore.getState().startEditing(nodeId);
+}

@@ -45,7 +45,6 @@ export const DeletableEdge = React.memo(function DeletableEdge({
     style,
 }: EdgeProps) {
     const [isHovered, setIsHovered] = useState(false);
-    const deleteEdge = useCanvasStore((s) => s.deleteEdge);
     const connectorStyle = useSettingsStore((s) => s.connectorStyle);
 
     const [edgePath, labelX, labelY] = getBezierPath({
@@ -58,8 +57,8 @@ export const DeletableEdge = React.memo(function DeletableEdge({
     });
 
     const handleDelete = useCallback(() => {
-        deleteEdge(id);
-    }, [deleteEdge, id]);
+        useCanvasStore.getState().deleteEdge(id);
+    }, [id]);
 
     const handleMouseEnter = useCallback(() => setIsHovered(true), []);
     const handleMouseLeave = useCallback(() => setIsHovered(false), []);

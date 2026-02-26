@@ -16,6 +16,17 @@
   --color-warning: hsl(38, 80%, 50%);
   --color-error: hsl(0, 65%, 51%);
 
+  --tag-red: #ef4444;
+  --tag-orange: #f97316;
+  --tag-amber: #f59e0b;
+  --tag-lime: #84cc16;
+  --tag-green: #22c55e;
+  --tag-teal: #14b8a6;
+  --tag-cyan: #06b6d4;
+  --tag-blue: #3b82f6;
+  --tag-violet: #8b5cf6;
+  --tag-fuchsia: #d946ef;
+
   --color-background: hsl(0, 0%, 100%);
   --color-surface: hsl(220, 14%, 98%);
   --color-surface-elevated: hsl(0, 0%, 100%);
@@ -41,6 +52,17 @@
   --node-derived-bg: hsl(220, 20%, 97%);
   --node-border: hsl(220, 13%, 88%);
   --node-shadow: 0 2px 8px hsla(220, 13%, 13%, 0.06);
+
+  /* Node status colors - semantic, theme-aware (used by IdeaCard color picker) */
+  --node-status-danger: hsl(0, 72%, 51%);
+  --node-status-danger-bg: hsl(0, 80%, 97%);
+  --node-status-danger-border: hsl(0, 50%, 85%);
+  --node-status-warning: hsl(45, 93%, 47%);
+  --node-status-warning-bg: hsl(48, 80%, 96%);
+  --node-status-warning-border: hsl(45, 50%, 82%);
+  --node-status-success: hsl(145, 65%, 42%);
+  --node-status-success-bg: hsl(145, 60%, 96%);
+  --node-status-success-border: hsl(145, 40%, 82%);
 
   /* Toast notification colors */
   --color-success-bg: hsl(145, 65%, 42%);
@@ -166,6 +188,12 @@
   --node-utils-peek-height: 32px;
   --node-utils-hover-delay-in: 80ms;
   --node-utils-hover-delay-out: 150ms;
+  /* Top-anchor: bar starts at card's content top, expands downward */
+  --node-utils-bar-top-offset: var(--space-md);
+  /* Slide-out transition (ease-in-out cubic) */
+  --node-utils-transition-duration: 200ms;
+  /* Spring-entry transition — slightly longer for the overshoot effect */
+  --node-utils-spring-duration: 220ms;
 
   /* Dropdown Menus (TransformMenu, ShareMenu, etc.) */
   --dropdown-min-width: 120px;

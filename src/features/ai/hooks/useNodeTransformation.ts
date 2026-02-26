@@ -3,7 +3,7 @@
  * Provides transformation capabilities for IdeaCard nodes
  */
 import { useCallback, useState } from 'react';
-import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useCanvasStore, getNodeMap } from '@/features/canvas/stores/canvasStore';
 import { transformContent, type TransformationType } from '../services/geminiService';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
 import { strings } from '@/shared/localization/strings';
@@ -15,7 +15,6 @@ import { toast } from '@/shared/stores/toastStore';
  */
 export function useNodeTransformation() {
     const [isTransforming, setIsTransforming] = useState(false);
-    const { updateNodeOutput } = useCanvasStore();
     const { getKBContext } = useKnowledgeBankContext();
 
     /**
@@ -24,7 +23,7 @@ export function useNodeTransformation() {
     const transformNodeContent = useCallback(
         async (nodeId: string, type: TransformationType) => {
             // Get fresh node data from store
-            const node = useCanvasStore.getState().nodes.find((n) => n.id === nodeId);
+            const node = getNodeMap(useCanvasStore.getState().nodes).get(nodeId);
             if (node?.type !== 'idea') return;
 
             const content = node.data.output;
@@ -35,7 +34,7 @@ export function useNodeTransformation() {
             try {
                 const kbContext = getKBContext(content, 'transform');
                 const transformedContent = await transformContent(content, type, kbContext);
-                updateNodeOutput(nodeId, transformedContent);
+                useCanvasStore.getState().updateNodeOutput(nodeId, transformedContent);
             } catch (error) {
                 const message = error instanceof Error ? error.message : strings.errors.aiError;
                 toast.error(message);
@@ -43,7 +42,7 @@ export function useNodeTransformation() {
                 setIsTransforming(false);
             }
         },
-        [updateNodeOutput, getKBContext]
+        [getKBContext]
     );
 
     return {

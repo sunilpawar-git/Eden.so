@@ -20,8 +20,8 @@ export function useNodeShortcuts(
     selected: boolean,
     shortcuts: NodeShortcutMap,
 ): void {
-    const editingNodeId = useCanvasStore((s) => s.editingNodeId);
-    const isActive = selected && !editingNodeId;
+    const isAnyEditing = useCanvasStore((s) => s.editingNodeId !== null);
+    const isActive = selected && !isAnyEditing;
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (!isActive) return;

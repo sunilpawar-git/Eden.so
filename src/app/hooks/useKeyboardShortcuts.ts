@@ -1,0 +1,99 @@
+/**
+ * useKeyboardShortcuts Hook - Global keyboard shortcuts
+ * Registered on document capture phase to intercept before browser defaults.
+ */
+import { useEffect, useCallback } from 'react';
+import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { isEditableTarget } from '@/shared/utils/domGuards';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
+
+interface KeyboardShortcutsOptions {
+    onOpenSettings?: () => void;
+    onAddNode?: () => void;
+    onQuickCapture?: () => void;
+}
+
+function hasModifier(e: KeyboardEvent): boolean {
+    return e.metaKey || e.ctrlKey;
+}
+
+export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
+    const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+    const editingNodeId = useCanvasStore((s) => s.editingNodeId);
+    const { onOpenSettings, onAddNode, onQuickCapture } = options;
+
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            if (handleModifierShortcuts(e, onQuickCapture, onOpenSettings)) {
+                return;
+            }
+
+            if (editingNodeId) return;
+            if (isEditableTarget(e)) return;
+
+            handlePlainShortcuts(e, onAddNode, selectedNodeIds);
+        },
+        [selectedNodeIds, editingNodeId, onOpenSettings, onAddNode, onQuickCapture]
+    );
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown, { capture: true });
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown, { capture: true });
+        };
+    }, [handleKeyDown]);
+
+    const escapeActive = !editingNodeId && selectedNodeIds.size > 0;
+    const handleClearSelection = useCallback(() => {
+        useCanvasStore.getState().clearSelection();
+    }, []);
+    useEscapeLayer(ESCAPE_PRIORITY.CLEAR_SELECTION, escapeActive, handleClearSelection);
+}
+
+/** Modifier shortcuts (Cmd/Ctrl+key). Returns true if handled. */
+function handleModifierShortcuts(
+    e: KeyboardEvent,
+    onQuickCapture?: () => void,
+    onOpenSettings?: () => void,
+): boolean {
+    if (!hasModifier(e)) return false;
+
+    if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onQuickCapture?.();
+        return true;
+    }
+
+    if (e.key === ',') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onOpenSettings?.();
+        return true;
+    }
+
+    return false;
+}
+
+/** Plain (non-modifier) shortcuts for canvas operations. */
+function handlePlainShortcuts(
+    e: KeyboardEvent,
+    onAddNode?: () => void,
+    selectedNodeIds?: Set<string>,
+): void {
+    if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        onAddNode?.();
+        return;
+    }
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        const store = useCanvasStore.getState();
+        selectedNodeIds?.forEach((nodeId) => store.deleteNode(nodeId));
+        store.clearSelection();
+        return;
+    }
+
+}

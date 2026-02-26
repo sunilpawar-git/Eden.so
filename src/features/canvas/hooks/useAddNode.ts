@@ -4,7 +4,7 @@
  */
 import { useCallback } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
-import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import { useWorkspaceContext } from '@/app/contexts/WorkspaceContext';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { useFocusStore } from '../stores/focusStore';
 import { createIdeaNode } from '../types/node';
@@ -13,9 +13,8 @@ import { calculateSmartPlacement } from '../services/freeFlowPlacementService';
 import { usePanToNode } from './usePanToNode';
 
 export function useAddNode() {
-    const addNode = useCanvasStore((s) => s.addNode);
     const nodes = useCanvasStore((s) => s.nodes);
-    const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const { currentWorkspaceId } = useWorkspaceContext();
     const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
     const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
     const { panToPosition } = usePanToNode();
@@ -33,9 +32,9 @@ export function useAddNode() {
             position
         );
 
-        addNode(newNode);
+        useCanvasStore.getState().addNode(newNode);
         panToPosition(position.x, position.y);
-    }, [addNode, nodes, currentWorkspaceId, canvasFreeFlow, focusedNodeId, panToPosition]);
+    }, [nodes, currentWorkspaceId, canvasFreeFlow, focusedNodeId, panToPosition]);
 
     return handleAddNode;
 }

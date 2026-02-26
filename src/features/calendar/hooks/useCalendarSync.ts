@@ -3,7 +3,7 @@
  * Handles loading state, errors, and store updates for calendar CRUD
  */
 import { useState, useCallback } from 'react';
-import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useCanvasStore, getNodeMap } from '@/features/canvas/stores/canvasStore';
 import { createEvent, deleteEvent, updateEvent } from '../services/calendarService';
 import { calendarStrings as cs } from '../localization/calendarStrings';
 import type { CalendarEventType } from '../types/calendarEvent';
@@ -78,7 +78,7 @@ export function useCalendarSync(nodeId: string) {
     }, [nodeId]);
 
     const syncDelete = useCallback(async () => {
-        const node = useCanvasStore.getState().nodes.find(n => n.id === nodeId);
+        const node = getNodeMap(useCanvasStore.getState().nodes).get(nodeId);
         const eventId = node?.data.calendarEvent?.id;
         if (!eventId) return;
 

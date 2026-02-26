@@ -1,9 +1,12 @@
 /**
  * PasteTextModal Tests — Verifies modal behavior
  */
-import { describe, it, expect, vi } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PasteTextModal } from '../components/PasteTextModal';
+import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 
 describe('PasteTextModal', () => {
     const defaultProps = {
@@ -11,6 +14,10 @@ describe('PasteTextModal', () => {
         onClose: vi.fn(),
         onSave: vi.fn(),
     };
+
+    beforeEach(() => {
+        _resetEscapeLayer();
+    });
 
     it('renders nothing when closed', () => {
         const { container } = render(
@@ -78,6 +85,13 @@ describe('PasteTextModal', () => {
         expect(onClose).toHaveBeenCalledOnce();
     });
 
+    it('calls onClose when Escape is pressed', () => {
+        const onClose = vi.fn();
+        render(<PasteTextModal {...defaultProps} onClose={onClose} />);
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(onClose).toHaveBeenCalledOnce();
+    });
+
     it('shows character count', () => {
         render(<PasteTextModal {...defaultProps} />);
         expect(screen.getByText('0 / 10,000')).toBeDefined();
@@ -89,5 +103,21 @@ describe('PasteTextModal', () => {
             target: { value: 'Hello' },
         });
         expect(screen.getByText('5 / 10,000')).toBeDefined();
+    });
+
+    describe('defensive memoization (prevents cascade rerenders)', () => {
+        it('is wrapped in React.memo', () => {
+            const src = readFileSync(
+                resolve(__dirname, '../components/PasteTextModal.tsx'), 'utf-8'
+            );
+            expect(src).toMatch(/React\.memo/);
+        });
+
+        it('KnowledgeBankAddButton uses stable callback for useOutsideClick', () => {
+            const src = readFileSync(
+                resolve(__dirname, '../components/KnowledgeBankAddButton.tsx'), 'utf-8'
+            );
+            expect(src).not.toMatch(/useOutsideClick\([^,]+,\s*[^,]+,\s*\(\)/);
+        });
     });
 });

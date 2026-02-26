@@ -41,6 +41,17 @@
   --tooltip-bg: hsl(0, 0%, 18%);
   --tooltip-text: hsl(0, 0%, 96%);
 
+  /* Node status colors - Dark Black */
+  --node-status-danger: hsl(0, 55%, 52%);
+  --node-status-danger-bg: hsl(0, 35%, 12%);
+  --node-status-danger-border: hsl(0, 30%, 24%);
+  --node-status-warning: hsl(45, 75%, 48%);
+  --node-status-warning-bg: hsl(45, 30%, 12%);
+  --node-status-warning-border: hsl(45, 25%, 24%);
+  --node-status-success: hsl(145, 45%, 42%);
+  --node-status-success-bg: hsl(145, 25%, 12%);
+  --node-status-success-border: hsl(145, 20%, 24%);
+
   --color-success-bg: hsl(145, 45%, 32%);
   --color-success-text: hsl(145, 50%, 95%);
   --color-error-bg: hsl(0, 55%, 42%);

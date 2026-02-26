@@ -1,6 +1,8 @@
 /**
  * IdeaCard Style Tests - Verify CSS classes are applied correctly
  */
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -66,6 +68,10 @@ vi.mock('../IdeaCard.module.css', () => ({
         divider: 'divider',
         headingSection: 'headingSection',
     },
+}));
+
+vi.mock('../nodeColorStyles.module.css', () => ({
+    default: { colorContainer: 'colorContainer' },
 }));
 
 // Helper to wrap component with ReactFlow provider
@@ -156,5 +162,32 @@ describe('IdeaCard styles', () => {
         // AI card shows prompt with promptText class
         const promptElement = screen.getByRole('button', { name: /AI prompt/i });
         expect(promptElement).toHaveClass('promptText');
+    });
+
+    describe('node color — contentArea inherits color (no --output-bg masking)', () => {
+        it('contentArea uses transparent background so parent color shows through', () => {
+            const css = readFileSync(
+                resolve(__dirname, '../IdeaCard.module.css'), 'utf-8'
+            );
+            const contentMatch = /^\.contentArea\s*\{[^}]*background:\s*([^;]+);/m.exec(css);
+            expect(contentMatch).toBeTruthy();
+            expect(contentMatch![1]!.trim()).toBe('transparent');
+        });
+
+        it('data-color="default" scopes --output-bg to contentArea', () => {
+            const css = readFileSync(
+                resolve(__dirname, '../IdeaCard.module.css'), 'utf-8'
+            );
+            expect(css).toMatch(/\.ideaCard\[data-color="default"\]\s+\.contentArea/);
+        });
+
+        it('shared nodeColorStyles contains data-color selectors for all status colors', () => {
+            const sharedCss = readFileSync(
+                resolve(__dirname, '../nodeColorStyles.module.css'), 'utf-8'
+            );
+            expect(sharedCss).toMatch(/\[data-color="danger"\]/);
+            expect(sharedCss).toMatch(/\[data-color="warning"\]/);
+            expect(sharedCss).toMatch(/\[data-color="success"\]/);
+        });
     });
 });

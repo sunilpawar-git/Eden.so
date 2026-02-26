@@ -4,27 +4,27 @@
  */
 import { useRef, useEffect, useCallback } from 'react';
 import { useSidebarStore } from '@/shared/stores/sidebarStore';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 
 export function useSidebarHover() {
     const isPinned = useSidebarStore((s) => s.isPinned);
     const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
-    const setHoverOpen = useSidebarStore((s) => s.setHoverOpen);
     const triggerZoneRef = useRef<HTMLDivElement>(null);
 
     const handleMouseEnter = useCallback(() => {
-        if (!isPinned) setHoverOpen(true);
-    }, [isPinned, setHoverOpen]);
+        const state = useSidebarStore.getState();
+        if (!state.isPinned) state.setHoverOpen(true);
+    }, []);
 
     const handleMouseLeave = useCallback(() => {
-        if (!isPinned) setHoverOpen(false);
-    }, [isPinned, setHoverOpen]);
+        const state = useSidebarStore.getState();
+        if (!state.isPinned) state.setHoverOpen(false);
+    }, []);
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key !== 'Escape' || isPinned || !isHoverOpen) return;
-        const tag = (document.activeElement?.tagName ?? '').toLowerCase();
-        if (tag === 'input' || tag === 'textarea') return;
-        setHoverOpen(false);
-    }, [isPinned, isHoverOpen, setHoverOpen]);
+    const handleEscape = useCallback(() => {
+        useSidebarStore.getState().setHoverOpen(false);
+    }, []);
 
     useEffect(() => {
         const el = triggerZoneRef.current;
@@ -39,11 +39,7 @@ export function useSidebarHover() {
         };
     }, [isPinned, handleMouseEnter, handleMouseLeave]);
 
-    useEffect(() => {
-        if (isPinned) return;
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isPinned, handleKeyDown]);
+    useEscapeLayer(ESCAPE_PRIORITY.SIDEBAR_HOVER, !isPinned && isHoverOpen, handleEscape);
 
     return { triggerZoneRef };
 }

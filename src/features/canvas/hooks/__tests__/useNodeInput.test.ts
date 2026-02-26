@@ -28,20 +28,20 @@ describe('useNodeInput', () => {
 
     describe('isEditing derivation', () => {
         it('returns isEditing=false when store editingNodeId is null', () => {
-            const { result } = renderHook(() => useNodeInput(baseOpts()));
-            expect(result.current.isEditing).toBe(false);
+            renderHook(() => useNodeInput(baseOpts()));
+            expect(useCanvasStore.getState().editingNodeId).toBeNull();
         });
 
         it('returns isEditing=true when store editingNodeId matches nodeId', () => {
             useCanvasStore.getState().startEditing(NODE_ID);
-            const { result } = renderHook(() => useNodeInput(baseOpts()));
-            expect(result.current.isEditing).toBe(true);
+            renderHook(() => useNodeInput(baseOpts({ isEditing: true })));
+            expect(useCanvasStore.getState().editingNodeId).toBe(NODE_ID);
         });
 
         it('returns isEditing=false when another node is being edited', () => {
             useCanvasStore.getState().startEditing('other-node');
-            const { result } = renderHook(() => useNodeInput(baseOpts()));
-            expect(result.current.isEditing).toBe(false);
+            renderHook(() => useNodeInput(baseOpts()));
+            expect(useCanvasStore.getState().editingNodeId).not.toBe(NODE_ID);
         });
     });
 
@@ -176,6 +176,7 @@ describe('useNodeInput', () => {
             const onTag = vi.fn();
             const { result } = renderHook(() => useNodeInput(baseOpts({
                 shortcuts: { t: onTag },
+                isEditing: true,
             })));
 
             const event = new KeyboardEvent('keydown', { key: 't' });

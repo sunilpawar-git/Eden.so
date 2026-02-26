@@ -1,9 +1,11 @@
 /**
  * TooltipButton — Action button with portal-based tooltip on hover
- * Wraps a single icon button and manages its own hover state + PortalTooltip.
- * Extracted from NodeUtilsBar to keep each file under SRP.
+ * Wraps a single icon button and manages tooltip visibility via ref (no useState).
+ * CSS :hover drives visual button states (no React state for styling).
+ * Tooltip visibility uses useState — isolated to this component by React.memo.
+ * Memoized per CLAUDE.md performance rules (500+ node canvases).
  */
-import { useState, useRef, useCallback, useId } from 'react';
+import React, { useRef, useCallback, useId, useState } from 'react';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
 import styles from './TooltipButton.module.css';
@@ -27,7 +29,7 @@ export interface TooltipButtonProps {
     tooltipPlacement?: PortalTooltipProps['placement'];
 }
 
-export function TooltipButton({
+export const TooltipButton = React.memo(function TooltipButton({
     label,
     tooltipText,
     shortcut,
@@ -73,4 +75,4 @@ export function TooltipButton({
             />
         </>
     );
-}
+});
