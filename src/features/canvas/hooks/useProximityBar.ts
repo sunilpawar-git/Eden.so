@@ -2,16 +2,21 @@
  * useProximityBar — Ref-based proximity detection for NodeUtilsBar.
  * Sets data attributes directly on the DOM (zero React state, zero re-renders).
  *
+ * The bar lives OUTSIDE the card edge (position: absolute; left: 100%).
+ * Proximity fires when cursor approaches or passes the card edge toward the bar.
+ *
  * Data attributes set on cardRef element:
  * - data-hovered="true"|removed         (mouse anywhere on card)
- * - data-bar-proximity="near"|removed   (mouse within threshold of bar edge)
+ * - data-bar-proximity="near"|removed   (cursor near or past the bar-side edge)
  * - data-bar-placement="left"|"right"   (auto-flips near viewport edge)
  * - data-bar-focused="true"|removed     (keyboard focus inside bar, a11y)
+ * - data-bar-deck="1"|"2"|removed       (which deck level the cursor has reached)
  */
 import { useEffect, type RefObject } from 'react';
 
 export const PROXIMITY_THRESHOLD_PX = 80;
 export const FLIP_THRESHOLD_PX = 60;
+export const DECK_TWO_THRESHOLD_PX = 50;
 
 function recalculatePlacement(card: HTMLElement): void {
     const rect = card.getBoundingClientRect();
@@ -20,17 +25,29 @@ function recalculatePlacement(card: HTMLElement): void {
     card.setAttribute('data-bar-placement', placement);
 }
 
+/**
+ * Proximity detection: measures how close the cursor is to the bar-side edge.
+ * `distToEdge` is the absolute distance from the cursor to the card edge.
+ * `pastEdge` is positive when the cursor has crossed past the edge toward the bar.
+ */
 function checkProximity(card: HTMLElement, clientX: number): void {
     const rect = card.getBoundingClientRect();
     const placement = card.getAttribute('data-bar-placement') ?? 'right';
-    const distanceFromEdge = placement === 'left'
-        ? clientX - rect.left
-        : rect.right - clientX;
 
-    if (distanceFromEdge <= PROXIMITY_THRESHOLD_PX) {
+    const edgeX = placement === 'left' ? rect.left : rect.right;
+    const signedDist = placement === 'left'
+        ? edgeX - clientX
+        : clientX - edgeX;
+
+    const distToEdge = Math.abs(signedDist);
+
+    if (distToEdge <= PROXIMITY_THRESHOLD_PX) {
         card.setAttribute('data-bar-proximity', 'near');
+        const pastEdge = Math.max(0, signedDist);
+        card.setAttribute('data-bar-deck', pastEdge >= DECK_TWO_THRESHOLD_PX ? '2' : '1');
     } else {
         card.removeAttribute('data-bar-proximity');
+        card.removeAttribute('data-bar-deck');
     }
 }
 
@@ -56,6 +73,7 @@ export function useProximityBar(
         const onMouseLeave = (): void => {
             card.removeAttribute('data-hovered');
             card.removeAttribute('data-bar-proximity');
+            card.removeAttribute('data-bar-deck');
         };
 
         const onResize = (): void => {

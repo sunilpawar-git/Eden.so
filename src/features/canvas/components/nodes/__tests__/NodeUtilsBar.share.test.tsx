@@ -1,12 +1,18 @@
 /**
- * NodeUtilsBar Share integration tests — ShareMenu renders inside overflow menu.
+ * NodeUtilsBar Share integration tests — Share deck button + ShareMenu in overflow.
+ * Share is a direct deck 2 button. The ShareMenu sub-menu opens inside overflow.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 
-const openOverflow = () => fireEvent.click(screen.getByLabelText('More actions'));
+vi.mock('../../../../hooks/useUtilsBarLayout', () => ({
+    useUtilsBarLayout: () => ({
+        deckOneActions: ['ai', 'connect', 'copy', 'pin', 'delete'],
+        deckTwoActions: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+    }),
+}));
 
 describe('NodeUtilsBar — ShareMenu integration', () => {
     const baseProps = {
@@ -25,23 +31,22 @@ describe('NodeUtilsBar — ShareMenu integration', () => {
         });
     });
 
-    it('renders ShareMenu inside overflow when onShareClick is provided', () => {
+    it('renders Share button directly when onShareClick is provided', () => {
         const onShareClick = vi.fn().mockResolvedValue(undefined);
         render(<NodeUtilsBar {...baseProps} onShareClick={onShareClick} />);
-        openOverflow();
         expect(screen.getByLabelText('Share')).toBeInTheDocument();
     });
 
-    it('does not render ShareMenu when onShareClick is not provided', () => {
+    it('does not render Share when onShareClick is not provided', () => {
         render(<NodeUtilsBar {...baseProps} />);
-        openOverflow();
         expect(screen.queryByLabelText('Share')).not.toBeInTheDocument();
     });
 
-    it('passes isSharing prop to ShareMenu — Share button is disabled', () => {
+    it('overflow menu contains ShareMenu sub-menu when onShareClick is provided', () => {
         const onShareClick = vi.fn().mockResolvedValue(undefined);
-        render(<NodeUtilsBar {...baseProps} onShareClick={onShareClick} isSharing />);
-        openOverflow();
-        expect(screen.getByLabelText('Share')).toBeDisabled();
+        render(<NodeUtilsBar {...baseProps} onShareClick={onShareClick} />);
+        fireEvent.click(screen.getByLabelText('More actions'));
+        const shareElements = screen.getAllByLabelText('Share');
+        expect(shareElements.length).toBeGreaterThanOrEqual(2);
     });
 });

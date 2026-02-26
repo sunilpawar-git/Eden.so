@@ -1,5 +1,5 @@
 /**
- * useNodeUtilsBar — Logic for NodeUtilsBar: overflow items, submenu toggles, outside handlers.
+ * useNodeUtilsBar — Logic for NodeUtilsBar: submenu toggles, outside-click, overflow state.
  * Extracted for CLAUDE.md 100-line component limit.
  */
 import { useMemo, useRef, useCallback } from 'react';
@@ -9,29 +9,13 @@ import { useNodeUtilsBarOutsideHandlers } from './useNodeUtilsBarOutsideHandlers
 import type { NodeColorKey } from '../types/node';
 
 interface UseNodeUtilsBarProps {
-    onTagClick: () => void;
-    onImageClick?: () => void;
-    onDuplicateClick?: () => void;
-    onFocusClick?: () => void;
-    onCollapseToggle?: () => void;
     onShareClick?: (targetWorkspaceId: string) => Promise<void>;
     onColorChange?: (colorKey: NodeColorKey) => void;
-    isCollapsed?: boolean;
     isPinnedOpen?: boolean;
 }
 
 export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
-    const {
-        onTagClick,
-        onImageClick,
-        onDuplicateClick,
-        onFocusClick,
-        onCollapseToggle,
-        onShareClick,
-        onColorChange,
-        isCollapsed = false,
-        isPinnedOpen = false,
-    } = props;
+    const { onShareClick, onColorChange, isPinnedOpen = false } = props;
 
     const containerRef = useRef<HTMLDivElement>(null);
     const { state, actions: controllerActions } = useNodeUtilsController(isPinnedOpen);
@@ -69,19 +53,7 @@ export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
         else openSubmenu('color');
     }, [closeSubmenu, openSubmenu, isColorOpen]);
 
-    const overflowItems = useMemo(
-        () =>
-            buildNodeUtilsOverflowItems({
-                onTagClick,
-                onImageClick,
-                onDuplicateClick,
-                onFocusClick,
-                onCollapseToggle,
-                isCollapsed,
-            }),
-        [onTagClick, onImageClick, onDuplicateClick, onFocusClick, onCollapseToggle, isCollapsed],
-    );
-
+    const overflowItems = useMemo(() => buildNodeUtilsOverflowItems(), []);
     const hasOverflow = overflowItems.length > 0 || !!onShareClick || !!onColorChange;
 
     return {

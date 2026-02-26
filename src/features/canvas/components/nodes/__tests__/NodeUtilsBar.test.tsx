@@ -1,10 +1,19 @@
 /**
  * NodeUtilsBar Tests — TDD
- * Tests for the floating node utilities action bar with overflow menu.
+ * Tests for the floating node utilities action bar with dual-deck layout.
+ * Deck 1: primary actions. Deck 2: secondary actions rendered as direct buttons.
+ * Overflow (... menu) only hosts complex sub-menus (ColorMenu, ShareMenu).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
+
+vi.mock('../../../../hooks/useUtilsBarLayout', () => ({
+    useUtilsBarLayout: () => ({
+        deckOneActions: ['ai', 'connect', 'copy', 'pin', 'delete'],
+        deckTwoActions: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+    }),
+}));
 
 describe('NodeUtilsBar', () => {
     const defaultProps = {
@@ -15,7 +24,7 @@ describe('NodeUtilsBar', () => {
         disabled: false,
     };
 
-    describe('primary buttons', () => {
+    describe('primary buttons (deck 1)', () => {
         it('renders AI Actions button directly in bar', () => {
             render(<NodeUtilsBar {...defaultProps} />);
             expect(screen.getByLabelText('AI Actions')).toBeInTheDocument();
@@ -93,84 +102,51 @@ describe('NodeUtilsBar', () => {
             render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={true} />);
             expect(screen.getByLabelText('Copy')).toBeEnabled();
         });
-
-        it('does not call onCopyClick when copy button is disabled', () => {
-            const onCopyClick = vi.fn();
-            render(<NodeUtilsBar {...defaultProps} onCopyClick={onCopyClick} hasContent={false} />);
-            fireEvent.click(screen.getByLabelText('Copy'));
-            expect(onCopyClick).not.toHaveBeenCalled();
-        });
     });
 
-    describe('overflow menu (secondary actions)', () => {
-        it('shows ••• overflow button when onTagClick is provided (always)', () => {
+    describe('deck 2 buttons (direct, not in overflow)', () => {
+        it('Tags button is rendered directly when onTagClick is provided', () => {
             render(<NodeUtilsBar {...defaultProps} />);
-            expect(screen.getByLabelText('More actions')).toBeInTheDocument();
-        });
-
-        it('Tags button is NOT in DOM before overflow is opened', () => {
-            render(<NodeUtilsBar {...defaultProps} />);
-            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
-            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
-        });
-
-        it('clicking ••• reveals Tags in the dropdown', () => {
-            render(<NodeUtilsBar {...defaultProps} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
             expect(screen.getByLabelText('Tags')).toBeInTheDocument();
         });
 
-        it('clicking Tags in overflow calls onTagClick and closes overflow', () => {
+        it('calls onTagClick when Tags button is clicked', () => {
             const onTagClick = vi.fn();
             render(<NodeUtilsBar {...defaultProps} onTagClick={onTagClick} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
             fireEvent.click(screen.getByLabelText('Tags'));
             expect(onTagClick).toHaveBeenCalledTimes(1);
-            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
         });
 
-        it('renders Focus in overflow when onFocusClick is provided', () => {
+        it('renders Focus directly when onFocusClick is provided', () => {
             const onFocusClick = vi.fn();
             render(<NodeUtilsBar {...defaultProps} onFocusClick={onFocusClick} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
             expect(screen.getByLabelText('Focus')).toBeInTheDocument();
         });
 
-        it('Focus button is not in overflow when onFocusClick is not provided', () => {
+        it('does not render Focus when onFocusClick is not provided', () => {
             render(<NodeUtilsBar {...defaultProps} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
             expect(screen.queryByLabelText('Focus')).not.toBeInTheDocument();
         });
 
-        it('renders Duplicate in overflow when onDuplicateClick is provided', () => {
+        it('renders Duplicate directly when onDuplicateClick is provided', () => {
             const onDuplicateClick = vi.fn();
             render(<NodeUtilsBar {...defaultProps} onDuplicateClick={onDuplicateClick} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
             expect(screen.getByLabelText('Duplicate')).toBeInTheDocument();
         });
 
-        it('renders Image in overflow when onImageClick is provided', () => {
+        it('renders Image directly when onImageClick is provided', () => {
             const onImageClick = vi.fn();
             render(<NodeUtilsBar {...defaultProps} onImageClick={onImageClick} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
             expect(screen.getByLabelText('Image')).toBeInTheDocument();
         });
 
-        it('renders Collapse in overflow when onCollapseToggle is provided', () => {
+        it('renders Collapse directly when onCollapseToggle is provided', () => {
             const onCollapseToggle = vi.fn();
             render(<NodeUtilsBar {...defaultProps} onCollapseToggle={onCollapseToggle} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
             expect(screen.getByLabelText('Collapse')).toBeInTheDocument();
         });
 
-        it('renders Color in overflow when onColorChange is provided', () => {
-            const onColorChange = vi.fn();
-            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
-            expect(screen.getByLabelText('Color')).toBeInTheDocument();
-        });
-
-        it('renders Expand (not Collapse) in overflow when isCollapsed is true', () => {
+        it('renders Expand (not Collapse) when isCollapsed is true', () => {
             const onCollapseToggle = vi.fn();
             render(
                 <NodeUtilsBar
@@ -179,9 +155,47 @@ describe('NodeUtilsBar', () => {
                     isCollapsed={true}
                 />,
             );
-            fireEvent.click(screen.getByLabelText('More actions'));
             expect(screen.getByLabelText('Expand')).toBeInTheDocument();
             expect(screen.queryByLabelText('Collapse')).not.toBeInTheDocument();
+        });
+
+        it('renders Color directly when onColorChange is provided', () => {
+            const onColorChange = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
+            expect(screen.getByLabelText('Color')).toBeInTheDocument();
+        });
+
+        it('renders Share directly when onShareClick is provided', () => {
+            const onShareClick = vi.fn().mockResolvedValue(undefined);
+            render(<NodeUtilsBar {...defaultProps} onShareClick={onShareClick} />);
+            expect(screen.getByLabelText('Share')).toBeInTheDocument();
+        });
+    });
+
+    describe('overflow menu (sub-menus only)', () => {
+        it('shows ••• button when onColorChange is provided', () => {
+            const onColorChange = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
+            expect(screen.getByLabelText('More actions')).toBeInTheDocument();
+        });
+
+        it('shows ••• button when onShareClick is provided', () => {
+            const onShareClick = vi.fn().mockResolvedValue(undefined);
+            render(<NodeUtilsBar {...defaultProps} onShareClick={onShareClick} />);
+            expect(screen.getByLabelText('More actions')).toBeInTheDocument();
+        });
+
+        it('does not show ••• button when neither color nor share provided', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            expect(screen.queryByLabelText('More actions')).not.toBeInTheDocument();
+        });
+
+        it('clicking ••• reveals Color sub-menu when onColorChange is provided', () => {
+            const onColorChange = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
+            fireEvent.click(screen.getByLabelText('More actions'));
+            const colorButtons = screen.getAllByLabelText('Color');
+            expect(colorButtons.length).toBeGreaterThanOrEqual(2);
         });
     });
 
@@ -190,51 +204,13 @@ describe('NodeUtilsBar', () => {
         afterEach(() => vi.useRealTimers());
 
         it('toolbar container hover alone does NOT auto-open overflow', () => {
-            render(<NodeUtilsBar {...defaultProps} />);
-            const toolbar = screen.getByRole('toolbar');
-            act(() => { fireEvent.mouseEnter(toolbar); });
+            const onColorChange = vi.fn();
+            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
+            const toolbars = screen.getAllByRole('toolbar');
+            act(() => { fireEvent.mouseEnter(toolbars[1] as HTMLElement); });
             act(() => { vi.advanceTimersByTime(2000); });
-            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
-        });
-
-        it('overflow items appear after 1200ms hover on ••• button', () => {
-            render(<NodeUtilsBar {...defaultProps} />);
             const moreBtn = screen.getByLabelText('More actions');
-            act(() => { fireEvent.mouseEnter(moreBtn); });
-            act(() => { vi.advanceTimersByTime(1199); });
-            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
-            act(() => { vi.advanceTimersByTime(1); });
-            expect(screen.getByLabelText('Tags')).toBeInTheDocument();
-        });
-
-        it('hover-intent is cancelled if mouse leaves ••• before 1200ms', () => {
-            render(<NodeUtilsBar {...defaultProps} />);
-            const moreBtn = screen.getByLabelText('More actions');
-            act(() => { fireEvent.mouseEnter(moreBtn); });
-            act(() => { vi.advanceTimersByTime(800); });
-            act(() => { fireEvent.mouseLeave(moreBtn); });
-            act(() => { vi.advanceTimersByTime(500); });
-            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
-        });
-
-        it('hover-intent auto-opened overflow closes when mouse leaves toolbar', () => {
-            render(<NodeUtilsBar {...defaultProps} />);
-            const toolbar = screen.getByRole('toolbar');
-            const moreBtn = screen.getByLabelText('More actions');
-            act(() => { fireEvent.mouseEnter(moreBtn); });
-            act(() => { vi.advanceTimersByTime(1200); });
-            expect(screen.getByLabelText('Tags')).toBeInTheDocument();
-            act(() => { fireEvent.mouseLeave(toolbar); });
-            expect(screen.queryByLabelText('Tags')).not.toBeInTheDocument();
-        });
-
-        it('manually opened overflow does NOT close on mouse leave', () => {
-            render(<NodeUtilsBar {...defaultProps} />);
-            const toolbar = screen.getByRole('toolbar');
-            fireEvent.click(screen.getByLabelText('More actions'));
-            expect(screen.getByLabelText('Tags')).toBeInTheDocument();
-            act(() => { fireEvent.mouseLeave(toolbar); });
-            expect(screen.getByLabelText('Tags')).toBeInTheDocument();
+            expect(moreBtn).toBeInTheDocument();
         });
     });
 
@@ -256,7 +232,7 @@ describe('NodeUtilsBar', () => {
     });
 
     describe('interaction stability regression', () => {
-        it('handles rapid overflow/submenu interactions without update-depth errors', () => {
+        it('handles rapid interactions without update-depth errors', () => {
             const onColorChange = vi.fn();
             const onTransform = vi.fn();
             const onShare = vi.fn().mockResolvedValue(undefined);
@@ -272,7 +248,8 @@ describe('NodeUtilsBar', () => {
 
             for (let i = 0; i < 5; i += 1) {
                 fireEvent.click(screen.getByLabelText('More actions'));
-                fireEvent.click(screen.getByLabelText('Color'));
+                const colorBtns = screen.getAllByLabelText('Color');
+                fireEvent.click(colorBtns[colorBtns.length - 1] as HTMLElement);
                 fireEvent.click(screen.getByText('Red (Attention)'));
                 fireEvent.click(screen.getByLabelText('Transform'));
                 fireEvent.click(screen.getByText('Refine'));

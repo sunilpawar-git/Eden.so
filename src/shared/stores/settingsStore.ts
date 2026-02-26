@@ -4,6 +4,9 @@
  */
 import { create } from 'zustand';
 import { getStorageItem, getValidatedStorageItem, setStorageItem } from '@/shared/utils/storage';
+import { DEFAULT_UTILS_BAR_LAYOUT } from '@/features/canvas/types/utilsBarLayout';
+import type { UtilsBarActionId, UtilsBarDeck, UtilsBarLayout } from '@/features/canvas/types/utilsBarLayout';
+import { loadUtilsBarLayout, computeNextLayout, persistUtilsBarLayout } from './utilsBarLayoutSlice';
 
 export type ThemeOption = 'light' | 'dark' | 'system' | 'sepia' | 'grey' | 'darkBlack';
 type ResolvedTheme = 'light' | 'dark' | 'sepia' | 'grey' | 'darkBlack';
@@ -47,6 +50,7 @@ interface SettingsState {
     connectorStyle: ConnectorStyle;
     isCanvasLocked: boolean;
     canvasFreeFlow: boolean;
+    utilsBarLayout: UtilsBarLayout;
     setTheme: (theme: ThemeOption) => void;
     toggleCanvasGrid: () => void;
     setAutoSave: (enabled: boolean) => void;
@@ -56,6 +60,8 @@ interface SettingsState {
     setConnectorStyle: (style: ConnectorStyle) => void;
     toggleCanvasLocked: () => void;
     toggleCanvasFreeFlow: () => void;
+    setUtilsBarActionDeck: (actionId: UtilsBarActionId, deck: UtilsBarDeck) => void;
+    resetUtilsBarLayout: () => void;
     getResolvedTheme: () => ResolvedTheme;
     loadFromStorage: () => void;
 }
@@ -74,67 +80,43 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
     isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
     canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
-
-    setTheme: (theme: ThemeOption) => {
-        set({ theme });
-        setStorageItem(STORAGE_KEYS.theme, theme);
-    },
-
+    utilsBarLayout: loadUtilsBarLayout(),
+    setTheme: (theme: ThemeOption) => { set({ theme }); setStorageItem(STORAGE_KEYS.theme, theme); },
     toggleCanvasGrid: () => {
-        const newValue = !get().canvasGrid;
-        set({ canvasGrid: newValue });
-        setStorageItem(STORAGE_KEYS.canvasGrid, newValue);
+        const v = !get().canvasGrid; set({ canvasGrid: v }); setStorageItem(STORAGE_KEYS.canvasGrid, v);
     },
-
-    setAutoSave: (enabled: boolean) => {
-        set({ autoSave: enabled });
-        setStorageItem(STORAGE_KEYS.autoSave, enabled);
-    },
-
+    setAutoSave: (enabled: boolean) => { set({ autoSave: enabled }); setStorageItem(STORAGE_KEYS.autoSave, enabled); },
     setAutoSaveInterval: (seconds: number) => {
         const clamped = clamp(seconds, AUTO_SAVE_MIN, AUTO_SAVE_MAX);
-        set({ autoSaveInterval: clamped });
-        setStorageItem(STORAGE_KEYS.autoSaveInterval, clamped);
+        set({ autoSaveInterval: clamped }); setStorageItem(STORAGE_KEYS.autoSaveInterval, clamped);
     },
-
     toggleCompactMode: () => {
-        const newValue = !get().compactMode;
-        set({ compactMode: newValue });
-        setStorageItem(STORAGE_KEYS.compactMode, newValue);
+        const v = !get().compactMode; set({ compactMode: v }); setStorageItem(STORAGE_KEYS.compactMode, v);
     },
-
-    setCanvasScrollMode: (mode: CanvasScrollMode) => {
-        set({ canvasScrollMode: mode });
-        setStorageItem(STORAGE_KEYS.canvasScrollMode, mode);
-    },
-
-    setConnectorStyle: (style: ConnectorStyle) => {
-        set({ connectorStyle: style });
-        setStorageItem(STORAGE_KEYS.connectorStyle, style);
-    },
-
+    setCanvasScrollMode: (mode: CanvasScrollMode) => { set({ canvasScrollMode: mode }); setStorageItem(STORAGE_KEYS.canvasScrollMode, mode); },
+    setConnectorStyle: (style: ConnectorStyle) => { set({ connectorStyle: style }); setStorageItem(STORAGE_KEYS.connectorStyle, style); },
     toggleCanvasLocked: () => {
-        const newValue = !get().isCanvasLocked;
-        set({ isCanvasLocked: newValue });
-        setStorageItem(STORAGE_KEYS.isCanvasLocked, newValue);
+        const v = !get().isCanvasLocked; set({ isCanvasLocked: v }); setStorageItem(STORAGE_KEYS.isCanvasLocked, v);
     },
-
     toggleCanvasFreeFlow: () => {
-        const newValue = !get().canvasFreeFlow;
-        set({ canvasFreeFlow: newValue });
-        setStorageItem(STORAGE_KEYS.canvasFreeFlow, newValue);
+        const v = !get().canvasFreeFlow; set({ canvasFreeFlow: v }); setStorageItem(STORAGE_KEYS.canvasFreeFlow, v);
     },
-
+    setUtilsBarActionDeck: (actionId: UtilsBarActionId, deck: UtilsBarDeck) => {
+        const next = computeNextLayout(get().utilsBarLayout, actionId, deck);
+        if (!next) return;
+        set({ utilsBarLayout: next }); persistUtilsBarLayout(next);
+    },
+    resetUtilsBarLayout: () => {
+        set({ utilsBarLayout: DEFAULT_UTILS_BAR_LAYOUT }); persistUtilsBarLayout(DEFAULT_UTILS_BAR_LAYOUT);
+    },
     getResolvedTheme: (): ResolvedTheme => {
         const { theme } = get();
         if (DIRECT_THEMES.has(theme)) return theme as ResolvedTheme;
-        // theme === 'system': resolve based on OS preference
         if (typeof window !== 'undefined') {
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         return 'light';
     },
-
     loadFromStorage: () => {
         set({
             theme: getValidatedStorageItem(STORAGE_KEYS.theme, 'system', VALID_THEMES),
@@ -146,7 +128,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
             connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
             isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
             canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
+            utilsBarLayout: loadUtilsBarLayout(),
         });
     },
-
 }));

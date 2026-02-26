@@ -5,13 +5,14 @@ import { useState } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { AppearanceSection } from './sections/AppearanceSection';
 import { CanvasSection } from './sections/CanvasSection';
+import { ToolbarSection } from './sections/ToolbarSection';
 import { AccountSection } from './sections/AccountSection';
 import { KeyboardSection } from './sections/KeyboardSection';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import styles from './SettingsPanel.module.css';
 
-type TabId = 'appearance' | 'canvas' | 'account' | 'keyboard';
+type TabId = 'appearance' | 'canvas' | 'toolbar' | 'account' | 'keyboard';
 
 interface Tab {
     id: TabId;
@@ -21,6 +22,7 @@ interface Tab {
 const tabs: Tab[] = [
     { id: 'appearance', label: strings.settings.appearance },
     { id: 'canvas', label: strings.settings.canvas },
+    { id: 'toolbar', label: strings.settings.toolbar },
     { id: 'account', label: strings.settings.account },
     { id: 'keyboard', label: strings.settings.keyboard },
 ];
@@ -43,6 +45,8 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 return <AppearanceSection />;
             case 'canvas':
                 return <CanvasSection />;
+            case 'toolbar':
+                return <ToolbarSection />;
             case 'account':
                 return <AccountSection />;
             case 'keyboard':

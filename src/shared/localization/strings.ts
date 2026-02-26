@@ -3,6 +3,7 @@ import { workspaceStrings } from './workspaceStrings';
 import { canvasStrings } from './canvasStrings';
 import { knowledgeBankStrings } from './knowledgeBankStrings';
 import { calendarStrings } from './calendarStrings';
+import { settingsStrings } from './settingsStrings';
 
 export const strings = {
     app: {
@@ -61,36 +62,7 @@ export const strings = {
         comingSoon: 'Coming soon!',
         closeSymbol: '\u00D7',
     },
-    settings: {
-        title: 'Settings',
-        appearance: 'Appearance',
-        canvas: 'Canvas',
-        account: 'Account',
-        keyboard: 'Keyboard Shortcuts',
-        theme: 'Theme',
-        themeLight: 'Light',
-        themeDark: 'Dark',
-        themeSystem: 'System',
-        themeSepia: 'Sepia',
-        themeGrey: 'Grey',
-        themeDarkBlack: 'Dark Black',
-        canvasGrid: 'Show grid',
-        autoSave: 'Auto-save',
-        autoSaveInterval: 'Auto-save interval',
-        seconds: 'seconds',
-        compactMode: 'Compact mode',
-        canvasScrollMode: 'Scroll behavior',
-        canvasScrollZoom: 'Canvas Zoom',
-        canvasScrollNavigate: 'Canvas Navigation',
-        connectorStyle: 'Connector style',
-        connectorSolid: 'Solid',
-        connectorSubtle: 'Subtle',
-        connectorThick: 'Thick',
-        connectorDashed: 'Dashed',
-        connectorDotted: 'Dotted',
-        freeFlow: 'Free flow mode',
-        close: 'Close',
-    },
+    settings: settingsStrings,
     shortcuts: {
         openSettings: 'Open Settings',
         addNode: 'Add Node',

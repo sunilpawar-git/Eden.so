@@ -4,6 +4,7 @@
  */
 import { vi } from 'vitest';
 import { useSettingsStore } from '../../settingsStore';
+import { DEFAULT_UTILS_BAR_LAYOUT } from '@/features/canvas/types/utilsBarLayout';
 
 /** Creates a mock localStorage with an in-memory backing store */
 export function createLocalStorageMock() {
@@ -44,6 +45,7 @@ export const DEFAULT_SETTINGS_STATE = {
     connectorStyle: 'solid' as const,
     isCanvasLocked: false,
     canvasFreeFlow: false,
+    utilsBarLayout: DEFAULT_UTILS_BAR_LAYOUT,
 };
 
 /** Resets the settings store to default state */

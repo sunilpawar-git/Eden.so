@@ -176,4 +176,81 @@ describe('useProximityBar', () => {
         window.dispatchEvent(new Event('resize'));
         expect(card.getAttribute('data-bar-placement')).toBe('left');
     });
+
+    describe('data-bar-deck (dual-deck cascade)', () => {
+        it('sets data-bar-deck="1" when proximity is near but cursor is close to node edge', () => {
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+            renderHook(() => useProximityBar(cardRef, barRef));
+
+            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 490, bubbles: true }));
+            expect(card.getAttribute('data-bar-proximity')).toBe('near');
+            expect(card.getAttribute('data-bar-deck')).toBe('1');
+        });
+
+        it('sets data-bar-deck="2" when cursor passes DECK_TWO_THRESHOLD_PX beyond node edge', () => {
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+            renderHook(() => useProximityBar(cardRef, barRef));
+
+            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 560, bubbles: true }));
+            expect(card.getAttribute('data-bar-proximity')).toBe('near');
+            expect(card.getAttribute('data-bar-deck')).toBe('2');
+        });
+
+        it('reverts to data-bar-deck="1" when cursor moves back toward node', () => {
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+            renderHook(() => useProximityBar(cardRef, barRef));
+
+            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 560, bubbles: true }));
+            expect(card.getAttribute('data-bar-deck')).toBe('2');
+
+            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 510, bubbles: true }));
+            expect(card.getAttribute('data-bar-deck')).toBe('1');
+        });
+
+        it('removes data-bar-deck on mouse leave', () => {
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+            renderHook(() => useProximityBar(cardRef, barRef));
+
+            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 560, bubbles: true }));
+            expect(card.getAttribute('data-bar-deck')).toBe('2');
+
+            card.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+            expect(card.getAttribute('data-bar-deck')).toBeNull();
+        });
+
+        it('does not set data-bar-deck when proximity is not near', () => {
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+            renderHook(() => useProximityBar(cardRef, barRef));
+
+            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 200, bubbles: true }));
+            expect(card.getAttribute('data-bar-proximity')).toBeNull();
+            expect(card.getAttribute('data-bar-deck')).toBeNull();
+        });
+
+        it('handles left-placement deck detection', () => {
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+
+            vi.spyOn(card, 'getBoundingClientRect').mockReturnValue({
+                left: 100, right: window.innerWidth - 30, top: 100, bottom: 300,
+                width: 400, height: 200, x: 100, y: 100, toJSON: () => ({}),
+            });
+
+            renderHook(() => useProximityBar(cardRef, barRef));
+            card.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+            expect(card.getAttribute('data-bar-placement')).toBe('left');
+
+            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 90, bubbles: true }));
+            expect(card.getAttribute('data-bar-proximity')).toBe('near');
+            expect(card.getAttribute('data-bar-deck')).toBe('1');
+
+            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 40, bubbles: true }));
+            expect(card.getAttribute('data-bar-deck')).toBe('2');
+        });
+    });
 });

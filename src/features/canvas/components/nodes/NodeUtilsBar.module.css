@@ -1,19 +1,30 @@
 /**
- * NodeUtilsBar Styles — Pill bar tucked behind node
- * Top-anchored: bar starts at --node-utils-bar-top-offset, expands downward.
- * Slides out on hover with intent delay; uses design tokens only.
- * Visibility driven by parent data-bar-proximity / data-bar-focused attributes.
+ * NodeUtilsBar Styles — Dual-deck card cascade.
+ * Two vertical bars slide out from node edge like cards from a deck.
+ * barWrapper is anchored to the card edge and extends outward.
+ * Visibility driven by parent data-bar-proximity / data-bar-focused / data-bar-deck.
+ * Both decks overlap the node side via z-index, always on top.
  */
 
 .barWrapper {
-    display: contents;
-}
-
-.container {
     position: absolute;
     top: var(--node-utils-bar-top-offset);
-    right: 0;
-    transform: translateX(calc(100% - var(--node-utils-bar-peek)));
+    left: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: var(--node-utils-deck-gap);
+    pointer-events: none;
+    z-index: var(--z-dropdown);
+}
+
+:global([data-bar-placement="left"]) .barWrapper {
+    left: auto;
+    right: 100%;
+    flex-direction: row-reverse;
+}
+
+/* Shared deck base — hidden, tucked behind the card edge */
+.deckBase {
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -24,72 +35,97 @@
     box-shadow: var(--card-shadow);
     opacity: 0;
     visibility: hidden;
-    z-index: -1;
     pointer-events: none;
+    transform: translateX(calc(-100% + var(--node-utils-bar-peek))) rotate(var(--node-utils-deck-rotation));
     transition:
         opacity var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
         transform var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
-        visibility 0s linear calc(var(--node-utils-transition-duration) + var(--node-utils-hover-delay-out)),
-        z-index 0s linear calc(var(--node-utils-transition-duration) + var(--node-utils-hover-delay-out)),
-        box-shadow var(--node-utils-transition-duration) ease;
+        visibility 0s linear calc(var(--node-utils-transition-duration) + var(--node-utils-hover-delay-out));
 }
 
-/* Slide out when parent has data-bar-proximity="near" or data-bar-focused="true" */
-:global([data-bar-proximity="near"]) .container,
-:global([data-bar-focused="true"]) .container {
+:global([data-bar-placement="left"]) .deckBase {
+    transform: translateX(calc(100% - var(--node-utils-bar-peek))) rotate(calc(-1 * var(--node-utils-deck-rotation)));
+}
+
+/* Deck One — cascades out when proximity is near */
+.deckOne {
+    composes: deckBase;
+    z-index: var(--z-dropdown);
+}
+
+:global([data-bar-proximity="near"]) .deckOne,
+:global([data-bar-focused="true"]) .deckOne {
     opacity: 1;
     visibility: visible;
-    transform: translateX(100%);
-    z-index: var(--z-dropdown);
     pointer-events: auto;
+    transform: translateX(0) rotate(0deg);
     box-shadow: var(--card-shadow-hover);
     transition:
         opacity var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
         transform var(--node-utils-spring-duration) cubic-bezier(0.34, 1.56, 0.64, 1) var(--node-utils-hover-delay-in),
-        visibility 0s linear 0s,
-        z-index 0s linear 0s,
-        box-shadow var(--node-utils-transition-duration) ease;
+        visibility 0s linear 0s;
 }
 
-/* Left-side variant: slide out to the left when near viewport right edge */
-:global([data-bar-placement="left"]) .container {
-    right: auto;
-    left: 0;
-    transform: translateX(calc(-100% + var(--node-utils-bar-peek)));
+:global([data-bar-placement="left"][data-bar-proximity="near"]) .deckOne,
+:global([data-bar-placement="left"][data-bar-focused="true"]) .deckOne {
+    transform: translateX(0) rotate(0deg);
 }
 
-:global([data-bar-placement="left"][data-bar-proximity="near"]) .container,
-:global([data-bar-placement="left"][data-bar-focused="true"]) .container {
-    transform: translateX(-100%);
+/* Deck Two — cascades out when deck level reaches 2 */
+.deckTwo {
+    composes: deckBase;
+    z-index: var(--node-utils-deck-two-z);
+    transform: translateX(calc(-100% + var(--node-utils-bar-peek))) rotate(calc(-1 * var(--node-utils-deck-rotation))) scale(0.97);
 }
 
-/* Pinned-open state: same as visible but no transition delay */
-.containerPinnedOpen {
+:global([data-bar-placement="left"]) .deckTwo {
+    transform: translateX(calc(100% - var(--node-utils-bar-peek))) rotate(var(--node-utils-deck-rotation)) scale(0.97);
+}
+
+:global([data-bar-deck="2"]) .deckTwo,
+:global([data-bar-focused="true"]) .deckTwo {
     opacity: 1;
     visibility: visible;
-    transform: translateX(100%);
-    z-index: var(--z-dropdown);
     pointer-events: auto;
+    transform: translateX(0) rotate(0deg) scale(1);
+    box-shadow: var(--card-shadow-hover);
+    transition:
+        opacity var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) calc(var(--node-utils-hover-delay-in) + var(--node-utils-deck-stagger-delay)),
+        transform var(--node-utils-spring-duration) cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--node-utils-hover-delay-in) + var(--node-utils-deck-stagger-delay)),
+        visibility 0s linear 0s;
+}
+
+:global([data-bar-placement="left"][data-bar-deck="2"]) .deckTwo,
+:global([data-bar-placement="left"][data-bar-focused="true"]) .deckTwo {
+    transform: translateX(0) rotate(0deg) scale(1);
+}
+
+/* Pinned-open state: both decks visible, no transition */
+.deckOnePinned {
+    composes: deckOne;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0) rotate(0deg);
     box-shadow: var(--card-shadow-hover);
     transition: none;
 }
 
-:global([data-bar-placement="left"]) .containerPinnedOpen {
-    transform: translateX(-100%);
+.deckTwoPinned {
+    composes: deckTwo;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0) rotate(0deg) scale(1);
+    box-shadow: var(--card-shadow-hover);
+    transition: none;
 }
 
-/* Left-side peek indicator */
-:global([data-bar-placement="left"]) .peekIndicator {
-    right: auto;
-    left: calc(-1 * var(--node-utils-bar-peek));
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-}
-
-/* Peek indicator — subtle colored sliver on node's right edge, top-aligned with bar */
+/* Peek indicator — subtle colored sliver on node's right edge */
 .peekIndicator {
     position: absolute;
-    top: var(--node-utils-bar-top-offset);
-    right: calc(-1 * var(--node-utils-bar-peek));
+    top: 0;
+    left: 0;
     width: var(--node-utils-bar-peek);
     height: var(--node-utils-peek-height);
     background: var(--color-primary);
@@ -101,16 +137,18 @@
     animation: peekPulse 2.5s ease-in-out infinite;
 }
 
+:global([data-bar-placement="left"]) .peekIndicator {
+    left: auto;
+    right: 0;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
 @keyframes peekPulse {
     0%, 100% { opacity: 0.3; }
     50% { opacity: 0.6; }
 }
 
-/* Respect user motion preferences — disable continuous animation */
 @media (prefers-reduced-motion: reduce) {
-    .peekIndicator {
-        animation: none;
-    }
+    .peekIndicator { animation: none; }
+    .deckBase { transition: opacity var(--node-utils-transition-duration) ease; }
 }
-
-/* Button styles (.actionButton, .deleteButton, .icon) are in TooltipButton.module.css */

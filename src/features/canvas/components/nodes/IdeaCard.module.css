@@ -10,7 +10,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    /* Fill ReactFlow node for vertical resize support */
+    overflow: visible;
+    /* NodeUtilsBar is position:absolute and extends outside the card boundary */
 }
 
 .ideaCard {

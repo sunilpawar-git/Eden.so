@@ -21,12 +21,21 @@ vi.mock('@/shared/components/PortalTooltip', () => ({
     ),
 }));
 
-// Mock CSS modules
+vi.mock('../../../../hooks/useUtilsBarLayout', () => ({
+    useUtilsBarLayout: () => ({
+        deckOneActions: ['ai', 'connect', 'copy', 'pin', 'delete'],
+        deckTwoActions: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+    }),
+}));
+
 vi.mock('../NodeUtilsBar.module.css', () => ({
     default: {
         barWrapper: 'barWrapper',
-        container: 'container',
-        containerPinnedOpen: 'containerPinnedOpen',
+        deckBase: 'deckBase',
+        deckOne: 'deckOne',
+        deckTwo: 'deckTwo',
+        deckOnePinned: 'deckOnePinned',
+        deckTwoPinned: 'deckTwoPinned',
         peekIndicator: 'peekIndicator',
     },
 }));
