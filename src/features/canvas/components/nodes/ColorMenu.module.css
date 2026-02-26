@@ -72,14 +72,14 @@
     background: var(--color-surface-elevated);
 }
 
-.dotPrimary {
-    background: var(--color-primary);
-}
-
-.dotSuccess {
-    background: var(--color-success-bg);
+.dotDanger {
+    background: var(--node-status-danger);
 }
 
 .dotWarning {
-    background: var(--color-warning-bg);
+    background: var(--node-status-warning);
+}
+
+.dotSuccess {
+    background: var(--node-status-success);
 }

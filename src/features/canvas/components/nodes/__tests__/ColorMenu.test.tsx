@@ -9,7 +9,7 @@ function Controlled({
     disabled?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [colorKey, setColorKey] = useState<'default' | 'primary' | 'success' | 'warning'>('default');
+    const [colorKey, setColorKey] = useState<'default' | 'danger' | 'success' | 'warning'>('default');
     return (
         <ColorMenu
             isOpen={isOpen}
@@ -33,15 +33,15 @@ describe('ColorMenu', () => {
         fireEvent.click(screen.getByLabelText('Color'));
         expect(screen.getByRole('menu')).toBeInTheDocument();
         expect(screen.getByText('Default')).toBeInTheDocument();
-        expect(screen.getByText('Blue')).toBeInTheDocument();
-        expect(screen.getByText('Green')).toBeInTheDocument();
-        expect(screen.getByText('Amber')).toBeInTheDocument();
+        expect(screen.getByText('Red (Attention)')).toBeInTheDocument();
+        expect(screen.getByText('Yellow (In Progress)')).toBeInTheDocument();
+        expect(screen.getByText('Green (Complete)')).toBeInTheDocument();
     });
 
     it('selecting a color closes menu', () => {
         render(<Controlled />);
         fireEvent.click(screen.getByLabelText('Color'));
-        fireEvent.click(screen.getByText('Blue'));
+        fireEvent.click(screen.getByText('Red (Attention)'));
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
@@ -54,6 +54,49 @@ describe('ColorMenu', () => {
         render(<Controlled disabled />);
         fireEvent.click(screen.getByLabelText('Color'));
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('passes correct key for each color option', () => {
+        const onColorSelect = vi.fn();
+        const onClose = vi.fn();
+        render(
+            <ColorMenu
+                isOpen={true}
+                onToggle={vi.fn()}
+                onClose={onClose}
+                selectedColorKey="default"
+                onColorSelect={onColorSelect}
+            />
+        );
+        fireEvent.click(screen.getByText('Red (Attention)'));
+        expect(onColorSelect).toHaveBeenCalledWith('danger');
+
+        onColorSelect.mockClear();
+        onClose.mockClear();
+        render(
+            <ColorMenu
+                isOpen={true}
+                onToggle={vi.fn()}
+                onClose={vi.fn()}
+                selectedColorKey="default"
+                onColorSelect={onColorSelect}
+            />
+        );
+        fireEvent.click(screen.getAllByText('Yellow (In Progress)')[0]!);
+        expect(onColorSelect).toHaveBeenCalledWith('warning');
+
+        onColorSelect.mockClear();
+        render(
+            <ColorMenu
+                isOpen={true}
+                onToggle={vi.fn()}
+                onClose={vi.fn()}
+                selectedColorKey="default"
+                onColorSelect={onColorSelect}
+            />
+        );
+        fireEvent.click(screen.getAllByText('Green (Complete)')[0]!);
+        expect(onColorSelect).toHaveBeenCalledWith('success');
     });
 
     it('does not reselect same color', () => {

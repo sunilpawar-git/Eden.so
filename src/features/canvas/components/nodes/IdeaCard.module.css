@@ -39,19 +39,19 @@
     background: var(--output-bg);
 }
 
-.colorPrimary {
-    background: color-mix(in srgb, var(--color-primary-light) 60%, var(--color-surface-elevated));
-    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
-}
-
-.colorSuccess {
-    background: color-mix(in srgb, var(--color-success-bg) 16%, var(--color-surface-elevated));
-    border-color: color-mix(in srgb, var(--color-success-bg) 36%, var(--color-border));
+.colorDanger {
+    background: color-mix(in srgb, var(--node-status-danger-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-danger-border);
 }
 
 .colorWarning {
-    background: color-mix(in srgb, var(--color-warning-bg) 18%, var(--color-surface-elevated));
-    border-color: color-mix(in srgb, var(--color-warning-bg) 38%, var(--color-border));
+    background: color-mix(in srgb, var(--node-status-warning-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-warning-border);
+}
+
+.colorSuccess {
+    background: color-mix(in srgb, var(--node-status-success-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-success-border);
 }
 
 .ideaCard:hover {

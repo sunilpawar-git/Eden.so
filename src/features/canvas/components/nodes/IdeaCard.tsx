@@ -15,9 +15,9 @@ import './NodeImage.module.css';
 
 const COLOR_CLASS: Record<NodeColorKey, string> = {
     default: styles.colorDefault ?? '',
-    primary: styles.colorPrimary ?? '',
-    success: styles.colorSuccess ?? '',
+    danger: styles.colorDanger ?? '',
     warning: styles.colorWarning ?? '',
+    success: styles.colorSuccess ?? '',
 };
 
 export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) => {

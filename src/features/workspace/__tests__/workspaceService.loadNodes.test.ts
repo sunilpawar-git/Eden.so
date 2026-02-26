@@ -160,6 +160,27 @@ describe('WorkspaceService loadNodes', () => {
             expect(node.height).toBeUndefined();
         });
 
+        it('maps legacy "primary" colorKey to "danger" on load', async () => {
+            const mockTimestamp = { toDate: () => new Date('2024-01-01') };
+            mockGetDocs.mockResolvedValue({
+                docs: [
+                    {
+                        data: () => ({
+                            id: 'node-1',
+                            type: 'idea',
+                            data: { prompt: 'Test', colorKey: 'primary' },
+                            position: { x: 0, y: 0 },
+                            createdAt: mockTimestamp,
+                            updatedAt: mockTimestamp,
+                        }),
+                    },
+                ],
+            });
+
+            const result = await loadNodes('user-1', 'ws-1');
+            expect(result[0]?.data.colorKey).toBe('danger');
+        });
+
         it('normalizes invalid node colorKey to default', async () => {
             const mockTimestamp = { toDate: () => new Date('2024-01-01') };
             mockGetDocs.mockResolvedValue({

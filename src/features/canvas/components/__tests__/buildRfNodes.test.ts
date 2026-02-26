@@ -62,7 +62,7 @@ describe('buildRfNodes structural sharing', () => {
 
         const updatedNodeA = {
             ...nodeA,
-            data: { ...nodeA.data, colorKey: 'primary' as const },
+            data: { ...nodeA.data, colorKey: 'danger' as const },
             updatedAt: new Date(),
         };
         const nodesAfterColorChange = [updatedNodeA, nodeB];
@@ -190,7 +190,7 @@ describe('buildRfNodes — render loop prevention (regression)', () => {
     it('data shell never contains content fields (only id)', () => {
         const ref = makeRef();
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
-        node.data = { ...node.data, output: 'long content', heading: 'title', colorKey: 'primary' };
+        node.data = { ...node.data, output: 'long content', heading: 'title', colorKey: 'danger' };
 
         const result = buildRfNodes([node], emptySelection, false, ref);
         expect(Object.keys(result[0]!.data as Record<string, unknown>)).toEqual(['id']);

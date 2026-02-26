@@ -41,6 +41,17 @@
   --tooltip-bg: hsl(28, 20%, 22%);
   --tooltip-text: hsl(36, 40%, 96%);
 
+  /* Node status colors - Sepia (warm-tinted) */
+  --node-status-danger: hsl(0, 60%, 48%);
+  --node-status-danger-bg: hsl(0, 50%, 95%);
+  --node-status-danger-border: hsl(0, 35%, 82%);
+  --node-status-warning: hsl(42, 80%, 46%);
+  --node-status-warning-bg: hsl(44, 60%, 94%);
+  --node-status-warning-border: hsl(42, 40%, 80%);
+  --node-status-success: hsl(145, 50%, 40%);
+  --node-status-success-bg: hsl(145, 40%, 94%);
+  --node-status-success-border: hsl(145, 30%, 80%);
+
   /* Toast notification colors - Sepia */
   --color-success-bg: hsl(145, 50%, 40%);
   --color-success-text: hsl(0, 0%, 100%);

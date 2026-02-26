@@ -250,13 +250,19 @@ describe('canvasStoreHelpers', () => {
     describe('setNodeColorInArray', () => {
         it('sets node color when changed', () => {
             const nodes = [createMockNode('n1', { data: { prompt: '', output: '', tags: [], colorKey: 'default' } })];
-            const result = setNodeColorInArray(nodes, 'n1', 'primary');
-            expect(result[0]?.data.colorKey).toBe('primary');
+            const result = setNodeColorInArray(nodes, 'n1', 'danger');
+            expect(result[0]?.data.colorKey).toBe('danger');
         });
 
         it('returns original array when color is unchanged', () => {
             const nodes = [createMockNode('n1', { data: { prompt: '', output: '', tags: [], colorKey: 'default' } })];
             const result = setNodeColorInArray(nodes, 'n1', 'default');
+            expect(result).toBe(nodes);
+        });
+
+        it('returns original array when node is not found', () => {
+            const nodes = [createMockNode('n1', { data: { prompt: '', output: '', tags: [], colorKey: 'default' } })];
+            const result = setNodeColorInArray(nodes, 'nonexistent', 'danger');
             expect(result).toBe(nodes);
         });
     });

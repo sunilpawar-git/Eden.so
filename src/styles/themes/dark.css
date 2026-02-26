@@ -41,6 +41,17 @@
   --card-shadow-hover: 0 4px 12px hsla(0, 0%, 0%, 0.3);
   --tooltip-bg: hsl(220, 13%, 25%);
 
+  /* Node status colors - Dark */
+  --node-status-danger: hsl(0, 60%, 55%);
+  --node-status-danger-bg: hsl(0, 40%, 18%);
+  --node-status-danger-border: hsl(0, 35%, 30%);
+  --node-status-warning: hsl(45, 80%, 50%);
+  --node-status-warning-bg: hsl(45, 35%, 18%);
+  --node-status-warning-border: hsl(45, 30%, 30%);
+  --node-status-success: hsl(145, 50%, 45%);
+  --node-status-success-bg: hsl(145, 30%, 18%);
+  --node-status-success-border: hsl(145, 25%, 30%);
+
   /* Toast notification colors - Dark */
   --color-success-bg: hsl(145, 50%, 35%);
   --color-success-text: hsl(145, 50%, 95%);

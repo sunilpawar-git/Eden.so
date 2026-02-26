@@ -20,9 +20,9 @@ interface ColorMenuProps {
 
 const COLOR_OPTIONS: Array<{ key: NodeColorKey; label: string; dotClass: string }> = [
     { key: 'default', label: strings.nodeUtils.nodeColorDefault, dotClass: styles.dotDefault ?? '' },
-    { key: 'primary', label: strings.nodeUtils.nodeColorBlue, dotClass: styles.dotPrimary ?? '' },
+    { key: 'danger', label: strings.nodeUtils.nodeColorRed, dotClass: styles.dotDanger ?? '' },
+    { key: 'warning', label: strings.nodeUtils.nodeColorYellow, dotClass: styles.dotWarning ?? '' },
     { key: 'success', label: strings.nodeUtils.nodeColorGreen, dotClass: styles.dotSuccess ?? '' },
-    { key: 'warning', label: strings.nodeUtils.nodeColorAmber, dotClass: styles.dotWarning ?? '' },
 ];
 
 export const ColorMenu = React.memo(function ColorMenu({

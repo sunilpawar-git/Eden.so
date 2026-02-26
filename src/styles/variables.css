@@ -53,6 +53,17 @@
   --node-border: hsl(220, 13%, 88%);
   --node-shadow: 0 2px 8px hsla(220, 13%, 13%, 0.06);
 
+  /* Node status colors - semantic, theme-aware (used by IdeaCard color picker) */
+  --node-status-danger: hsl(0, 72%, 51%);
+  --node-status-danger-bg: hsl(0, 80%, 97%);
+  --node-status-danger-border: hsl(0, 50%, 85%);
+  --node-status-warning: hsl(45, 93%, 47%);
+  --node-status-warning-bg: hsl(48, 80%, 96%);
+  --node-status-warning-border: hsl(45, 50%, 82%);
+  --node-status-success: hsl(145, 65%, 42%);
+  --node-status-success-bg: hsl(145, 60%, 96%);
+  --node-status-success-border: hsl(145, 40%, 82%);
+
   /* Toast notification colors */
   --color-success-bg: hsl(145, 65%, 42%);
   --color-success-text: hsl(0, 0%, 100%);

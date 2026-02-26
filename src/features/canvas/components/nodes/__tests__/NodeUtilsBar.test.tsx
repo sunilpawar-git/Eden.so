@@ -264,7 +264,7 @@ describe('NodeUtilsBar', () => {
             for (let i = 0; i < 5; i += 1) {
                 fireEvent.click(screen.getByLabelText('More actions'));
                 fireEvent.click(screen.getByLabelText('Color'));
-                fireEvent.click(screen.getByText('Blue'));
+                fireEvent.click(screen.getByText('Red (Attention)'));
                 fireEvent.click(screen.getByLabelText('Transform'));
                 fireEvent.click(screen.getByText('Refine'));
                 fireEvent.mouseDown(document.body);

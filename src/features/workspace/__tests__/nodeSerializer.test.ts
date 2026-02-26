@@ -79,5 +79,17 @@ describe('nodeSerializer', () => {
             const first = deserializeNodes(serialized)[0]!;
             expect(first.data.colorKey).toBe('default');
         });
+
+        it('maps legacy "primary" colorKey to "danger"', () => {
+            const serialized = serializeNodes([makeNode({ data: { prompt: 'x', colorKey: 'primary' as never } })]);
+            const first = deserializeNodes(serialized)[0]!;
+            expect(first.data.colorKey).toBe('danger');
+        });
+
+        it('preserves valid non-default colorKey through round-trip', () => {
+            const orig = makeNode({ data: { prompt: 'x', colorKey: 'danger' } });
+            const rt = deserializeNodes(serializeNodes([orig]))[0]!;
+            expect(rt.data.colorKey).toBe('danger');
+        });
     });
 });

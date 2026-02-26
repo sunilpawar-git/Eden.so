@@ -56,9 +56,22 @@ describe('createIdeaNode', () => {
 });
 
 describe('normalizeNodeColorKey', () => {
-    it('returns known keys and defaults unknown values', () => {
-        expect(normalizeNodeColorKey('primary')).toBe('primary');
+    it('returns known keys verbatim', () => {
+        expect(normalizeNodeColorKey('default')).toBe('default');
+        expect(normalizeNodeColorKey('danger')).toBe('danger');
+        expect(normalizeNodeColorKey('warning')).toBe('warning');
+        expect(normalizeNodeColorKey('success')).toBe('success');
+    });
+
+    it('maps legacy "primary" to "danger"', () => {
+        expect(normalizeNodeColorKey('primary')).toBe('danger');
+    });
+
+    it('defaults unknown and non-string values', () => {
         expect(normalizeNodeColorKey('unknown')).toBe('default');
         expect(normalizeNodeColorKey(undefined)).toBe('default');
+        expect(normalizeNodeColorKey(null)).toBe('default');
+        expect(normalizeNodeColorKey(42)).toBe('default');
+        expect(normalizeNodeColorKey('')).toBe('default');
     });
 });

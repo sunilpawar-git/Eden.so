@@ -38,11 +38,16 @@ export function clampNodeDimensions(
  */
 export type NodeType = 'idea' | 'media';
 
-export const NODE_COLOR_KEYS = ['default', 'primary', 'success', 'warning'] as const;
+export const NODE_COLOR_KEYS = ['default', 'danger', 'warning', 'success'] as const;
 export type NodeColorKey = (typeof NODE_COLOR_KEYS)[number];
+
+/** Maps legacy Firestore keys to current keys (backward compatibility) */
+const LEGACY_COLOR_MAP: Record<string, NodeColorKey> = { primary: 'danger' };
 
 export function normalizeNodeColorKey(value: unknown): NodeColorKey {
     if (typeof value !== 'string') return 'default';
+    const mapped = LEGACY_COLOR_MAP[value];
+    if (mapped) return mapped;
     return (NODE_COLOR_KEYS as readonly string[]).includes(value) ? (value as NodeColorKey) : 'default';
 }
 
