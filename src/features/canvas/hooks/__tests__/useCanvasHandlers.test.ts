@@ -52,7 +52,7 @@ describe('useCanvasHandlers', () => {
         expect(nodes.find((n) => n.id === 'n1')?.position).toEqual({ x: 0, y: 0 });
     });
 
-    it('applies position changes when unlocked', () => {
+    it('applies position changes when unlocked (batched via RAF)', () => {
         const { result } = renderHook(() =>
             useCanvasHandlers('ws-1', false)
         );
@@ -60,6 +60,8 @@ describe('useCanvasHandlers', () => {
             { type: 'position', id: 'n1', position: { x: 50, y: 60 } },
         ];
         act(() => result.current.onNodesChange(changes));
+        // Position changes are batched via requestAnimationFrame
+        act(() => vi.runAllTimers());
         const nodes = useCanvasStore.getState().nodes;
         expect(nodes.find((n) => n.id === 'n1')?.position).toEqual({ x: 50, y: 60 });
     });
