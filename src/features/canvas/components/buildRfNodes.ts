@@ -7,13 +7,15 @@
  *
  * To break this cycle, we pass a STABLE data shell to ReactFlow. The shell only
  * contains the node `id` — IdeaCard reads its own content directly from the
- * Zustand store. This means content/color/tag changes NEVER cause a ReactFlow
- * diff. Only structural changes (position, dimensions, selection, pin-draggable)
+ * Zustand store. This means content/color/tag/pin changes NEVER cause a
+ * ReactFlow diff. Only structural changes (position, dimensions, selection)
  * produce new RF node objects.
  *
- * NOTE: Global interaction disabling (focus/lock) is handled by ReactFlow's
- * `nodesDraggable` prop on CanvasView, NOT per-node draggable here. This avoids
- * mass object re-creation when toggling focus/lock mode.
+ * Pin-drag prevention is handled by adding the `nodrag` CSS class on the
+ * IdeaCard wrapper when isPinned, combined with ReactFlow's `noDragClassName`
+ * prop on CanvasView. Global interaction disabling (focus/lock) uses
+ * ReactFlow's `nodesDraggable` prop. Neither approach requires per-node
+ * `draggable` in RF objects, avoiding mass object re-creation.
  */
 import type { Node } from '@xyflow/react';
 import type { MutableRefObject } from 'react';
@@ -49,13 +51,11 @@ export function buildRfNodes(
 
     const result = nodes.map((node, index) => {
         const selected = selectedNodeIds.has(node.id);
-        const draggable = node.data.isPinned !== true;
         const prev = prevMap.get(node.id);
 
         if (prev
             && prev.position === node.position
             && prev.selected === selected
-            && prev.draggable === draggable
             && prev.width === node.width
             && prev.height === node.height) {
             if (prevArr[index] !== prev) allReused = false;
@@ -69,7 +69,6 @@ export function buildRfNodes(
             position: node.position,
             data: getDataShell(node.id),
             selected,
-            draggable,
             ...(node.width != null && { width: node.width }),
             ...(node.height != null && { height: node.height }),
         };

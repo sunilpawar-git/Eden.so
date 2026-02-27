@@ -103,6 +103,8 @@ export const strings = {
         delete: 'Delete',
         deleteShortcut: '⌫',
         duplicate: 'Duplicate',
+        expandDeck: 'Show more actions',
+        expandDeckIcon: '\u203A',
         duplicateError: 'Failed to duplicate node',
         duplicateSuccess: 'Node duplicated',
         exitFocus: 'Exit focus',

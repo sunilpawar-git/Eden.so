@@ -11,7 +11,7 @@ export const ESCAPE_PRIORITY = {
     SIDEBAR_HOVER: 20,
     /** Dismiss pinned NodeUtilsBar */
     BAR_PIN: 30,
-    /** Close NodeUtilsBar overflow/submenu */
+    /** Close NodeUtilsBar submenu/deck */
     BAR_OVERFLOW: 40,
     /** Exit focus mode (when editor is not active) */
     FOCUS_MODE: 50,

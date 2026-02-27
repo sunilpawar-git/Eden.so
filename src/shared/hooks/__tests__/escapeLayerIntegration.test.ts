@@ -137,4 +137,93 @@ describe('Escape Layer Integration', () => {
             expect(() => pressEscape()).not.toThrow();
         });
     });
+
+    describe('NodeUtilsBar escape priority chain', () => {
+        it('Escape deselects node when bar is visible but no submenu/deck open', () => {
+            const clearSelection = vi.fn();
+            const barEscape = vi.fn();
+
+            renderHook(() => useEscapeLayer(ESCAPE_PRIORITY.CLEAR_SELECTION, true, clearSelection));
+            renderHook(() => useEscapeLayer(ESCAPE_PRIORITY.BAR_OVERFLOW, false, barEscape));
+
+            pressEscape();
+            expect(clearSelection).toHaveBeenCalledOnce();
+            expect(barEscape).not.toHaveBeenCalled();
+        });
+
+        it('Escape closes submenu first, then deselects node on second press', () => {
+            const clearSelection = vi.fn();
+            const barEscape = vi.fn();
+
+            renderHook(() => useEscapeLayer(ESCAPE_PRIORITY.CLEAR_SELECTION, true, clearSelection));
+            const { rerender: rBar } = renderHook(
+                ({ active }) => useEscapeLayer(ESCAPE_PRIORITY.BAR_OVERFLOW, active, barEscape),
+                { initialProps: { active: true } },
+            );
+
+            pressEscape();
+            expect(barEscape).toHaveBeenCalledOnce();
+            expect(clearSelection).not.toHaveBeenCalled();
+
+            rBar({ active: false });
+            pressEscape();
+            expect(clearSelection).toHaveBeenCalledOnce();
+        });
+
+        it('Escape closes deck 2 first, then deselects node on second press', () => {
+            const clearSelection = vi.fn();
+            const closeDeck = vi.fn();
+
+            renderHook(() => useEscapeLayer(ESCAPE_PRIORITY.CLEAR_SELECTION, true, clearSelection));
+            const { rerender: rDeck } = renderHook(
+                ({ active }) => useEscapeLayer(ESCAPE_PRIORITY.BAR_OVERFLOW, active, closeDeck),
+                { initialProps: { active: true } },
+            );
+
+            pressEscape();
+            expect(closeDeck).toHaveBeenCalledOnce();
+            expect(clearSelection).not.toHaveBeenCalled();
+
+            rDeck({ active: false });
+            pressEscape();
+            expect(clearSelection).toHaveBeenCalledOnce();
+        });
+
+        it('Focus mode Escape exits focus, then next Escape deselects', () => {
+            const clearSelection = vi.fn();
+            const exitFocus = vi.fn();
+
+            renderHook(() => useEscapeLayer(ESCAPE_PRIORITY.CLEAR_SELECTION, true, clearSelection));
+            const { rerender: rFocus } = renderHook(
+                ({ active }) => useEscapeLayer(ESCAPE_PRIORITY.FOCUS_MODE, active, exitFocus),
+                { initialProps: { active: true } },
+            );
+
+            pressEscape();
+            expect(exitFocus).toHaveBeenCalledOnce();
+            expect(clearSelection).not.toHaveBeenCalled();
+
+            rFocus({ active: false });
+            pressEscape();
+            expect(clearSelection).toHaveBeenCalledOnce();
+        });
+
+        it('data-bar-focused does not prevent Escape from deselecting', () => {
+            const clearSelection = vi.fn();
+            const barEscape = vi.fn();
+
+            renderHook(() => useEscapeLayer(ESCAPE_PRIORITY.CLEAR_SELECTION, true, clearSelection));
+            renderHook(() => useEscapeLayer(ESCAPE_PRIORITY.BAR_OVERFLOW, false, barEscape));
+
+            const card = document.createElement('div');
+            card.setAttribute('data-bar-focused', 'true');
+            document.body.appendChild(card);
+
+            pressEscape();
+            expect(clearSelection).toHaveBeenCalledOnce();
+            expect(barEscape).not.toHaveBeenCalled();
+
+            document.body.removeChild(card);
+        });
+    });
 });

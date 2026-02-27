@@ -1,176 +1,70 @@
 /**
- * useNodeUtilsController — Single-owner interaction controller for NodeUtilsBar.
- * Reducer-driven state machine for overflow/submenu/pin interactions.
+ * useNodeUtilsController — React hook wiring for the NodeUtilsBar state machine.
+ * Delegates pure state logic to nodeUtilsControllerReducer.
  */
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useReducer, useRef } from 'react';
+import { useHoverIntent } from './useHoverIntent';
+import {
+    nodeUtilsControllerReducer,
+    initialNodeUtilsControllerState,
+    isPortalBoundaryTarget,
+    HOVER_INTENT_DELAY_MS,
+} from './nodeUtilsControllerReducer';
+import type { NodeUtilsSubmenu } from './nodeUtilsControllerReducer';
 
-export const NODE_UTILS_PORTAL_ATTR = 'data-node-utils-zone';
-
-/** Delay before overflow auto-opens on ••• hover-intent (ms). */
-export const MORE_BUTTON_EXPAND_DELAY_MS = 1200;
-
-export type NodeUtilsSubmenu = 'none' | 'share' | 'transform' | 'color';
-export type NodeUtilsMode = 'auto' | 'manual';
-
-export interface NodeUtilsControllerState {
-    overflowOpen: boolean;
-    mode: NodeUtilsMode;
-    activeSubmenu: NodeUtilsSubmenu;
-}
-
-export type NodeUtilsControllerEvent =
-    | { type: 'HOVER_OPEN' }
-    | { type: 'HOVER_LEAVE' }
-    | { type: 'TOGGLE_OVERFLOW' }
-    | { type: 'OPEN_SUBMENU'; submenu: Exclude<NodeUtilsSubmenu, 'none'> }
-    | { type: 'CLOSE_SUBMENU' }
-    | { type: 'ESCAPE' }
-    | { type: 'OUTSIDE_POINTER' };
-
-export const initialNodeUtilsControllerState: NodeUtilsControllerState = {
-    overflowOpen: false,
-    mode: 'auto',
-    activeSubmenu: 'none',
-};
-
-function enforceInvariants(state: NodeUtilsControllerState): NodeUtilsControllerState {
-    if (!state.overflowOpen && state.activeSubmenu !== 'none') {
-        return { ...state, activeSubmenu: 'none' };
-    }
-    return state;
-}
-
-export function nodeUtilsControllerReducer(
-    state: NodeUtilsControllerState,
-    event: NodeUtilsControllerEvent
-): NodeUtilsControllerState {
-    let next = state;
-    switch (event.type) {
-        case 'HOVER_OPEN':
-            if (state.overflowOpen && state.mode === 'auto') return state;
-            next = { ...state, overflowOpen: true, mode: 'auto' };
-            break;
-        case 'HOVER_LEAVE':
-            if (state.mode !== 'auto') return state;
-            if (!state.overflowOpen && state.activeSubmenu === 'none') return state;
-            next = { ...state, overflowOpen: false, activeSubmenu: 'none' };
-            break;
-        case 'TOGGLE_OVERFLOW':
-            next = state.overflowOpen
-                ? { ...state, overflowOpen: false, activeSubmenu: 'none', mode: 'auto' }
-                : { ...state, overflowOpen: true, mode: 'manual' };
-            break;
-        case 'OPEN_SUBMENU':
-            next = { ...state, overflowOpen: true, mode: 'manual', activeSubmenu: event.submenu };
-            break;
-        case 'CLOSE_SUBMENU':
-            if (state.activeSubmenu === 'none') return state;
-            next = { ...state, activeSubmenu: 'none' };
-            break;
-        case 'ESCAPE':
-            if (state.activeSubmenu !== 'none') {
-                next = { ...state, activeSubmenu: 'none' };
-                break;
-            }
-            if (!state.overflowOpen && state.mode === 'auto') return state;
-            next = { ...state, overflowOpen: false, activeSubmenu: 'none', mode: 'auto' };
-            break;
-        case 'OUTSIDE_POINTER':
-            if (!state.overflowOpen && state.activeSubmenu === 'none' && state.mode === 'auto') return state;
-            next = { ...state, overflowOpen: false, activeSubmenu: 'none', mode: 'auto' };
-            break;
-        default:
-            return state;
-    }
-    return enforceInvariants(next);
-}
+export { NODE_UTILS_PORTAL_ATTR } from './nodeUtilsControllerReducer';
+export type { NodeUtilsSubmenu, NodeUtilsMode, NodeUtilsControllerState, NodeUtilsControllerEvent } from './nodeUtilsControllerReducer';
+export { HOVER_INTENT_DELAY_MS, initialNodeUtilsControllerState, nodeUtilsControllerReducer } from './nodeUtilsControllerReducer';
 
 interface HoverLeaveLike {
     relatedTarget?: EventTarget | null;
 }
 
-function isPortalBoundaryTarget(target: EventTarget | null | undefined): boolean {
-    const element = target instanceof HTMLElement ? target : null;
-    return Boolean(element?.closest(`[${NODE_UTILS_PORTAL_ATTR}="true"]`));
-}
-
 export function useNodeUtilsController(isPinnedOpen = false) {
     const [state, dispatch] = useReducer(nodeUtilsControllerReducer, initialNodeUtilsControllerState);
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isPinnedRef = useRef(isPinnedOpen);
     isPinnedRef.current = isPinnedOpen;
 
-    const clearTimer = useCallback(() => {
-        if (timerRef.current) {
-            clearTimeout(timerRef.current);
-            timerRef.current = null;
-        }
-    }, []);
+    const toggleDeckTwoAction = useCallback(() => { dispatch({ type: 'TOGGLE_DECK_TWO' }); }, []);
+    const deckTwoHover = useHoverIntent(toggleDeckTwoAction, HOVER_INTENT_DELAY_MS);
 
-    /** Container enter: cancel any pending intent timer (bar is now visible). */
     const handleHoverEnter = useCallback(() => {
-        clearTimer();
-    }, [clearTimer]);
+        deckTwoHover.cancel();
+    }, [deckTwoHover]);
 
     const handleHoverLeave = useCallback((event?: HoverLeaveLike) => {
-        clearTimer();
+        deckTwoHover.cancel();
         if (isPinnedRef.current) return;
         if (isPortalBoundaryTarget(event?.relatedTarget)) return;
         dispatch({ type: 'HOVER_LEAVE' });
-    }, [clearTimer]);
+    }, [deckTwoHover]);
 
-    /**
-     * ••• button enter: start hover-intent timer.
-     * Overflow opens in auto mode after MORE_BUTTON_EXPAND_DELAY_MS if mouse stays.
-     */
-    const handleMoreHoverEnter = useCallback(() => {
-        clearTimer();
-        timerRef.current = setTimeout(() => {
-            dispatch({ type: 'HOVER_OPEN' });
-        }, MORE_BUTTON_EXPAND_DELAY_MS);
-    }, [clearTimer]);
+    const toggleDeckTwo = useCallback(() => {
+        deckTwoHover.cancel();
+        dispatch({ type: 'TOGGLE_DECK_TWO' });
+    }, [deckTwoHover]);
 
-    /** ••• button leave before intent fires: cancel the pending open. */
-    const handleMoreHoverLeave = useCallback(() => {
-        clearTimer();
-    }, [clearTimer]);
-
-    const toggleOverflow = useCallback(() => {
-        clearTimer();
-        dispatch({ type: 'TOGGLE_OVERFLOW' });
-    }, [clearTimer]);
+    const handleDeckTwoHoverEnter = useCallback(() => { deckTwoHover.onEnter(); }, [deckTwoHover]);
+    const handleDeckTwoHoverLeave = useCallback(() => { deckTwoHover.onLeave(); }, [deckTwoHover]);
 
     const openSubmenu = useCallback((submenu: Exclude<NodeUtilsSubmenu, 'none'>) => {
         dispatch({ type: 'OPEN_SUBMENU', submenu });
     }, []);
 
-    const closeSubmenu = useCallback(() => {
-        dispatch({ type: 'CLOSE_SUBMENU' });
-    }, []);
-
-    const onEscape = useCallback(() => {
-        dispatch({ type: 'ESCAPE' });
-    }, []);
+    const closeSubmenu = useCallback(() => { dispatch({ type: 'CLOSE_SUBMENU' }); }, []);
+    const onEscape = useCallback(() => { dispatch({ type: 'ESCAPE' }); }, []);
 
     const onOutsidePointer = useCallback(() => {
         if (isPinnedRef.current) return;
         dispatch({ type: 'OUTSIDE_POINTER' });
     }, []);
 
-    useEffect(() => () => clearTimer(), [clearTimer]);
-
     return {
         state,
         actions: {
-            handleHoverEnter,
-            handleHoverLeave,
-            handleMoreHoverEnter,
-            handleMoreHoverLeave,
-            toggleOverflow,
-            openSubmenu,
-            closeSubmenu,
-            onEscape,
-            onOutsidePointer,
+            handleHoverEnter, handleHoverLeave,
+            toggleDeckTwo, handleDeckTwoHoverEnter, handleDeckTwoHoverLeave,
+            openSubmenu, closeSubmenu, onEscape, onOutsidePointer,
         },
     };
 }

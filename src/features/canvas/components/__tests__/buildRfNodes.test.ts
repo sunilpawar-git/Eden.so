@@ -138,7 +138,6 @@ describe('buildRfNodes structural sharing', () => {
         const second = buildRfNodes(nodes, emptySelection, ref);
 
         expect(second).toBe(first);
-        expect(first[0]!.draggable).toBe(true);
     });
 
     it('returns an empty array for empty nodes input', () => {
@@ -147,12 +146,21 @@ describe('buildRfNodes structural sharing', () => {
         expect(result).toHaveLength(0);
     });
 
-    it('sets draggable=false when node isPinned', () => {
+    it('does NOT include draggable in RF node objects', () => {
         const ref = makeRef();
-        const pinned = createIdeaNode('a', 'w1', { x: 0, y: 0 });
-        pinned.data = { ...pinned.data, isPinned: true };
-        const result = buildRfNodes([pinned], emptySelection, ref);
-        expect(result[0]!.draggable).toBe(false);
+        const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
+        const result = buildRfNodes([node], emptySelection, ref);
+        expect(result[0]).not.toHaveProperty('draggable');
+    });
+
+    it('returns same array ref when only isPinned changes', () => {
+        const ref = makeRef();
+        const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
+        const first = buildRfNodes([node], emptySelection, ref);
+
+        const pinned = { ...node, data: { ...node.data, isPinned: true } };
+        const second = buildRfNodes([pinned], emptySelection, ref);
+        expect(second).toBe(first);
     });
 
     it('omits width/height when they are undefined', () => {
@@ -217,16 +225,15 @@ describe('buildRfNodes — render loop prevention (regression)', () => {
         }
     });
 
-    it('updates draggable when isPinned toggles (structural change)', () => {
+    it('isPinned toggle does NOT produce new RF node objects (handled by noDragClassName)', () => {
         const ref = makeRef();
         const node = createIdeaNode('a', 'w1', { x: 0, y: 0 });
         const first = buildRfNodes([node], emptySelection, ref);
-        expect(first[0]!.draggable).toBe(true);
 
         const pinned = { ...node, data: { ...node.data, isPinned: true } };
         const second = buildRfNodes([pinned], emptySelection, ref);
-        expect(second[0]!.draggable).toBe(false);
-        expect(second[0]).not.toBe(first[0]);
+        expect(second).toBe(first);
+        expect(second[0]).toBe(first[0]);
     });
 });
 

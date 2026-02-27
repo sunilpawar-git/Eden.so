@@ -8,6 +8,8 @@ import { TransformMenu } from './TransformMenu';
 import { TooltipButton } from './TooltipButton';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 
+const NOOP = () => undefined;
+
 interface Props {
     onTransform?: (type: TransformationType) => void;
     isTransformOpen: boolean;
@@ -41,7 +43,7 @@ export const NodeUtilsBarAIOrTransform = React.memo(function NodeUtilsBarAIOrTra
             label={strings.nodeUtils.aiActions}
             tooltipText={strings.nodeUtils.aiActions}
             icon="✨"
-            onClick={props.onAIClick ?? (() => undefined)}
+            onClick={props.onAIClick ?? NOOP}
             disabled={props.disabled || !props.onAIClick}
             tooltipPlacement={props.tooltipPlacement}
         />

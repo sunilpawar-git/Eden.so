@@ -4,9 +4,9 @@
 }
 
 .colorButton {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
+    width: var(--color-button-size);
+    height: var(--color-button-size);
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
     background: var(--color-surface-elevated);
     display: inline-flex;
@@ -22,46 +22,21 @@
 }
 
 .colorButton:disabled {
-    opacity: 0.6;
+    opacity: var(--opacity-disabled);
     cursor: not-allowed;
 }
 
 .dropdownMenu {
-    position: fixed;
-    z-index: 1000;
-    transform: translateX(-50%);
-    min-width: 170px;
-    background: var(--color-surface-elevated);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-    padding: var(--space-xs);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    composes: dropdownMenu from './DropdownMenu.module.css';
 }
 
 .menuItem {
-    width: 100%;
-    border: none;
-    background: transparent;
-    color: var(--color-text-primary);
-    border-radius: var(--radius-sm);
-    padding: 8px 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    text-align: left;
-}
-
-.menuItem:hover {
-    background: var(--color-surface-hover);
+    composes: menuItem from './DropdownMenu.module.css';
 }
 
 .dot {
-    width: 12px;
-    height: 12px;
+    width: var(--color-dot-size);
+    height: var(--color-dot-size);
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
     display: inline-block;

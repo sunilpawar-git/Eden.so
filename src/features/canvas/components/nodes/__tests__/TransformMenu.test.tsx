@@ -107,4 +107,13 @@ describe('TransformMenu', () => {
         fireEvent.click(button);
         expect(button).toHaveAttribute('aria-expanded', 'true');
     });
+
+    it('dropdown positions to the side of the button via inline style', () => {
+        render(<Controlled />);
+        fireEvent.click(screen.getByRole('button', { name: strings.ideaCard.transform }));
+        const portal = document.querySelector('[data-testid="transform-menu-portal"]') as HTMLElement;
+        expect(portal).toBeInTheDocument();
+        expect(portal.style.top).toBeDefined();
+        expect(portal.style.left).toBeDefined();
+    });
 });

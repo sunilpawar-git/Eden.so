@@ -1,0 +1,44 @@
+/**
+ * DropdownMenu Shared Styles — SSOT for portal dropdown menus.
+ * Used by ColorMenu, TransformMenu, ShareMenu via CSS composes.
+ * All dimensions from CSS variables (no hardcoded values).
+ */
+
+.dropdownMenu {
+    position: fixed;
+    z-index: var(--z-suggestion-popup);
+    min-width: var(--dropdown-min-width);
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.menuItem {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    border-radius: var(--radius-sm);
+    padding: var(--menu-item-v-padding) var(--menu-item-h-padding);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+    text-align: left;
+    font-size: var(--font-size-sm);
+    transition: background-color var(--transition-fast);
+}
+
+.menuItem:hover:not(:disabled) {
+    background-color: var(--color-surface-hover);
+}
+
+.menuItem:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+}

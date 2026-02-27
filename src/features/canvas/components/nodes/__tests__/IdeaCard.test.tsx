@@ -135,14 +135,14 @@ describe('IdeaCard', () => {
     });
 
     describe('Unified action bar (all cards get same actions)', () => {
-        it('renders Transform, overflow, and Delete buttons for note cards', () => {
+        it('renders Transform, Show more actions, and Delete buttons for note cards', () => {
             const noteCard = {
                 ...defaultProps,
                 data: { ...defaultData, prompt: '', output: 'My personal note' },
             };
             render(<IdeaCard {...noteCard} />);
             expect(screen.getByRole('button', { name: /transform/i })).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: /more actions/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /show more actions/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
         });
 
@@ -157,8 +157,7 @@ describe('IdeaCard', () => {
             expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
-            // Tags is accessible via overflow
-            expect(screen.getByRole('button', { name: /more actions/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /show more actions/i })).toBeInTheDocument();
         });
 
         // Copy-specific tests are in IdeaCard.copy.test.tsx

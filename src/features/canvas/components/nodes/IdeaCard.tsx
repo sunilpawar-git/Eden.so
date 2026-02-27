@@ -28,7 +28,7 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
 
     return (
         <div ref={cardWrapperRef}
-            className={`${styles.cardWrapper} ${handleStyles.resizerWrapper} ${isCollapsed ? styles.cardWrapperCollapsed : ''}`}
+            className={`${styles.cardWrapper} ${handleStyles.resizerWrapper} ${isCollapsed ? styles.cardWrapperCollapsed : ''} ${isPinned ? 'nodrag' : ''}`}
             onContextMenu={pinOpenHandlers.onContextMenu}
             onTouchStart={pinOpenHandlers.onTouchStart} onTouchEnd={pinOpenHandlers.onTouchEnd}>
             <NodeResizer minWidth={MIN_NODE_WIDTH} maxWidth={MAX_NODE_WIDTH}

@@ -1,21 +1,17 @@
 /**
- * useNodeUtilsBar — Logic for NodeUtilsBar: submenu toggles, outside-click, overflow state.
+ * useNodeUtilsBar — Logic for NodeUtilsBar: submenu toggles, outside-click handling.
  * Extracted for CLAUDE.md 100-line component limit.
  */
-import { useMemo, useRef, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { useNodeUtilsController } from './useNodeUtilsController';
-import { buildNodeUtilsOverflowItems } from './buildNodeUtilsOverflowItems';
 import { useNodeUtilsBarOutsideHandlers } from './useNodeUtilsBarOutsideHandlers';
-import type { NodeColorKey } from '../types/node';
 
 interface UseNodeUtilsBarProps {
-    onShareClick?: (targetWorkspaceId: string) => Promise<void>;
-    onColorChange?: (colorKey: NodeColorKey) => void;
     isPinnedOpen?: boolean;
 }
 
 export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
-    const { onShareClick, onColorChange, isPinnedOpen = false } = props;
+    const { isPinnedOpen = false } = props;
 
     const containerRef = useRef<HTMLDivElement>(null);
     const { state, actions: controllerActions } = useNodeUtilsController(isPinnedOpen);
@@ -23,20 +19,28 @@ export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
         onOutsidePointer,
         onEscape,
         handleHoverEnter,
-        handleHoverLeave,
-        handleMoreHoverEnter,
-        handleMoreHoverLeave,
-        toggleOverflow,
+        handleHoverLeave: controllerHoverLeave,
+        toggleDeckTwo,
+        handleDeckTwoHoverEnter,
+        handleDeckTwoHoverLeave,
         openSubmenu,
         closeSubmenu,
     } = controllerActions;
 
-    const overflowOpen = state.overflowOpen;
+    const handleHoverLeave = useCallback((event?: { relatedTarget?: EventTarget | null }) => {
+        if (event?.relatedTarget instanceof Node && containerRef.current?.contains(event.relatedTarget)) {
+            return;
+        }
+        controllerHoverLeave(event);
+    }, [controllerHoverLeave]);
+
+    const isDeckTwoOpen = state.isDeckTwoOpen;
     const isShareOpen = state.activeSubmenu === 'share';
     const isTransformOpen = state.activeSubmenu === 'transform';
     const isColorOpen = state.activeSubmenu === 'color';
 
-    useNodeUtilsBarOutsideHandlers(containerRef, overflowOpen, onEscape, onOutsidePointer);
+    const isActive = isShareOpen || isTransformOpen || isColorOpen || isDeckTwoOpen;
+    useNodeUtilsBarOutsideHandlers(containerRef, isActive, onEscape, onOutsidePointer);
 
     const handleShareToggle = useCallback(() => {
         if (isShareOpen) closeSubmenu();
@@ -53,20 +57,15 @@ export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
         else openSubmenu('color');
     }, [closeSubmenu, openSubmenu, isColorOpen]);
 
-    const overflowItems = useMemo(() => buildNodeUtilsOverflowItems(), []);
-    const hasOverflow = overflowItems.length > 0 || !!onShareClick || !!onColorChange;
-
     return {
         containerRef,
         handleHoverEnter,
         handleHoverLeave,
-        handleMoreHoverEnter,
-        handleMoreHoverLeave,
-        toggleOverflow,
+        toggleDeckTwo,
+        handleDeckTwoHoverEnter,
+        handleDeckTwoHoverLeave,
         closeSubmenu,
-        overflowItems,
-        hasOverflow,
-        overflowOpen,
+        isDeckTwoOpen,
         isShareOpen,
         isTransformOpen,
         isColorOpen,

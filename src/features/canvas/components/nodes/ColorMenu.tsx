@@ -6,6 +6,7 @@ import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import type { NodeColorKey } from '../../types/node';
 import { NODE_UTILS_PORTAL_ATTR } from '../../hooks/useNodeUtilsController';
 import { useCssHover } from '../../hooks/useCssHover';
+import { getDropdownPosition } from './dropdownPositioning';
 import styles from './ColorMenu.module.css';
 
 interface ColorMenuProps {
@@ -40,8 +41,7 @@ export const ColorMenu = React.memo(function ColorMenu({
 
     useEffect(() => {
         if (!isOpen || !buttonRef.current) return;
-        const rect = buttonRef.current.getBoundingClientRect();
-        setMenuPosition({ top: rect.top, left: rect.left + rect.width / 2 });
+        setMenuPosition(getDropdownPosition(buttonRef.current));
     }, [isOpen]);
 
     const handleSelect = useCallback((colorKey: NodeColorKey) => {

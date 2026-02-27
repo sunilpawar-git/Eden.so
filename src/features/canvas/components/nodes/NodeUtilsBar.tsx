@@ -7,7 +7,7 @@
 import React, { forwardRef, useCallback } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { NodeUtilsBarDeckButtons } from './NodeUtilsBarDeckButtons';
-import { NodeUtilsBarOverflow } from './NodeUtilsBarOverflow';
+import { TooltipButton } from './TooltipButton';
 import { useNodeUtilsBar } from '../../hooks/useNodeUtilsBar';
 import { useUtilsBarLayout } from '../../hooks/useUtilsBarLayout';
 import type { NodeUtilsBarProps } from './NodeUtilsBar.types';
@@ -15,14 +15,11 @@ import styles from './NodeUtilsBar.module.css';
 
 export const NodeUtilsBar = React.memo(forwardRef<HTMLDivElement, NodeUtilsBarProps>(function NodeUtilsBar(props, ref) {
     const { disabled = false, isPinnedOpen = false } = props;
-    const bar = useNodeUtilsBar({
-        onShareClick: props.onShareClick,
-        onColorChange: props.onColorChange,
-        isPinnedOpen,
-    });
+    const bar = useNodeUtilsBar({ isPinnedOpen });
     const { deckOneActions, deckTwoActions } = useUtilsBarLayout();
     const deckOneCls = isPinnedOpen ? styles.deckOnePinned : styles.deckOne;
-    const deckTwoCls = isPinnedOpen ? styles.deckTwoPinned : styles.deckTwo;
+    const deckTwoBase = isPinnedOpen ? styles.deckTwoPinned : styles.deckTwo;
+    const deckTwoCls = bar.isDeckTwoOpen ? `${deckTwoBase} ${styles.deckTwoOpen ?? ''}` : deckTwoBase;
 
     const mergedRef = useCallback((node: HTMLDivElement | null) => {
         /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion -- RefObject.current is readonly */
@@ -42,6 +39,18 @@ export const NodeUtilsBar = React.memo(forwardRef<HTMLDivElement, NodeUtilsBarPr
                 onMouseLeave={bar.handleHoverLeave}
             >
                 <NodeUtilsBarDeckButtons actions={deckOneActions} props={props} bar={bar} />
+                {deckTwoActions.length > 0 && (
+                    <TooltipButton
+                        label={strings.nodeUtils.expandDeck}
+                        icon={strings.nodeUtils.expandDeckIcon}
+                        onClick={bar.toggleDeckTwo}
+                        onMouseEnter={bar.handleDeckTwoHoverEnter}
+                        onMouseLeave={bar.handleDeckTwoHoverLeave}
+                        disabled={disabled}
+                        tooltipPlacement="right"
+                        aria-expanded={bar.isDeckTwoOpen}
+                    />
+                )}
             </div>
             {deckTwoActions.length > 0 && (
                 <div
@@ -52,26 +61,6 @@ export const NodeUtilsBar = React.memo(forwardRef<HTMLDivElement, NodeUtilsBarPr
                     onMouseLeave={bar.handleHoverLeave}
                 >
                     <NodeUtilsBarDeckButtons actions={deckTwoActions} props={props} bar={bar} />
-                    {bar.hasOverflow && (
-                        <NodeUtilsBarOverflow
-                            items={bar.overflowItems}
-                            isOpen={bar.overflowOpen}
-                            onToggle={bar.toggleOverflow}
-                            onMoreHoverEnter={bar.handleMoreHoverEnter}
-                            onMoreHoverLeave={bar.handleMoreHoverLeave}
-                            disabled={disabled}
-                            tooltipPlacement="right"
-                            onColorChange={props.onColorChange}
-                            isColorOpen={bar.isColorOpen}
-                            onColorToggle={bar.handleColorToggle}
-                            onCloseSubmenu={bar.closeSubmenu}
-                            nodeColorKey={props.nodeColorKey ?? 'default'}
-                            onShareClick={props.onShareClick}
-                            isShareOpen={bar.isShareOpen}
-                            onShareToggle={bar.handleShareToggle}
-                            isSharing={props.isSharing ?? false}
-                        />
-                    )}
                 </div>
             )}
             <div className={styles.peekIndicator} aria-hidden="true" />

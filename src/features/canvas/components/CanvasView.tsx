@@ -71,6 +71,7 @@ function CanvasViewInner() {
                 panOnScroll={!isInteractionDisabled && isNavigateMode}
                 panOnDrag={!isInteractionDisabled}
                 nodesDraggable={!isInteractionDisabled}
+                noDragClassName="nodrag"
                 elementsSelectable={!isInteractionDisabled}
                 nodesConnectable={!isInteractionDisabled}
                 {...(isNavigateMode && { panOnScrollMode: PanOnScrollMode.Free })}

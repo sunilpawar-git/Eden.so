@@ -5,8 +5,8 @@
 
 .actionButton {
     position: relative;
-    width: 28px;
-    height: 28px;
+    width: var(--bubble-menu-btn-size);
+    height: var(--bubble-menu-btn-size);
     padding: 0;
     border: none;
     background: transparent;
@@ -26,17 +26,17 @@
 }
 
 .actionButton:disabled {
-    opacity: 0.4;
+    opacity: var(--opacity-disabled-light);
     cursor: not-allowed;
 }
 
 .actionButton:focus-visible {
     outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline-offset: var(--outline-offset-sm);
 }
 
 .deleteButton:hover:not(:disabled) {
-    background: hsla(0, 72%, 51%, 0.1);
+    background: var(--color-error-hover-bg);
     color: var(--color-error);
 }
 

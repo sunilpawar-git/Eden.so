@@ -2,10 +2,10 @@
  * NodeUtilsBar Tests — TDD
  * Tests for the floating node utilities action bar with dual-deck layout.
  * Deck 1: primary actions. Deck 2: secondary actions rendered as direct buttons.
- * Overflow (... menu) only hosts complex sub-menus (ColorMenu, ShareMenu).
+ * All sub-menus (ColorMenu, ShareMenu) render inline in their deck — no overflow.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
 
 vi.mock('../../../../hooks/useUtilsBarLayout', () => ({
@@ -172,45 +172,23 @@ describe('NodeUtilsBar', () => {
         });
     });
 
-    describe('overflow menu (sub-menus only)', () => {
-        it('shows ••• button when onColorChange is provided', () => {
-            const onColorChange = vi.fn();
-            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
-            expect(screen.getByLabelText('More actions')).toBeInTheDocument();
-        });
-
-        it('shows ••• button when onShareClick is provided', () => {
+    describe('no overflow menu (sub-menus render inline)', () => {
+        it('does NOT show ••• button even when onShareClick is provided', () => {
             const onShareClick = vi.fn().mockResolvedValue(undefined);
             render(<NodeUtilsBar {...defaultProps} onShareClick={onShareClick} />);
-            expect(screen.getByLabelText('More actions')).toBeInTheDocument();
+            expect(screen.queryByLabelText('More actions')).not.toBeInTheDocument();
         });
 
-        it('does not show ••• button when neither color nor share provided', () => {
+        it('does not show ••• button when onShareClick is not provided', () => {
             render(<NodeUtilsBar {...defaultProps} />);
             expect(screen.queryByLabelText('More actions')).not.toBeInTheDocument();
         });
 
-        it('clicking ••• reveals Color sub-menu when onColorChange is provided', () => {
-            const onColorChange = vi.fn();
-            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
-            fireEvent.click(screen.getByLabelText('More actions'));
-            const colorButtons = screen.getAllByLabelText('Color');
-            expect(colorButtons.length).toBeGreaterThanOrEqual(2);
-        });
-    });
-
-    describe('hover-intent on ••• button (1200ms)', () => {
-        beforeEach(() => vi.useFakeTimers());
-        afterEach(() => vi.useRealTimers());
-
-        it('toolbar container hover alone does NOT auto-open overflow', () => {
-            const onColorChange = vi.fn();
-            render(<NodeUtilsBar {...defaultProps} onColorChange={onColorChange} />);
-            const toolbars = screen.getAllByRole('toolbar');
-            act(() => { fireEvent.mouseEnter(toolbars[1] as HTMLElement); });
-            act(() => { vi.advanceTimersByTime(2000); });
-            const moreBtn = screen.getByLabelText('More actions');
-            expect(moreBtn).toBeInTheDocument();
+        it('clicking Share opens ShareMenu portal directly', () => {
+            const onShareClick = vi.fn().mockResolvedValue(undefined);
+            render(<NodeUtilsBar {...defaultProps} onShareClick={onShareClick} />);
+            fireEvent.click(screen.getByLabelText('Share'));
+            expect(screen.getByTestId('share-menu-portal')).toBeInTheDocument();
         });
     });
 
@@ -231,33 +209,22 @@ describe('NodeUtilsBar', () => {
         });
     });
 
-    describe('interaction stability regression', () => {
-        it('handles rapid interactions without update-depth errors', () => {
-            const onColorChange = vi.fn();
-            const onTransform = vi.fn();
-            const onShare = vi.fn().mockResolvedValue(undefined);
-            render(
-                <NodeUtilsBar
-                    {...defaultProps}
-                    hasContent={true}
-                    onTransform={onTransform}
-                    onColorChange={onColorChange}
-                    onShareClick={onShare}
-                />
-            );
+    describe('deck 2 isolation (data-bar-focused must NOT open deck 2)', () => {
+        it('clicking a deck 1 button does not add deckTwoOpen class to deck 2', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            fireEvent.click(screen.getByLabelText('Connect'));
+            const toolbars = screen.getAllByRole('toolbar');
+            const deck2 = toolbars[1] as HTMLElement;
+            expect(deck2.className).not.toContain('deckTwoOpen');
+        });
 
-            for (let i = 0; i < 5; i += 1) {
-                fireEvent.click(screen.getByLabelText('More actions'));
-                const colorBtns = screen.getAllByLabelText('Color');
-                fireEvent.click(colorBtns[colorBtns.length - 1] as HTMLElement);
-                fireEvent.click(screen.getByText('Red (Attention)'));
-                fireEvent.click(screen.getByLabelText('Transform'));
-                fireEvent.click(screen.getByText('Refine'));
-                fireEvent.mouseDown(document.body);
-            }
-
-            expect(onColorChange).toHaveBeenCalled();
-            expect(onTransform).toHaveBeenCalled();
+        it('deck 2 toolbar does not gain deckTwoOpen when Delete is clicked', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            fireEvent.click(screen.getByLabelText('Delete'));
+            const toolbars = screen.getAllByRole('toolbar');
+            const deck2 = toolbars[1] as HTMLElement;
+            expect(deck2.className).not.toContain('deckTwoOpen');
         });
     });
+
 });

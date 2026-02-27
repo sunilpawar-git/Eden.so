@@ -13,8 +13,8 @@ import styles from './TooltipButton.module.css';
 export interface TooltipButtonProps {
     /** Accessible label (aria-label) */
     label: string;
-    /** Tooltip text shown on hover */
-    tooltipText: string;
+    /** Tooltip text shown on hover (omit to suppress tooltip) */
+    tooltipText?: string;
     /** Optional keyboard shortcut hint (e.g. "⌫") */
     shortcut?: string;
     /** Emoji or icon content */
@@ -27,6 +27,12 @@ export interface TooltipButtonProps {
     className?: string;
     /** Tooltip placement — forwarded to PortalTooltip */
     tooltipPlacement?: PortalTooltipProps['placement'];
+    /** Additional mouse enter handler (fired alongside tooltip tracking) */
+    onMouseEnter?: () => void;
+    /** Additional mouse leave handler (fired alongside tooltip tracking) */
+    onMouseLeave?: () => void;
+    /** aria-expanded for toggle buttons */
+    'aria-expanded'?: boolean;
 }
 
 export const TooltipButton = React.memo(function TooltipButton({
@@ -38,14 +44,17 @@ export const TooltipButton = React.memo(function TooltipButton({
     disabled = false,
     className,
     tooltipPlacement,
+    onMouseEnter: onMouseEnterProp,
+    onMouseLeave: onMouseLeaveProp,
+    'aria-expanded': ariaExpanded,
 }: TooltipButtonProps) {
     const [hovered, setHovered] = useState(false);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const tooltipId = useId();
     const isTooltipVisible = hovered && !disabled;
 
-    const handleMouseEnter = useCallback(() => setHovered(true), []);
-    const handleMouseLeave = useCallback(() => setHovered(false), []);
+    const handleMouseEnter = useCallback(() => { setHovered(true); onMouseEnterProp?.(); }, [onMouseEnterProp]);
+    const handleMouseLeave = useCallback(() => { setHovered(false); onMouseLeaveProp?.(); }, [onMouseLeaveProp]);
 
     const buttonClass = className
         ? `${styles.actionButton} ${className}`
@@ -59,20 +68,23 @@ export const TooltipButton = React.memo(function TooltipButton({
                 onClick={onClick}
                 disabled={disabled}
                 aria-label={label}
-                aria-describedby={isTooltipVisible ? tooltipId : undefined}
+                aria-describedby={tooltipText && isTooltipVisible ? tooltipId : undefined}
+                aria-expanded={ariaExpanded}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
             >
                 <span className={styles.icon}>{icon}</span>
             </button>
-            <PortalTooltip
-                text={tooltipText}
-                shortcut={shortcut}
-                targetRef={buttonRef}
-                visible={isTooltipVisible}
-                placement={tooltipPlacement}
-                tooltipId={tooltipId}
-            />
+            {tooltipText && (
+                <PortalTooltip
+                    text={tooltipText}
+                    shortcut={shortcut}
+                    targetRef={buttonRef}
+                    visible={isTooltipVisible}
+                    placement={tooltipPlacement}
+                    tooltipId={tooltipId}
+                />
+            )}
         </>
     );
 });

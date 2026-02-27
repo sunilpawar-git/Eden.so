@@ -2,8 +2,8 @@
  * NodeUtilsBar Styles — Dual-deck card cascade.
  * Two vertical bars slide out from node edge like cards from a deck.
  * barWrapper is anchored to the card edge and extends outward.
- * Visibility driven by parent data-bar-proximity / data-bar-focused / data-bar-deck.
- * Both decks overlap the node side via z-index, always on top.
+ * Deck 1 visibility: data-bar-proximity / data-bar-focused (set by useProximityBar).
+ * Deck 2 visibility: .deckTwoOpen / .deckTwoPinned only (set by useNodeUtilsController).
  */
 
 .barWrapper {
@@ -71,7 +71,7 @@
     transform: translateX(0) rotate(0deg);
 }
 
-/* Deck Two — cascades out when deck level reaches 2 */
+/* Deck Two — cascades out when toggled via chevron button */
 .deckTwo {
     composes: deckBase;
     z-index: var(--node-utils-deck-two-z);
@@ -82,8 +82,7 @@
     transform: translateX(calc(100% - var(--node-utils-bar-peek))) rotate(var(--node-utils-deck-rotation)) scale(0.97);
 }
 
-:global([data-bar-deck="2"]) .deckTwo,
-:global([data-bar-focused="true"]) .deckTwo {
+.deckTwoOpen {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -95,8 +94,7 @@
         visibility 0s linear 0s;
 }
 
-:global([data-bar-placement="left"][data-bar-deck="2"]) .deckTwo,
-:global([data-bar-placement="left"][data-bar-focused="true"]) .deckTwo {
+:global([data-bar-placement="left"]) .deckTwoOpen {
     transform: translateX(0) rotate(0deg) scale(1);
 }
 
@@ -130,7 +128,7 @@
     height: var(--node-utils-peek-height);
     background: var(--color-primary);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    opacity: 0.4;
+    opacity: var(--opacity-peek);
     transition: opacity var(--transition-normal);
     z-index: 1;
     pointer-events: none;
@@ -144,8 +142,8 @@
 }
 
 @keyframes peekPulse {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.6; }
+    0%, 100% { opacity: var(--opacity-peek-min); }
+    50% { opacity: var(--opacity-peek-max); }
 }
 
 @media (prefers-reduced-motion: reduce) {

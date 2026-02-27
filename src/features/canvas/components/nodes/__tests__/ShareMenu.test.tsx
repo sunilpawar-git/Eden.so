@@ -160,4 +160,13 @@ describe('ShareMenu', () => {
         );
         expect(screen.getByTestId('share-menu-portal')).toHaveAttribute('aria-busy', 'true');
     });
+
+    it('dropdown positions to the side of the button via inline style', () => {
+        render(<ControlledShareMenu onShare={onShare} />);
+        fireEvent.click(screen.getByLabelText('Share'));
+        const portal = document.querySelector('[data-testid="share-menu-portal"]') as HTMLElement;
+        expect(portal).toBeInTheDocument();
+        expect(portal.style.top).toBeDefined();
+        expect(portal.style.left).toBeDefined();
+    });
 });

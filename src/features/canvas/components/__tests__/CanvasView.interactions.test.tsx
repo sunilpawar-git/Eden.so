@@ -77,8 +77,15 @@ describe('CanvasView', () => {
         });
     });
 
-    describe('Pin prevents drag', () => {
-        it('should set draggable=false when node isPinned', () => {
+    describe('Pin prevents drag via noDragClassName', () => {
+        it('passes noDragClassName prop to ReactFlow', () => {
+            render(<CanvasView />);
+            const mockCalls = vi.mocked(ReactFlow).mock.calls;
+            const props = mockCalls[0]?.[0] ?? {};
+            expect(props.noDragClassName).toBe('nodrag');
+        });
+
+        it('RF node objects never include per-node draggable', () => {
             useCanvasStore.setState({
                 nodes: [
                     {
@@ -100,32 +107,7 @@ describe('CanvasView', () => {
             const mockCalls = vi.mocked(ReactFlow).mock.calls;
             const props = mockCalls[0]?.[0] ?? {};
             const nodes = props.nodes ?? [];
-            expect(nodes[0]?.draggable).toBe(false);
-        });
-
-        it('should set draggable=true when node is not pinned', () => {
-            useCanvasStore.setState({
-                nodes: [
-                    {
-                        id: 'free-node',
-                        workspaceId: 'workspace-1',
-                        type: 'idea',
-                        data: { prompt: 'Free', output: undefined, isGenerating: false, isPromptCollapsed: false, isPinned: false, isCollapsed: false },
-                        position: { x: 50, y: 50 },
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    },
-                ],
-                edges: [],
-                selectedNodeIds: new Set(),
-            });
-
-            render(<CanvasView />);
-
-            const mockCalls = vi.mocked(ReactFlow).mock.calls;
-            const props = mockCalls[0]?.[0] ?? {};
-            const nodes = props.nodes ?? [];
-            expect(nodes[0]?.draggable).toBe(true);
+            expect(nodes[0]).not.toHaveProperty('draggable');
         });
     });
 
@@ -161,31 +143,14 @@ describe('CanvasView', () => {
             expect(props.panOnScroll).toBe(false);
         });
 
-        it('per-node draggable only reflects isPinned, global nodesDraggable handles lock', () => {
-            useCanvasStore.setState({
-                nodes: [
-                    {
-                        id: 'free-node',
-                        workspaceId: 'workspace-1',
-                        type: 'idea',
-                        data: { prompt: 'Free', output: undefined, isGenerating: false, isPromptCollapsed: false, isPinned: false, isCollapsed: false },
-                        position: { x: 50, y: 50 },
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                    },
-                ],
-                edges: [],
-                selectedNodeIds: new Set(),
-            });
-
+        it('global nodesDraggable handles lock, per-node draggable not used', () => {
             render(<CanvasView />);
 
             const mockCalls = vi.mocked(ReactFlow).mock.calls;
             const props = mockCalls[0]?.[0] ?? {};
-            const nodes = props.nodes ?? [];
 
-            expect(nodes[0]?.draggable).toBe(true);
             expect(props.nodesDraggable).toBe(false);
+            expect(props.noDragClassName).toBe('nodrag');
         });
 
         it('should render ZoomControls', () => {

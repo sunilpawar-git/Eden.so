@@ -1,5 +1,5 @@
 /**
- * useNodeUtilsBarOutsideHandlers — Escape/outside-click handlers for NodeUtilsBar overflow.
+ * useNodeUtilsBarOutsideHandlers — Escape/outside-click handlers for NodeUtilsBar.
  * Escape is handled via centralized useEscapeLayer; outside-click via document mousedown.
  */
 import { useEffect } from 'react';
@@ -9,15 +9,15 @@ import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 
 export function useNodeUtilsBarOutsideHandlers(
     containerRef: React.RefObject<HTMLDivElement | null>,
-    overflowOpen: boolean,
+    isActive: boolean,
     onEscape: () => void,
     onOutsidePointer: () => void,
 ) {
-    useEscapeLayer(ESCAPE_PRIORITY.BAR_OVERFLOW, overflowOpen, onEscape);
+    useEscapeLayer(ESCAPE_PRIORITY.BAR_OVERFLOW, isActive, onEscape);
 
     useEffect(() => {
         const onPointerDown = (event: MouseEvent) => {
-            if (!overflowOpen) return;
+            if (!isActive) return;
             const target = event.target as Node | null;
             if (!target) return;
             const element = target instanceof HTMLElement ? target : null;
@@ -30,5 +30,5 @@ export function useNodeUtilsBarOutsideHandlers(
         return () => {
             document.removeEventListener('mousedown', onPointerDown, true);
         };
-    }, [containerRef, overflowOpen, onOutsidePointer]);
+    }, [containerRef, isActive, onOutsidePointer]);
 }

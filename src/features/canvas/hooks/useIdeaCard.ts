@@ -1,4 +1,5 @@
 import { useCallback, useState, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import { useFocusStore } from '../stores/focusStore';
 import { useIdeaCardEditor } from './useIdeaCardEditor';
@@ -20,8 +21,11 @@ interface UseIdeaCardParams {
 }
 
 export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions -- nodes may be absent in test mocks
-    const storeData = useCanvasStore((s) => s.nodes ? getNodeMap(s.nodes).get(id)?.data : undefined);
+    const storeData = useCanvasStore(useShallow((s) => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions -- nodes may be absent in test mocks
+        if (!s.nodes) return undefined;
+        return getNodeMap(s.nodes).get(id)?.data;
+    }));
     const resolvedData: IdeaNodeData = storeData ?? rfData;
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field, heading is SSOT
     const { heading, prompt = '', output, isGenerating, isPinned, isCollapsed, tags: tagIds = [], linkPreviews, calendarEvent } = resolvedData;

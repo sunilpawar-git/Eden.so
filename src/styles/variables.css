@@ -199,6 +199,8 @@
   --node-utils-deck-stagger-delay: 80ms;
   --node-utils-deck-rotation: 2deg;
   --node-utils-deck-two-z: calc(var(--z-dropdown) + 1);
+  /* Applied via JS on .react-flow__node when bar is active — above RF selected-node z (1000) */
+  --node-utils-active-z: 1001;
 
   /* Dropdown Menus (TransformMenu, ShareMenu, etc.) */
   --dropdown-min-width: 120px;
@@ -216,7 +218,24 @@
 
   /* Opacity tokens */
   --opacity-disabled: 0.5;
+  --opacity-disabled-light: 0.4;
   --opacity-hover-subtle: 0.9;
+  --opacity-peek: 0.4;
+  --opacity-peek-min: 0.3;
+  --opacity-peek-max: 0.6;
+
+  /* Destructive action hover */
+  --color-error-hover-bg: hsla(0, 72%, 51%, 0.1);
+
+  /* Dropdown positioning */
+  --dropdown-side-offset: 8px;
+
+  /* Focus outline */
+  --outline-offset-sm: 2px;
+
+  /* Color picker dot/button sizes */
+  --color-button-size: 30px;
+  --color-dot-size: 12px;
 
   /* Node Images */
   --node-image-radius: var(--radius-md);

@@ -1,6 +1,5 @@
 /**
- * NodeUtilsBar Share integration tests — Share deck button + ShareMenu in overflow.
- * Share is a direct deck 2 button. The ShareMenu sub-menu opens inside overflow.
+ * NodeUtilsBar Share integration tests — ShareMenu renders inline in deck 2.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -42,11 +41,11 @@ describe('NodeUtilsBar — ShareMenu integration', () => {
         expect(screen.queryByLabelText('Share')).not.toBeInTheDocument();
     });
 
-    it('overflow menu contains ShareMenu sub-menu when onShareClick is provided', () => {
+    it('clicking Share opens ShareMenu portal directly (no overflow)', () => {
         const onShareClick = vi.fn().mockResolvedValue(undefined);
         render(<NodeUtilsBar {...baseProps} onShareClick={onShareClick} />);
-        fireEvent.click(screen.getByLabelText('More actions'));
-        const shareElements = screen.getAllByLabelText('Share');
-        expect(shareElements.length).toBeGreaterThanOrEqual(2);
+        fireEvent.click(screen.getByLabelText('Share'));
+        expect(screen.getByTestId('share-menu-portal')).toBeInTheDocument();
+        expect(screen.queryByLabelText('More actions')).not.toBeInTheDocument();
     });
 });

@@ -17,6 +17,7 @@ vi.mock('../NodeUtilsBar.module.css', () => ({
         deckBase: 'deckBase',
         deckOne: 'deckOne',
         deckTwo: 'deckTwo',
+        deckTwoOpen: 'deckTwoOpen',
         deckOnePinned: 'deckOnePinned',
         deckTwoPinned: 'deckTwoPinned',
         peekIndicator: 'peekIndicator',
@@ -65,6 +66,10 @@ describe('NodeUtilsBar CSS conventions (dual-deck)', () => {
         expect(moduleCss).toContain('.deckTwo');
     });
 
+    it('CSS defines .deckTwoOpen class for controller-driven visibility', () => {
+        expect(moduleCss).toContain('.deckTwoOpen');
+    });
+
     it('CSS does not use translateY(-50%)', () => {
         expect(moduleCss).not.toContain('translateY(-50%)');
     });
@@ -108,15 +113,20 @@ describe('NodeUtilsBar strings compliance', () => {
         expect(strings.nodeUtils.moreIcon).toBe('•••');
     });
 
-    it('••• button renders the icon from strings.nodeUtils.moreIcon', () => {
+    it('strings.nodeUtils defines expandDeck and expandDeckIcon', () => {
+        expect(strings.nodeUtils).toHaveProperty('expandDeck');
+        expect(strings.nodeUtils).toHaveProperty('expandDeckIcon');
+        expect(strings.nodeUtils.expandDeckIcon).toBe('\u203A');
+    });
+
+    it('no ••• overflow button renders (sub-menus are inline)', () => {
         const defaultProps = {
             onTagClick: vi.fn(), onAIClick: vi.fn(),
             onConnectClick: vi.fn(), onDelete: vi.fn(),
-            onColorChange: vi.fn(),
+            onShareClick: vi.fn().mockResolvedValue(undefined),
         };
         render(<NodeUtilsBar {...defaultProps} />);
-        const moreBtn = screen.getByLabelText('More actions');
-        expect(moreBtn.textContent).toBe(strings.nodeUtils.moreIcon);
+        expect(screen.queryByLabelText('More actions')).not.toBeInTheDocument();
     });
 });
 

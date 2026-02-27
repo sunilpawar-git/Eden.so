@@ -1,7 +1,7 @@
 /**
  * TransformMenu Styles
- * Dropdown menu for AI text transformations
- * All dimensions from CSS variables (no hardcoded values)
+ * Dropdown menu for AI text transformations.
+ * Shared dropdown rules composed from DropdownMenu.module.css (DRY/SSOT).
  */
 
 .transformMenuWrapper {
@@ -33,39 +33,9 @@
 }
 
 .dropdownMenu {
-    position: fixed;
-    transform: translate(-50%, -100%);
-    margin-top: calc(-1 * var(--space-xs));
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-dropdown);
-    min-width: var(--dropdown-min-width);
-    z-index: var(--z-suggestion-popup);
-    overflow: hidden;
+    composes: dropdownMenu from './DropdownMenu.module.css';
 }
 
 .menuItem {
-    display: block;
-    width: 100%;
-    padding: var(--menu-item-v-padding) var(--menu-item-h-padding);
-    text-align: left;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: var(--font-size-sm);
-    color: var(--color-text-primary);
-    transition: background-color var(--transition-fast);
-}
-
-.menuItem:hover {
-    background-color: var(--color-hover);
-}
-
-.menuItem:first-child {
-    border-radius: calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px) 0 0;
-}
-
-.menuItem:last-child {
-    border-radius: 0 0 calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px);
+    composes: menuItem from './DropdownMenu.module.css';
 }
