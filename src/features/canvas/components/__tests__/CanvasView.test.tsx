@@ -32,6 +32,11 @@ vi.mock('../FocusOverlay', () => ({
     FocusOverlay: () => <div data-testid="mock-focus-overlay" />,
 }));
 
+// Mock ViewportSync import
+vi.mock('../ViewportSync', () => ({
+    ViewportSync: () => null,
+}));
+
 describe('CanvasView', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -77,7 +82,8 @@ describe('CanvasView', () => {
 
         const mockCalls = vi.mocked(ReactFlow).mock.calls;
         const reactFlowProps = mockCalls[0]?.[0] ?? {};
-        expect(reactFlowProps.defaultViewport).toEqual({ x: 32, y: 32, zoom: 1 });
+        // Viewport is now controlled programmatically via ViewportSync component
+        expect(reactFlowProps.defaultViewport).toBeUndefined();
         // fitView is disabled to prevent auto-zoom making nodes appear oversized
         expect(reactFlowProps.fitView).toBeUndefined();
     });

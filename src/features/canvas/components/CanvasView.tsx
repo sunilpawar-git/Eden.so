@@ -13,6 +13,7 @@ import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { ZoomControls } from './ZoomControls';
 import { FocusOverlay } from './FocusOverlay';
+import { ViewportSync } from './ViewportSync';
 import { buildRfNodes, cleanupDataShells, type PrevRfNodes } from './buildRfNodes';
 import { mapCanvasEdgesToRfEdges } from './canvasChangeHelpers';
 import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID } from './canvasViewConstants';
@@ -73,7 +74,6 @@ function CanvasViewInner() {
                 edgeTypes={edgeTypes}
                 connectionLineType={ConnectionLineType.Bezier}
                 defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
-                defaultViewport={viewport}
                 snapToGrid
                 snapGrid={SNAP_GRID}
                 minZoom={0.1}
@@ -89,6 +89,7 @@ function CanvasViewInner() {
                 selectionOnDrag={!isInteractionDisabled}
                 selectionMode={SelectionMode.Partial}
             >
+                <ViewportSync viewport={viewport} />
                 {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1} />}
                 <ZoomControls />
             </ReactFlow>
