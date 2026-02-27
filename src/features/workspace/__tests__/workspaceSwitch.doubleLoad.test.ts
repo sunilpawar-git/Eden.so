@@ -68,6 +68,7 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
             getState: () => ({
                 nodes: cachedNodes,
                 edges: cachedEdges,
+                viewport: { x: 32, y: 32, zoom: 1 },
                 editingNodeId: null,
             }),
             setState: (...args: unknown[]) => mockCanvasSetState(...args),
