@@ -39,7 +39,7 @@ describe('Grid Layout Helpers', () => {
             expect(result[4]!.position.y).toBeGreaterThan(32);
         });
 
-        it('should sort nodes by createdAt before arranging', () => {
+        it('should assign positions by createdAt order while preserving input array order', () => {
             const nodes = [
                 createMockNode('n2', { createdAt: new Date('2024-01-02') }),
                 createMockNode('n1', { createdAt: new Date('2024-01-01') }),
@@ -47,10 +47,17 @@ describe('Grid Layout Helpers', () => {
 
             const result = arrangeNodesInGrid(nodes);
 
-            // n1 should be first (earlier date) at position padding,padding
-            expect(result[0]!.id).toBe('n1');
-            expect(result[0]!.position.x).toBe(32);
-            expect(result[0]!.position.y).toBe(32);
+            // Input order preserved: n2 still at index 0, n1 at index 1
+            expect(result[0]!.id).toBe('n2');
+            expect(result[1]!.id).toBe('n1');
+
+            // n1 (older) gets col 0, n2 (newer) gets col 1
+            const n1 = result.find(n => n.id === 'n1')!;
+            const n2 = result.find(n => n.id === 'n2')!;
+            expect(n1.position.x).toBe(32);
+            expect(n1.position.y).toBe(32);
+            expect(n2.position.x).toBe(352);
+            expect(n2.position.y).toBe(32);
         });
 
         it('should return empty array for empty input', () => {

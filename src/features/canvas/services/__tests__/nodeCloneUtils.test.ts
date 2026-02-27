@@ -61,6 +61,12 @@ describe('buildClonedNode', () => {
         expect(clone.data.calendarEvent).toBeUndefined();
     });
 
+    it('resets isPinned to false (clones should not inherit spatial lock)', () => {
+        const source = makeNode({ data: { ...makeNode().data, isPinned: true } });
+        const clone = buildClonedNode(source, { position: { x: 0, y: 0 } });
+        expect(clone.data.isPinned).toBe(false);
+    });
+
     it('deep clones data — source mutation does not affect clone', () => {
         const source = makeNode();
         const clone = buildClonedNode(source, { position: { x: 0, y: 0 } });

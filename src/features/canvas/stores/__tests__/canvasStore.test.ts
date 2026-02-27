@@ -76,5 +76,73 @@ describe('canvasStore', () => {
                 expect(newUpdatedAt.getTime()).toBeGreaterThanOrEqual(originalUpdatedAt.getTime());
             }, 0);
         });
+
+        it('should NOT move pinned nodes during arrangeNodes', () => {
+            const baseDate = new Date('2024-01-01');
+            const nodes = [
+                createMockNode('pinned', {
+                    position: { x: 500, y: 600 },
+                    data: { prompt: '', output: '', tags: [], isPinned: true },
+                    createdAt: new Date(baseDate.getTime() + 1000),
+                }),
+                createMockNode('free1', {
+                    createdAt: new Date(baseDate.getTime() + 2000),
+                }),
+                createMockNode('free2', {
+                    createdAt: new Date(baseDate.getTime() + 3000),
+                }),
+            ];
+
+            useCanvasStore.getState().setNodes(nodes);
+            useCanvasStore.getState().arrangeNodes();
+
+            const updated = useCanvasStore.getState().nodes;
+            const pinnedNode = updated.find(n => n.id === 'pinned');
+            const freeNode1 = updated.find(n => n.id === 'free1');
+
+            expect(pinnedNode!.position).toEqual({ x: 500, y: 600 });
+            expect(freeNode1!.position.x).toBe(32);
+            expect(freeNode1!.position.y).toBe(32);
+        });
+
+        it('should NOT move pinned nodes during arrangeAfterResize', () => {
+            const baseDate = new Date('2024-01-01');
+            const nodes = [
+                createMockNode('pinned', {
+                    position: { x: 777, y: 888 },
+                    data: { prompt: '', output: '', tags: [], isPinned: true },
+                    createdAt: new Date(baseDate.getTime() + 1000),
+                }),
+                createMockNode('resized', {
+                    width: 400,
+                    height: 300,
+                    createdAt: new Date(baseDate.getTime() + 2000),
+                }),
+            ];
+
+            useCanvasStore.getState().setNodes(nodes);
+            useCanvasStore.getState().arrangeAfterResize('resized');
+
+            const updated = useCanvasStore.getState().nodes;
+            const pinnedNode = updated.find(n => n.id === 'pinned');
+
+            expect(pinnedNode!.position).toEqual({ x: 777, y: 888 });
+        });
+
+        it('should return all nodes including pinned after arrange', () => {
+            const nodes = [
+                createMockNode('p1', {
+                    data: { prompt: '', output: '', tags: [], isPinned: true },
+                }),
+                createMockNode('f1'),
+                createMockNode('f2'),
+            ];
+
+            useCanvasStore.getState().setNodes(nodes);
+            useCanvasStore.getState().arrangeNodes();
+
+            const updated = useCanvasStore.getState().nodes;
+            expect(updated).toHaveLength(3);
+        });
     });
 });
