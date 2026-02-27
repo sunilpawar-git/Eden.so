@@ -53,7 +53,6 @@ function CanvasViewInner() {
             <ReactFlow
                 nodes={rfNodes}
                 edges={rfEdges}
-                onlyRenderVisibleElements
                 onNodesChange={handlers.onNodesChange}
                 onEdgesChange={handlers.onEdgesChange}
                 onConnect={handlers.onConnect}

@@ -2,7 +2,7 @@
  * useNodeUtilsBar — Logic for NodeUtilsBar: submenu toggles, outside-click handling.
  * Extracted for CLAUDE.md 100-line component limit.
  */
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { useNodeUtilsController } from './useNodeUtilsController';
 import { useNodeUtilsBarOutsideHandlers } from './useNodeUtilsBarOutsideHandlers';
 
@@ -41,6 +41,15 @@ export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
 
     const isActive = isShareOpen || isTransformOpen || isColorOpen || isDeckTwoOpen;
     useNodeUtilsBarOutsideHandlers(containerRef, isActive, onEscape, onOutsidePointer);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+        if (isActive) {
+            containerRef.current.setAttribute('data-bar-active', 'true');
+        } else {
+            containerRef.current.removeAttribute('data-bar-active');
+        }
+    }, [isActive]);
 
     const handleShareToggle = useCallback(() => {
         if (isShareOpen) closeSubmenu();

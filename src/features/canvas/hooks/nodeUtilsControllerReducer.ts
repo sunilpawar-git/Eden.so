@@ -41,7 +41,11 @@ export function nodeUtilsControllerReducer(
             if (!state.isDeckTwoOpen && state.activeSubmenu === 'none') return state;
             return { ...state, isDeckTwoOpen: false, activeSubmenu: 'none' };
         case 'TOGGLE_DECK_TWO':
-            return { ...state, isDeckTwoOpen: !state.isDeckTwoOpen };
+            return {
+                ...state,
+                isDeckTwoOpen: !state.isDeckTwoOpen,
+                mode: !state.isDeckTwoOpen ? 'manual' : 'auto'
+            };
         case 'OPEN_SUBMENU':
             return { ...state, mode: 'manual', activeSubmenu: event.submenu };
         case 'CLOSE_SUBMENU':

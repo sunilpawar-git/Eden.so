@@ -6,12 +6,7 @@
 export const PROXIMITY_THRESHOLD_PX = 80;
 export const FLIP_THRESHOLD_PX = 60;
 
-/** Reads --node-utils-active-z from :root; falls back to 1001. */
-export function getActiveZIndex(): string {
-    const raw = getComputedStyle(document.documentElement)
-        .getPropertyValue('--node-utils-active-z').trim();
-    return raw || '1001';
-}
+
 
 export function recalculatePlacement(card: HTMLElement): void {
     const rect = card.getBoundingClientRect();
@@ -34,13 +29,10 @@ export function checkProximity(card: HTMLElement, clientX: number): void {
         : clientX - edgeX;
 
     const distToEdge = Math.abs(signedDist);
-    const nodeWrapper = card.closest<HTMLElement>('.react-flow__node');
 
     if (distToEdge <= PROXIMITY_THRESHOLD_PX) {
         card.setAttribute('data-bar-proximity', 'near');
-        if (nodeWrapper) nodeWrapper.style.zIndex = getActiveZIndex();
     } else {
         card.removeAttribute('data-bar-proximity');
-        if (nodeWrapper) nodeWrapper.style.zIndex = '';
     }
 }

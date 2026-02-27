@@ -2,7 +2,7 @@
  * IdeaCard Proximity Hover Tests
  * Tests that useProximityBar sets DOM data attributes for bar visibility
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { PROXIMITY_THRESHOLD_PX } from '../../../hooks/useProximityBar';
@@ -143,7 +143,12 @@ describe('IdeaCard - Proximity Hover (data-attribute driven)', () => {
     } as NodeProps;
 
     beforeEach(() => {
+        vi.useFakeTimers();
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('sets data-bar-proximity="near" when mouse is within PROXIMITY_THRESHOLD_PX of right edge', () => {
@@ -197,6 +202,7 @@ describe('IdeaCard - Proximity Hover (data-attribute driven)', () => {
 
         fireEvent.mouseEnter(cardWrapper);
         fireEvent.mouseLeave(cardWrapper);
+        vi.advanceTimersByTime(300);
         expect(cardWrapper.getAttribute('data-hovered')).toBeNull();
     });
 

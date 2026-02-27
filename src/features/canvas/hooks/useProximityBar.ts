@@ -18,20 +18,28 @@ export function useProximityBar(
 
         card.setAttribute('data-bar-placement', 'right');
 
+        let leaveTimeout: ReturnType<typeof setTimeout> | null = null;
+
         const onMouseEnter = (): void => {
+            if (leaveTimeout) clearTimeout(leaveTimeout);
             card.setAttribute('data-hovered', 'true');
             recalculatePlacement(card);
         };
 
         const onMouseMove = (e: MouseEvent): void => {
+            const bar = barRef.current;
+            if (bar && e.target instanceof Node && bar.contains(e.target)) {
+                card.setAttribute('data-bar-proximity', 'near');
+                return;
+            }
             checkProximity(card, e.clientX);
         };
 
         const onMouseLeave = (): void => {
-            card.removeAttribute('data-hovered');
-            card.removeAttribute('data-bar-proximity');
-            const nodeWrapper = card.closest<HTMLElement>('.react-flow__node');
-            if (nodeWrapper) nodeWrapper.style.zIndex = '';
+            leaveTimeout = setTimeout(() => {
+                card.removeAttribute('data-hovered');
+                card.removeAttribute('data-bar-proximity');
+            }, 300);
         };
 
         const onResize = (): void => { recalculatePlacement(card); };

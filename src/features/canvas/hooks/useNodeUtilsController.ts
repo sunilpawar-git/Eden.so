@@ -27,8 +27,10 @@ export function useNodeUtilsController(isPinnedOpen = false) {
 
     const toggleDeckTwoAction = useCallback(() => { dispatch({ type: 'TOGGLE_DECK_TWO' }); }, []);
     const deckTwoHover = useHoverIntent(toggleDeckTwoAction, HOVER_INTENT_DELAY_MS);
+    const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleHoverEnter = useCallback(() => {
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
         deckTwoHover.cancel();
     }, [deckTwoHover]);
 
@@ -36,10 +38,13 @@ export function useNodeUtilsController(isPinnedOpen = false) {
         deckTwoHover.cancel();
         if (isPinnedRef.current) return;
         if (isPortalBoundaryTarget(event?.relatedTarget)) return;
-        dispatch({ type: 'HOVER_LEAVE' });
+        leaveTimerRef.current = setTimeout(() => {
+            dispatch({ type: 'HOVER_LEAVE' });
+        }, 300);
     }, [deckTwoHover]);
 
     const toggleDeckTwo = useCallback(() => {
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
         deckTwoHover.cancel();
         dispatch({ type: 'TOGGLE_DECK_TWO' });
     }, [deckTwoHover]);

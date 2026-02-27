@@ -17,6 +17,7 @@ describe('useProximityBar', () => {
     let bar: HTMLDivElement;
 
     beforeEach(() => {
+        vi.useFakeTimers();
         card = createMockElement();
         bar = createMockElement();
         vi.spyOn(card, 'getBoundingClientRect').mockReturnValue({
@@ -28,6 +29,7 @@ describe('useProximityBar', () => {
     afterEach(() => {
         card.remove();
         bar.remove();
+        vi.useRealTimers();
     });
 
     it('sets data-bar-placement="right" by default', () => {
@@ -54,6 +56,7 @@ describe('useProximityBar', () => {
 
         card.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
         card.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+        vi.advanceTimersByTime(300);
         expect(card.getAttribute('data-hovered')).toBeNull();
     });
 
@@ -177,52 +180,6 @@ describe('useProximityBar', () => {
         expect(card.getAttribute('data-bar-placement')).toBe('left');
     });
 
-    describe('node wrapper z-index elevation', () => {
-        function wrapCardInNodeWrapper(cardEl: HTMLDivElement): HTMLDivElement {
-            const wrapper = document.createElement('div');
-            wrapper.classList.add('react-flow__node');
-            wrapper.style.zIndex = '0';
-            document.body.appendChild(wrapper);
-            wrapper.appendChild(cardEl);
-            return wrapper;
-        }
-
-        it('sets z-index on .react-flow__node ancestor when proximity is near', () => {
-            const nodeWrapper = wrapCardInNodeWrapper(card);
-            const cardRef = { current: card };
-            const barRef = { current: bar };
-            renderHook(() => useProximityBar(cardRef, barRef));
-
-            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 450, bubbles: true }));
-            expect(nodeWrapper.style.zIndex).toBe('1001');
-            nodeWrapper.remove();
-        });
-
-        it('resets z-index on .react-flow__node ancestor when mouse leaves', () => {
-            const nodeWrapper = wrapCardInNodeWrapper(card);
-            const cardRef = { current: card };
-            const barRef = { current: bar };
-            renderHook(() => useProximityBar(cardRef, barRef));
-
-            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 450, bubbles: true }));
-            expect(nodeWrapper.style.zIndex).toBe('1001');
-
-            card.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
-            expect(nodeWrapper.style.zIndex).toBe('');
-            nodeWrapper.remove();
-        });
-
-        it('does not elevate z-index when cursor is far from edge', () => {
-            const nodeWrapper = wrapCardInNodeWrapper(card);
-            const cardRef = { current: card };
-            const barRef = { current: bar };
-            renderHook(() => useProximityBar(cardRef, barRef));
-
-            card.dispatchEvent(new MouseEvent('mousemove', { clientX: 200, bubbles: true }));
-            expect(nodeWrapper.style.zIndex).not.toBe('1001');
-            nodeWrapper.remove();
-        });
-    });
 
     describe('data-bar-deck removed (deck 2 controlled by controller)', () => {
         it('does NOT set data-bar-deck on mousemove', () => {

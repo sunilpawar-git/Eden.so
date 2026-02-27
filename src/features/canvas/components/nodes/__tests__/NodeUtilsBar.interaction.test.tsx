@@ -2,8 +2,8 @@
  * NodeUtilsBar Interaction Tests — Cross-deck hover, chevron tooltip, stability.
  * Split from NodeUtilsBar.test.tsx to meet 300-line file limit.
  */
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
 
 vi.mock('../../../../hooks/useUtilsBarLayout', () => ({
@@ -14,6 +14,13 @@ vi.mock('../../../../hooks/useUtilsBarLayout', () => ({
 }));
 
 describe('NodeUtilsBar interaction', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
     const defaultProps = {
         onTagClick: vi.fn(),
         onAIClick: vi.fn(),
@@ -50,7 +57,7 @@ describe('NodeUtilsBar interaction', () => {
             expect(deck2.className).toContain('deckTwoOpen');
         });
 
-        it('mouse leaving deck 1 away from bar closes deck 2 in auto mode', () => {
+        it('mouse leaving deck 1 away from bar DOES NOT close deck 2 (manual mode)', () => {
             render(<NodeUtilsBar {...defaultProps} />);
             const toolbars = screen.getAllByRole('toolbar');
             const deck1 = toolbars[0] as HTMLElement;
@@ -60,7 +67,10 @@ describe('NodeUtilsBar interaction', () => {
             expect(deck2.className).toContain('deckTwoOpen');
 
             fireEvent.mouseLeave(deck1, { relatedTarget: document.body });
-            expect(deck2.className).not.toContain('deckTwoOpen');
+            act(() => {
+                vi.advanceTimersByTime(300);
+            });
+            expect(deck2.className).toContain('deckTwoOpen');
         });
 
         it('mouse leaving deck 2 toward deck 1 does not close deck 2', () => {
@@ -73,6 +83,9 @@ describe('NodeUtilsBar interaction', () => {
             expect(deck2.className).toContain('deckTwoOpen');
 
             fireEvent.mouseLeave(deck2, { relatedTarget: deck1 });
+            act(() => {
+                vi.advanceTimersByTime(300);
+            });
             expect(deck2.className).toContain('deckTwoOpen');
         });
     });
@@ -100,6 +113,20 @@ describe('NodeUtilsBar interaction', () => {
 
             expect(onColorChange).toHaveBeenCalled();
             expect(onTransform).toHaveBeenCalled();
+        });
+    });
+
+    describe('CSS z-index protection via data attributes', () => {
+        it('sets data-bar-active on the container when deck 2 is opened', () => {
+            render(<NodeUtilsBar {...defaultProps} />);
+            const toolbars = screen.getAllByRole('toolbar');
+            const container = toolbars[0].parentElement!;
+
+            expect(container.getAttribute('data-bar-active')).toBeNull();
+
+            fireEvent.click(screen.getByLabelText('Show more actions'));
+
+            expect(container.getAttribute('data-bar-active')).toBe('true');
         });
     });
 });

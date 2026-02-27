@@ -13,6 +13,13 @@
     overflow: visible !important;
 }
 
+/* Ensure toolbars always float above neighboring nodes, overriding React Flow's inline styling */
+.canvasContainer :global(.react-flow__node:has([data-bar-proximity="near"])),
+.canvasContainer :global(.react-flow__node:has([data-bar-focused="true"])),
+.canvasContainer :global(.react-flow__node:has([data-bar-active="true"])) {
+    z-index: var(--node-utils-active-z, 1001) !important;
+}
+
 .canvasContainer :global(.react-flow__node):active {
     cursor: grabbing;
 }

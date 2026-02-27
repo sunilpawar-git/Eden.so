@@ -78,8 +78,22 @@
     transform: translateX(calc(-100% + var(--node-utils-bar-peek))) rotate(calc(-1 * var(--node-utils-deck-rotation))) scale(0.97);
 }
 
+.deckTwo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(-1 * var(--node-utils-deck-gap, 8px));
+    width: var(--node-utils-deck-gap, 8px);
+}
+
 :global([data-bar-placement="left"]) .deckTwo {
     transform: translateX(calc(100% - var(--node-utils-bar-peek))) rotate(var(--node-utils-deck-rotation)) scale(0.97);
+}
+
+:global([data-bar-placement="left"]) .deckTwo::before {
+    left: auto;
+    right: calc(-1 * var(--node-utils-deck-gap, 8px));
 }
 
 .deckTwoOpen {

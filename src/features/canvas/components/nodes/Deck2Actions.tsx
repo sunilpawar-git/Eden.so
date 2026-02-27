@@ -38,7 +38,7 @@ export function renderDeck2Action(id: UtilsBarActionId, ctx: RenderContext): Rea
         case 'collapse': {
             if (!p.onCollapseToggle) return null;
             const label = (p.isCollapsed ?? false) ? strings.nodeUtils.expand : strings.nodeUtils.collapse;
-            const icon = (p.isCollapsed ?? false) ? '▴' : '▾';
+            const icon = (p.isCollapsed ?? false) ? '🔽' : '🔼';
             return (
                 <TooltipButton key={id} label={label} tooltipText={label}
                     shortcut={strings.nodeUtils.collapseShortcut} icon={icon}
