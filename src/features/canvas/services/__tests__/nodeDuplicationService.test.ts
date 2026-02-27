@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { duplicateNode } from '../nodeDuplicationService';
 import type { CanvasNode } from '../../types/node';
-import { GRID_PADDING, GRID_GAP } from '../gridLayoutService';
+import { GRID_GAP } from '../gridLayoutService';
 import { DEFAULT_NODE_WIDTH } from '../../types/node';
 
 const makeNode = (overrides?: Partial<CanvasNode>): CanvasNode => ({
@@ -52,28 +52,22 @@ describe('duplicateNode', () => {
         expect(a.id).not.toBe(b.id);
     });
 
-    it('places duplicate at grid padding when canvas is empty', () => {
-        const source = makeNode();
-        const result = duplicateNode(source, []);
-        expect(result.position).toEqual({ x: GRID_PADDING, y: GRID_PADDING });
-    });
-
-    it('places duplicate in second column when first column has one node', () => {
-        const source = makeNode({ position: { x: GRID_PADDING, y: GRID_PADDING } });
+    it('places duplicate to the right of the source node at the same y', () => {
+        const source = makeNode({ position: { x: 100, y: 200 }, width: 280 });
         const result = duplicateNode(source, [source]);
-        expect(result.position.y).toBe(GRID_PADDING);
-        expect(result.position.x).toBeGreaterThan(GRID_PADDING);
+        expect(result.position).toEqual({ x: 100 + 280 + GRID_GAP, y: 200 });
     });
 
-    it('places duplicate in shortest column (shortest-column masonry rule)', () => {
-        const node1 = makeNode({ id: 'n1', position: { x: GRID_PADDING, y: GRID_PADDING }, height: 300 });
-        const node2 = makeNode({
-            id: 'n2',
-            position: { x: GRID_PADDING + DEFAULT_NODE_WIDTH + GRID_GAP, y: GRID_PADDING },
-            height: 100,
-        });
-        const result = duplicateNode(makeNode(), [node1, node2]);
-        expect(result.position.y).toBeLessThan(GRID_PADDING + 300 + GRID_GAP);
+    it('uses DEFAULT_NODE_WIDTH when source has no width', () => {
+        const source = makeNode({ position: { x: 50, y: 80 }, width: undefined });
+        const result = duplicateNode(source, [source]);
+        expect(result.position).toEqual({ x: 50 + DEFAULT_NODE_WIDTH + GRID_GAP, y: 80 });
+    });
+
+    it('places duplicate beside source even when canvas is empty', () => {
+        const source = makeNode({ position: { x: 32, y: 32 }, width: 280 });
+        const result = duplicateNode(source, []);
+        expect(result.position).toEqual({ x: 32 + 280 + GRID_GAP, y: 32 });
     });
 
     it('preserves heading content', () => {
