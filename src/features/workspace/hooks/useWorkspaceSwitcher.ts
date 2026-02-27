@@ -19,7 +19,7 @@ interface UseWorkspaceSwitcherResult {
 
 
 export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
 

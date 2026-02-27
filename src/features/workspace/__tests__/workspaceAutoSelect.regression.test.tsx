@@ -99,23 +99,31 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(useAuthStore).mockReturnValue({
-            user: { id: 'user-1', name: 'Test User', avatarUrl: '' },
-            isLoading: false,
-            isAuthenticated: true,
-            error: null,
-            setUser: vi.fn(),
-            clearUser: vi.fn(),
-            setLoading: vi.fn(),
-            setError: vi.fn(),
-        } as Partial<ReturnType<typeof useAuthStore>> as ReturnType<typeof useAuthStore>);
+
+        // Set up the mock state BEFORE any hook calls
+        const defaultState = createMockState();
+        mockWorkspaceGetState.mockReturnValue(defaultState);
+
+        vi.mocked(useAuthStore).mockImplementation((selector) => {
+            const state = {
+                user: { id: 'user-1', name: 'Test User', avatarUrl: '' },
+                isLoading: false,
+                isAuthenticated: true,
+                error: null,
+                setUser: vi.fn(),
+                clearUser: vi.fn(),
+                setLoading: vi.fn(),
+                setError: vi.fn(),
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return typeof selector === 'function' ? selector(state as any) : state;
+        });
 
         vi.mocked(useCanvasStore).mockReturnValue(mockClearCanvas);
         mockGetState.mockReturnValue({ nodes: [], edges: [] });
 
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
-            const state = createMockState();
-            mockWorkspaceGetState.mockReturnValue(state);
+            const state = mockWorkspaceGetState();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return typeof selector === 'function' ? selector(state as any) : state;
         });
@@ -146,20 +154,18 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
         vi.mocked(loadUserWorkspaces).mockResolvedValue(mockWorkspaces);
 
+        // Set up mock state BEFORE hook runs (for getState() calls)
+        const state = createMockState({ currentWorkspaceId: 'default-workspace', workspaces: [] });
+        mockWorkspaceGetState.mockReturnValue(state);
+
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
-            const state = createMockState({ currentWorkspaceId: 'default-workspace', workspaces: [] });
-            mockWorkspaceGetState.mockReturnValue(state);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return typeof selector === 'function' ? selector(state as any) : state;
         });
 
-        // Test logic moved to useWorkspaceLoading, which we can test via renderHook
-
-        // Actually, let's just render the hook directly to test the regression
         const { renderHook } = await import('@testing-library/react');
         const { useWorkspaceLoading } = await import('@/app/hooks/useWorkspaceLoading');
 
-        // Unmock the hook so we can test it real implementation
         vi.unmock('@/app/hooks/useWorkspaceLoading');
 
         renderHook(() => useWorkspaceLoading());
@@ -177,14 +183,15 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
         vi.mocked(loadUserWorkspaces).mockResolvedValue(mockWorkspaces);
 
+        // Set up mock state BEFORE hook runs (for getState() calls)
+        const state = createMockState({ currentWorkspaceId: 'ws-existing', workspaces: [] });
+        mockWorkspaceGetState.mockReturnValue(state);
+
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
-            const state = createMockState({ currentWorkspaceId: 'ws-existing', workspaces: [] });
-            mockWorkspaceGetState.mockReturnValue(state);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return typeof selector === 'function' ? selector(state as any) : state;
         });
 
-        // Test the hook directly
         const { renderHook } = await import('@testing-library/react');
         const { useWorkspaceLoading } = await import('@/app/hooks/useWorkspaceLoading');
 
@@ -199,6 +206,10 @@ describe('Workspace Auto-Selection (Regression)', () => {
 
     it('should handle empty workspace list gracefully', async () => {
         vi.mocked(loadUserWorkspaces).mockResolvedValue([]);
+
+        // Set up mock state BEFORE hook runs (for getState() calls)
+        const state = createMockState();
+        mockWorkspaceGetState.mockReturnValue(state);
 
         const { renderHook } = await import('@testing-library/react');
         const { useWorkspaceLoading } = await import('@/app/hooks/useWorkspaceLoading');

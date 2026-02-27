@@ -24,10 +24,12 @@ vi.mock('@/shared/stores/sidebarStore', () => ({
     }),
 }));
 
+// Mock auth store - must handle selector pattern: useAuthStore((s) => s.user)
 vi.mock('@/features/auth/stores/authStore', () => ({
-    useAuthStore: () => ({
-        user: { id: 'user-1', name: 'Test User', avatarUrl: '' },
-    }),
+    useAuthStore: (selector?: (s: { user: { id: string; name: string; avatarUrl: string } }) => unknown) => {
+        const state = { user: { id: 'user-1', name: 'Test User', avatarUrl: '' } };
+        return typeof selector === 'function' ? selector(state) : state;
+    },
 }));
 
 vi.mock('@/features/canvas/stores/canvasStore', () => ({

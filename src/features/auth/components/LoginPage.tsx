@@ -8,7 +8,8 @@ import styles from './LoginPage.module.css';
 
  
 export function LoginPage() {
-    const { isLoading, error } = useAuthStore();
+    const isLoading = useAuthStore((s) => s.isLoading);
+    const error = useAuthStore((s) => s.error);
 
     const handleSignIn = async () => {
         try {

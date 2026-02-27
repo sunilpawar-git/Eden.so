@@ -19,7 +19,7 @@ const AUTOSAVE_DELAY_MS = 2000; // 2 second debounce
 export function useAutosave(workspaceId: string, isWorkspaceLoading: boolean = false) {
     const nodes = useCanvasStore((s) => s.nodes);
     const edges = useCanvasStore((s) => s.edges);
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSavedRef = useRef({ nodes: '', edges: '' });
 

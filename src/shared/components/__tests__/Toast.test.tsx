@@ -4,14 +4,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ToastContainer } from '../Toast';
-import { useToastStore } from '../../stores/toastStore';
+// useToastStore is mocked below - no direct import needed
 
-// Mock the toast store
+// Mock the toast store - must handle selector pattern and getState()
+const mockRemoveToastFn = vi.fn();
+let mockToasts: Array<{ id: string; message: string; type: string }> = [];
 vi.mock('../../stores/toastStore', () => ({
-    useToastStore: vi.fn(() => ({
-        toasts: [],
-        removeToast: vi.fn(),
-    })),
+    useToastStore: Object.assign(
+        vi.fn((selector?: (s: { toasts: typeof mockToasts; removeToast: typeof mockRemoveToastFn }) => unknown) => {
+            const state = { toasts: mockToasts, removeToast: mockRemoveToastFn };
+            return typeof selector === 'function' ? selector(state) : state;
+        }),
+        {
+            getState: () => ({ toasts: mockToasts, removeToast: mockRemoveToastFn }),
+        }
+    ),
 }));
 
 // Mock CSS module
@@ -28,30 +35,22 @@ vi.mock('../Toast.module.css', () => ({
 }));
 
 describe('ToastContainer', () => {
-    const mockRemoveToast = vi.fn();
-
     beforeEach(() => {
         vi.clearAllMocks();
+        mockToasts = [];
     });
 
     it('should render nothing when there are no toasts', () => {
-        vi.mocked(useToastStore).mockReturnValue({
-            toasts: [],
-            removeToast: mockRemoveToast,
-        } as unknown as ReturnType<typeof useToastStore>);
-
+        mockToasts = [];
         const { container } = render(<ToastContainer />);
         expect(container.firstChild).toBeNull();
     });
 
     it('should render toast messages', () => {
-        vi.mocked(useToastStore).mockReturnValue({
-            toasts: [
-                { id: 'toast-1', message: 'Success message', type: 'success' },
-                { id: 'toast-2', message: 'Error message', type: 'error' },
-            ],
-            removeToast: mockRemoveToast,
-        } as unknown as ReturnType<typeof useToastStore>);
+        mockToasts = [
+            { id: 'toast-1', message: 'Success message', type: 'success' },
+            { id: 'toast-2', message: 'Error message', type: 'error' },
+        ];
 
         render(<ToastContainer />);
 
@@ -60,24 +59,18 @@ describe('ToastContainer', () => {
     });
 
     it('should call removeToast when close button is clicked', () => {
-        vi.mocked(useToastStore).mockReturnValue({
-            toasts: [{ id: 'toast-1', message: 'Test message', type: 'info' }],
-            removeToast: mockRemoveToast,
-        } as unknown as ReturnType<typeof useToastStore>);
+        mockToasts = [{ id: 'toast-1', message: 'Test message', type: 'info' }];
 
         render(<ToastContainer />);
 
         const closeButton = screen.getByRole('button', { name: /close/i });
         fireEvent.click(closeButton);
 
-        expect(mockRemoveToast).toHaveBeenCalledWith('toast-1');
+        expect(mockRemoveToastFn).toHaveBeenCalledWith('toast-1');
     });
 
     it('should apply correct CSS class based on toast type', () => {
-        vi.mocked(useToastStore).mockReturnValue({
-            toasts: [{ id: 'toast-1', message: 'Success!', type: 'success' }],
-            removeToast: mockRemoveToast,
-        } as unknown as ReturnType<typeof useToastStore>);
+        mockToasts = [{ id: 'toast-1', message: 'Success!', type: 'success' }];
 
         render(<ToastContainer />);
 
@@ -86,14 +79,11 @@ describe('ToastContainer', () => {
     });
 
     it('should render multiple toasts with unique keys', () => {
-        vi.mocked(useToastStore).mockReturnValue({
-            toasts: [
-                { id: 'toast-1', message: 'First', type: 'info' },
-                { id: 'toast-2', message: 'Second', type: 'info' },
-                { id: 'toast-3', message: 'Third', type: 'info' },
-            ],
-            removeToast: mockRemoveToast,
-        } as unknown as ReturnType<typeof useToastStore>);
+        mockToasts = [
+            { id: 'toast-1', message: 'First', type: 'info' },
+            { id: 'toast-2', message: 'Second', type: 'info' },
+            { id: 'toast-3', message: 'Third', type: 'info' },
+        ];
 
         render(<ToastContainer />);
 

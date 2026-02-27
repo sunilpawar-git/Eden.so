@@ -6,9 +6,13 @@ import { useConfirmStore } from '@/shared/stores/confirmStore';
 import styles from './ConfirmDialog.module.css';
 
 export function ConfirmDialog() {
-    const { isOpen, options, handleConfirm, handleCancel } = useConfirmStore();
+    const isOpen = useConfirmStore((s) => s.isOpen);
+    const options = useConfirmStore((s) => s.options);
 
     if (!isOpen || !options) return null;
+
+    const handleConfirm = () => useConfirmStore.getState().handleConfirm();
+    const handleCancel = () => useConfirmStore.getState().handleCancel();
 
     const {
         title,

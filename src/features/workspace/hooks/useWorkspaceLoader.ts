@@ -61,7 +61,7 @@ async function loadFromFirestore(
 }
 
 export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResult {
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasOfflineData, setHasOfflineData] = useState(false);
