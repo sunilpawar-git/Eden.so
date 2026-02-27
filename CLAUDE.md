@@ -157,6 +157,40 @@ interface CanvasState {
 }
 ```
 
+### 🔴 CRITICAL: Zustand Selector Pattern (Prevents "Maximum Update Depth" Errors)
+
+The **selector pattern is MANDATORY**. Bare store subscriptions cause cascading re-renders and infinite loops in ReactFlow.
+
+```typescript
+// ❌ ANTI-PATTERN - Subscribes to ENTIRE store (causes re-renders on ANY field change)
+const { user, isLoading, setUser } = useAuthStore();
+
+// ✅ CORRECT - Use selectors for state, getState() for actions
+const user = useAuthStore((s) => s.user);
+const isLoading = useAuthStore((s) => s.isLoading);
+
+// For actions, use getState() - stable references, no re-render dependency
+const handleSubmit = () => useAuthStore.getState().setUser(newUser);
+```
+
+**Why This Matters:**
+- Bare destructuring subscribes to ENTIRE store object
+- ANY field change → component re-renders → useEffect fires → updates store → cascades
+- With 500+ nodes in ReactFlow, this causes "Maximum update depth exceeded" errors
+- Selectors ensure component only re-renders when SPECIFIC field changes
+
+**All Zustand Stores Require Selectors:**
+- `useAuthStore` → `const user = useAuthStore((s) => s.user)`
+- `useWorkspaceStore` → `const currentId = useWorkspaceStore((s) => s.currentWorkspaceId)`
+- `useCanvasStore` → `const nodes = useCanvasStore((s) => s.nodes)`
+- `useToastStore` → `const toasts = useToastStore((s) => s.toasts)`
+- `useConfirmStore` → `const isOpen = useConfirmStore((s) => s.isOpen)`
+- `useSettingsStore` → `const theme = useSettingsStore((s) => s.theme)`
+- `useFocusStore` → `const focusedId = useFocusStore((s) => s.focusedNodeId)`
+- `useKnowledgeBankStore` → `const entries = useKnowledgeBankStore((s) => s.entries)`
+
+**Enforcement:** Regression test `src/__tests__/zustandSelectors.structural.test.ts` scans for all 8 anti-patterns and fails the build if any are found.
+
 ## ✅ COMMIT CONVENTIONS
 
 Format: `type(scope): description`
