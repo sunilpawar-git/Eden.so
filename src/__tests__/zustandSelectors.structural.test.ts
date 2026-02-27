@@ -5,13 +5,23 @@
  * all Zustand store hooks use selectors instead of subscribing
  * to the entire store.
  *
- * Anti-pattern (causes cascading re-renders):
- *   const { user } = useAuthStore();
+ * == ANTI-PATTERN 1: Bare destructuring ==
+ *   const { user } = useAuthStore();  // Subscribes to ENTIRE store
  *
- * Correct pattern (only re-renders when `user` changes):
+ * == ANTI-PATTERN 2: Closure variables in selectors ==
+ *   const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
+ *   const node = useCanvasStore((s) => getNodeMap(s.nodes).get(focusedNodeId));
+ *   // ↑ focusedNodeId is a CLOSURE VARIABLE - selector recreated each render!
+ *
+ * == CORRECT PATTERNS ==
+ *   // Selector (only re-renders when value changes):
  *   const user = useAuthStore((s) => s.user);
  *
- * Actions should be accessed via .getState() inside callbacks:
+ *   // Stable selector + useMemo derivation (avoids closure anti-pattern):
+ *   const nodes = useCanvasStore((s) => s.nodes);
+ *   const node = useMemo(() => getNodeMap(nodes).get(id), [nodes, id]);
+ *
+ *   // Actions via .getState() (stable reference, no subscription):
  *   useWorkspaceStore.getState().removeWorkspace(id);
  */
 import { readFileSync, readdirSync } from 'fs';
@@ -21,7 +31,7 @@ import { describe, it, expect } from 'vitest';
 const SRC_DIR = join(process.cwd(), 'src');
 
 /** Patterns that indicate bare store subscriptions (anti-pattern) */
-const ANTI_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
+const BARE_DESTRUCTURING_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
     {
         name: 'Destructuring from useAuthStore()',
         pattern: /const\s*\{[^}]+\}\s*=\s*useAuthStore\(\)/,
@@ -53,6 +63,22 @@ const ANTI_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
     {
         name: 'Destructuring from useKnowledgeBankStore()',
         pattern: /const\s*\{[^}]+\}\s*=\s*useKnowledgeBankStore\(\)/,
+    },
+];
+
+/**
+ * Closure variable anti-patterns in selectors.
+ * These cause selector functions to be recreated each render,
+ * leading to cascading re-renders during drag operations.
+ *
+ * Pattern: getNodeMap inside a store selector (should use useMemo instead)
+ */
+const CLOSURE_VARIABLE_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
+    {
+        name: 'getNodeMap inside useCanvasStore selector',
+        // Detects: useCanvasStore((s) => ... getNodeMap(s.nodes) ...)
+        // Should be: const nodes = useCanvasStore(s => s.nodes); useMemo(() => getNodeMap(nodes)...)
+        pattern: /useCanvasStore\(\s*(?:useShallow\s*\()?\s*\(\s*\w+\s*\)\s*=>\s*[^)]*getNodeMap\s*\(/,
     },
 ];
 
@@ -96,7 +122,7 @@ describe('Zustand selector enforcement', () => {
         expect(files.length).toBeGreaterThan(50);
     });
 
-    it.each(ANTI_PATTERNS)(
+    it.each(BARE_DESTRUCTURING_PATTERNS)(
         'no file uses $name',
         ({ pattern }) => {
             const violations: string[] = [];
@@ -124,19 +150,52 @@ describe('Zustand selector enforcement', () => {
         }
     );
 
+    it.each(CLOSURE_VARIABLE_PATTERNS)(
+        'no file uses $name',
+        ({ pattern }) => {
+            const violations: string[] = [];
+
+            for (const file of files) {
+                const relPath = rel(file);
+                if (ALLOWLIST.includes(relPath)) continue;
+                if (relPath.includes('__tests__')) continue;
+                if (relPath.endsWith('.test.ts') || relPath.endsWith('.test.tsx')) continue;
+
+                const content = readFileSync(file, 'utf-8');
+                if (pattern.test(content)) {
+                    violations.push(relPath);
+                }
+            }
+
+            expect(
+                violations,
+                `Files with closure variables in selectors (use useMemo instead):\n` +
+                `  Pattern: ${pattern.toString()}\n` +
+                `  Fix: const nodes = useCanvasStore(s => s.nodes); useMemo(() => getNodeMap(nodes)...)\n\n` +
+                `  Violations:\n${violations.map((v) => `    - ${v}`).join('\n')}`
+            ).toEqual([]);
+        }
+    );
+
     it('provides documentation on correct patterns', () => {
         const correctPatterns = [
             '// ✅ CORRECT: Selector pattern - only re-renders when value changes',
             'const user = useAuthStore((s) => s.user);',
             'const nodes = useCanvasStore((s) => s.nodes);',
             '',
+            '// ✅ CORRECT: Stable selector + useMemo derivation',
+            'const nodes = useCanvasStore((s) => s.nodes);',
+            'const node = useMemo(() => getNodeMap(nodes).get(id), [nodes, id]);',
+            '',
             '// ✅ CORRECT: Actions via getState() - stable reference, no subscription',
             'useWorkspaceStore.getState().removeWorkspace(id);',
             'useCanvasStore.getState().clearCanvas();',
             '',
-            '// ❌ ANTI-PATTERN: Subscribes to ENTIRE store, causes cascading re-renders',
+            '// ❌ ANTI-PATTERN 1: Subscribes to ENTIRE store',
             '// const { user } = useAuthStore();',
-            '// const { nodes, edges } = useCanvasStore();',
+            '',
+            '// ❌ ANTI-PATTERN 2: Closure variable in selector',
+            '// const node = useCanvasStore((s) => getNodeMap(s.nodes).get(externalId));',
         ];
         // This test always passes but serves as documentation
         expect(correctPatterns.length).toBeGreaterThan(0);

@@ -244,6 +244,34 @@ This allows your component to:
 - Call `useToastStore.getState().removeToast(id)` ✅
 - Both work correctly in tests ✅
 
+### 🔴 CRITICAL: Closure Variable Anti-Pattern (Causes Drag Lag)
+
+**Never use closure variables inside selectors.** This causes selector functions to be recreated each render, leading to subscription churn during drag operations.
+
+```typescript
+// ❌ ANTI-PATTERN 2: Closure variable in selector
+const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
+const node = useCanvasStore((s) => getNodeMap(s.nodes).get(focusedNodeId));
+// ↑ focusedNodeId is a CLOSURE VARIABLE - selector recreated each render!
+
+// ✅ CORRECT: Stable selector + useMemo derivation
+const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
+const nodes = useCanvasStore((s) => s.nodes);
+const node = useMemo(
+    () => getNodeMap(nodes).get(focusedNodeId) ?? null,
+    [nodes, focusedNodeId]
+);
+```
+
+**Why Closure Variables Cause Problems:**
+1. Selector function captures `focusedNodeId` in closure
+2. When component re-renders, NEW selector function is created
+3. Zustand sees different function reference → triggers re-subscription logic
+4. During drag (60 updates/sec), this compounds across all visible nodes
+5. Eventually causes "Maximum update depth exceeded"
+
+**Enforcement:** Structural test detects `getNodeMap` inside selectors.
+
 ## ✅ COMMIT CONVENTIONS
 
 Format: `type(scope): description`
