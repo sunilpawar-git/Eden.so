@@ -207,11 +207,14 @@ export function calculateMasonryPosition(nodes: CanvasNode[]): NodePosition {
         newNodeHeight
     );
 
-    const targetX = targetCol === 0
-        ? GRID_PADDING
-        : maxRightEdge !== null
-            ? maxRightEdge + GRID_GAP
-            : getDefaultColumnX(targetCol, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
+    let targetX: number;
+    if (targetCol === 0) {
+        targetX = GRID_PADDING;
+    } else if (maxRightEdge !== null) {
+        targetX = maxRightEdge + GRID_GAP;
+    } else {
+        targetX = getDefaultColumnX(targetCol, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
+    }
 
     return { x: targetX, y: targetY };
 }
