@@ -171,12 +171,13 @@ describe('useNodeUtilsController', () => {
             expect(result.current.state.isDeckTwoOpen).toBe(false);
         });
 
-        it('HOVER_LEAVE (auto mode) closes deck two', () => {
+        it('HOVER_LEAVE (manual mode) does NOT close deck two', () => {
             const { result } = renderHook(() => useNodeUtilsController());
             act(() => { result.current.actions.toggleDeckTwo(); });
             expect(result.current.state.isDeckTwoOpen).toBe(true);
             act(() => { result.current.actions.handleHoverLeave(); });
-            expect(result.current.state.isDeckTwoOpen).toBe(false);
+            act(() => { vi.advanceTimersByTime(300); });
+            expect(result.current.state.isDeckTwoOpen).toBe(true);
         });
 
         it('ESCAPE closes deck two', () => {

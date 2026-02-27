@@ -120,13 +120,14 @@ describe('NodeUtilsBar interaction', () => {
         it('sets data-bar-active on the container when deck 2 is opened', () => {
             render(<NodeUtilsBar {...defaultProps} />);
             const toolbars = screen.getAllByRole('toolbar');
-            const container = toolbars[0].parentElement!;
+            const container = toolbars[0]?.parentElement;
+            expect(container).not.toBeNull();
 
-            expect(container.getAttribute('data-bar-active')).toBeNull();
+            expect(container!.getAttribute('data-bar-active')).toBeNull();
 
             fireEvent.click(screen.getByLabelText('Show more actions'));
 
-            expect(container.getAttribute('data-bar-active')).toBe('true');
+            expect(container!.getAttribute('data-bar-active')).toBe('true');
         });
     });
 });

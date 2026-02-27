@@ -2,8 +2,8 @@
  * IdeaCard Resize Buttons Integration Tests
  * NodeResizeButtons: expand/shrink width/height, hover visibility
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { IdeaCard } from '../IdeaCard';
 import { useCanvasStore } from '../../../stores/canvasStore';
 import {
@@ -102,9 +102,14 @@ describe('IdeaCard Resize Integration', () => {
 
     describe('NodeResizeButtons integration', () => {
         beforeEach(() => {
+            vi.useFakeTimers();
             const node = createIdeaNode(defaultProps.id, TEST_WORKSPACE_ID, { x: 0, y: 0 });
             node.data = defaultData;
             useCanvasStore.getState().addNode(node);
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
         });
 
         it('renders resize buttons when node is hovered', () => {
@@ -121,6 +126,7 @@ describe('IdeaCard Resize Integration', () => {
         it('removes data-hovered when mouse leaves', () => {
             const cardWrapper = hoverCard();
             fireEvent.mouseLeave(cardWrapper);
+            act(() => { vi.advanceTimersByTime(300); });
             expect(cardWrapper.getAttribute('data-hovered')).toBeNull();
         });
 
