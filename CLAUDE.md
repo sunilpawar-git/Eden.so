@@ -191,6 +191,59 @@ const handleSubmit = () => useAuthStore.getState().setUser(newUser);
 
 **Enforcement:** Regression test `src/__tests__/zustandSelectors.structural.test.ts` scans for all 8 anti-patterns and fails the build if any are found.
 
+**Common Mistakes to Avoid:**
+
+```typescript
+// ❌ WRONG: Including selector in useEffect dependency
+useEffect(() => {
+  const currentId = useWorkspaceStore((s) => s.currentWorkspaceId);
+  // ... do something
+}, [useWorkspaceStore((s) => s.currentWorkspaceId)]); // DON'T DO THIS!
+
+// ✅ CORRECT: Call selector outside useEffect, use value in dependency
+const currentId = useWorkspaceStore((s) => s.currentWorkspaceId);
+useEffect(() => {
+  // ... do something with currentId
+}, [currentId]);
+
+// ❌ WRONG: Mixing selector and action in one hook call
+const { user, setUser } = useAuthStore((s) => ({ user: s.user, setUser: s.setUser }));
+
+// ✅ CORRECT: Selectors for state, getState() for actions
+const user = useAuthStore((s) => s.user);
+const handleUpdate = useCallback(() => {
+  useAuthStore.getState().setUser(newUser);
+}, []);
+```
+
+**Testing/Mocking Pattern:**
+
+When writing tests, mock Zustand stores to handle BOTH selector calls and direct calls:
+
+```typescript
+// Mock setup that handles selector pattern
+const mockRemoveToastFn = vi.fn();
+let mockToasts = [];
+
+vi.mock('../../stores/toastStore', () => ({
+    useToastStore: Object.assign(
+        vi.fn((selector?: (s: any) => unknown) => {
+            const state = { toasts: mockToasts, removeToast: mockRemoveToastFn };
+            // Handle both: selector calls and direct calls
+            return typeof selector === 'function' ? selector(state) : state;
+        }),
+        {
+            getState: () => ({ toasts: mockToasts, removeToast: mockRemoveToastFn }),
+        }
+    ),
+}));
+```
+
+This allows your component to:
+- Call `const toasts = useToastStore((s) => s.toasts)` ✅
+- Call `useToastStore.getState().removeToast(id)` ✅
+- Both work correctly in tests ✅
+
 ## ✅ COMMIT CONVENTIONS
 
 Format: `type(scope): description`
