@@ -1,0 +1,38 @@
+/**
+ * AboutSection — App version, changelog, and bug report links
+ */
+import { strings } from '@/shared/localization/strings';
+import panelStyles from '../SettingsPanel.module.css';
+import styles from './AccountSection.module.css';
+
+export function AboutSection() {
+    return (
+        <div className={panelStyles.section}>
+            <h3 className={panelStyles.sectionTitle}>{strings.settings.about}</h3>
+
+            <div className={styles.aboutRow}>
+                <span className={styles.aboutLabel}>{strings.settings.version}</span>
+                <span className={styles.aboutValue}>{__APP_VERSION__}</span>
+            </div>
+
+            <div className={styles.aboutLinks}>
+                <a
+                    href={strings.settings.changelogUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.aboutLink}
+                >
+                    {strings.settings.changelog}
+                </a>
+                <a
+                    href={strings.settings.reportBugUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.aboutLink}
+                >
+                    {strings.settings.reportBug}
+                </a>
+            </div>
+        </div>
+    );
+}

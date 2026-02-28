@@ -10,6 +10,10 @@ import {
     resetSettingsState,
 } from './helpers/settingsTestSetup';
 
+vi.mock('@/shared/services/analyticsService', () => ({
+    trackSettingsChanged: vi.fn(),
+}));
+
 const localStorageMock = createLocalStorageMock();
 const mockMatchMedia = createMockMatchMedia();
 
@@ -33,6 +37,7 @@ describe('SettingsStore', () => {
             expect(state.compactMode).toBe(false);
             expect(state.canvasScrollMode).toBe('zoom');
             expect(state.connectorStyle).toBe('solid');
+            expect(state.lastSettingsTab).toBe('appearance');
         });
     });
 
@@ -285,4 +290,6 @@ describe('SettingsStore', () => {
             expect(useSettingsStore.getState().theme).toBe('system');
         });
     });
+
+
 });

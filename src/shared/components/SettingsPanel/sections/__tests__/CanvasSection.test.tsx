@@ -48,6 +48,7 @@ function applyOverrides(overrides: Record<string, unknown>) {
 describe('CanvasSection', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        Object.assign(useSettingsStore, { getState: () => buildCanvasSettingsState() });
     });
 
     it('should render free flow toggle', () => {
@@ -55,25 +56,18 @@ describe('CanvasSection', () => {
         expect(screen.getByText(strings.settings.freeFlow)).toBeInTheDocument();
     });
 
-    it('should reflect canvasFreeFlow state in checkbox', () => {
+    it('should reflect canvasFreeFlow state in switch', () => {
         applyOverrides({ canvasFreeFlow: true });
 
         render(<CanvasSection />);
-        const checkboxes = screen.getAllByRole('checkbox');
-        const freeFlowCheckbox = checkboxes.find(
-            (cb) => cb.closest('label')?.textContent?.includes(strings.settings.freeFlow)
-        );
-        expect(freeFlowCheckbox).toBeChecked();
+        const freeFlowSwitch = screen.getByRole('switch', { name: strings.settings.freeFlow });
+        expect(freeFlowSwitch).toHaveAttribute('aria-checked', 'true');
     });
 
-    it('should call toggleCanvasFreeFlow when free flow checkbox is clicked', () => {
+    it('should call toggleCanvasFreeFlow when free flow toggle is clicked', () => {
         render(<CanvasSection />);
-        const checkboxes = screen.getAllByRole('checkbox');
-        const freeFlowCheckbox = checkboxes.find(
-            (cb) => cb.closest('label')?.textContent?.includes(strings.settings.freeFlow)
-        );
-        expect(freeFlowCheckbox).toBeDefined();
-        fireEvent.click(freeFlowCheckbox!);
+        const freeFlowSwitch = screen.getByRole('switch', { name: strings.settings.freeFlow });
+        fireEvent.click(freeFlowSwitch);
         expect(mockToggleCanvasFreeFlow).toHaveBeenCalledOnce();
     });
 

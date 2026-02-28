@@ -10,7 +10,7 @@ import { DEFAULT_UTILS_BAR_LAYOUT } from '@/features/canvas/types/utilsBarLayout
 export function createLocalStorageMock() {
     let store: Record<string, string> = {};
     return {
-        getItem: vi.fn((key: string) => store[key] || null),
+        getItem: vi.fn((key: string) => store[key] ?? null),
         setItem: vi.fn((key: string, value: string) => {
             store[key] = value;
         }),
@@ -45,6 +45,7 @@ export const DEFAULT_SETTINGS_STATE = {
     connectorStyle: 'solid' as const,
     isCanvasLocked: false,
     canvasFreeFlow: false,
+    lastSettingsTab: 'appearance' as const,
     utilsBarLayout: DEFAULT_UTILS_BAR_LAYOUT,
 };
 

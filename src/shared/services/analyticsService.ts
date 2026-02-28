@@ -88,6 +88,15 @@ export function trackKbEntryAdded(method: 'paste' | 'file'): void {
     track('kb_entry_added', { method });
 }
 
+type SettingKey =
+    | 'theme' | 'canvasGrid' | 'autoSave' | 'autoSaveInterval'
+    | 'compactMode' | 'canvasScrollMode' | 'connectorStyle'
+    | 'isCanvasLocked' | 'canvasFreeFlow' | 'data_export';
+
+export function trackSettingsChanged(setting: SettingKey, value: string | boolean | number): void {
+    track('settings_changed', { setting, value });
+}
+
 // ── Internal helper ───────────────────────────────────────────────────────────
 
 function track(event: string, properties?: Record<string, unknown>): void {

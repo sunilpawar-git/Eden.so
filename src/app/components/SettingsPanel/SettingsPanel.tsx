@@ -1,21 +1,20 @@
 /**
  * Settings Panel - Modal with tabbed settings sections
  */
-import { useState } from 'react';
 import { strings } from '@/shared/localization/strings';
+import { useSettingsStore, type SettingsTabId } from '@/shared/stores/settingsStore';
 import { AppearanceSection } from './sections/AppearanceSection';
 import { CanvasSection } from './sections/CanvasSection';
 import { ToolbarSection } from './sections/ToolbarSection';
 import { AccountSection } from './sections/AccountSection';
 import { KeyboardSection } from './sections/KeyboardSection';
+import { AboutSection } from './sections/AboutSection';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import styles from './SettingsPanel.module.css';
 
-type TabId = 'appearance' | 'canvas' | 'toolbar' | 'account' | 'keyboard';
-
 interface Tab {
-    id: TabId;
+    id: SettingsTabId;
     label: string;
 }
 
@@ -25,6 +24,7 @@ const tabs: Tab[] = [
     { id: 'toolbar', label: strings.settings.toolbar },
     { id: 'account', label: strings.settings.account },
     { id: 'keyboard', label: strings.settings.keyboard },
+    { id: 'about', label: strings.settings.about },
 ];
 
 interface SettingsPanelProps {
@@ -33,7 +33,7 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
-    const [activeTab, setActiveTab] = useState<TabId>('appearance');
+    const activeTab = useSettingsStore((s) => s.lastSettingsTab);
 
     useEscapeLayer(ESCAPE_PRIORITY.SETTINGS_PANEL, isOpen, onClose);
 
@@ -51,6 +51,12 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 return <AccountSection />;
             case 'keyboard':
                 return <KeyboardSection />;
+            case 'about':
+                return <AboutSection />;
+            default: {
+                const _exhaustive: never = activeTab;
+                return _exhaustive;
+            }
         }
     };
 
@@ -78,7 +84,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                             <button
                                 key={tab.id}
                                 className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => useSettingsStore.getState().setLastSettingsTab(tab.id)}
                             >
                                 {tab.label}
                             </button>

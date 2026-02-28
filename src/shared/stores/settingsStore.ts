@@ -7,6 +7,7 @@ import { getStorageItem, getValidatedStorageItem, setStorageItem } from '@/share
 import { DEFAULT_UTILS_BAR_LAYOUT } from '@/features/canvas/types/utilsBarLayout';
 import type { UtilsBarActionId, UtilsBarDeck, UtilsBarLayout } from '@/features/canvas/types/utilsBarLayout';
 import { loadUtilsBarLayout, computeNextLayout, persistUtilsBarLayout } from './utilsBarLayoutSlice';
+import { trackSettingsChanged } from '@/shared/services/analyticsService';
 
 export type ThemeOption = 'light' | 'dark' | 'system' | 'sepia' | 'grey' | 'darkBlack';
 type ResolvedTheme = 'light' | 'dark' | 'sepia' | 'grey' | 'darkBlack';
@@ -16,11 +17,13 @@ const DIRECT_THEMES: ReadonlySet<string> = new Set(['light', 'dark', 'sepia', 'g
 
 export type CanvasScrollMode = 'zoom' | 'navigate';
 export type ConnectorStyle = 'solid' | 'subtle' | 'thick' | 'dashed' | 'dotted';
+export type SettingsTabId = 'appearance' | 'canvas' | 'toolbar' | 'account' | 'keyboard' | 'about';
 
 /** Allow-lists for validated storage reads (defense-in-depth) */
 const VALID_THEMES: readonly ThemeOption[] = ['light', 'dark', 'system', 'sepia', 'grey', 'darkBlack'];
 const VALID_SCROLL_MODES: readonly CanvasScrollMode[] = ['zoom', 'navigate'];
 const VALID_CONNECTOR_STYLES: readonly ConnectorStyle[] = ['solid', 'subtle', 'thick', 'dashed', 'dotted'];
+const VALID_SETTINGS_TABS: readonly SettingsTabId[] = ['appearance', 'canvas', 'toolbar', 'account', 'keyboard', 'about'];
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -33,6 +36,7 @@ const STORAGE_KEYS = {
     connectorStyle: 'settings-connectorStyle',
     isCanvasLocked: 'settings-isCanvasLocked',
     canvasFreeFlow: 'settings-canvasFreeFlow',
+    lastSettingsTab: 'settings-lastSettingsTab',
 } as const;
 
 // Constants
@@ -50,6 +54,7 @@ interface SettingsState {
     connectorStyle: ConnectorStyle;
     isCanvasLocked: boolean;
     canvasFreeFlow: boolean;
+    lastSettingsTab: SettingsTabId;
     utilsBarLayout: UtilsBarLayout;
     setTheme: (theme: ThemeOption) => void;
     toggleCanvasGrid: () => void;
@@ -60,6 +65,7 @@ interface SettingsState {
     setConnectorStyle: (style: ConnectorStyle) => void;
     toggleCanvasLocked: () => void;
     toggleCanvasFreeFlow: () => void;
+    setLastSettingsTab: (tab: SettingsTabId) => void;
     setUtilsBarActionDeck: (actionId: UtilsBarActionId, deck: UtilsBarDeck) => void;
     resetUtilsBarLayout: () => void;
     getResolvedTheme: () => ResolvedTheme;
@@ -70,37 +76,43 @@ function clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
 }
 
+function getClampedStorageItem(key: string, defaultVal: number, min: number, max: number): number {
+    return clamp(getStorageItem<number>(key, defaultVal), min, max);
+}
+
 export const useSettingsStore = create<SettingsState>()((set, get) => ({
     theme: getValidatedStorageItem(STORAGE_KEYS.theme, 'system', VALID_THEMES),
     canvasGrid: getStorageItem<boolean>(STORAGE_KEYS.canvasGrid, true),
     autoSave: getStorageItem<boolean>(STORAGE_KEYS.autoSave, true),
-    autoSaveInterval: getStorageItem<number>(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT),
+    autoSaveInterval: getClampedStorageItem(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT, AUTO_SAVE_MIN, AUTO_SAVE_MAX),
     compactMode: getStorageItem<boolean>(STORAGE_KEYS.compactMode, false),
     canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
     connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
     isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
     canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
+    lastSettingsTab: getValidatedStorageItem(STORAGE_KEYS.lastSettingsTab, 'appearance', VALID_SETTINGS_TABS),
     utilsBarLayout: loadUtilsBarLayout(),
-    setTheme: (theme: ThemeOption) => { set({ theme }); setStorageItem(STORAGE_KEYS.theme, theme); },
+    setTheme: (theme: ThemeOption) => { set({ theme }); setStorageItem(STORAGE_KEYS.theme, theme); trackSettingsChanged('theme', theme); },
     toggleCanvasGrid: () => {
-        const v = !get().canvasGrid; set({ canvasGrid: v }); setStorageItem(STORAGE_KEYS.canvasGrid, v);
+        const v = !get().canvasGrid; set({ canvasGrid: v }); setStorageItem(STORAGE_KEYS.canvasGrid, v); trackSettingsChanged('canvasGrid', v);
     },
-    setAutoSave: (enabled: boolean) => { set({ autoSave: enabled }); setStorageItem(STORAGE_KEYS.autoSave, enabled); },
+    setAutoSave: (enabled: boolean) => { set({ autoSave: enabled }); setStorageItem(STORAGE_KEYS.autoSave, enabled); trackSettingsChanged('autoSave', enabled); },
     setAutoSaveInterval: (seconds: number) => {
         const clamped = clamp(seconds, AUTO_SAVE_MIN, AUTO_SAVE_MAX);
-        set({ autoSaveInterval: clamped }); setStorageItem(STORAGE_KEYS.autoSaveInterval, clamped);
+        set({ autoSaveInterval: clamped }); setStorageItem(STORAGE_KEYS.autoSaveInterval, clamped); trackSettingsChanged('autoSaveInterval', clamped);
     },
     toggleCompactMode: () => {
-        const v = !get().compactMode; set({ compactMode: v }); setStorageItem(STORAGE_KEYS.compactMode, v);
+        const v = !get().compactMode; set({ compactMode: v }); setStorageItem(STORAGE_KEYS.compactMode, v); trackSettingsChanged('compactMode', v);
     },
-    setCanvasScrollMode: (mode: CanvasScrollMode) => { set({ canvasScrollMode: mode }); setStorageItem(STORAGE_KEYS.canvasScrollMode, mode); },
-    setConnectorStyle: (style: ConnectorStyle) => { set({ connectorStyle: style }); setStorageItem(STORAGE_KEYS.connectorStyle, style); },
+    setCanvasScrollMode: (mode: CanvasScrollMode) => { set({ canvasScrollMode: mode }); setStorageItem(STORAGE_KEYS.canvasScrollMode, mode); trackSettingsChanged('canvasScrollMode', mode); },
+    setConnectorStyle: (style: ConnectorStyle) => { set({ connectorStyle: style }); setStorageItem(STORAGE_KEYS.connectorStyle, style); trackSettingsChanged('connectorStyle', style); },
     toggleCanvasLocked: () => {
-        const v = !get().isCanvasLocked; set({ isCanvasLocked: v }); setStorageItem(STORAGE_KEYS.isCanvasLocked, v);
+        const v = !get().isCanvasLocked; set({ isCanvasLocked: v }); setStorageItem(STORAGE_KEYS.isCanvasLocked, v); trackSettingsChanged('isCanvasLocked', v);
     },
     toggleCanvasFreeFlow: () => {
-        const v = !get().canvasFreeFlow; set({ canvasFreeFlow: v }); setStorageItem(STORAGE_KEYS.canvasFreeFlow, v);
+        const v = !get().canvasFreeFlow; set({ canvasFreeFlow: v }); setStorageItem(STORAGE_KEYS.canvasFreeFlow, v); trackSettingsChanged('canvasFreeFlow', v);
     },
+    setLastSettingsTab: (tab: SettingsTabId) => { set({ lastSettingsTab: tab }); setStorageItem(STORAGE_KEYS.lastSettingsTab, tab); },
     setUtilsBarActionDeck: (actionId: UtilsBarActionId, deck: UtilsBarDeck) => {
         const next = computeNextLayout(get().utilsBarLayout, actionId, deck);
         if (!next) return;
@@ -122,12 +134,13 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
             theme: getValidatedStorageItem(STORAGE_KEYS.theme, 'system', VALID_THEMES),
             canvasGrid: getStorageItem<boolean>(STORAGE_KEYS.canvasGrid, true),
             autoSave: getStorageItem<boolean>(STORAGE_KEYS.autoSave, true),
-            autoSaveInterval: getStorageItem<number>(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT),
+            autoSaveInterval: getClampedStorageItem(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT, AUTO_SAVE_MIN, AUTO_SAVE_MAX),
             compactMode: getStorageItem<boolean>(STORAGE_KEYS.compactMode, false),
             canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
             connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
             isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
             canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
+            lastSettingsTab: getValidatedStorageItem(STORAGE_KEYS.lastSettingsTab, 'appearance', VALID_SETTINGS_TABS),
             utilsBarLayout: loadUtilsBarLayout(),
         });
     },

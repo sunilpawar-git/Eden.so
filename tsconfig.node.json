@@ -17,10 +17,12 @@
         "composite": true,
         "emitDeclarationOnly": true,
         "declaration": true,
+        "resolveJsonModule": true,
         "outDir": "./dist-node"
     },
     "include": [
         "vite.config.ts",
-        "vitest.config.ts"
+        "vitest.config.ts",
+        "package.json"
     ]
 }

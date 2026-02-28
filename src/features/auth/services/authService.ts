@@ -6,6 +6,8 @@ import {
     signInWithPopup,
     signOut as firebaseSignOut,
     onAuthStateChanged,
+    deleteUser,
+    reauthenticateWithPopup,
     type User as FirebaseUser,
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/config/firebase';
@@ -103,5 +105,39 @@ export function subscribeToAuthState(): () => void {
         }
         setLoading(false);
     });
+}
+
+/**
+ * Delete the current user's account.
+ * Re-authenticates via Google popup if the session is too old.
+ * Firestore data cleanup is handled server-side via Firebase Auth onDelete trigger.
+ * See: firebase/functions/src/onUserDeleted.ts (planned)
+ */
+export async function deleteAccount(): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error(strings.settings.reAuthRequired);
+
+    try {
+        await deleteUser(user);
+    } catch (error: unknown) {
+        if (!isReauthRequired(error)) throw error;
+        await reauthenticateWithPopup(user, googleProvider);
+        await deleteUser(user);
+    }
+
+    trackSignOut();
+    useAuthStore.getState().clearUser();
+    clearSentryUser();
+    resetAnalyticsUser();
+    useSubscriptionStore.getState().reset();
+}
+
+function isReauthRequired(error: unknown): boolean {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'auth/requires-recent-login'
+    );
 }
 

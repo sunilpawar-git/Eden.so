@@ -4,6 +4,7 @@
 import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSettingsStore, type ThemeOption } from '@/shared/stores/settingsStore';
+import { Toggle } from '@/shared/components/Toggle';
 import panelStyles from '../SettingsPanel.module.css';
 import styles from './AppearanceSection.module.css';
 
@@ -57,15 +58,13 @@ export const AppearanceSection = React.memo(function AppearanceSection() {
                 ))}
             </div>
 
-            <h3 className={panelStyles.sectionTitle}>{strings.settings.compactMode}</h3>
-            <label className={panelStyles.toggleLabel}>
-                <input
-                    type="checkbox"
-                    checked={compactMode}
-                    onChange={() => useSettingsStore.getState().toggleCompactMode()}
-                />
-                <span>{strings.settings.compactMode}</span>
-            </label>
+            <Toggle
+                id="compact-mode"
+                checked={compactMode}
+                onChange={() => useSettingsStore.getState().toggleCompactMode()}
+                label={strings.settings.compactMode}
+                description={strings.settings.compactModeDescription}
+            />
         </div>
     );
 });

@@ -22,18 +22,27 @@ function buildSettingsState() {
     });
 }
 
+let currentTab = 'appearance';
+
 vi.mock('@/shared/stores/settingsStore', () => {
     const selectorFn = vi.fn((selector?: (s: Record<string, unknown>) => unknown) => {
-        const state = buildSettingsState();
+        const state = { ...buildSettingsState(), lastSettingsTab: currentTab };
         return typeof selector === 'function' ? selector(state) : state;
     });
-    Object.assign(selectorFn, { getState: () => buildSettingsState() });
+    Object.assign(selectorFn, {
+        getState: () => ({
+            ...buildSettingsState(),
+            lastSettingsTab: currentTab,
+            setLastSettingsTab: (tab: string) => { currentTab = tab; },
+        }),
+    });
     return { useSettingsStore: selectorFn };
 });
 
 describe('SettingsPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        currentTab = 'appearance';
     });
 
     describe('visibility', () => {
@@ -95,13 +104,11 @@ describe('SettingsPanel', () => {
             expect(screen.getByText(strings.settings.theme)).toBeInTheDocument();
         });
 
-        it('should switch to Canvas section when clicked', () => {
+        it('should render Canvas section when canvas tab is active', () => {
+            currentTab = 'canvas';
             render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
-            
-            fireEvent.click(screen.getByText(strings.settings.canvas));
-            
-            // Canvas section has multiple "Show grid" elements (title + label)
-            expect(screen.getAllByText(strings.settings.canvasGrid).length).toBeGreaterThan(0);
+
+            expect(screen.getByText(strings.settings.canvasGrid)).toBeInTheDocument();
         });
     });
 

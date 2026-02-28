@@ -13,7 +13,7 @@
 .backdrop {
     position: absolute;
     inset: 0;
-    background: hsla(220, 13%, 13%, 0.5);
+    background: var(--color-backdrop, hsla(220, 13%, 13%, 0.5));
     backdrop-filter: blur(4px);
 }
 
@@ -144,63 +144,30 @@
     accent-color: var(--color-primary);
 }
 
-/* Account Section */
-.accountInfo {
+/* Setting description */
+.settingDescription {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-top: calc(-1 * var(--space-sm));
+}
+
+/* Slider group */
+.sliderGroup {
     display: flex;
     align-items: center;
     gap: var(--space-md);
 }
 
-.accountAvatar,
-.accountAvatarPlaceholder {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    object-fit: cover;
+.sliderGroup input[type="range"] {
+    flex: 1;
+    accent-color: var(--color-primary);
 }
 
-.accountAvatarPlaceholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-primary);
-    color: white;
-    font-weight: var(--font-weight-semibold);
-    font-size: var(--font-size-lg);
-}
-
-.accountDetails {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.accountName {
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
-}
-
-.accountEmail {
+.sliderValue {
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
-}
-
-.signOutButton {
-    margin-top: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
-    background: transparent;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    width: fit-content;
-}
-
-.signOutButton:hover {
-    border-color: var(--color-error);
-    color: var(--color-error);
+    min-width: 80px;
+    text-align: right;
 }
 
 /* Keyboard Shortcuts */

@@ -1,0 +1,68 @@
+/**
+ * SegmentedControl styles — uses CSS variables for theming
+ */
+.container {
+    display: flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.segment {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-right: 1px solid var(--color-border);
+}
+
+.segment:last-child {
+    border-right: none;
+}
+
+.segment:hover {
+    background: var(--color-surface-hover);
+}
+
+.segmentActive {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.segmentActive:hover {
+    background: var(--color-primary-light);
+}
+
+.hiddenRadio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.segment:has(.hiddenRadio:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+.preview {
+    display: flex;
+    align-items: center;
+}
+
+.segmentLabel {
+    white-space: nowrap;
+}
