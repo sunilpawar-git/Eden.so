@@ -1,5 +1,6 @@
 /**
  * ToolbarSection Tests — Settings UI for dual-deck icon arrangement.
+ * Layout shape: { deck1: ActionId[], deck2: ActionId[] }
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -55,12 +56,16 @@ describe('ToolbarSection', () => {
         const moveButton = screen.getByLabelText(`${strings.settings.toolbarMoveToBar2}: ${strings.nodeUtils.connect}`);
         expect(moveButton).not.toBeDisabled();
         fireEvent.click(moveButton);
-        expect(useSettingsStore.getState().utilsBarLayout.connect).toBe(2);
+        expect(useSettingsStore.getState().utilsBarLayout.deck2).toContain('connect');
+        expect(useSettingsStore.getState().utilsBarLayout.deck1).not.toContain('connect');
     });
 
     it('disables move buttons when deck would drop below MIN_ACTIONS_PER_DECK', () => {
         useSettingsStore.setState({
-            utilsBarLayout: { ...DEFAULT_UTILS_BAR_LAYOUT, ai: 2, connect: 2, copy: 2 },
+            utilsBarLayout: {
+                deck1: ['pin', 'delete'],
+                deck2: ['ai', 'connect', 'copy', 'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            },
         });
         render(<ToolbarSection />);
         const pinMoveBtn = screen.getByLabelText(`${strings.settings.toolbarMoveToBar2}: ${strings.nodeUtils.pin}`);
@@ -69,7 +74,7 @@ describe('ToolbarSection', () => {
 
     it('reset button restores default layout', () => {
         useSettingsStore.getState().setUtilsBarActionDeck('connect', 2);
-        expect(useSettingsStore.getState().utilsBarLayout.connect).toBe(2);
+        expect(useSettingsStore.getState().utilsBarLayout.deck2).toContain('connect');
 
         render(<ToolbarSection />);
         fireEvent.click(screen.getByText(strings.settings.toolbarReset));
@@ -81,5 +86,19 @@ describe('ToolbarSection', () => {
         expect(screen.getByText(strings.settings.toolbarBar1)).toBeInTheDocument();
         expect(screen.getByText(strings.settings.toolbarBar2)).toBeInTheDocument();
         expect(screen.getByText(strings.settings.toolbarReset)).toBeInTheDocument();
+    });
+
+    it('actions in default deck1 render in their stored order', () => {
+        render(<ToolbarSection />);
+        const listItems = screen.getAllByRole('listitem');
+        const deck1Labels = DEFAULT_UTILS_BAR_LAYOUT.deck1.map(
+            (id) => strings.nodeUtils[id as keyof typeof strings.nodeUtils],
+        );
+        // First N list items should match deck1 order
+        deck1Labels.forEach((label, i) => {
+            if (typeof label === 'string') {
+                expect(listItems[i]?.textContent).toContain(label);
+            }
+        });
     });
 });

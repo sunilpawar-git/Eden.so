@@ -57,6 +57,32 @@
     color: var(--color-text-primary);
 }
 
+.actionRowDragging {
+    opacity: 0.4;
+    cursor: grabbing;
+}
+
+.actionRowDropTarget {
+    background: var(--color-primary-light);
+    border-radius: var(--radius-md);
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+.dragHandle {
+    cursor: grab;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: -1px;
+    flex-shrink: 0;
+    user-select: none;
+    padding: 0 var(--space-xs);
+}
+
+.dragHandle:active {
+    cursor: grabbing;
+}
+
 .moveButton {
     width: 24px;
     height: 24px;

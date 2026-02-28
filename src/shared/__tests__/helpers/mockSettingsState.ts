@@ -34,6 +34,7 @@ export interface MockSettingsOverrides {
     toggleCanvasLocked?: ReturnType<typeof vi.fn>;
     toggleCanvasFreeFlow?: ReturnType<typeof vi.fn>;
     setUtilsBarActionDeck?: ReturnType<typeof vi.fn>;
+    reorderUtilsBarAction?: ReturnType<typeof vi.fn>;
     resetUtilsBarLayout?: ReturnType<typeof vi.fn>;
     setLastSettingsTab?: ReturnType<typeof vi.fn>;
     getResolvedTheme?: () => 'light' | 'dark' | 'sepia' | 'grey' | 'darkBlack';
@@ -64,6 +65,7 @@ export function createMockSettingsState(overrides: MockSettingsOverrides = {}) {
         toggleCanvasLocked: vi.fn(),
         toggleCanvasFreeFlow: vi.fn(),
         setUtilsBarActionDeck: vi.fn(),
+        reorderUtilsBarAction: vi.fn(),
         resetUtilsBarLayout: vi.fn(),
         setLastSettingsTab: vi.fn(),
         getResolvedTheme: () => 'light' as const,

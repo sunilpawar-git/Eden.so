@@ -3,23 +3,15 @@
  */
 import React from 'react';
 import { strings } from '@/shared/localization/strings';
-import { useSettingsStore, type CanvasScrollMode, type ConnectorStyle } from '@/shared/stores/settingsStore';
+import { useSettingsStore, type CanvasScrollMode } from '@/shared/stores/settingsStore';
 import { Toggle } from '@/shared/components/Toggle';
 import { SegmentedControl } from '@/shared/components/SegmentedControl';
-import { ConnectorPreview } from './ConnectorPreview';
+import { ConnectorStylePicker } from './ConnectorStylePicker';
 import styles from '../SettingsPanel.module.css';
 
 const SCROLL_MODE_OPTIONS = [
     { value: 'zoom' as CanvasScrollMode, label: strings.settings.canvasScrollZoom },
     { value: 'navigate' as CanvasScrollMode, label: strings.settings.canvasScrollNavigate },
-] as const;
-
-const CONNECTOR_STYLE_OPTIONS = [
-    { value: 'solid' as ConnectorStyle, label: strings.settings.connectorSolid, preview: <ConnectorPreview style="solid" /> },
-    { value: 'subtle' as ConnectorStyle, label: strings.settings.connectorSubtle, preview: <ConnectorPreview style="subtle" /> },
-    { value: 'thick' as ConnectorStyle, label: strings.settings.connectorThick, preview: <ConnectorPreview style="thick" /> },
-    { value: 'dashed' as ConnectorStyle, label: strings.settings.connectorDashed, preview: <ConnectorPreview style="dashed" /> },
-    { value: 'dotted' as ConnectorStyle, label: strings.settings.connectorDotted, preview: <ConnectorPreview style="dotted" /> },
 ] as const;
 
 export const CanvasSection = React.memo(function CanvasSection() {
@@ -56,10 +48,7 @@ export const CanvasSection = React.memo(function CanvasSection() {
             />
 
             <h3 className={styles.sectionTitle}>{strings.settings.connectorStyle}</h3>
-            <SegmentedControl
-                name="connectorStyle"
-                label={strings.settings.connectorStyle}
-                options={CONNECTOR_STYLE_OPTIONS}
+            <ConnectorStylePicker
                 value={connectorStyle}
                 onChange={(v) => useSettingsStore.getState().setConnectorStyle(v)}
             />

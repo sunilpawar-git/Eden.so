@@ -1,5 +1,6 @@
 /**
  * UtilsBarLayout Tests — SSOT validation, defaults, and security.
+ * Layout shape: { deck1: ActionId[], deck2: ActionId[] }
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -24,29 +25,36 @@ describe('utilsBarLayout', () => {
     });
 
     describe('DEFAULT_UTILS_BAR_LAYOUT', () => {
-        it('maps every action ID to a deck', () => {
-            for (const id of ALL_ACTION_IDS) {
-                expect(DEFAULT_UTILS_BAR_LAYOUT[id]).toBeDefined();
-                expect([1, 2]).toContain(DEFAULT_UTILS_BAR_LAYOUT[id]);
-            }
+        it('is the new array format with deck1 and deck2 properties', () => {
+            expect(DEFAULT_UTILS_BAR_LAYOUT).toHaveProperty('deck1');
+            expect(DEFAULT_UTILS_BAR_LAYOUT).toHaveProperty('deck2');
+            expect(Array.isArray(DEFAULT_UTILS_BAR_LAYOUT.deck1)).toBe(true);
+            expect(Array.isArray(DEFAULT_UTILS_BAR_LAYOUT.deck2)).toBe(true);
+        });
+
+        it('covers all 12 action IDs across both decks', () => {
+            const combined = [...DEFAULT_UTILS_BAR_LAYOUT.deck1, ...DEFAULT_UTILS_BAR_LAYOUT.deck2].sort();
+            expect(combined).toEqual([...ALL_ACTION_IDS].sort());
         });
 
         it('assigns quick actions to deck 1', () => {
-            expect(DEFAULT_UTILS_BAR_LAYOUT.ai).toBe(1);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.connect).toBe(1);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.copy).toBe(1);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.pin).toBe(1);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.delete).toBe(1);
+            const { deck1 } = DEFAULT_UTILS_BAR_LAYOUT;
+            expect(deck1).toContain('ai');
+            expect(deck1).toContain('connect');
+            expect(deck1).toContain('copy');
+            expect(deck1).toContain('pin');
+            expect(deck1).toContain('delete');
         });
 
         it('assigns secondary actions to deck 2', () => {
-            expect(DEFAULT_UTILS_BAR_LAYOUT.tags).toBe(2);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.image).toBe(2);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.duplicate).toBe(2);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.focus).toBe(2);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.collapse).toBe(2);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.color).toBe(2);
-            expect(DEFAULT_UTILS_BAR_LAYOUT.share).toBe(2);
+            const { deck2 } = DEFAULT_UTILS_BAR_LAYOUT;
+            expect(deck2).toContain('tags');
+            expect(deck2).toContain('image');
+            expect(deck2).toContain('duplicate');
+            expect(deck2).toContain('focus');
+            expect(deck2).toContain('collapse');
+            expect(deck2).toContain('color');
+            expect(deck2).toContain('share');
         });
 
         it('has at least MIN_ACTIONS_PER_DECK in each deck', () => {
@@ -57,6 +65,11 @@ describe('utilsBarLayout', () => {
 
         it('passes its own validation', () => {
             expect(isValidUtilsBarLayout(DEFAULT_UTILS_BAR_LAYOUT)).toBe(true);
+        });
+
+        it('has no duplicate action IDs', () => {
+            const combined = [...DEFAULT_UTILS_BAR_LAYOUT.deck1, ...DEFAULT_UTILS_BAR_LAYOUT.deck2];
+            expect(new Set(combined).size).toBe(combined.length);
         });
     });
 
@@ -71,11 +84,36 @@ describe('utilsBarLayout', () => {
             expect(isValidUtilsBarLayout(DEFAULT_UTILS_BAR_LAYOUT)).toBe(true);
         });
 
-        it('accepts layout with all actions in deck 1 (structurally valid)', () => {
-            const allDeck1 = Object.fromEntries(
-                ALL_ACTION_IDS.map((id) => [id, 1]),
-            ) as UtilsBarLayout;
-            expect(isValidUtilsBarLayout(allDeck1)).toBe(true);
+        it('rejects layout with all actions in deck 1 (deck 2 empty, violates MIN_ACTIONS_PER_DECK)', () => {
+            const allDeck1: UtilsBarLayout = {
+                deck1: [...ALL_ACTION_IDS],
+                deck2: [],
+            };
+            expect(isValidUtilsBarLayout(allDeck1)).toBe(false);
+        });
+
+        it('rejects layout with all actions in deck 2 (deck 1 empty, violates MIN_ACTIONS_PER_DECK)', () => {
+            const allDeck2: UtilsBarLayout = {
+                deck1: [],
+                deck2: [...ALL_ACTION_IDS],
+            };
+            expect(isValidUtilsBarLayout(allDeck2)).toBe(false);
+        });
+
+        it('accepts layout where each deck has exactly MIN_ACTIONS_PER_DECK items', () => {
+            const boundary: UtilsBarLayout = {
+                deck1: ['ai', 'connect'],
+                deck2: ['copy', 'pin', 'delete', 'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            };
+            expect(isValidUtilsBarLayout(boundary)).toBe(true);
+        });
+
+        it('rejects layout where deck1 has one fewer than MIN_ACTIONS_PER_DECK', () => {
+            const tooFew: UtilsBarLayout = {
+                deck1: ['ai'],
+                deck2: ['connect', 'copy', 'pin', 'delete', 'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            };
+            expect(isValidUtilsBarLayout(tooFew)).toBe(false);
         });
 
         it('rejects null', () => {
@@ -102,57 +140,74 @@ describe('utilsBarLayout', () => {
             expect(isValidUtilsBarLayout({})).toBe(false);
         });
 
-        it('rejects object with missing keys', () => {
-            const { ai: _removed, ...partial } = DEFAULT_UTILS_BAR_LAYOUT;
-            expect(isValidUtilsBarLayout(partial)).toBe(false);
+        it('rejects object with only deck1 (missing deck2)', () => {
+            expect(isValidUtilsBarLayout({ deck1: [...ALL_ACTION_IDS] })).toBe(false);
         });
 
-        it('rejects object with extra keys', () => {
-            const extended = { ...DEFAULT_UTILS_BAR_LAYOUT, hacked: 1 };
+        it('rejects object with extra keys beyond deck1 and deck2', () => {
+            const extended = { ...DEFAULT_UTILS_BAR_LAYOUT, hacked: [1] };
             expect(isValidUtilsBarLayout(extended)).toBe(false);
         });
 
-        it('rejects invalid deck value (0)', () => {
-            const bad = { ...DEFAULT_UTILS_BAR_LAYOUT, ai: 0 };
-            expect(isValidUtilsBarLayout(bad)).toBe(false);
+        it('rejects layout with wrong total action count', () => {
+            expect(isValidUtilsBarLayout({
+                deck1: ['ai', 'connect'],
+                deck2: ['copy'],
+            })).toBe(false);
         });
 
-        it('rejects invalid deck value (3)', () => {
-            const bad = { ...DEFAULT_UTILS_BAR_LAYOUT, ai: 3 };
-            expect(isValidUtilsBarLayout(bad)).toBe(false);
+        it('rejects duplicate action IDs across decks', () => {
+            const combinedWithDup: UtilsBarLayout = {
+                deck1: ['ai', 'ai', 'connect', 'pin', 'delete'],
+                deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            };
+            expect(isValidUtilsBarLayout(combinedWithDup)).toBe(false);
         });
 
-        it('rejects string deck values', () => {
-            const bad = { ...DEFAULT_UTILS_BAR_LAYOUT, ai: '1' };
-            expect(isValidUtilsBarLayout(bad)).toBe(false);
+        it('rejects unknown action ID', () => {
+            expect(isValidUtilsBarLayout({
+                deck1: ['ai', 'connect', 'copy', 'pin', 'delete'],
+                deck2: ['unknown', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            })).toBe(false);
         });
 
-        it('rejects XSS payload as key', () => {
-            const { ai: _removed, ...withoutAi } = DEFAULT_UTILS_BAR_LAYOUT;
-            const xss = { ...withoutAi, '<script>alert(1)</script>': 1 };
-            expect(isValidUtilsBarLayout(xss)).toBe(false);
+        it('rejects non-string values in deck arrays', () => {
+            expect(isValidUtilsBarLayout({
+                deck1: [1, 'connect', 'copy', 'pin', 'delete'],
+                deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            })).toBe(false);
         });
 
-        it('rejects __proto__ key (prototype pollution)', () => {
-            const poisoned = Object.create(null);
-            for (const id of ALL_ACTION_IDS) {
-                poisoned[id] = DEFAULT_UTILS_BAR_LAYOUT[id];
-            }
-            // eslint-disable-next-line @typescript-eslint/dot-notation -- bracket notation required to set own key "__proto__"
-            poisoned['__proto__'] = 1;
-            expect(isValidUtilsBarLayout(poisoned)).toBe(false);
+        it('rejects non-array deck values', () => {
+            expect(isValidUtilsBarLayout({ deck1: 'ai', deck2: [] })).toBe(false);
         });
 
-        it('rejects constructor key (prototype pollution)', () => {
-            const { ai: _removed, ...withoutAi } = DEFAULT_UTILS_BAR_LAYOUT;
-            const poisoned = { ...withoutAi, constructor: 1 };
-            expect(isValidUtilsBarLayout(poisoned)).toBe(false);
+        it('rejects XSS payload as action ID', () => {
+            expect(isValidUtilsBarLayout({
+                deck1: ['ai', 'connect', 'copy', 'pin', '<script>alert(1)</script>'],
+                deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            })).toBe(false);
         });
 
-        it('rejects prototype key (prototype pollution)', () => {
-            const { ai: _removed, ...withoutAi } = DEFAULT_UTILS_BAR_LAYOUT;
-            const poisoned = { ...withoutAi, prototype: 1 };
-            expect(isValidUtilsBarLayout(poisoned)).toBe(false);
+        it('rejects __proto__ as action ID (prototype pollution)', () => {
+            expect(isValidUtilsBarLayout({
+                deck1: ['ai', 'connect', 'copy', 'pin', '__proto__'],
+                deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            })).toBe(false);
+        });
+
+        it('rejects constructor as action ID (prototype pollution)', () => {
+            expect(isValidUtilsBarLayout({
+                deck1: ['ai', 'connect', 'copy', 'pin', 'constructor'],
+                deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            })).toBe(false);
+        });
+
+        it('rejects prototype as action ID (prototype pollution)', () => {
+            expect(isValidUtilsBarLayout({
+                deck1: ['ai', 'connect', 'copy', 'pin', 'prototype'],
+                deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            })).toBe(false);
         });
     });
 
@@ -164,21 +219,27 @@ describe('utilsBarLayout', () => {
         });
 
         it('counts all-deck-1 layout correctly', () => {
-            const allDeck1 = Object.fromEntries(
-                ALL_ACTION_IDS.map((id) => [id, 1]),
-            ) as UtilsBarLayout;
+            const allDeck1: UtilsBarLayout = { deck1: [...ALL_ACTION_IDS], deck2: [] };
             const counts = countActionsPerDeck(allDeck1);
             expect(counts.deck1).toBe(12);
             expect(counts.deck2).toBe(0);
         });
 
         it('counts all-deck-2 layout correctly', () => {
-            const allDeck2 = Object.fromEntries(
-                ALL_ACTION_IDS.map((id) => [id, 2]),
-            ) as UtilsBarLayout;
+            const allDeck2: UtilsBarLayout = { deck1: [], deck2: [...ALL_ACTION_IDS] };
             const counts = countActionsPerDeck(allDeck2);
             expect(counts.deck1).toBe(0);
             expect(counts.deck2).toBe(12);
+        });
+
+        it('reflects array lengths', () => {
+            const layout: UtilsBarLayout = {
+                deck1: ['ai', 'connect', 'copy'],
+                deck2: ['pin', 'delete', 'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+            };
+            const counts = countActionsPerDeck(layout);
+            expect(counts.deck1).toBe(3);
+            expect(counts.deck2).toBe(9);
         });
     });
 });

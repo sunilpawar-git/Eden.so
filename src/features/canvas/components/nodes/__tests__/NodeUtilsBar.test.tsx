@@ -8,10 +8,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NodeUtilsBar } from '../NodeUtilsBar';
 
+const mockDeckOneActions: string[] = ['ai', 'connect', 'copy', 'pin', 'delete'];
+const mockDeckTwoActions: string[] = ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'];
+
 vi.mock('../../../../hooks/useUtilsBarLayout', () => ({
     useUtilsBarLayout: () => ({
-        deckOneActions: ['ai', 'connect', 'copy', 'pin', 'delete'],
-        deckTwoActions: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+        deckOneActions: mockDeckOneActions,
+        deckTwoActions: mockDeckTwoActions,
     }),
 }));
 
@@ -224,6 +227,46 @@ describe('NodeUtilsBar', () => {
             const toolbars = screen.getAllByRole('toolbar');
             const deck2 = toolbars[1] as HTMLElement;
             expect(deck2.className).not.toContain('deckTwoOpen');
+        });
+    });
+
+    describe('user-configured action order', () => {
+        it('deck 1 renders AI Actions first when order is [ai, connect, copy, pin, delete]', () => {
+            render(<NodeUtilsBar {...defaultProps} onPinToggle={vi.fn()} onCopyClick={vi.fn()} />);
+            const toolbars = screen.getAllByRole('toolbar');
+            const deck1 = toolbars[0] as HTMLElement;
+            const buttons = Array.from(deck1.querySelectorAll('button[aria-label]'));
+            // First button in DOM order must be AI Actions
+            expect(buttons[0]).toHaveAttribute('aria-label', 'AI Actions');
+        });
+
+        it('deck 1 renders Connect second when order is [ai, connect, copy, pin, delete]', () => {
+            render(<NodeUtilsBar {...defaultProps} onPinToggle={vi.fn()} onCopyClick={vi.fn()} />);
+            const toolbars = screen.getAllByRole('toolbar');
+            const deck1 = toolbars[0] as HTMLElement;
+            const buttons = Array.from(deck1.querySelectorAll('button[aria-label]'));
+            expect(buttons[1]).toHaveAttribute('aria-label', 'Connect');
+        });
+
+        it('deck 1 renders Delete last when order is [ai, connect, copy, pin, delete]', () => {
+            render(<NodeUtilsBar {...defaultProps} onPinToggle={vi.fn()} onCopyClick={vi.fn()} />);
+            const toolbars = screen.getAllByRole('toolbar');
+            const deck1 = toolbars[0] as HTMLElement;
+            // Exclude the expand-deck button ('Show more actions')
+            const actionButtons = Array.from(
+                deck1.querySelectorAll('button[aria-label]')
+            ).filter((b) => b.getAttribute('aria-label') !== 'Show more actions');
+            expect(actionButtons[actionButtons.length - 1]).toHaveAttribute('aria-label', 'Delete');
+        });
+
+        it('NodeUtilsBarDeckButtons maps actions array in order (contract test)', () => {
+            // Verify that mock order [ai, connect, copy, pin, delete] is reflected in DOM
+            render(<NodeUtilsBar {...defaultProps} onPinToggle={vi.fn()} onCopyClick={vi.fn()} />);
+            const aiButton = screen.getByLabelText('AI Actions');
+            const connectButton = screen.getByLabelText('Connect');
+            // compareDocumentPosition: DOCUMENT_POSITION_FOLLOWING = 4 means aiButton comes before connectButton
+            const position = aiButton.compareDocumentPosition(connectButton);
+            expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         });
     });
 

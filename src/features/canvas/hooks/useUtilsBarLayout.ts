@@ -1,28 +1,19 @@
 /**
- * useUtilsBarLayout — Derives deck 1 and deck 2 action lists from settings store.
- * Single Zustand selector, memoized output to prevent unnecessary re-renders.
+ * useUtilsBarLayout — Returns ordered deck action lists from the settings store.
+ * The layout now stores arrays directly, so this hook simply reads them.
+ * Memoized to prevent unnecessary re-renders.
  */
 import { useMemo } from 'react';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
-import { ALL_ACTION_IDS } from '../types/utilsBarLayout';
-import type { UtilsBarActionId, UtilsBarLayout } from '../types/utilsBarLayout';
+import type { UtilsBarActionId } from '../types/utilsBarLayout';
 
 export interface UtilsBarLayoutResult {
     deckOneActions: UtilsBarActionId[];
     deckTwoActions: UtilsBarActionId[];
 }
 
-function splitByDeck(layout: UtilsBarLayout): UtilsBarLayoutResult {
-    const deckOneActions: UtilsBarActionId[] = [];
-    const deckTwoActions: UtilsBarActionId[] = [];
-    for (const id of ALL_ACTION_IDS) {
-        if (layout[id] === 1) deckOneActions.push(id);
-        else deckTwoActions.push(id);
-    }
-    return { deckOneActions, deckTwoActions };
-}
-
 export function useUtilsBarLayout(): UtilsBarLayoutResult {
-    const layout = useSettingsStore((state) => state.utilsBarLayout);
-    return useMemo(() => splitByDeck(layout), [layout]);
+    const deck1 = useSettingsStore((state) => state.utilsBarLayout.deck1);
+    const deck2 = useSettingsStore((state) => state.utilsBarLayout.deck2);
+    return useMemo(() => ({ deckOneActions: deck1, deckTwoActions: deck2 }), [deck1, deck2]);
 }

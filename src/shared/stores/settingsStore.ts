@@ -6,7 +6,7 @@ import { create } from 'zustand';
 import { getStorageItem, getValidatedStorageItem, setStorageItem } from '@/shared/utils/storage';
 import { DEFAULT_UTILS_BAR_LAYOUT } from '@/features/canvas/types/utilsBarLayout';
 import type { UtilsBarActionId, UtilsBarDeck, UtilsBarLayout } from '@/features/canvas/types/utilsBarLayout';
-import { loadUtilsBarLayout, computeNextLayout, persistUtilsBarLayout } from './utilsBarLayoutSlice';
+import { loadUtilsBarLayout, computeNextLayout, computeReorder, persistUtilsBarLayout } from './utilsBarLayoutSlice';
 import { trackSettingsChanged } from '@/shared/services/analyticsService';
 
 export type ThemeOption = 'light' | 'dark' | 'system' | 'sepia' | 'grey' | 'darkBlack';
@@ -67,6 +67,7 @@ interface SettingsState {
     toggleCanvasFreeFlow: () => void;
     setLastSettingsTab: (tab: SettingsTabId) => void;
     setUtilsBarActionDeck: (actionId: UtilsBarActionId, deck: UtilsBarDeck) => void;
+    reorderUtilsBarAction: (actionId: UtilsBarActionId, targetDeck: UtilsBarDeck, targetIndex: number) => void;
     resetUtilsBarLayout: () => void;
     getResolvedTheme: () => ResolvedTheme;
     loadFromStorage: () => void;
@@ -115,6 +116,11 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     setLastSettingsTab: (tab: SettingsTabId) => { set({ lastSettingsTab: tab }); setStorageItem(STORAGE_KEYS.lastSettingsTab, tab); },
     setUtilsBarActionDeck: (actionId: UtilsBarActionId, deck: UtilsBarDeck) => {
         const next = computeNextLayout(get().utilsBarLayout, actionId, deck);
+        if (!next) return;
+        set({ utilsBarLayout: next }); persistUtilsBarLayout(next);
+    },
+    reorderUtilsBarAction: (actionId: UtilsBarActionId, targetDeck: UtilsBarDeck, targetIndex: number) => {
+        const next = computeReorder(get().utilsBarLayout, actionId, targetDeck, targetIndex);
         if (!next) return;
         set({ utilsBarLayout: next }); persistUtilsBarLayout(next);
     },
