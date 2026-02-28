@@ -12,6 +12,7 @@ import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { KB_MAX_FILE_SIZE } from '../types/knowledgeBank';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
+import { trackKbEntryAdded } from '@/shared/services/analyticsService';
 
 export function useFileProcessor() {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -39,6 +40,7 @@ export function useFileProcessor() {
             for (const entry of entries) {
                 useKnowledgeBankStore.getState().addEntry(entry);
             }
+            trackKbEntryAdded('file');
             toast.success(strings.knowledgeBank.saveEntry);
 
             // Background summarization with observable lifecycle

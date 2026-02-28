@@ -11,6 +11,7 @@ import { createIdeaNode } from '../types/node';
 import { calculateNextNodePosition } from '../stores/canvasStoreHelpers';
 import { calculateSmartPlacement } from '../services/freeFlowPlacementService';
 import { usePanToNode } from './usePanToNode';
+import { trackNodeCreated } from '@/shared/services/analyticsService';
 
 export function useAddNode() {
     const nodes = useCanvasStore((s) => s.nodes);
@@ -33,6 +34,7 @@ export function useAddNode() {
         );
 
         useCanvasStore.getState().addNode(newNode);
+        trackNodeCreated('idea');
         panToPosition(position.x, position.y);
     }, [nodes, currentWorkspaceId, canvasFreeFlow, focusedNodeId, panToPosition]);
 

@@ -5,6 +5,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTagStore } from '../stores/tagStore';
 import { strings } from '@/shared/localization/strings';
+import { tagNameSchema } from '@/shared/validation/schemas';
 import styles from './TagInput.module.css';
 
 interface TagInputProps {
@@ -42,9 +43,11 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
             if (e.key === 'Escape') {
                 setIsInputVisible(false);
                 setInputValue('');
-            } else if (e.key === 'Enter' && inputValue.trim()) {
+            } else if (e.key === 'Enter') {
+                const parsed = tagNameSchema.safeParse(inputValue);
+                if (!parsed.success) return;
                 // Find or create tag
-                const tag = getTagByName(inputValue) ?? addTag(inputValue);
+                const tag = getTagByName(parsed.data) ?? addTag(parsed.data);
                 if (tag && !selectedTagIds.includes(tag.id)) {
                     onChange([...selectedTagIds, tag.id]);
                 }
