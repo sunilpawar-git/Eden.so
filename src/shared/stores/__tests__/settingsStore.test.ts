@@ -291,5 +291,31 @@ describe('SettingsStore', () => {
         });
     });
 
+    describe('createLocalStorageMock — Storage interface compliance', () => {
+        it('exposes a length property reflecting number of stored keys', () => {
+            const mock = createLocalStorageMock();
+            expect(mock.length).toBe(0);
+            mock.setItem('a', '1');
+            expect(mock.length).toBe(1);
+            mock.setItem('b', '2');
+            expect(mock.length).toBe(2);
+            mock.removeItem('a');
+            expect(mock.length).toBe(1);
+            mock.clear();
+            expect(mock.length).toBe(0);
+        });
 
+        it('returns the key at a given index via key()', () => {
+            const mock = createLocalStorageMock();
+            mock.setItem('x', 'val');
+            expect(mock.key(0)).toBe('x');
+            expect(mock.key(1)).toBeNull();
+        });
+
+        it('key() returns null for out-of-bounds index', () => {
+            const mock = createLocalStorageMock();
+            expect(mock.key(0)).toBeNull();
+            expect(mock.key(-1)).toBeNull();
+        });
+    });
 });

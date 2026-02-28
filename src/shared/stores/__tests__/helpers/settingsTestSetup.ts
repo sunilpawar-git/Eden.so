@@ -6,10 +6,12 @@ import { vi } from 'vitest';
 import { useSettingsStore } from '../../settingsStore';
 import { DEFAULT_UTILS_BAR_LAYOUT } from '@/features/canvas/types/utilsBarLayout';
 
-/** Creates a mock localStorage with an in-memory backing store */
+/** Creates a mock localStorage with an in-memory backing store (Storage interface compliant) */
 export function createLocalStorageMock() {
     let store: Record<string, string> = {};
-    return {
+
+    const mock = {
+        get length() { return Object.keys(store).length; },
         getItem: vi.fn((key: string) => store[key] ?? null),
         setItem: vi.fn((key: string, value: string) => {
             store[key] = value;
@@ -20,7 +22,10 @@ export function createLocalStorageMock() {
             );
         }),
         clear: vi.fn(() => { store = {}; }),
+        key: vi.fn((index: number) => Object.keys(store)[index] ?? null),
     };
+
+    return mock;
 }
 
 /** Creates a mock matchMedia with configurable matches */

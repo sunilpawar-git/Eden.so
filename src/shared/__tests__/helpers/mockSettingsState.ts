@@ -5,8 +5,7 @@
 import { vi } from 'vitest';
 import { DEFAULT_UTILS_BAR_LAYOUT } from '@/features/canvas/types/utilsBarLayout';
 
-/** Creates a complete mock SettingsState with optional overrides */
-export function createMockSettingsState(overrides: Record<string, unknown> = {}) {
+function buildBaseMockSettingsState() {
     return {
         theme: 'system' as const,
         canvasGrid: true,
@@ -33,6 +32,16 @@ export function createMockSettingsState(overrides: Record<string, unknown> = {})
         setLastSettingsTab: vi.fn(),
         getResolvedTheme: () => 'light' as const,
         loadFromStorage: vi.fn(),
+    };
+}
+
+/** Strongly-typed overrides for createMockSettingsState — only valid SettingsState keys allowed */
+export type MockSettingsOverrides = Partial<ReturnType<typeof buildBaseMockSettingsState>>;
+
+/** Creates a complete mock SettingsState with optional type-safe overrides */
+export function createMockSettingsState(overrides: MockSettingsOverrides = {}) {
+    return {
+        ...buildBaseMockSettingsState(),
         ...overrides,
     };
 }

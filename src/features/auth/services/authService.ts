@@ -82,9 +82,7 @@ export async function signOut(): Promise<void> {
  * Call this once on app initialization
  */
 export function subscribeToAuthState(): () => void {
-    const { setUser, clearUser, setLoading } = useAuthStore.getState();
-
-    setLoading(true);
+    useAuthStore.getState().setLoading(true);
 
     return onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser) {
@@ -94,16 +92,16 @@ export function subscribeToAuthState(): () => void {
                 firebaseUser.email,
                 firebaseUser.photoURL
             );
-            setUser(user);
+            useAuthStore.getState().setUser(user);
             setSentryUser(user.id);
             identifyUser(user.id);
             checkCalendarConnection();
         } else {
-            clearUser();
+            useAuthStore.getState().clearUser();
             clearSentryUser();
             resetAnalyticsUser();
         }
-        setLoading(false);
+        useAuthStore.getState().setLoading(false);
     });
 }
 

@@ -40,6 +40,12 @@
     white-space: nowrap;
 }
 
+/* Focus ring: shown on the parent label when the hidden input is keyboard-focused */
+.themeSwatchInput:focus-visible ~ .themeSwatchPreview {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 .themeSwatchPreview {
     width: 48px;
     height: 48px;
@@ -64,52 +70,74 @@
     text-align: center;
 }
 
+/* Swatch color tokens — intentionally theme-specific (preview of the actual theme appearance) */
+:root {
+    --swatch-light-bg: hsl(0, 0%, 100%);
+    --swatch-dark-bg: hsl(220, 13%, 9%);
+    --swatch-sepia-bg: hsl(36, 40%, 95%);
+    --swatch-grey-bg: hsl(0, 0%, 92%);
+    --swatch-darkBlack-bg: hsl(0, 0%, 0%);
+    --swatch-system-bg-light: hsl(0, 0%, 100%);
+    --swatch-system-bg-dark: hsl(220, 13%, 9%);
+
+    --swatch-light-accent: hsl(220, 65%, 50%);
+    --swatch-dark-accent: hsl(220, 70%, 60%);
+    --swatch-sepia-accent: hsl(28, 55%, 45%);
+    --swatch-grey-accent: hsl(210, 15%, 45%);
+    --swatch-darkBlack-accent: hsl(220, 75%, 62%);
+    --swatch-system-accent: hsl(220, 65%, 50%);
+}
+
 /* Swatch Preview Backgrounds (per theme) */
 .themeSwatchPreview[data-swatch="light"] {
-    background: hsl(0, 0%, 100%);
+    background: var(--swatch-light-bg);
 }
 
 .themeSwatchPreview[data-swatch="dark"] {
-    background: hsl(220, 13%, 9%);
+    background: var(--swatch-dark-bg);
 }
 
 .themeSwatchPreview[data-swatch="sepia"] {
-    background: hsl(36, 40%, 95%);
+    background: var(--swatch-sepia-bg);
 }
 
 .themeSwatchPreview[data-swatch="grey"] {
-    background: hsl(0, 0%, 92%);
+    background: var(--swatch-grey-bg);
 }
 
 .themeSwatchPreview[data-swatch="darkBlack"] {
-    background: hsl(0, 0%, 0%);
+    background: var(--swatch-darkBlack-bg);
 }
 
 .themeSwatchPreview[data-swatch="system"] {
-    background: linear-gradient(135deg, hsl(0, 0%, 100%) 50%, hsl(220, 13%, 9%) 50%);
+    background: linear-gradient(
+        135deg,
+        var(--swatch-system-bg-light) 50%,
+        var(--swatch-system-bg-dark) 50%
+    );
 }
 
 /* Swatch Accent Dots (per theme) */
 .themeSwatchAccent[data-swatch="light"] {
-    background: hsl(220, 65%, 50%);
+    background: var(--swatch-light-accent);
 }
 
 .themeSwatchAccent[data-swatch="dark"] {
-    background: hsl(220, 70%, 60%);
+    background: var(--swatch-dark-accent);
 }
 
 .themeSwatchAccent[data-swatch="sepia"] {
-    background: hsl(28, 55%, 45%);
+    background: var(--swatch-sepia-accent);
 }
 
 .themeSwatchAccent[data-swatch="grey"] {
-    background: hsl(210, 15%, 45%);
+    background: var(--swatch-grey-accent);
 }
 
 .themeSwatchAccent[data-swatch="darkBlack"] {
-    background: hsl(220, 75%, 62%);
+    background: var(--swatch-darkBlack-accent);
 }
 
 .themeSwatchAccent[data-swatch="system"] {
-    background: hsl(220, 65%, 50%);
+    background: var(--swatch-system-accent);
 }

@@ -11,28 +11,21 @@ import { useSettingsStore } from '@/shared/stores/settingsStore';
  */
 export function useThemeApplicator(): void {
     const theme = useSettingsStore((state) => state.theme);
-    const getResolvedTheme = useSettingsStore((state) => state.getResolvedTheme);
 
     useEffect(() => {
-        // Apply the resolved theme to document
+        // getResolvedTheme is a pure getter — call it via getState() to avoid
+        // subscribing a function reference as reactive state (causes re-render churn).
         const applyTheme = () => {
-            const resolved = getResolvedTheme();
+            const resolved = useSettingsStore.getState().getResolvedTheme();
             document.documentElement.dataset.theme = resolved;
         };
 
-        // Apply immediately
         applyTheme();
 
-        // If theme is 'system', listen for system preference changes
         if (theme === 'system' && typeof window !== 'undefined') {
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            
-            const handleChange = () => {
-                applyTheme();
-            };
-
-            mediaQuery.addEventListener('change', handleChange);
-            return () => mediaQuery.removeEventListener('change', handleChange);
+            mediaQuery.addEventListener('change', applyTheme);
+            return () => mediaQuery.removeEventListener('change', applyTheme);
         }
-    }, [theme, getResolvedTheme]);
+    }, [theme]);
 }

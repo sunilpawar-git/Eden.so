@@ -28,8 +28,12 @@ export const AppearanceSection = React.memo(function AppearanceSection() {
 
     return (
         <div className={panelStyles.section}>
-            <h3 className={panelStyles.sectionTitle}>{strings.settings.theme}</h3>
-            <div className={styles.themeSwatchGrid}>
+            <h3 id="theme-picker-label" className={panelStyles.sectionTitle}>{strings.settings.theme}</h3>
+            <div
+                className={styles.themeSwatchGrid}
+                role="radiogroup"
+                aria-labelledby="theme-picker-label"
+            >
                 {THEME_SWATCHES.map((swatch) => (
                     <label
                         key={swatch.value}
