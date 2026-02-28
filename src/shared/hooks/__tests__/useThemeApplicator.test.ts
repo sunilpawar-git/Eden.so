@@ -142,8 +142,7 @@ describe('useThemeApplicator', () => {
         // unrelated store updates.
         useSettingsStore.setState({ theme: 'light' });
         const { rerender, result } = renderHook(() => {
-            // Track render count via a ref held outside the hook
-            return useThemeApplicator();
+            useThemeApplicator();
         });
 
         const themeBeforeUnrelated = document.documentElement.dataset.theme;

@@ -7,6 +7,7 @@ import { ReactFlowProvider, Position } from '@xyflow/react';
 import { DeletableEdge } from '../DeletableEdge';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { createMockSettingsState } from '@/shared/__tests__/helpers/mockSettingsState';
+import type { ConnectorStyle } from '@/shared/stores/settingsStore';
 import styles from '../DeletableEdge.module.css';
 
 // Mock the settings store with getState() support
@@ -40,7 +41,7 @@ describe('DeletableEdge ConnectorStyles', () => {
         vi.clearAllMocks();
     });
 
-    const setupWithStyle = (connectorStyle: string) => {
+    const setupWithStyle = (connectorStyle: ConnectorStyle) => {
         vi.mocked(useSettingsStore).mockImplementation((selector) => {
             const state = createMockSettingsState({ connectorStyle });
             return typeof selector === 'function' ? selector(state) : state;

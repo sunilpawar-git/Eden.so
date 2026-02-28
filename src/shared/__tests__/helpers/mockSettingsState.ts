@@ -4,19 +4,55 @@
  */
 import { vi } from 'vitest';
 import { DEFAULT_UTILS_BAR_LAYOUT } from '@/features/canvas/types/utilsBarLayout';
+import type {
+    ThemeOption,
+    ConnectorStyle,
+    CanvasScrollMode,
+    SettingsTabId,
+} from '@/shared/stores/settingsStore';
 
-function buildBaseMockSettingsState() {
+/** Strongly-typed overrides — only valid SettingsState keys accepted */
+export interface MockSettingsOverrides {
+    theme?: ThemeOption;
+    canvasGrid?: boolean;
+    autoSave?: boolean;
+    autoSaveInterval?: number;
+    compactMode?: boolean;
+    canvasScrollMode?: CanvasScrollMode;
+    connectorStyle?: ConnectorStyle;
+    isCanvasLocked?: boolean;
+    canvasFreeFlow?: boolean;
+    lastSettingsTab?: SettingsTabId;
+    utilsBarLayout?: typeof DEFAULT_UTILS_BAR_LAYOUT;
+    setTheme?: ReturnType<typeof vi.fn>;
+    toggleCanvasGrid?: ReturnType<typeof vi.fn>;
+    setAutoSave?: ReturnType<typeof vi.fn>;
+    setAutoSaveInterval?: ReturnType<typeof vi.fn>;
+    toggleCompactMode?: ReturnType<typeof vi.fn>;
+    setCanvasScrollMode?: ReturnType<typeof vi.fn>;
+    setConnectorStyle?: ReturnType<typeof vi.fn>;
+    toggleCanvasLocked?: ReturnType<typeof vi.fn>;
+    toggleCanvasFreeFlow?: ReturnType<typeof vi.fn>;
+    setUtilsBarActionDeck?: ReturnType<typeof vi.fn>;
+    resetUtilsBarLayout?: ReturnType<typeof vi.fn>;
+    setLastSettingsTab?: ReturnType<typeof vi.fn>;
+    getResolvedTheme?: () => 'light' | 'dark' | 'sepia' | 'grey' | 'darkBlack';
+    loadFromStorage?: ReturnType<typeof vi.fn>;
+}
+
+/** Creates a complete mock SettingsState with optional type-safe overrides */
+export function createMockSettingsState(overrides: MockSettingsOverrides = {}) {
     return {
-        theme: 'system' as const,
+        theme: 'system' as ThemeOption,
         canvasGrid: true,
         autoSave: true,
         autoSaveInterval: 30,
         compactMode: false,
-        canvasScrollMode: 'zoom' as const,
-        connectorStyle: 'solid' as const,
+        canvasScrollMode: 'zoom' as CanvasScrollMode,
+        connectorStyle: 'solid' as ConnectorStyle,
         isCanvasLocked: false,
         canvasFreeFlow: false,
-        lastSettingsTab: 'appearance' as const,
+        lastSettingsTab: 'appearance' as SettingsTabId,
         utilsBarLayout: DEFAULT_UTILS_BAR_LAYOUT,
         setTheme: vi.fn(),
         toggleCanvasGrid: vi.fn(),
@@ -32,16 +68,6 @@ function buildBaseMockSettingsState() {
         setLastSettingsTab: vi.fn(),
         getResolvedTheme: () => 'light' as const,
         loadFromStorage: vi.fn(),
-    };
-}
-
-/** Strongly-typed overrides for createMockSettingsState — only valid SettingsState keys allowed */
-export type MockSettingsOverrides = Partial<ReturnType<typeof buildBaseMockSettingsState>>;
-
-/** Creates a complete mock SettingsState with optional type-safe overrides */
-export function createMockSettingsState(overrides: MockSettingsOverrides = {}) {
-    return {
-        ...buildBaseMockSettingsState(),
         ...overrides,
     };
 }
