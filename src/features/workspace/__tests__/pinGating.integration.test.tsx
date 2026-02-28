@@ -8,15 +8,14 @@ import { PinWorkspaceButton } from '../components/PinWorkspaceButton';
 import { strings } from '@/shared/localization/strings';
 
 // Mock pinned workspace store
-const mockIsPinned = vi.fn().mockReturnValue(false);
+let mockPinnedIds: string[] = [];
 const mockPinWorkspace = vi.fn().mockResolvedValue(true);
 const mockUnpinWorkspace = vi.fn().mockResolvedValue(true);
 
 const buildPinState = () => ({
-    isPinned: mockIsPinned,
+    pinnedIds: mockPinnedIds,
     pinWorkspace: mockPinWorkspace,
     unpinWorkspace: mockUnpinWorkspace,
-    pinnedIds: [],
 });
 
 vi.mock('../stores/pinnedWorkspaceStore', () => {
@@ -47,7 +46,7 @@ vi.mock('@/shared/stores/toastStore', () => ({
 describe('PinWorkspaceButton - subscription gating', () => {
     it('shows upgrade prompt when free user tries to pin', () => {
         mockHasAccess = false;
-        mockIsPinned.mockReturnValue(false);
+        mockPinnedIds = [];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
 
         fireEvent.click(screen.getByLabelText(strings.pinning.pin));
@@ -59,7 +58,7 @@ describe('PinWorkspaceButton - subscription gating', () => {
 
     it('pins workspace when pro user clicks pin', () => {
         mockHasAccess = true;
-        mockIsPinned.mockReturnValue(false);
+        mockPinnedIds = [];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
 
         fireEvent.click(screen.getByLabelText(strings.pinning.pin));
@@ -71,7 +70,7 @@ describe('PinWorkspaceButton - subscription gating', () => {
 
     it('allows free user to unpin already-pinned workspace', () => {
         mockHasAccess = false;
-        mockIsPinned.mockReturnValue(true);
+        mockPinnedIds = ['ws-1'];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
 
         fireEvent.click(screen.getByLabelText(strings.pinning.unpin));
@@ -82,7 +81,7 @@ describe('PinWorkspaceButton - subscription gating', () => {
 
     it('dismisses upgrade prompt when user clicks dismiss', () => {
         mockHasAccess = false;
-        mockIsPinned.mockReturnValue(false);
+        mockPinnedIds = [];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
 
         fireEvent.click(screen.getByLabelText(strings.pinning.pin));

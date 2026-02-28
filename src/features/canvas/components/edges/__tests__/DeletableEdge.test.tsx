@@ -9,10 +9,12 @@ import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { createMockSettingsState } from '@/shared/__tests__/helpers/mockSettingsState';
 import styles from '../DeletableEdge.module.css';
 
-// Mock the settings store
-vi.mock('@/shared/stores/settingsStore', () => ({
-    useSettingsStore: vi.fn(),
-}));
+// Mock the settings store with getState() support
+vi.mock('@/shared/stores/settingsStore', () => {
+    const selectorFn = vi.fn();
+    Object.assign(selectorFn, { getState: () => createMockSettingsState({}) });
+    return { useSettingsStore: selectorFn };
+});
 
 // Mock the canvas store
 vi.mock('../../stores/canvasStore', () => ({

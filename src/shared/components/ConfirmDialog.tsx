@@ -3,6 +3,7 @@
  * Replaces window.confirm for a non-blocking, themed UX.
  */
 import { useConfirmStore } from '@/shared/stores/confirmStore';
+import { strings } from '@/shared/localization/strings';
 import styles from './ConfirmDialog.module.css';
 
 export function ConfirmDialog() {
@@ -17,8 +18,8 @@ export function ConfirmDialog() {
     const {
         title,
         message,
-        confirmText = 'Confirm',
-        cancelText = 'Cancel',
+        confirmText = strings.common.confirm,
+        cancelText = strings.common.cancel,
         isDestructive = false,
     } = options;
 

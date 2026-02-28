@@ -51,4 +51,27 @@ describe('useFeatureGate', () => {
         const { result } = renderHook(() => useFeatureGate(GATED_FEATURES.backgroundSync));
         expect(result.current.tier).toBe('pro');
     });
+
+    it('uses pure hasFeatureAccess (not store method) for derivation', () => {
+        mockTier = SUBSCRIPTION_TIERS.free;
+        const { result } = renderHook(() => useFeatureGate(GATED_FEATURES.offlinePin));
+        expect(result.current.hasAccess).toBe(false);
+        expect(result.current.tier).toBe('free');
+    });
+
+    it('returns correct access for each gated feature on free tier', () => {
+        mockTier = SUBSCRIPTION_TIERS.free;
+        const pin = renderHook(() => useFeatureGate(GATED_FEATURES.offlinePin));
+        const sync = renderHook(() => useFeatureGate(GATED_FEATURES.backgroundSync));
+        expect(pin.result.current.hasAccess).toBe(false);
+        expect(sync.result.current.hasAccess).toBe(false);
+    });
+
+    it('returns correct access for each gated feature on pro tier', () => {
+        mockTier = SUBSCRIPTION_TIERS.pro;
+        const pin = renderHook(() => useFeatureGate(GATED_FEATURES.offlinePin));
+        const sync = renderHook(() => useFeatureGate(GATED_FEATURES.backgroundSync));
+        expect(pin.result.current.hasAccess).toBe(true);
+        expect(sync.result.current.hasAccess).toBe(true);
+    });
 });

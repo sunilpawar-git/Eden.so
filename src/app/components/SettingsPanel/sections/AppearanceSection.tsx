@@ -1,6 +1,7 @@
 /**
  * Appearance Section - Theme swatch picker and compact mode toggle
  */
+import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSettingsStore, type ThemeOption } from '@/shared/stores/settingsStore';
 import panelStyles from '../SettingsPanel.module.css';
@@ -20,11 +21,9 @@ const THEME_SWATCHES: readonly ThemeSwatchConfig[] = [
     { value: 'system', label: strings.settings.themeSystem },
 ];
 
-export function AppearanceSection() {
+export const AppearanceSection = React.memo(function AppearanceSection() {
     const theme = useSettingsStore((state) => state.theme);
-    const setTheme = useSettingsStore((state) => state.setTheme);
     const compactMode = useSettingsStore((state) => state.compactMode);
-    const toggleCompactMode = useSettingsStore((state) => state.toggleCompactMode);
 
     return (
         <div className={panelStyles.section}>
@@ -40,7 +39,7 @@ export function AppearanceSection() {
                             name="theme"
                             value={swatch.value}
                             checked={theme === swatch.value}
-                            onChange={() => setTheme(swatch.value)}
+                            onChange={() => useSettingsStore.getState().setTheme(swatch.value)}
                             className={styles.themeSwatchInput}
                             aria-label={swatch.label}
                         />
@@ -63,10 +62,10 @@ export function AppearanceSection() {
                 <input
                     type="checkbox"
                     checked={compactMode}
-                    onChange={toggleCompactMode}
+                    onChange={() => useSettingsStore.getState().toggleCompactMode()}
                 />
                 <span>{strings.settings.compactMode}</span>
             </label>
         </div>
     );
-}
+});

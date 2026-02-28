@@ -2,14 +2,14 @@
  * ViewportSync - Synchronizes ReactFlow viewport with Zustand store
  * Must be rendered as a child of ReactFlow to access useReactFlow hook
  */
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useReactFlow, type Viewport } from '@xyflow/react';
 
 interface ViewportSyncProps {
     viewport: Viewport;
 }
 
-export function ViewportSync({ viewport }: ViewportSyncProps) {
+export const ViewportSync = React.memo(function ViewportSync({ viewport }: ViewportSyncProps) {
     const { setViewport } = useReactFlow();
     const isFirstRenderRef = useRef(true);
     const prevViewportRef = useRef<Viewport>(viewport);
@@ -32,4 +32,4 @@ export function ViewportSync({ viewport }: ViewportSyncProps) {
     }, [viewport, setViewport]);
 
     return null;
-}
+});

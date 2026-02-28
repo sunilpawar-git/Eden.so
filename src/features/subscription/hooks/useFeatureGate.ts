@@ -3,8 +3,9 @@
  * Returns whether the current user has access to a gated feature.
  * SOLID SRP: Only checks feature access, no side effects.
  */
+import { useMemo } from 'react';
 import { useSubscriptionStore } from '../stores/subscriptionStore';
-import type { GatedFeature } from '../types/subscription';
+import { hasFeatureAccess, type GatedFeature } from '../types/subscription';
 
 interface FeatureGateResult {
     hasAccess: boolean;
@@ -13,9 +14,9 @@ interface FeatureGateResult {
 }
 
 export function useFeatureGate(feature: GatedFeature): FeatureGateResult {
-    const hasAccess = useSubscriptionStore((s) => s.hasAccess(feature));
-    const isLoading = useSubscriptionStore((s) => s.isLoading);
     const tier = useSubscriptionStore((s) => s.tier);
+    const isLoading = useSubscriptionStore((s) => s.isLoading);
+    const hasAccess = useMemo(() => hasFeatureAccess(tier, feature), [tier, feature]);
 
     return { hasAccess, isLoading, tier };
 }

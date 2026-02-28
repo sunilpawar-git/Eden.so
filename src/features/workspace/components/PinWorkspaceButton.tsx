@@ -3,12 +3,9 @@
  * Gated behind subscription: free users see upgrade prompt.
  * All text from strings.pinning.* -- no hardcoded strings.
  */
-import { useCallback, useState, useEffect } from 'react';
-import { usePinnedWorkspaceStore } from '../stores/pinnedWorkspaceStore';
-import { useFeatureGate } from '@/features/subscription/hooks/useFeatureGate';
-import { GATED_FEATURES } from '@/features/subscription/types/subscription';
+import React from 'react';
+import { usePinWorkspaceButton } from '../hooks/usePinWorkspaceButton';
 import { UpgradePrompt } from '@/shared/components/UpgradePrompt';
-import { storageQuotaService } from '@/shared/services/storageQuotaService';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import styles from './PinWorkspaceButton.module.css';
@@ -17,46 +14,13 @@ interface PinWorkspaceButtonProps {
     workspaceId: string;
 }
 
-export function PinWorkspaceButton({ workspaceId }: PinWorkspaceButtonProps) {
-    const isPinned = usePinnedWorkspaceStore((s) => s.isPinned(workspaceId));
-    const { hasAccess } = useFeatureGate(GATED_FEATURES.offlinePin);
-    const [showUpgrade, setShowUpgrade] = useState(false);
-    const [storageLabel, setStorageLabel] = useState<string | null>(null);
+export const PinWorkspaceButton = React.memo(function PinWorkspaceButton({ workspaceId }: PinWorkspaceButtonProps) {
+    const { isPinned, showUpgrade, setShowUpgrade, storageLabel, handleToggle } = usePinWorkspaceButton(workspaceId);
 
-    // Show storage usage when pinned
-    useEffect(() => {
-        if (!isPinned) {
-            setStorageLabel(null);
-            return;
-        }
-        void storageQuotaService.getQuotaInfo().then((info) => {
-            if (info.isAvailable && info.usageBytes > 0) {
-                setStorageLabel(storageQuotaService.formatBytes(info.usageBytes));
-            }
-        });
-    }, [isPinned]);
-
-    const handleToggle = useCallback(async () => {
-        if (!hasAccess && !isPinned) {
-            setShowUpgrade(true);
-            return;
-        }
-        const store = usePinnedWorkspaceStore.getState();
-        if (isPinned) {
-            await store.unpinWorkspace(workspaceId);
-        } else {
-            await store.pinWorkspace(workspaceId);
-        }
-    }, [hasAccess, isPinned, workspaceId]);
-
-    const label = isPinned
-        ? strings.pinning.unpin
-        : strings.pinning.pin;
-
+    const label = isPinned ? strings.pinning.unpin : strings.pinning.pin;
     const storageInfo = isPinned && storageLabel
         ? ` (${strings.pinning.storageUsage}: ${storageLabel})`
         : '';
-
     const title = isPinned
         ? `${strings.pinning.unpinTooltip}${storageInfo}`
         : strings.pinning.pinTooltip;
@@ -92,4 +56,4 @@ export function PinWorkspaceButton({ workspaceId }: PinWorkspaceButtonProps) {
             )}
         </>
     );
-}
+});

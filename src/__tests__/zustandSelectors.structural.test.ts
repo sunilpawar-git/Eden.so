@@ -76,9 +76,23 @@ const BARE_DESTRUCTURING_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
 const CLOSURE_VARIABLE_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
     {
         name: 'getNodeMap inside useCanvasStore selector',
-        // Detects: useCanvasStore((s) => ... getNodeMap(s.nodes) ...)
-        // Should be: const nodes = useCanvasStore(s => s.nodes); useMemo(() => getNodeMap(nodes)...)
         pattern: /useCanvasStore\(\s*(?:useShallow\s*\()?\s*\(\s*\w+\s*\)\s*=>\s*[^)]*getNodeMap\s*\(/,
+    },
+    {
+        name: 'method call (s.fn(arg)) inside any store selector',
+        pattern: /use\w+Store\(\s*\(\s*\w+\s*\)\s*=>\s*\w+\.(?:hasAccess|isPinned|isSelected|getById)\s*\(/,
+    },
+];
+
+/**
+ * Action-via-selector anti-patterns.
+ * Actions should be accessed via getState(), not selected via hooks.
+ * Selecting actions causes unnecessary subscriptions to the store.
+ */
+const ACTION_SELECTOR_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
+    {
+        name: 'action selected via useSettingsStore selector',
+        pattern: /use(?:Settings|Auth|Canvas|Workspace|Toast|Confirm|Focus|KnowledgeBank)Store\(\s*\(\s*\w+\s*\)\s*=>\s*\w+\.(?:set\w+|toggle\w+|reset\w+|remove\w+|add\w+|clear\w+|load\w+|update\w+|start\w+|stop\w+|confirm)\b/,
     },
 ];
 
@@ -172,6 +186,33 @@ describe('Zustand selector enforcement', () => {
                 `Files with closure variables in selectors (use useMemo instead):\n` +
                 `  Pattern: ${pattern.toString()}\n` +
                 `  Fix: const nodes = useCanvasStore(s => s.nodes); useMemo(() => getNodeMap(nodes)...)\n\n` +
+                `  Violations:\n${violations.map((v) => `    - ${v}`).join('\n')}`
+            ).toEqual([]);
+        }
+    );
+
+    it.each(ACTION_SELECTOR_PATTERNS)(
+        'no file uses $name',
+        ({ pattern }) => {
+            const violations: string[] = [];
+
+            for (const file of files) {
+                const relPath = rel(file);
+                if (ALLOWLIST.includes(relPath)) continue;
+                if (relPath.includes('__tests__')) continue;
+                if (relPath.endsWith('.test.ts') || relPath.endsWith('.test.tsx')) continue;
+
+                const content = readFileSync(file, 'utf-8');
+                if (pattern.test(content)) {
+                    violations.push(relPath);
+                }
+            }
+
+            expect(
+                violations,
+                `Files selecting actions via selectors (use getState() instead):\n` +
+                `  Pattern: ${pattern.toString()}\n` +
+                `  Fix: useStore.getState().action() instead of useStore((s) => s.action)\n\n` +
                 `  Violations:\n${violations.map((v) => `    - ${v}`).join('\n')}`
             ).toEqual([]);
         }

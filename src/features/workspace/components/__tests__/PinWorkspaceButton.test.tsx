@@ -8,15 +8,14 @@ import { PinWorkspaceButton } from '../PinWorkspaceButton';
 import { strings } from '@/shared/localization/strings';
 
 // Mock the pinned workspace store
-const mockIsPinned = vi.fn().mockReturnValue(false);
+let mockPinnedIds: string[] = [];
 const mockPinWorkspace = vi.fn().mockResolvedValue(true);
 const mockUnpinWorkspace = vi.fn().mockResolvedValue(true);
 
 const buildPinState = () => ({
-    isPinned: mockIsPinned,
+    pinnedIds: mockPinnedIds,
     pinWorkspace: mockPinWorkspace,
     unpinWorkspace: mockUnpinWorkspace,
-    pinnedIds: [],
 });
 
 vi.mock('../../stores/pinnedWorkspaceStore', () => {
@@ -54,13 +53,13 @@ vi.mock('@/shared/stores/toastStore', () => ({
 
 describe('PinWorkspaceButton', () => {
     it('renders with pin label when not pinned', () => {
-        mockIsPinned.mockReturnValue(false);
+        mockPinnedIds = [];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
         expect(screen.getByLabelText(strings.pinning.pin)).toBeInTheDocument();
     });
 
     it('renders with unpin label when pinned', async () => {
-        mockIsPinned.mockReturnValue(true);
+        mockPinnedIds = ['ws-1'];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
         await waitFor(() => {
             expect(screen.getByLabelText(strings.pinning.unpin)).toBeInTheDocument();
@@ -68,14 +67,14 @@ describe('PinWorkspaceButton', () => {
     });
 
     it('calls pinWorkspace on click when not pinned', () => {
-        mockIsPinned.mockReturnValue(false);
+        mockPinnedIds = [];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
         fireEvent.click(screen.getByLabelText(strings.pinning.pin));
         expect(mockPinWorkspace).toHaveBeenCalledWith('ws-1');
     });
 
     it('calls unpinWorkspace on click when pinned', async () => {
-        mockIsPinned.mockReturnValue(true);
+        mockPinnedIds = ['ws-1'];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
         await waitFor(() => {
             expect(screen.getByLabelText(strings.pinning.unpin)).toBeInTheDocument();
@@ -85,13 +84,13 @@ describe('PinWorkspaceButton', () => {
     });
 
     it('uses string resources for tooltip', () => {
-        mockIsPinned.mockReturnValue(false);
+        mockPinnedIds = [];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
         expect(screen.getByTitle(strings.pinning.pinTooltip)).toBeInTheDocument();
     });
 
     it('shows storage usage in tooltip when pinned', async () => {
-        mockIsPinned.mockReturnValue(true);
+        mockPinnedIds = ['ws-1'];
         render(<PinWorkspaceButton workspaceId="ws-1" />);
 
         // Wait for async storage quota fetch
@@ -99,5 +98,25 @@ describe('PinWorkspaceButton', () => {
             const button = screen.getByLabelText(strings.pinning.unpin);
             expect(button.getAttribute('title')).toContain(strings.pinning.storageUsage);
         });
+    });
+
+    it('shows pin label when other workspaces are pinned but not this one', () => {
+        mockPinnedIds = ['ws-other', 'ws-another'];
+        render(<PinWorkspaceButton workspaceId="ws-1" />);
+        expect(screen.getByLabelText(strings.pinning.pin)).toBeInTheDocument();
+    });
+
+    it('shows unpin label when this workspace is among multiple pinned', async () => {
+        mockPinnedIds = ['ws-other', 'ws-1', 'ws-another'];
+        render(<PinWorkspaceButton workspaceId="ws-1" />);
+        await waitFor(() => {
+            expect(screen.getByLabelText(strings.pinning.unpin)).toBeInTheDocument();
+        });
+    });
+
+    it('shows pin label when pinnedIds is empty', () => {
+        mockPinnedIds = [];
+        render(<PinWorkspaceButton workspaceId="ws-1" />);
+        expect(screen.getByLabelText(strings.pinning.pin)).toBeInTheDocument();
     });
 });

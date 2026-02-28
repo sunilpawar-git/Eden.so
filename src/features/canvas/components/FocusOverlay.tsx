@@ -4,7 +4,7 @@
  * Reuses NodeHeading and TagInput for consistent editing UX.
  * ViewModel logic extracted to useFocusOverlayActions.
  */
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '@/shared/localization/strings';
 import { useFocusMode } from '../hooks/useFocusMode';
@@ -27,7 +27,11 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
     const tagIds = focusedNode?.data.tags ?? [];
     const linkPreviews = focusedNode?.data.linkPreviews;
     const colorKey = normalizeNodeColorKey(focusedNode?.data.colorKey);
-    const isEditing = useCanvasStore((s) => s.editingNodeId === nodeId && nodeId !== '');
+    const editingNodeId = useCanvasStore((s) => s.editingNodeId);
+    const isEditing = useMemo(
+        () => editingNodeId === nodeId && nodeId !== '',
+        [editingNodeId, nodeId],
+    );
 
     const { editor, handleDoubleClick, handleHeadingChange, handleTagsChange, saveBeforeExit } =
         useFocusOverlayActions({ nodeId, output, isEditing, onExit: exitFocus });

@@ -170,6 +170,43 @@ describe('FocusOverlay', () => {
             fireEvent.doubleClick(screen.getByTestId('focus-heading'));
             expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
         });
+
+        it('isEditing is true when editingNodeId matches focusedNodeId', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
+            expect(screen.queryByTestId('focus-content-area')).toBeInTheDocument();
+        });
+
+        it('isEditing becomes false when editingNodeId clears', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            render(<FocusOverlay />);
+            act(() => { useCanvasStore.setState({ editingNodeId: null }); });
+            const contentArea = screen.getByTestId('focus-content-area');
+            expect(contentArea).toBeInTheDocument();
+            expect(contentArea.getAttribute('onDoubleClick')).not.toBeNull;
+        });
+
+        it('isEditing is false when editingNodeId targets a different node', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            useCanvasStore.setState({ editingNodeId: 'node-no-tags' });
+            render(<FocusOverlay />);
+            const contentArea = screen.getByTestId('focus-content-area');
+            expect(contentArea).toBeInTheDocument();
+        });
+
+        it('isEditing reacts to editingNodeId store changes', () => {
+            useFocusStore.setState({ focusedNodeId: 'node-1' });
+            const { rerender } = render(<FocusOverlay />);
+            expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
+
+            act(() => { useCanvasStore.setState({ editingNodeId: null }); });
+            rerender(<FocusOverlay />);
+
+            act(() => { useCanvasStore.setState({ editingNodeId: 'node-1' }); });
+            rerender(<FocusOverlay />);
+            expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
+        });
     });
 
     describe('Save on exit', () => {

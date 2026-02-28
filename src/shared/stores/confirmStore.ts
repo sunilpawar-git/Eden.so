@@ -63,8 +63,9 @@ export const useConfirmStore = create<ConfirmStore>((set, get) => ({
 }));
 
 /**
- * Convenient hook to extract just the trigger function
+ * Convenient hook to extract just the trigger function.
+ * Uses getState() for stable reference -- no subscription needed for actions.
  */
 export const useConfirm = () => {
-    return useConfirmStore((state) => state.confirm);
+    return useConfirmStore.getState().confirm;
 };
