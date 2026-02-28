@@ -184,7 +184,7 @@ describe('FocusOverlay', () => {
             act(() => { useCanvasStore.setState({ editingNodeId: null }); });
             const contentArea = screen.getByTestId('focus-content-area');
             expect(contentArea).toBeInTheDocument();
-            expect(contentArea.getAttribute('onDoubleClick')).not.toBeNull;
+            expect(contentArea.getAttribute('onDoubleClick')).not.toBeNull();
         });
 
         it('isEditing is false when editingNodeId targets a different node', () => {
