@@ -7,6 +7,7 @@
  * to prevent overwriting local edits. @see mergeNodes.ts
  */
 import { useState, useEffect } from 'react';
+import type { Viewport } from '@xyflow/react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCanvasStore, EMPTY_SELECTED_IDS } from '@/features/canvas/stores/canvasStore';
 import type { CanvasNode } from '@/features/canvas/types/node';
@@ -23,8 +24,10 @@ interface UseWorkspaceLoaderResult {
     hasOfflineData: boolean;
 }
 
-type UpdateCallback = (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
+type UpdateCallback = (nodes: CanvasNode[], edges: CanvasEdge[], viewport?: Viewport) => void;
 type MergeCallback = (freshNodes: CanvasNode[], freshEdges: CanvasEdge[]) => void;
+
+const DEFAULT_VIEWPORT: Viewport = { x: 32, y: 32, zoom: 1 };
 
 /** Background-refresh from Firestore, merging with local state */
 async function backgroundRefresh(
@@ -56,12 +59,12 @@ async function loadFromFirestore(
         loadNodes(userId, workspaceId),
         loadEdges(userId, workspaceId),
     ]);
-    onUpdate(nodes, edges);
-    workspaceCache.set(workspaceId, { nodes, edges, loadedAt: Date.now() });
+    onUpdate(nodes, edges, DEFAULT_VIEWPORT);
+    workspaceCache.set(workspaceId, { nodes, edges, viewport: DEFAULT_VIEWPORT, loadedAt: Date.now() });
 }
 
 export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResult {
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasOfflineData, setHasOfflineData] = useState(false);
@@ -75,12 +78,27 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
         const userId = user.id;
         let mounted = true;
 
-        const applyIfMounted: UpdateCallback = (nodes, edges) => {
+        const applyIfMounted: UpdateCallback = (nodes, edges, viewport) => {
             if (!mounted) return;
             const current = useCanvasStore.getState();
-            if (current.nodes === nodes && current.edges === edges) return;
+            const newViewport = viewport ?? DEFAULT_VIEWPORT;
+
+            // Skip update only if nodes, edges, AND viewport are identical
+            if (
+                current.nodes === nodes &&
+                current.edges === edges &&
+                current.viewport.x === newViewport.x &&
+                current.viewport.y === newViewport.y &&
+                current.viewport.zoom === newViewport.zoom
+            ) {
+                return;
+            }
+
             useCanvasStore.setState({
-                nodes, edges, selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
+                nodes,
+                edges,
+                selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
+                viewport: newViewport,
             });
         };
 
@@ -95,6 +113,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
             workspaceCache.set(workspaceId, {
                 nodes: mergedNodes,
                 edges: mergedEdges,
+                viewport: state.viewport,
                 loadedAt: Date.now(),
             });
         };
@@ -108,7 +127,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
             if (mounted) setHasOfflineData(cached != null);
 
             if (cached) {
-                applyIfMounted(cached.nodes, cached.edges);
+                applyIfMounted(cached.nodes, cached.edges, cached.viewport);
                 if (mounted) setIsLoading(false);
                 await backgroundRefresh(userId, workspaceId, mergeIfMounted);
                 return;

@@ -5,9 +5,13 @@ import { useToastStore } from '../stores/toastStore';
 import styles from './Toast.module.css';
 
 export function ToastContainer() {
-    const { toasts, removeToast } = useToastStore();
+    const toasts = useToastStore((s) => s.toasts);
 
     if (toasts.length === 0) return null;
+
+    const handleRemove = (id: string) => {
+        useToastStore.getState().removeToast(id);
+    };
 
     return (
         <div className={styles.container}>
@@ -16,7 +20,7 @@ export function ToastContainer() {
                     <span className={styles.message}>{t.message}</span>
                     <button
                         className={styles.close}
-                        onClick={() => removeToast(t.id)}
+                        onClick={() => handleRemove(t.id)}
                         aria-label="Close"
                     >
                         ×

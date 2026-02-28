@@ -3,7 +3,7 @@
  * Neighbor-aware algorithm: nodes only shift when they vertically overlap with wider neighbors
  */
 import type { CanvasNode, NodePosition } from '../types/node';
-import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '../types/node';
+import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, isNodePinned } from '../types/node';
 import type { ColumnStack, NodePlacement } from '../types/masonryLayout';
 import { checkVerticalOverlap, getDefaultColumnX } from '../types/masonryLayout';
 
@@ -166,12 +166,14 @@ function computeNeighborAwareX(stacks: Map<number, ColumnStack>): void {
  * Finds the shortest column and stacks that place.
  */
 export function calculateMasonryPosition(nodes: CanvasNode[]): NodePosition {
-    if (nodes.length === 0) {
+    const unpinned = nodes.filter((n) => !isNodePinned(n));
+
+    if (unpinned.length === 0) {
         return { x: GRID_PADDING, y: GRID_PADDING };
     }
 
-    // Sort nodes by creation date
-    const sorted = [...nodes].sort(
+    // Sort unpinned nodes by creation date
+    const sorted = [...unpinned].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
@@ -205,32 +207,41 @@ export function calculateMasonryPosition(nodes: CanvasNode[]): NodePosition {
         newNodeHeight
     );
 
-    const targetX = targetCol === 0
-        ? GRID_PADDING
-        : maxRightEdge !== null
-            ? maxRightEdge + GRID_GAP
-            : getDefaultColumnX(targetCol, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
+    let targetX: number;
+    if (targetCol === 0) {
+        targetX = GRID_PADDING;
+    } else if (maxRightEdge !== null) {
+        targetX = maxRightEdge + GRID_GAP;
+    } else {
+        targetX = getDefaultColumnX(targetCol, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
+    }
 
     return { x: targetX, y: targetY };
 }
 
 /**
- * Rearranges all nodes using the neighbor-aware Masonry algorithm.
- * Multi-pass algorithm:
- *   Pass 1: Assign nodes to columns (shortest-first)
+ * Rearranges unpinned nodes using the neighbor-aware Masonry algorithm.
+ * Pinned nodes keep their current position. Input array order is preserved.
+ *
+ * Multi-pass algorithm (unpinned nodes only):
+ *   Pass 1: Assign to columns (shortest-first, sorted by createdAt)
  *   Pass 2: Build column stacks with Y positions
  *   Pass 3: Compute neighbor-aware X positions
- *   Pass 4: Map placements back to nodes
+ *   Pass 4: Map placements back, preserving input order
  */
 export function arrangeMasonry(nodes: CanvasNode[]): CanvasNode[] {
     if (nodes.length === 0) return [];
 
-    // Sort by creation date
-    const sorted = [...nodes].sort(
+    const unpinned = nodes.filter((n) => !isNodePinned(n));
+
+    if (unpinned.length === 0) return nodes;
+
+    // Sort unpinned by creation date
+    const sorted = [...unpinned].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // Pass 1: Assign nodes to columns
+    // Pass 1: Assign unpinned nodes to columns
     const assignments = assignNodesToColumns(sorted);
 
     // Pass 2: Build column stacks with Y positions
@@ -247,11 +258,12 @@ export function arrangeMasonry(nodes: CanvasNode[]): CanvasNode[] {
         }
     }
 
-    // Map back to nodes in original assignment order
-    return assignments.map(({ node }) => {
+    // Map over original array to preserve input order
+    return nodes.map((node) => {
+        if (isNodePinned(node)) return node;
+
         const placement = placementMap.get(node.id);
         if (!placement) {
-            // Fallback (should not happen)
             return { ...node, updatedAt: new Date() };
         }
 
@@ -264,26 +276,13 @@ export function arrangeMasonry(nodes: CanvasNode[]): CanvasNode[] {
 }
 
 /**
- * Incrementally rearranges nodes after a single node resize.
- * More efficient than full arrangeMasonry - only updates affected nodes.
- * 
- * For width changes: only shifts nodes in adjacent columns that overlap vertically
- * For height changes: only shifts nodes below in the same column
- * 
- * Note: This uses the same algorithm as arrangeMasonry but is semantically
- * clearer for the resize use case. The neighbor-aware algorithm inherently
- * handles incremental updates correctly.
+ * Rearranges nodes after a single node resize.
+ * Delegates to arrangeMasonry (pinned nodes excluded, input order preserved).
+ * @param _resizedNodeId - Reserved for future incremental optimization
  */
 export function rearrangeAfterResize(
     nodes: CanvasNode[],
     _resizedNodeId: string
 ): CanvasNode[] {
-    // The neighbor-aware algorithm already handles incremental updates correctly:
-    // - Width changes only affect overlapping neighbors (not global column width)
-    // - Height changes only affect nodes below in the same column
-    // 
-    // For now, we use the full arrangeMasonry which is already O(n) and 
-    // produces correct neighbor-aware results. Future optimization could
-    // track which nodes actually changed position and skip unchanged nodes.
     return arrangeMasonry(nodes);
 }

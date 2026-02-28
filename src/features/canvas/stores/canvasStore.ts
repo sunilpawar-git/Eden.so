@@ -3,6 +3,7 @@
  * Performance: Selection state decoupled from nodes array
  */
 import { create } from 'zustand';
+import type { Viewport } from '@xyflow/react';
 import type { CanvasNode, NodePosition, LinkPreviewMetadata, NodeColorKey } from '../types/node';
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
@@ -43,6 +44,7 @@ interface CanvasState {
     nodes: CanvasNode[];
     edges: CanvasEdge[];
     selectedNodeIds: Set<string>;
+    viewport: Viewport;
 
     // Editing state (SSOT — only one node editable at a time)
     editingNodeId: string | null;
@@ -93,6 +95,9 @@ interface CanvasActions {
     setEdges: (edges: CanvasEdge[]) => void;
     clearCanvas: () => void;
 
+    // Viewport actions
+    setViewport: (viewport: Viewport) => void;
+
     // Editing state actions (SSOT for "who is editing")
     startEditing: (nodeId: string) => void;
     stopEditing: () => void;
@@ -113,6 +118,7 @@ const initialState: CanvasState = {
     nodes: [],
     edges: [],
     selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
+    viewport: { x: 32, y: 32, zoom: 1 },
     editingNodeId: null,
     draftContent: null,
     inputMode: 'note',
@@ -217,8 +223,11 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     clearCanvas: () => set({
         nodes: [], edges: [], selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
+        viewport: { x: 32, y: 32, zoom: 1 },
         editingNodeId: null, draftContent: null, inputMode: 'note',
     }),
+
+    setViewport: (viewport) => set({ viewport }),
 
     // Editing state actions
     startEditing: (nodeId) => set({ editingNodeId: nodeId, draftContent: null, inputMode: 'note' }),

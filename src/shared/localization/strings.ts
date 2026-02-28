@@ -196,6 +196,9 @@ export const strings = {
         arrangeNodes: 'Auto Arrange',
         arrangeTooltip: 'Arrange nodes in masonry grid',
         arrangeSuccess: 'Nodes arranged in grid',
+        arrangeSuccessWithPinned: (pinnedCount: number) =>
+            `Nodes arranged in grid (${pinnedCount} pinned ${pinnedCount === 1 ? 'node' : 'nodes'} kept in place)`,
+        allNodesPinned: 'All nodes are pinned — nothing to arrange',
         arrangingNodes: 'Arranging nodes...',
         neighborAwareLayout: 'Neighbor-aware layout',
         incrementalRearrange: 'Incremental rearrange',

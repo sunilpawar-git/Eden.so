@@ -3,18 +3,23 @@
  * Replaces window.confirm for a non-blocking, themed UX.
  */
 import { useConfirmStore } from '@/shared/stores/confirmStore';
+import { strings } from '@/shared/localization/strings';
 import styles from './ConfirmDialog.module.css';
 
 export function ConfirmDialog() {
-    const { isOpen, options, handleConfirm, handleCancel } = useConfirmStore();
+    const isOpen = useConfirmStore((s) => s.isOpen);
+    const options = useConfirmStore((s) => s.options);
 
     if (!isOpen || !options) return null;
+
+    const handleConfirm = () => useConfirmStore.getState().handleConfirm();
+    const handleCancel = () => useConfirmStore.getState().handleCancel();
 
     const {
         title,
         message,
-        confirmText = 'Confirm',
-        cancelText = 'Cancel',
+        confirmText = strings.common.confirm,
+        cancelText = strings.common.cancel,
         isDestructive = false,
     } = options;
 

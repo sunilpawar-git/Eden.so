@@ -49,8 +49,12 @@ vi.mock('@/features/knowledgeBank/stores/knowledgeBankStore', () => ({
     }),
 }));
 
+// Mock auth store - must handle selector pattern: useAuthStore((s) => s.user)
 vi.mock('@/features/auth/stores/authStore', () => ({
-    useAuthStore: () => ({ user: { id: 'user-1', email: 'a@b.com' } }),
+    useAuthStore: (selector?: (s: { user: { id: string; email: string } }) => unknown) => {
+        const state = { user: { id: 'user-1', email: 'a@b.com' } };
+        return typeof selector === 'function' ? selector(state) : state;
+    },
 }));
 
 const cachedNodes = [{ id: 'n1', type: 'idea', data: { prompt: 'P' } }];
@@ -64,6 +68,7 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
             getState: () => ({
                 nodes: cachedNodes,
                 edges: cachedEdges,
+                viewport: { x: 32, y: 32, zoom: 1 },
                 editingNodeId: null,
             }),
             setState: (...args: unknown[]) => mockCanvasSetState(...args),

@@ -4,6 +4,7 @@
  * Persistent layer uses IndexedDB via idbCacheService.
  * SOLID: Single Responsibility - only handles caching.
  */
+import type { Viewport } from '@xyflow/react';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import { loadNodes, loadEdges } from './workspaceService';
@@ -12,6 +13,7 @@ import { idbCacheService } from './idbCacheService';
 export interface WorkspaceData {
     nodes: CanvasNode[];
     edges: CanvasEdge[];
+    viewport?: Viewport;
     loadedAt: number;
 }
 

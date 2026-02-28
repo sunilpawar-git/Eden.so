@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useConfirmStore } from '../confirmStore';
+import { useConfirmStore, useConfirm } from '../confirmStore';
 
 describe('confirmStore', () => {
     beforeEach(() => {
@@ -68,5 +68,39 @@ describe('confirmStore', () => {
         // Should close after rejecting
         expect(result.current.isOpen).toBe(false);
         expect(result.current.options).toBeNull();
+    });
+});
+
+describe('useConfirm hook', () => {
+    beforeEach(() => {
+        useConfirmStore.setState({
+            isOpen: false,
+            options: null,
+            resolve: null,
+        });
+    });
+
+    it('returns the confirm function from getState()', () => {
+        const { result } = renderHook(() => useConfirm());
+        expect(typeof result.current).toBe('function');
+    });
+
+    it('returns a stable function reference across re-renders', () => {
+        const { result, rerender } = renderHook(() => useConfirm());
+        const first = result.current;
+        rerender();
+        const second = result.current;
+        expect(first).toBe(second);
+    });
+
+    it('opens confirm dialog when called', () => {
+        const { result } = renderHook(() => useConfirm());
+        const options = { title: 'Test', message: 'Are you sure?' };
+
+        act(() => { result.current(options); });
+
+        const state = useConfirmStore.getState();
+        expect(state.isOpen).toBe(true);
+        expect(state.options).toEqual(options);
     });
 });

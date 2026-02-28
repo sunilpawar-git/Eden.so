@@ -10,8 +10,9 @@ import { useConfirm } from '@/shared/stores/confirmStore';
 import styles from './WorkspaceControls.module.css';
 
 export function DeleteWorkspaceButton() {
-    const { user } = useAuthStore();
-    const { currentWorkspaceId, workspaces, removeWorkspace, setCurrentWorkspaceId } = useWorkspaceStore();
+    const user = useAuthStore((s) => s.user);
+    const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
+    const workspaces = useWorkspaceStore((s) => s.workspaces);
     const [isDeleting, setIsDeleting] = useState(false);
     const confirm = useConfirm();
 
@@ -35,14 +36,15 @@ export function DeleteWorkspaceButton() {
         setIsDeleting(true);
         try {
             await deleteWorkspace(userId, currentWorkspaceId);
-            removeWorkspace(currentWorkspaceId);
+            // Use getState() for actions - stable references, no re-render dependency
+            useWorkspaceStore.getState().removeWorkspace(currentWorkspaceId);
 
             const remainingWorkspaces = workspaces.filter(ws => ws.id !== currentWorkspaceId);
             const nextWorkspace = remainingWorkspaces[0];
             if (nextWorkspace) {
-                setCurrentWorkspaceId(nextWorkspace.id);
+                useWorkspaceStore.getState().setCurrentWorkspaceId(nextWorkspace.id);
             } else {
-                setCurrentWorkspaceId(DEFAULT_WORKSPACE_ID);
+                useWorkspaceStore.getState().setCurrentWorkspaceId(DEFAULT_WORKSPACE_ID);
                 useCanvasStore.getState().clearCanvas();
             }
 
@@ -53,7 +55,7 @@ export function DeleteWorkspaceButton() {
         } finally {
             setIsDeleting(false);
         }
-    }, [user, currentWorkspaceId, workspaces, removeWorkspace, setCurrentWorkspaceId, isDeleting, confirm]);
+    }, [user, currentWorkspaceId, workspaces, isDeleting, confirm]);
 
     return (
         <button

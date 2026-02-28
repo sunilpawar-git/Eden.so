@@ -41,7 +41,7 @@ const SettingsPanel = lazy(() =>
 );
 
 function AuthenticatedApp() {
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
@@ -105,7 +105,8 @@ function AuthenticatedApp() {
 }
 
 function AppContent() {
-    const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const authLoading = useAuthStore((s) => s.isLoading);
 
     // Auth loading state
     if (authLoading) {

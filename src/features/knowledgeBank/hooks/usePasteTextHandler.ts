@@ -9,6 +9,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
+import { trackKbEntryAdded } from '@/shared/services/analyticsService';
 
 export function usePasteTextHandler(onSuccess: () => void) {
     const kb = strings.knowledgeBank;
@@ -26,6 +27,7 @@ export function usePasteTextHandler(onSuccess: () => void) {
                     content,
                 });
                 useKnowledgeBankStore.getState().addEntry(entry);
+                trackKbEntryAdded('paste');
                 onSuccess();
                 toast.success(kb.saveEntry);
             } catch (error) {

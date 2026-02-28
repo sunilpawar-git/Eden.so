@@ -19,6 +19,7 @@ function cloneNodeData(source: IdeaNodeData): IdeaNodeData {
     delete cloned.calendarEvent;
     cloned.isGenerating = false;
     cloned.isPromptCollapsed = false;
+    cloned.isPinned = false;
     return cloned;
 }
 

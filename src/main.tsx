@@ -6,6 +6,12 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { initWebVitals } from '@/shared/services/performanceService';
+import { initSentry } from '@/shared/services/sentryService';
+import { initAnalytics } from '@/shared/services/analyticsService';
+
+// Initialize observability before rendering so first errors are captured
+initSentry();
+initAnalytics();
 
 const rootElement = document.getElementById('root');
 

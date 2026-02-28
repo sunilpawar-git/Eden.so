@@ -2,7 +2,7 @@
  * DeletableEdge - Custom edge with midpoint delete button
  * Renders bezier path with hover-activated delete control
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
     getBezierPath,
     BaseEdge,
@@ -64,6 +64,10 @@ export const DeletableEdge = React.memo(function DeletableEdge({
     const handleMouseLeave = useCallback(() => setIsHovered(false), []);
 
     const edgeClass = getEdgeClassName(connectorStyle);
+    const labelStyle = useMemo(
+        () => ({ transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)` }),
+        [labelX, labelY],
+    );
 
     return (
         <>
@@ -82,9 +86,7 @@ export const DeletableEdge = React.memo(function DeletableEdge({
             <EdgeLabelRenderer>
                 <div
                     className={`${styles.deleteButtonWrapper} ${isHovered ? styles.visible : ''} nodrag nopan`}
-                    style={{
-                        transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-                    }}
+                    style={labelStyle}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >

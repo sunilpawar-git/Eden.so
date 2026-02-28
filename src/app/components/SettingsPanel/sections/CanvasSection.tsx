@@ -1,6 +1,7 @@
 /**
  * Canvas Section - Canvas grid, auto-save, and scroll mode settings
  */
+import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSettingsStore, type CanvasScrollMode, type ConnectorStyle } from '@/shared/stores/settingsStore';
 import styles from '../SettingsPanel.module.css';
@@ -28,17 +29,12 @@ const CONNECTOR_STYLE_OPTIONS: readonly ConnectorStyleOption[] = [
     { value: 'dotted', label: strings.settings.connectorDotted },
 ];
 
-export function CanvasSection() {
+export const CanvasSection = React.memo(function CanvasSection() {
     const canvasGrid = useSettingsStore((state) => state.canvasGrid);
-    const toggleCanvasGrid = useSettingsStore((state) => state.toggleCanvasGrid);
     const canvasFreeFlow = useSettingsStore((state) => state.canvasFreeFlow);
-    const toggleCanvasFreeFlow = useSettingsStore((state) => state.toggleCanvasFreeFlow);
     const autoSave = useSettingsStore((state) => state.autoSave);
-    const setAutoSave = useSettingsStore((state) => state.setAutoSave);
     const canvasScrollMode = useSettingsStore((state) => state.canvasScrollMode);
-    const setCanvasScrollMode = useSettingsStore((state) => state.setCanvasScrollMode);
     const connectorStyle = useSettingsStore((state) => state.connectorStyle);
-    const setConnectorStyle = useSettingsStore((state) => state.setConnectorStyle);
 
     return (
         <div className={styles.section}>
@@ -47,7 +43,7 @@ export function CanvasSection() {
                 <input
                     type="checkbox"
                     checked={canvasGrid}
-                    onChange={toggleCanvasGrid}
+                    onChange={() => useSettingsStore.getState().toggleCanvasGrid()}
                 />
                 <span>{strings.settings.canvasGrid}</span>
             </label>
@@ -56,7 +52,7 @@ export function CanvasSection() {
                 <input
                     type="checkbox"
                     checked={canvasFreeFlow}
-                    onChange={toggleCanvasFreeFlow}
+                    onChange={() => useSettingsStore.getState().toggleCanvasFreeFlow()}
                 />
                 <span>{strings.settings.freeFlow}</span>
             </label>
@@ -70,7 +66,7 @@ export function CanvasSection() {
                             name="canvasScrollMode"
                             value={option.value}
                             checked={canvasScrollMode === option.value}
-                            onChange={() => setCanvasScrollMode(option.value)}
+                            onChange={() => useSettingsStore.getState().setCanvasScrollMode(option.value)}
                             aria-label={option.label}
                         />
                         <span>{option.label}</span>
@@ -87,7 +83,7 @@ export function CanvasSection() {
                             name="connectorStyle"
                             value={option.value}
                             checked={connectorStyle === option.value}
-                            onChange={() => setConnectorStyle(option.value)}
+                            onChange={() => useSettingsStore.getState().setConnectorStyle(option.value)}
                             aria-label={option.label}
                         />
                         <span>{option.label}</span>
@@ -100,10 +96,10 @@ export function CanvasSection() {
                 <input
                     type="checkbox"
                     checked={autoSave}
-                    onChange={() => setAutoSave(!autoSave)}
+                    onChange={() => useSettingsStore.getState().setAutoSave(!autoSave)}
                 />
                 <span>{strings.settings.autoSave}</span>
             </label>
         </div>
     );
-}
+});

@@ -14,6 +14,8 @@ import { useSubscriptionStore } from '@/features/subscription/stores/subscriptio
 import { createUserFromAuth } from '../types/user';
 import { strings } from '@/shared/localization/strings';
 import { checkCalendarConnection } from './calendarAuthService';
+import { setSentryUser, clearSentryUser } from '@/shared/services/sentryService';
+import { identifyUser, resetAnalyticsUser, trackSignIn, trackSignOut } from '@/shared/services/analyticsService';
 
 /**
  * Sign in with Google OAuth
@@ -35,7 +37,15 @@ export async function signInWithGoogle(): Promise<void> {
         );
 
         setUser(user);
+        setSentryUser(user.id);
+        identifyUser(user.id);
+        trackSignIn();
     } catch (error) {
+        // User closed the popup — not a real error, just reset loading state silently
+        if (error instanceof Error && error.message.includes('popup-closed-by-user')) {
+            useAuthStore.getState().setLoading(false);
+            return;
+        }
         const message = error instanceof Error ? error.message : strings.auth.signInFailed;
         setError(message);
         throw error;
@@ -57,7 +67,10 @@ export async function signOut(): Promise<void> {
         setError(message);
         throw error;
     } finally {
+        trackSignOut();
         clearUser();
+        clearSentryUser();
+        resetAnalyticsUser();
         useSubscriptionStore.getState().reset();
     }
 }
@@ -80,9 +93,13 @@ export function subscribeToAuthState(): () => void {
                 firebaseUser.photoURL
             );
             setUser(user);
+            setSentryUser(user.id);
+            identifyUser(user.id);
             checkCalendarConnection();
         } else {
             clearUser();
+            clearSentryUser();
+            resetAnalyticsUser();
         }
         setLoading(false);
     });

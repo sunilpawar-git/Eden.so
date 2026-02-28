@@ -28,6 +28,10 @@ vi.mock('@xyflow/react', async (importOriginal) => {
     };
 });
 
+vi.mock('../components/ViewportSync', () => ({
+    ViewportSync: () => null,
+}));
+
 describe('Canvas Scroll Mode Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();

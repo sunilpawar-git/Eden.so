@@ -31,6 +31,10 @@ vi.mock('../FocusOverlay', () => ({
     FocusOverlay: () => <div data-testid="mock-focus-overlay" />,
 }));
 
+vi.mock('../ViewportSync', () => ({
+    ViewportSync: () => null,
+}));
+
 describe('CanvasView', () => {
     beforeEach(() => {
         vi.clearAllMocks();

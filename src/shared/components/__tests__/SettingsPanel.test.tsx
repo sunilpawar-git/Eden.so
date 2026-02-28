@@ -4,32 +4,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsPanel } from '@/app/components/SettingsPanel';
-import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
 import { createMockSettingsState } from '@/shared/__tests__/helpers/mockSettingsState';
 
 // Mock the settings store
-vi.mock('@/shared/stores/settingsStore', () => ({
-    useSettingsStore: vi.fn(),
-}));
+const mockSetTheme = vi.fn();
+const mockToggleCanvasGrid = vi.fn();
+const mockSetAutoSave = vi.fn();
+const mockToggleCompactMode = vi.fn();
+
+function buildSettingsState() {
+    return createMockSettingsState({
+        setTheme: mockSetTheme,
+        toggleCanvasGrid: mockToggleCanvasGrid,
+        setAutoSave: mockSetAutoSave,
+        toggleCompactMode: mockToggleCompactMode,
+    });
+}
+
+vi.mock('@/shared/stores/settingsStore', () => {
+    const selectorFn = vi.fn((selector?: (s: Record<string, unknown>) => unknown) => {
+        const state = buildSettingsState();
+        return typeof selector === 'function' ? selector(state) : state;
+    });
+    Object.assign(selectorFn, { getState: () => buildSettingsState() });
+    return { useSettingsStore: selectorFn };
+});
 
 describe('SettingsPanel', () => {
-    const mockSetTheme = vi.fn();
-    const mockToggleCanvasGrid = vi.fn();
-    const mockSetAutoSave = vi.fn();
-    const mockToggleCompactMode = vi.fn();
-
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(useSettingsStore).mockImplementation((selector) => {
-            const state = createMockSettingsState({
-                setTheme: mockSetTheme,
-                toggleCanvasGrid: mockToggleCanvasGrid,
-                setAutoSave: mockSetAutoSave,
-                toggleCompactMode: mockToggleCompactMode,
-            });
-            return typeof selector === 'function' ? selector(state) : state;
-        });
     });
 
     describe('visibility', () => {

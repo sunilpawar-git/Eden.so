@@ -170,9 +170,9 @@ export function getUpstreamNodesFromArrays(
 export { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from '../services/gridLayoutService';
 
 /**
- * Arranges nodes in a grid layout (Masonry)
- * Sorts by createdAt (oldest first) and stacks in shortest column.
- * Pure function - does not mutate input.
+ * Arranges unpinned nodes in a masonry grid layout.
+ * Pinned nodes are excluded from arrangement and keep their position.
+ * Pure function — does not mutate input. Preserves input array order.
  */
 export function arrangeNodesInGrid(nodes: CanvasNode[]): CanvasNode[] {
     return arrangeMasonry(nodes);
@@ -187,9 +187,8 @@ export function calculateNextNodePosition(nodes: CanvasNode[]): NodePosition {
 }
 
 /**
- * Incrementally rearranges nodes after a single node resize.
- * More efficient than full arrangeNodesInGrid - only updates affected neighbors.
- * Pure function - does not mutate input.
+ * Rearranges nodes after a resize. Pinned nodes are excluded.
+ * Pure function — does not mutate input.
  */
 export function arrangeNodesAfterResize(
     nodes: CanvasNode[],

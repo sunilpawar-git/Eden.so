@@ -8,30 +8,46 @@ import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
 import { createMockSettingsState } from '@/shared/__tests__/helpers/mockSettingsState';
 
-vi.mock('@/shared/stores/settingsStore', () => ({
-    useSettingsStore: vi.fn(),
-}));
+const mockToggleCanvasGrid = vi.fn();
+const mockToggleCanvasFreeFlow = vi.fn();
+const mockSetAutoSave = vi.fn();
+const mockSetCanvasScrollMode = vi.fn();
+const mockSetConnectorStyle = vi.fn();
+
+function buildCanvasSettingsState(overrides?: Record<string, unknown>) {
+    return createMockSettingsState({
+        connectorStyle: 'solid' as const,
+        toggleCanvasGrid: mockToggleCanvasGrid,
+        toggleCanvasFreeFlow: mockToggleCanvasFreeFlow,
+        setAutoSave: mockSetAutoSave,
+        setCanvasScrollMode: mockSetCanvasScrollMode,
+        setConnectorStyle: mockSetConnectorStyle,
+        ...overrides,
+    });
+}
+
+vi.mock('@/shared/stores/settingsStore', () => {
+    const selectorFn = vi.fn((selector?: (s: Record<string, unknown>) => unknown) => {
+        const state = buildCanvasSettingsState();
+        return typeof selector === 'function' ? selector(state) : state;
+    });
+    Object.assign(selectorFn, { getState: () => buildCanvasSettingsState() });
+    return { useSettingsStore: selectorFn };
+});
+
+function applyOverrides(overrides: Record<string, unknown>) {
+    const impl = (selector?: (s: Record<string, unknown>) => unknown) => {
+        const state = buildCanvasSettingsState(overrides);
+        return typeof selector === 'function' ? selector(state) : state;
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useSettingsStore).mockImplementation(impl as any);
+    Object.assign(useSettingsStore, { getState: () => buildCanvasSettingsState(overrides) });
+}
 
 describe('CanvasSection', () => {
-    const mockToggleCanvasGrid = vi.fn();
-    const mockToggleCanvasFreeFlow = vi.fn();
-    const mockSetAutoSave = vi.fn();
-    const mockSetCanvasScrollMode = vi.fn();
-    const mockSetConnectorStyle = vi.fn();
-
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(useSettingsStore).mockImplementation((selector) => {
-            const state = createMockSettingsState({
-                connectorStyle: 'solid' as const,
-                toggleCanvasGrid: mockToggleCanvasGrid,
-                toggleCanvasFreeFlow: mockToggleCanvasFreeFlow,
-                setAutoSave: mockSetAutoSave,
-                setCanvasScrollMode: mockSetCanvasScrollMode,
-                setConnectorStyle: mockSetConnectorStyle,
-            });
-            return typeof selector === 'function' ? selector(state) : state;
-        });
     });
 
     it('should render free flow toggle', () => {
@@ -40,17 +56,7 @@ describe('CanvasSection', () => {
     });
 
     it('should reflect canvasFreeFlow state in checkbox', () => {
-        vi.mocked(useSettingsStore).mockImplementation((selector) => {
-            const state = createMockSettingsState({
-                canvasFreeFlow: true,
-                toggleCanvasFreeFlow: mockToggleCanvasFreeFlow,
-                toggleCanvasGrid: mockToggleCanvasGrid,
-                setAutoSave: mockSetAutoSave,
-                setCanvasScrollMode: mockSetCanvasScrollMode,
-                setConnectorStyle: mockSetConnectorStyle,
-            });
-            return typeof selector === 'function' ? selector(state) : state;
-        });
+        applyOverrides({ canvasFreeFlow: true });
 
         render(<CanvasSection />);
         const checkboxes = screen.getAllByRole('checkbox');
@@ -106,15 +112,7 @@ describe('CanvasSection', () => {
     });
 
     it('should call setCanvasScrollMode when zoom is selected', () => {
-        vi.mocked(useSettingsStore).mockImplementation((selector) => {
-            const state = createMockSettingsState({
-                canvasScrollMode: 'navigate' as const,
-                toggleCanvasGrid: mockToggleCanvasGrid,
-                setAutoSave: mockSetAutoSave,
-                setCanvasScrollMode: mockSetCanvasScrollMode,
-            });
-            return typeof selector === 'function' ? selector(state) : state;
-        });
+        applyOverrides({ canvasScrollMode: 'navigate' as const });
 
         render(<CanvasSection />);
         const zoomOption = screen.getByLabelText(strings.settings.canvasScrollZoom);

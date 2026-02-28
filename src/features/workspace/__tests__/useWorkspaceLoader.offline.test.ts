@@ -38,8 +38,12 @@ vi.mock('@/shared/stores/networkStatusStore', () => ({
     ),
 }));
 
+// Mock auth store - must handle selector pattern: useAuthStore((s) => s.user)
 vi.mock('@/features/auth/stores/authStore', () => ({
-    useAuthStore: () => ({ user: { id: 'user-1', email: 'test@test.com' } }),
+    useAuthStore: (selector?: (s: { user: { id: string; email: string } }) => unknown) => {
+        const state = { user: { id: 'user-1', email: 'test@test.com' } };
+        return typeof selector === 'function' ? selector(state) : state;
+    },
 }));
 
 // Avoid real KB service async side effects during loader tests.

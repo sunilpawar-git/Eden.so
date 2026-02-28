@@ -99,6 +99,17 @@ export interface IdeaNodeData {
     [key: string]: unknown;
 }
 
+/**
+ * SSOT check for whether a node is pinned.
+ * Defensive: handles missing/null data gracefully (e.g., legacy Firestore docs).
+ */
+export function isNodePinned(node: CanvasNode | { data?: IdeaNodeData | null }): boolean {
+    if (!node.data) {
+        return false;
+    }
+    return node.data.isPinned === true;
+}
+
 export interface CanvasNode {
     id: string;
     workspaceId: string;

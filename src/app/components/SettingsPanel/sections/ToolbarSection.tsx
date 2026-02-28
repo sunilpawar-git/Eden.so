@@ -2,6 +2,7 @@
  * ToolbarSection — Settings section for configuring dual-deck toolbar layout.
  * Users toggle actions between Bar 1 and Bar 2 with a simple arrow button.
  */
+import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { ALL_ACTION_IDS, MIN_ACTIONS_PER_DECK, countActionsPerDeck } from '@/features/canvas/types/utilsBarLayout';
@@ -29,10 +30,8 @@ const ACTION_ICONS: Record<UtilsBarActionId, string> = {
     tags: '🏷️', image: '🖼️', duplicate: '📑', focus: '🔍', collapse: '▾', color: '🎨', share: '📤',
 };
 
-export function ToolbarSection() {
+export const ToolbarSection = React.memo(function ToolbarSection() {
     const layout = useSettingsStore((s) => s.utilsBarLayout);
-    const setDeck = useSettingsStore((s) => s.setUtilsBarActionDeck);
-    const reset = useSettingsStore((s) => s.resetUtilsBarLayout);
     const counts = countActionsPerDeck(layout);
 
     const renderColumn = (deck: UtilsBarDeck, title: string) => {
@@ -51,7 +50,7 @@ export function ToolbarSection() {
                             <span className={toolbarStyles.actionLabel}>{ACTION_LABELS[id]}</span>
                             <button
                                 className={toolbarStyles.moveButton}
-                                onClick={() => setDeck(id, otherDeck)}
+                                onClick={() => useSettingsStore.getState().setUtilsBarActionDeck(id, otherDeck)}
                                 disabled={!canMoveOut}
                                 aria-label={`${moveLabel}: ${ACTION_LABELS[id]}`}
                                 title={canMoveOut ? moveLabel : strings.settings.toolbarMinWarning}
@@ -72,9 +71,9 @@ export function ToolbarSection() {
                 {renderColumn(1, strings.settings.toolbarBar1)}
                 {renderColumn(2, strings.settings.toolbarBar2)}
             </div>
-            <button className={toolbarStyles.resetButton} onClick={reset}>
+            <button className={toolbarStyles.resetButton} onClick={() => useSettingsStore.getState().resetUtilsBarLayout()}>
                 {strings.settings.toolbarReset}
             </button>
         </div>
     );
-}
+});

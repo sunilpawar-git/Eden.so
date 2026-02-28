@@ -3,6 +3,7 @@
  */
 import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { strings } from '@/shared/localization/strings';
+import { captureError } from '@/shared/services/sentryService';
 import styles from './ErrorBoundary.module.css';
 
 interface Props {
@@ -29,6 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
         console.error('[ErrorBoundary] Caught error:', error.message);
         console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack);
         console.error('[ErrorBoundary] Error stack:', error.stack);
+        captureError(error, { componentStack: errorInfo.componentStack ?? '' });
     }
 
     handleRetry = () => {

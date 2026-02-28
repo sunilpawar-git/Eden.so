@@ -36,11 +36,16 @@ vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
     }),
 }));
 
-// Mock toast store
+// Mock toast store — vi.hoisted ensures fns are available at vi.mock hoist time
+const { mockToastSuccess, mockToastInfo } = vi.hoisted(() => ({
+    mockToastSuccess: vi.fn(),
+    mockToastInfo: vi.fn(),
+}));
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: {
-        success: vi.fn(),
+        success: mockToastSuccess,
         error: vi.fn(),
+        info: mockToastInfo,
     },
 }));
 
@@ -173,7 +178,7 @@ describe('WorkspaceControls', () => {
 
     describe('Auto Arrange button', () => {
         it('should arrange nodes when clicked', () => {
-            useCanvasStore.setState({ nodes: [{ id: 'n1', position: { x: 0, y: 0 }, createdAt: new Date() } as unknown as CanvasNode] });
+            useCanvasStore.setState({ nodes: [{ id: 'n1', position: { x: 0, y: 0 }, data: { prompt: '', output: '', tags: [] }, createdAt: new Date() } as unknown as CanvasNode] });
             render(<WorkspaceControls />);
 
             const arrangeButton = screen.getByTitle(strings.workspace.arrangeNodesTooltip);
@@ -189,6 +194,47 @@ describe('WorkspaceControls', () => {
             render(<WorkspaceControls />);
             const arrangeButton = screen.getByTitle(strings.workspace.arrangeNodesTooltip);
             expect(arrangeButton).toBeDisabled();
+        });
+
+        it('should show success toast without pinned count when no nodes are pinned', () => {
+            const nodes = [
+                { id: 'n1', position: { x: 0, y: 0 }, data: { prompt: '', output: '', tags: [] }, createdAt: new Date() } as unknown as CanvasNode,
+            ];
+            useCanvasStore.setState({ nodes });
+            render(<WorkspaceControls />);
+
+            fireEvent.click(screen.getByTitle(strings.workspace.arrangeNodesTooltip));
+
+            expect(mockToastSuccess).toHaveBeenCalledWith(strings.layout.arrangeSuccess);
+        });
+
+        it('should show success toast with pinned count when some nodes are pinned', () => {
+            const nodes = [
+                { id: 'n1', position: { x: 0, y: 0 }, data: { prompt: '', output: '', tags: [], isPinned: true }, createdAt: new Date() } as unknown as CanvasNode,
+                { id: 'n2', position: { x: 0, y: 0 }, data: { prompt: '', output: '', tags: [] }, createdAt: new Date() } as unknown as CanvasNode,
+            ];
+            useCanvasStore.setState({ nodes });
+            render(<WorkspaceControls />);
+
+            fireEvent.click(screen.getByTitle(strings.workspace.arrangeNodesTooltip));
+
+            expect(mockToastSuccess).toHaveBeenCalledWith(
+                strings.layout.arrangeSuccessWithPinned(1)
+            );
+        });
+
+        it('should show info toast when ALL nodes are pinned', () => {
+            const nodes = [
+                { id: 'n1', position: { x: 0, y: 0 }, data: { prompt: '', output: '', tags: [], isPinned: true }, createdAt: new Date() } as unknown as CanvasNode,
+                { id: 'n2', position: { x: 0, y: 0 }, data: { prompt: '', output: '', tags: [], isPinned: true }, createdAt: new Date() } as unknown as CanvasNode,
+            ];
+            useCanvasStore.setState({ nodes });
+            render(<WorkspaceControls />);
+
+            fireEvent.click(screen.getByTitle(strings.workspace.arrangeNodesTooltip));
+
+            expect(mockToastInfo).toHaveBeenCalledWith(strings.layout.allNodesPinned);
+            expect(mockToastSuccess).not.toHaveBeenCalled();
         });
     });
 

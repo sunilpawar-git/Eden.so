@@ -2,7 +2,8 @@
  * Node Type Tests - Unit tests for node creation functions
  */
 import { describe, it, expect } from 'vitest';
-import { createIdeaNode, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, normalizeNodeColorKey } from '../node';
+import { createIdeaNode, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, normalizeNodeColorKey, isNodePinned } from '../node';
+import type { CanvasNode } from '../node';
 
 describe('createIdeaNode', () => {
     const testId = 'test-node-1';
@@ -73,5 +74,35 @@ describe('normalizeNodeColorKey', () => {
         expect(normalizeNodeColorKey(null)).toBe('default');
         expect(normalizeNodeColorKey(42)).toBe('default');
         expect(normalizeNodeColorKey('')).toBe('default');
+    });
+});
+
+describe('isNodePinned', () => {
+    const makeNode = (data: Partial<CanvasNode['data']> = {}): CanvasNode => ({
+        id: 'n1', workspaceId: 'ws', type: 'idea',
+        data: { prompt: '', output: '', tags: [], ...data },
+        position: { x: 0, y: 0 }, createdAt: new Date(), updatedAt: new Date(),
+    });
+
+    it('returns true when isPinned is true', () => {
+        expect(isNodePinned(makeNode({ isPinned: true }))).toBe(true);
+    });
+
+    it('returns false when isPinned is false', () => {
+        expect(isNodePinned(makeNode({ isPinned: false }))).toBe(false);
+    });
+
+    it('returns false when isPinned is undefined', () => {
+        expect(isNodePinned(makeNode())).toBe(false);
+    });
+
+    it('returns false when data is missing (defensive)', () => {
+        const malformed = { id: 'n1', data: undefined } as unknown as CanvasNode;
+        expect(isNodePinned(malformed)).toBe(false);
+    });
+
+    it('returns false when data is null (defensive)', () => {
+        const malformed = { id: 'n1', data: null } as unknown as CanvasNode;
+        expect(isNodePinned(malformed)).toBe(false);
     });
 });

@@ -157,6 +157,121 @@ interface CanvasState {
 }
 ```
 
+### 🔴 CRITICAL: Zustand Selector Pattern (Prevents "Maximum Update Depth" Errors)
+
+The **selector pattern is MANDATORY**. Bare store subscriptions cause cascading re-renders and infinite loops in ReactFlow.
+
+```typescript
+// ❌ ANTI-PATTERN - Subscribes to ENTIRE store (causes re-renders on ANY field change)
+const { user, isLoading, setUser } = useAuthStore();
+
+// ✅ CORRECT - Use selectors for state, getState() for actions
+const user = useAuthStore((s) => s.user);
+const isLoading = useAuthStore((s) => s.isLoading);
+
+// For actions, use getState() - stable references, no re-render dependency
+const handleSubmit = () => useAuthStore.getState().setUser(newUser);
+```
+
+**Why This Matters:**
+- Bare destructuring subscribes to ENTIRE store object
+- ANY field change → component re-renders → useEffect fires → updates store → cascades
+- With 500+ nodes in ReactFlow, this causes "Maximum update depth exceeded" errors
+- Selectors ensure component only re-renders when SPECIFIC field changes
+
+**All Zustand Stores Require Selectors:**
+- `useAuthStore` → `const user = useAuthStore((s) => s.user)`
+- `useWorkspaceStore` → `const currentId = useWorkspaceStore((s) => s.currentWorkspaceId)`
+- `useCanvasStore` → `const nodes = useCanvasStore((s) => s.nodes)`
+- `useToastStore` → `const toasts = useToastStore((s) => s.toasts)`
+- `useConfirmStore` → `const isOpen = useConfirmStore((s) => s.isOpen)`
+- `useSettingsStore` → `const theme = useSettingsStore((s) => s.theme)`
+- `useFocusStore` → `const focusedId = useFocusStore((s) => s.focusedNodeId)`
+- `useKnowledgeBankStore` → `const entries = useKnowledgeBankStore((s) => s.entries)`
+
+**Enforcement:** Regression test `src/__tests__/zustandSelectors.structural.test.ts` scans for all 8 anti-patterns and fails the build if any are found.
+
+**Common Mistakes to Avoid:**
+
+```typescript
+// ❌ WRONG: Including selector in useEffect dependency
+useEffect(() => {
+  const currentId = useWorkspaceStore((s) => s.currentWorkspaceId);
+  // ... do something
+}, [useWorkspaceStore((s) => s.currentWorkspaceId)]); // DON'T DO THIS!
+
+// ✅ CORRECT: Call selector outside useEffect, use value in dependency
+const currentId = useWorkspaceStore((s) => s.currentWorkspaceId);
+useEffect(() => {
+  // ... do something with currentId
+}, [currentId]);
+
+// ❌ WRONG: Mixing selector and action in one hook call
+const { user, setUser } = useAuthStore((s) => ({ user: s.user, setUser: s.setUser }));
+
+// ✅ CORRECT: Selectors for state, getState() for actions
+const user = useAuthStore((s) => s.user);
+const handleUpdate = useCallback(() => {
+  useAuthStore.getState().setUser(newUser);
+}, []);
+```
+
+**Testing/Mocking Pattern:**
+
+When writing tests, mock Zustand stores to handle BOTH selector calls and direct calls:
+
+```typescript
+// Mock setup that handles selector pattern
+const mockRemoveToastFn = vi.fn();
+let mockToasts = [];
+
+vi.mock('../../stores/toastStore', () => ({
+    useToastStore: Object.assign(
+        vi.fn((selector?: (s: any) => unknown) => {
+            const state = { toasts: mockToasts, removeToast: mockRemoveToastFn };
+            // Handle both: selector calls and direct calls
+            return typeof selector === 'function' ? selector(state) : state;
+        }),
+        {
+            getState: () => ({ toasts: mockToasts, removeToast: mockRemoveToastFn }),
+        }
+    ),
+}));
+```
+
+This allows your component to:
+- Call `const toasts = useToastStore((s) => s.toasts)` ✅
+- Call `useToastStore.getState().removeToast(id)` ✅
+- Both work correctly in tests ✅
+
+### 🔴 CRITICAL: Closure Variable Anti-Pattern (Causes Drag Lag)
+
+**Never use closure variables inside selectors.** This causes selector functions to be recreated each render, leading to subscription churn during drag operations.
+
+```typescript
+// ❌ ANTI-PATTERN 2: Closure variable in selector
+const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
+const node = useCanvasStore((s) => getNodeMap(s.nodes).get(focusedNodeId));
+// ↑ focusedNodeId is a CLOSURE VARIABLE - selector recreated each render!
+
+// ✅ CORRECT: Stable selector + useMemo derivation
+const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
+const nodes = useCanvasStore((s) => s.nodes);
+const node = useMemo(
+    () => getNodeMap(nodes).get(focusedNodeId) ?? null,
+    [nodes, focusedNodeId]
+);
+```
+
+**Why Closure Variables Cause Problems:**
+1. Selector function captures `focusedNodeId` in closure
+2. When component re-renders, NEW selector function is created
+3. Zustand sees different function reference → triggers re-subscription logic
+4. During drag (60 updates/sec), this compounds across all visible nodes
+5. Eventually causes "Maximum update depth exceeded"
+
+**Enforcement:** Structural test detects `getNodeMap` inside selectors.
+
 ## ✅ COMMIT CONVENTIONS
 
 Format: `type(scope): description`

@@ -9,11 +9,7 @@ import { indexedDbService, IDB_STORES } from '@/shared/services/indexedDbService
 import { loadUserWorkspaces } from '@/features/workspace/services/workspaceService';
 
 export function useWorkspaceLoading() {
-    const { user } = useAuthStore();
-    const {
-        setCurrentWorkspaceId,
-        setWorkspaces,
-    } = useWorkspaceStore();
+    const user = useAuthStore((s) => s.user);
 
     useEffect(() => {
         if (!user) return;
@@ -23,7 +19,8 @@ export function useWorkspaceLoading() {
             await workspaceCache.hydrateFromIdb();
             try {
                 const loaded = await loadUserWorkspaces(userId);
-                setWorkspaces(loaded);
+                // Use getState() for actions - stable references, no re-render dependency
+                useWorkspaceStore.getState().setWorkspaces(loaded);
 
                 const metadata = loaded.map(ws => ({ id: ws.id, name: ws.name, updatedAt: Date.now() }));
                 void indexedDbService.put(IDB_STORES.metadata, '__workspace_metadata__', metadata);
@@ -31,7 +28,7 @@ export function useWorkspaceLoading() {
                 const currentId = useWorkspaceStore.getState().currentWorkspaceId;
                 const firstReal = loaded.find(ws => ws.type !== 'divider');
                 if (firstReal && !loaded.some(ws => ws.id === currentId)) {
-                    setCurrentWorkspaceId(firstReal.id);
+                    useWorkspaceStore.getState().setCurrentWorkspaceId(firstReal.id);
                 }
 
                 if (loaded.length > 0) {
@@ -43,7 +40,7 @@ export function useWorkspaceLoading() {
                 console.error('[Sidebar] Failed to load workspaces:', error);
                 const cached = await indexedDbService.get<Array<{ id: string; name: string; updatedAt: number }>>(IDB_STORES.metadata, '__workspace_metadata__');
                 if (cached?.length) {
-                    setWorkspaces(cached.map(m => ({
+                    useWorkspaceStore.getState().setWorkspaces(cached.map(m => ({
                         id: m.id, userId, name: m.name, canvasSettings: { backgroundColor: 'white' as const },
                         createdAt: new Date(m.updatedAt), updatedAt: new Date(m.updatedAt)
                     })));
@@ -51,5 +48,5 @@ export function useWorkspaceLoading() {
             }
         }
         void load();
-    }, [user, setWorkspaces, setCurrentWorkspaceId]);
+    }, [user]);
 }

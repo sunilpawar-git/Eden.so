@@ -17,8 +17,14 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         isGenerating, isNewEmptyNode, focusHeading, shortcuts,
     } = options;
 
-    const draftContent = useCanvasStore((s) => (isEditing ? s.draftContent : null));
-    const nodeOutput = useCanvasStore((s) => getNodeMap(s.nodes).get(nodeId)?.data.output);
+    // Stable selectors - derive values outside to avoid closure anti-pattern during drag
+    const draftContentStore = useCanvasStore((s) => s.draftContent);
+    const nodes = useCanvasStore((s) => s.nodes);
+    const draftContent = isEditing ? draftContentStore : null;
+    const nodeOutput = useMemo(
+        () => getNodeMap(nodes).get(nodeId)?.data.output,
+        [nodes, nodeId],
+    );
     const detectedUrls = useMemo(
         () => extractUrls(isEditing ? draftContent : (nodeOutput ?? null)),
         [isEditing, draftContent, nodeOutput],

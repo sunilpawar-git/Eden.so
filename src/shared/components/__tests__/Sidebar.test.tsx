@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Sidebar } from '../Sidebar';
-import { useAuthStore } from '@/features/auth/stores/authStore';
+// useAuthStore is mocked below - no direct import needed
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 
@@ -12,7 +12,17 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
 
-vi.mock('@/features/auth/stores/authStore', () => ({ useAuthStore: vi.fn() }));
+// Mock auth store - must handle selector pattern: useAuthStore((s) => s.user)
+const mockAuthState = {
+    user: { id: 'user-1', name: 'Test User', avatarUrl: '' },
+    isLoading: false, isAuthenticated: true, error: null,
+    setUser: vi.fn(), clearUser: vi.fn(), setLoading: vi.fn(), setError: vi.fn(),
+};
+vi.mock('@/features/auth/stores/authStore', () => ({
+    useAuthStore: vi.fn((selector?: (s: typeof mockAuthState) => unknown) => {
+        return typeof selector === 'function' ? selector(mockAuthState) : mockAuthState;
+    }),
+}));
 const mockGetState = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(vi.fn(), { getState: () => mockGetState() }),
@@ -101,11 +111,7 @@ describe('Sidebar', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(useAuthStore).mockReturnValue({
-            user: { id: 'user-1', name: 'Test User', avatarUrl: '' },
-            isLoading: false, isAuthenticated: true, error: null,
-            setUser: vi.fn(), clearUser: vi.fn(), setLoading: vi.fn(), setError: vi.fn(),
-        } as Partial<ReturnType<typeof useAuthStore>> as ReturnType<typeof useAuthStore>);
+        // Auth state is already set up in the module mock
         vi.mocked(useCanvasStore).mockReturnValue(undefined);
         mockGetState.mockReturnValue({ nodes: [], edges: [], clearCanvas: mockClearCanvas });
         vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
@@ -162,14 +168,16 @@ describe('Sidebar', () => {
 
             // mockConfirm is already set to resolve(true) at the module level
 
+            const state = createMockState({
+                workspaces: [
+                    { id: 'ws-1', name: 'Project Alpha', userId: 'user-1', createdAt: new Date(), updatedAt: new Date() },
+                    { id: 'div-1', name: '---', type: 'divider', userId: 'user-1', createdAt: new Date(), updatedAt: new Date() },
+                ],
+                removeWorkspace: mockRemoveWorkspace
+            });
+            // Update getState to return the state with mockRemoveWorkspace
+            mockWorkspaceGetState.mockReturnValue(state);
             vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
-                const state = createMockState({
-                    workspaces: [
-                        { id: 'ws-1', name: 'Project Alpha', userId: 'user-1', createdAt: new Date(), updatedAt: new Date() },
-                        { id: 'div-1', name: '---', type: 'divider', userId: 'user-1', createdAt: new Date(), updatedAt: new Date() },
-                    ],
-                    removeWorkspace: mockRemoveWorkspace
-                });
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return typeof selector === 'function' ? selector(state as any) : state;
             });

@@ -9,7 +9,7 @@ interface SidebarFooterProps {
 }
 
 export function SidebarFooter({ onSettingsClick }: SidebarFooterProps) {
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
 
     if (!user) return null;
 

@@ -44,9 +44,13 @@ vi.mock('@/features/knowledgeBank/stores/knowledgeBankStore', () => ({
     }),
 }));
 
+// Mock auth store - must handle selector pattern: useAuthStore((s) => s.user)
 const mockUser = { id: 'user-1', email: 'test@example.com' };
 vi.mock('@/features/auth/stores/authStore', () => ({
-    useAuthStore: () => ({ user: mockUser }),
+    useAuthStore: (selector?: (s: { user: typeof mockUser }) => unknown) => {
+        const state = { user: mockUser };
+        return typeof selector === 'function' ? selector(state) : state;
+    },
 }));
 
 const mockCanvasSetState = vi.fn();

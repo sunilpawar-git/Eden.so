@@ -4,6 +4,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { KB_MAX_CONTENT_SIZE } from '../types/knowledgeBank';
+import { kbEntrySchema } from '@/shared/validation/schemas';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import styles from './PasteTextModal.module.css';
@@ -31,8 +32,9 @@ export const PasteTextModal = React.memo(function PasteTextModal({ isOpen, onClo
     }, [isOpen]);
 
     const handleSave = useCallback(() => {
-        if (!title.trim() || !content.trim()) return;
-        onSave(title.trim(), content);
+        const result = kbEntrySchema.safeParse({ title, content });
+        if (!result.success) return;
+        onSave(result.data.title, result.data.content);
         setTitle('');
         setContent('');
     }, [title, content, onSave]);
