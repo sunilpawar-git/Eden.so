@@ -178,13 +178,14 @@ describe('FocusOverlay', () => {
             expect(screen.queryByTestId('focus-content-area')).toBeInTheDocument();
         });
 
-        it('isEditing becomes false when editingNodeId clears', () => {
+        it('isEditing becomes false when editingNodeId clears and double-click starts editing again', () => {
             useFocusStore.setState({ focusedNodeId: 'node-1' });
             render(<FocusOverlay />);
             act(() => { useCanvasStore.setState({ editingNodeId: null }); });
             const contentArea = screen.getByTestId('focus-content-area');
             expect(contentArea).toBeInTheDocument();
-            expect(contentArea.getAttribute('onDoubleClick')).not.toBeNull();
+            fireEvent.doubleClick(contentArea);
+            expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
         });
 
         it('isEditing is false when editingNodeId targets a different node', () => {
