@@ -62,6 +62,11 @@ export function nodeUtilsControllerReducer(
             if (state.mode === 'auto') return state;
             return { ...state, isDeckTwoOpen: false, activeSubmenu: 'none', mode: 'auto' };
         case 'PROXIMITY_LOST':
+            // Don't close an active submenu portal — user may be moving to interact with it.
+            // OUTSIDE_POINTER (click elsewhere) handles that dismissal path.
+            if (state.activeSubmenu !== 'none') return state;
+            if (!state.isDeckTwoOpen && state.mode === 'auto') return state;
+            return { ...state, isDeckTwoOpen: false, mode: 'auto' };
         case 'OUTSIDE_POINTER':
             if (!state.isDeckTwoOpen && state.activeSubmenu === 'none' && state.mode === 'auto') return state;
             return { ...state, isDeckTwoOpen: false, activeSubmenu: 'none', mode: 'auto' };

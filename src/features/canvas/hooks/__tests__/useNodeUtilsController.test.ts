@@ -229,13 +229,14 @@ describe('useNodeUtilsController', () => {
             expect(result.current.state.mode).toBe('auto');
         });
 
-        it('handleProximityLost also closes open submenus in manual mode', () => {
+        it('handleProximityLost does NOT close active submenu portal (color picker stays accessible)', () => {
             const { result } = renderHook(() => useNodeUtilsController());
             act(() => { result.current.actions.openSubmenu('color'); });
             expect(result.current.state.activeSubmenu).toBe('color');
             act(() => { result.current.actions.handleProximityLost(); });
-            expect(result.current.state.activeSubmenu).toBe('none');
-            expect(result.current.state.mode).toBe('auto');
+            // Portal lives in document.body — state must stay unchanged so user can click a color
+            expect(result.current.state.activeSubmenu).toBe('color');
+            expect(result.current.state.mode).toBe('manual');
         });
 
         it('handleProximityLost is a no-op when isPinnedOpen=true', () => {
@@ -256,10 +257,11 @@ describe('nodeUtilsControllerReducer – PROXIMITY_LOST', () => {
         expect(next.mode).toBe('auto');
     });
 
-    it('closes active submenus', () => {
+    it('does NOT close active submenu portal — state returned unchanged', () => {
         const state = { isDeckTwoOpen: false, mode: 'manual' as const, activeSubmenu: 'share' as const };
         const next = nodeUtilsControllerReducer(state, { type: 'PROXIMITY_LOST' });
-        expect(next.activeSubmenu).toBe('none');
+        // Portal must remain mounted so user can interact with it
+        expect(next).toBe(state);
     });
 
     it('returns same reference when already fully closed', () => {
