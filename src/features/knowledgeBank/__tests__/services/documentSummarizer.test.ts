@@ -3,6 +3,8 @@
  * Concatenates raw chunk contents and sends to Gemini for a cohesive summary
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { isGeminiAvailable, callGemini, extractGeminiText } from '../../services/geminiClient';
+import { summarizeDocument } from '../../services/documentSummarizer';
 
 vi.mock('../../services/geminiClient', () => ({
     isGeminiAvailable: vi.fn(() => true),
@@ -13,9 +15,6 @@ vi.mock('../../services/geminiClient', () => ({
 vi.mock('../../utils/sanitizer', () => ({
     sanitizeContent: (s: string) => s,
 }));
-
-import { isGeminiAvailable, callGemini, extractGeminiText } from '../../services/geminiClient';
-import { summarizeDocument } from '../../services/documentSummarizer';
 
 const mockIsAvailable = vi.mocked(isGeminiAvailable);
 const mockCallGemini = vi.mocked(callGemini);
@@ -45,7 +44,7 @@ describe('summarizeDocument', () => {
 
         await summarizeDocument(['first chunk', 'second chunk', 'third chunk'], 'My Doc');
 
-        const callArgs = mockCallGemini.mock.calls[0]![0] as Record<string, unknown>;
+        const callArgs = mockCallGemini.mock.calls[0]![0] as unknown as Record<string, unknown>;
         const contents = callArgs.contents as Array<{ parts: Array<{ text: string }> }>;
         const inputText = contents[0]!.parts[0]!.text;
         expect(inputText).toContain('first chunk');
@@ -60,7 +59,7 @@ describe('summarizeDocument', () => {
 
         await summarizeDocument(['content'], 'Physical Security Notes');
 
-        const callArgs = mockCallGemini.mock.calls[0]![0] as Record<string, unknown>;
+        const callArgs = mockCallGemini.mock.calls[0]![0] as unknown as Record<string, unknown>;
         const contents = callArgs.contents as Array<{ parts: Array<{ text: string }> }>;
         const inputText = contents[0]!.parts[0]!.text;
         expect(inputText).toContain('Physical Security Notes');
@@ -73,7 +72,7 @@ describe('summarizeDocument', () => {
         const longChunk = 'x'.repeat(50_000);
         await summarizeDocument([longChunk], 'Doc');
 
-        const callArgs = mockCallGemini.mock.calls[0]![0] as Record<string, unknown>;
+        const callArgs = mockCallGemini.mock.calls[0]![0] as unknown as Record<string, unknown>;
         const contents = callArgs.contents as Array<{ parts: Array<{ text: string }> }>;
         const inputText = contents[0]!.parts[0]!.text;
         expect(inputText.length).toBeLessThanOrEqual(25_000 + 200);

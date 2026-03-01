@@ -2,6 +2,12 @@
  * documentCounting.test.ts — Tests for document-based counting and batch delete
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getCountFromServer, query, where, writeBatch, doc } from 'firebase/firestore';
+import {
+    getServerDocumentCount,
+    deleteKBEntryBatch,
+    addKBEntry,
+} from '../../services/knowledgeBankService';
 
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn(() => ({ id: 'mock-doc' })),
@@ -38,13 +44,6 @@ vi.mock('@/shared/localization/strings', () => ({
 vi.mock('../../utils/sanitizer', () => ({
     sanitizeContent: (s: string) => s,
 }));
-
-import { getCountFromServer, query, where, writeBatch, doc } from 'firebase/firestore';
-import {
-    getServerDocumentCount,
-    deleteKBEntryBatch,
-    addKBEntry,
-} from '../../services/knowledgeBankService';
 
 const mockGetCount = vi.mocked(getCountFromServer);
 const mockQuery = vi.mocked(query);

@@ -97,8 +97,8 @@ describe('rankDocumentGroups', () => {
         low.parent.id = 'low';
 
         const ranked = rankDocumentGroups([low, high], 'security protocols');
-        expect(ranked[0].parent.id).toBe('high');
-        expect(ranked[1].parent.id).toBe('low');
+        expect(ranked[0]!.parent.id).toBe('high');
+        expect(ranked[1]!.parent.id).toBe('low');
     });
 
     it('preserves original order when no prompt is given', () => {
@@ -106,8 +106,8 @@ describe('rankDocumentGroups', () => {
         const b = makeGroup({ title: 'BBB' }); b.parent.id = 'b';
 
         const ranked = rankDocumentGroups([a, b]);
-        expect(ranked[0].parent.id).toBe('a');
-        expect(ranked[1].parent.id).toBe('b');
+        expect(ranked[0]!.parent.id).toBe('a');
+        expect(ranked[1]!.parent.id).toBe('b');
     });
 
     it('preserves order for equal scores', () => {
@@ -115,6 +115,6 @@ describe('rankDocumentGroups', () => {
         const b = makeGroup({ title: 'Same' }); b.parent.id = 'b';
 
         const ranked = rankDocumentGroups([a, b], 'same');
-        expect(ranked[0].parent.id).toBe('a');
+        expect(ranked[0]!.parent.id).toBe('a');
     });
 });

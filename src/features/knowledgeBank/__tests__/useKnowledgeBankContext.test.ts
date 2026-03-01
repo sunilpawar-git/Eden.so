@@ -1,83 +1,96 @@
 /**
  * Knowledge Bank Context Builder Tests
- * TDD: Tests for buildKBContextBlock utility (with summary + relevance support)
+ * TDD: Tests for buildHierarchicalKBContext (with summary + relevance support)
  * + Selector stability tests for useKnowledgeBankContext hook
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { buildKBContextBlock, useKnowledgeBankContext } from '../hooks/useKnowledgeBankContext';
+import { buildHierarchicalKBContext } from '../services/hierarchicalContextBuilder';
+import { useKnowledgeBankContext } from '../hooks/useKnowledgeBankContext';
 import { KB_TOKEN_BUDGETS } from '../types/knowledgeBank';
+import type { KnowledgeBankEntry } from '../types/knowledgeBank';
 
-describe('buildKBContextBlock', () => {
+function makeEntry(overrides: Partial<KnowledgeBankEntry> = {}): KnowledgeBankEntry {
+    return {
+        id: `kb-${Math.random().toString(36).slice(2, 9)}`,
+        workspaceId: 'ws-1',
+        type: 'text',
+        title: 'Test',
+        content: 'Content',
+        enabled: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...overrides,
+    };
+}
+
+describe('buildHierarchicalKBContext', () => {
     it('returns empty string when no entries', () => {
-        expect(buildKBContextBlock([])).toBe('');
+        expect(buildHierarchicalKBContext([])).toBe('');
     });
 
     it('formats single entry correctly', () => {
-        const result = buildKBContextBlock([
-            { title: 'Brand Voice', content: 'Professional and concise tone.' },
+        const result = buildHierarchicalKBContext([
+            makeEntry({ title: 'Brand Voice', content: 'Professional and concise tone.' }),
         ]);
-        expect(result).toContain('--- Workspace Knowledge Bank ---');
+        expect(result).toContain('Workspace Knowledge Bank');
         expect(result).toContain('[Knowledge: Brand Voice]');
         expect(result).toContain('Professional and concise tone.');
-        expect(result).toContain('--- End Knowledge Bank ---');
+        expect(result).toContain('End Knowledge Bank');
     });
 
     it('formats multiple entries', () => {
-        const result = buildKBContextBlock([
-            { title: 'Style', content: 'Use bullet points.' },
-            { title: 'Audience', content: 'Engineers and PMs.' },
+        const result = buildHierarchicalKBContext([
+            makeEntry({ title: 'Style', content: 'Use bullet points.' }),
+            makeEntry({ title: 'Audience', content: 'Engineers and PMs.' }),
         ]);
         expect(result).toContain('[Knowledge: Style]');
         expect(result).toContain('[Knowledge: Audience]');
     });
 
     it('truncates entries that exceed token budget', () => {
-        // KB_MAX_CONTEXT_TOKENS = 8000, CHARS_PER_TOKEN = 4, so ~32000 chars max
         const bigContent = 'x'.repeat(31_950);
-        const result = buildKBContextBlock([
-            { title: 'Big', content: bigContent },
-            { title: 'Should Be Excluded', content: 'This should not appear' },
+        const result = buildHierarchicalKBContext([
+            makeEntry({ title: 'Big', content: bigContent }),
+            makeEntry({ title: 'Should Be Excluded', content: 'This should not appear' }),
         ]);
         expect(result).toContain('[Knowledge: Big]');
         expect(result).not.toContain('Should Be Excluded');
     });
 
     it('returns empty string if first entry alone exceeds budget', () => {
-        // KB_MAX_CONTEXT_TOKENS = 8000, CHARS_PER_TOKEN = 4, so budget = 32000 chars
         const hugeContent = 'x'.repeat(33_000);
-        const result = buildKBContextBlock([
-            { title: 'Huge', content: hugeContent },
+        const result = buildHierarchicalKBContext([
+            makeEntry({ title: 'Huge', content: hugeContent }),
         ]);
         expect(result).toBe('');
     });
 
     describe('summary preference', () => {
         it('uses summary when available instead of content', () => {
-            const result = buildKBContextBlock([
-                {
+            const result = buildHierarchicalKBContext([
+                makeEntry({
                     title: 'Long Doc',
                     content: 'Very long content that is thousands of characters...',
                     summary: 'Concise summary of the long document.',
-                },
+                }),
             ]);
             expect(result).toContain('Concise summary of the long document.');
             expect(result).not.toContain('Very long content');
         });
 
         it('falls back to content when summary is undefined', () => {
-            const result = buildKBContextBlock([
-                { title: 'No Summary', content: 'Original content here.' },
+            const result = buildHierarchicalKBContext([
+                makeEntry({ title: 'No Summary', content: 'Original content here.' }),
             ]);
             expect(result).toContain('Original content here.');
         });
 
         it('fits more entries in budget when using summaries', () => {
-            // Without summaries, only 1 entry fits. With summaries, both fit.
             const bigContent = 'x'.repeat(20_000);
-            const result = buildKBContextBlock([
-                { title: 'Doc 1', content: bigContent, summary: 'Summary of doc 1.' },
-                { title: 'Doc 2', content: bigContent, summary: 'Summary of doc 2.' },
+            const result = buildHierarchicalKBContext([
+                makeEntry({ title: 'Doc 1', content: bigContent, summary: 'Summary of doc 1.' }),
+                makeEntry({ title: 'Doc 2', content: bigContent, summary: 'Summary of doc 2.' }),
             ]);
             expect(result).toContain('[Knowledge: Doc 1]');
             expect(result).toContain('[Knowledge: Doc 2]');
@@ -88,27 +101,27 @@ describe('buildKBContextBlock', () => {
 
     describe('prompt-aware relevance ranking', () => {
         const entries = [
-            { title: 'Cooking Recipes', content: 'How to make pasta and bread.' },
-            { title: 'Machine Learning', content: 'Neural networks and classification.' },
-            { title: 'Budget Report', content: 'Q4 financial data and revenue.' },
+            makeEntry({ title: 'Cooking Recipes', content: 'How to make pasta and bread.' }),
+            makeEntry({ title: 'Machine Learning', content: 'Neural networks and classification.' }),
+            makeEntry({ title: 'Budget Report', content: 'Q4 financial data and revenue.' }),
         ];
 
         it('ranks most relevant entry first when prompt is provided', () => {
-            const result = buildKBContextBlock(entries, 'neural network classification');
+            const result = buildHierarchicalKBContext(entries, 'neural network classification');
             const mlIndex = result.indexOf('Machine Learning');
             const cookIndex = result.indexOf('Cooking Recipes');
             expect(mlIndex).toBeLessThan(cookIndex);
         });
 
         it('preserves original order when no prompt is given', () => {
-            const result = buildKBContextBlock(entries);
+            const result = buildHierarchicalKBContext(entries);
             const cookIndex = result.indexOf('Cooking Recipes');
             const mlIndex = result.indexOf('Machine Learning');
             expect(cookIndex).toBeLessThan(mlIndex);
         });
 
         it('preserves original order when prompt is empty string', () => {
-            const result = buildKBContextBlock(entries, '');
+            const result = buildHierarchicalKBContext(entries, '');
             const cookIndex = result.indexOf('Cooking Recipes');
             const mlIndex = result.indexOf('Machine Learning');
             expect(cookIndex).toBeLessThan(mlIndex);
@@ -116,49 +129,40 @@ describe('buildKBContextBlock', () => {
     });
 
     describe('dynamic token budgets by generation type', () => {
-        // CHARS_PER_TOKEN = 4, so budget in chars = tokens * 4
-        // single: 12000 * 4 = 48000, chain: 4000 * 4 = 16000, transform: 3000 * 4 = 12000
-
-        /** Create an entry whose block is approximately `charCount` chars */
-        function makeEntry(name: string, charCount: number) {
+        function makeSizedEntry(name: string, charCount: number): KnowledgeBankEntry {
             const overhead = `[Knowledge: ${name}]\n`.length;
-            return { title: name, content: 'x'.repeat(Math.max(0, charCount - overhead)) };
+            return makeEntry({ title: name, content: 'x'.repeat(Math.max(0, charCount - overhead)) });
         }
 
         it('uses 12K token budget for single generation type', () => {
-            // 48000 chars budget; 2 entries of 20K each — both should fit
-            const entries = [makeEntry('A', 20_000), makeEntry('B', 20_000)];
-            const result = buildKBContextBlock(entries, undefined, 'single');
+            const entries = [makeSizedEntry('A', 20_000), makeSizedEntry('B', 20_000)];
+            const result = buildHierarchicalKBContext(entries, undefined, 'single');
             expect(result).toContain('[Knowledge: A]');
             expect(result).toContain('[Knowledge: B]');
         });
 
         it('uses 4K token budget for chain generation type', () => {
-            // 16000 chars budget; entry of 20K should NOT fit
-            const entries = [makeEntry('Big', 20_000)];
-            const result = buildKBContextBlock(entries, undefined, 'chain');
+            const entries = [makeSizedEntry('Big', 20_000)];
+            const result = buildHierarchicalKBContext(entries, undefined, 'chain');
             expect(result).toBe('');
         });
 
         it('uses 3K token budget for transform generation type', () => {
-            // 12000 chars budget; entry of 15K should NOT fit
-            const entries = [makeEntry('Big', 15_000)];
-            const result = buildKBContextBlock(entries, undefined, 'transform');
+            const entries = [makeSizedEntry('Big', 15_000)];
+            const result = buildHierarchicalKBContext(entries, undefined, 'transform');
             expect(result).toBe('');
         });
 
         it('uses default 8K budget when no generation type provided', () => {
-            // 32000 chars budget; entry of 30K should fit, but not 33K
-            const entries = [makeEntry('Fits', 30_000)];
-            const result = buildKBContextBlock(entries);
+            const entries = [makeSizedEntry('Fits', 30_000)];
+            const result = buildHierarchicalKBContext(entries);
             expect(result).toContain('[Knowledge: Fits]');
         });
 
         it('chain budget truncates earlier than single budget', () => {
-            // Entry of 18K chars: fits in single (48K), not in chain (16K)
-            const entries = [makeEntry('Medium', 18_000)];
-            const singleResult = buildKBContextBlock(entries, undefined, 'single');
-            const chainResult = buildKBContextBlock(entries, undefined, 'chain');
+            const entries = [makeSizedEntry('Medium', 18_000)];
+            const singleResult = buildHierarchicalKBContext(entries, undefined, 'single');
+            const chainResult = buildHierarchicalKBContext(entries, undefined, 'chain');
             expect(singleResult).toContain('[Knowledge: Medium]');
             expect(chainResult).toBe('');
         });
@@ -173,41 +177,37 @@ describe('buildKBContextBlock', () => {
     describe('pinned entries priority', () => {
         it('places pinned entries before unpinned regardless of relevance', () => {
             const entries = [
-                { title: 'Unpinned ML', content: 'Machine learning neural networks.', pinned: false },
-                { title: 'Pinned Cooking', content: 'How to make pasta.', pinned: true },
+                makeEntry({ title: 'Unpinned ML', content: 'Machine learning neural networks.', pinned: false }),
+                makeEntry({ title: 'Pinned Cooking', content: 'How to make pasta.', pinned: true }),
             ];
-            // Prompt favors ML, but pinned Cooking should come first
-            const result = buildKBContextBlock(entries, 'machine learning neural');
+            const result = buildHierarchicalKBContext(entries, 'machine learning neural');
             const cookIdx = result.indexOf('Pinned Cooking');
             const mlIdx = result.indexOf('Unpinned ML');
             expect(cookIdx).toBeLessThan(mlIdx);
         });
 
         it('pinned entries consume budget first', () => {
-            // Use transform budget (3K tokens = 12K chars)
-            // Pinned entry fills almost all budget, leaving no room for unpinned
-            const pinnedEntry = {
+            const pinnedEntry = makeEntry({
                 title: 'Pinned Big', content: 'x'.repeat(11_950), pinned: true,
-            };
-            const unpinnedEntry = {
+            });
+            const unpinnedEntry = makeEntry({
                 title: 'Unpinned Small', content: 'This should not fit in remaining budget.', pinned: false,
-            };
-            const result = buildKBContextBlock([unpinnedEntry, pinnedEntry], undefined, 'transform');
+            });
+            const result = buildHierarchicalKBContext([unpinnedEntry, pinnedEntry], undefined, 'transform');
             expect(result).toContain('Pinned Big');
             expect(result).not.toContain('Unpinned Small');
         });
 
         it('ranks unpinned entries by relevance after pinned', () => {
             const entries = [
-                { title: 'Unpinned Finance', content: 'Q4 budget data.', pinned: false },
-                { title: 'Unpinned ML', content: 'Neural network classification.', pinned: false },
-                { title: 'Pinned Style', content: 'Use formal tone.', pinned: true },
+                makeEntry({ title: 'Unpinned Finance', content: 'Q4 budget data.', pinned: false }),
+                makeEntry({ title: 'Unpinned ML', content: 'Neural network classification.', pinned: false }),
+                makeEntry({ title: 'Pinned Style', content: 'Use formal tone.', pinned: true }),
             ];
-            const result = buildKBContextBlock(entries, 'neural network');
+            const result = buildHierarchicalKBContext(entries, 'neural network');
             const styleIdx = result.indexOf('Pinned Style');
             const mlIdx = result.indexOf('Unpinned ML');
             const finIdx = result.indexOf('Unpinned Finance');
-            // Pinned first, then ML (relevant), then Finance
             expect(styleIdx).toBeLessThan(mlIdx);
             expect(mlIdx).toBeLessThan(finIdx);
         });
@@ -226,14 +226,14 @@ describe('useKnowledgeBankContext selector stability', () => {
     it('getKBContext reads fresh entries at call time (not stale closure)', async () => {
         const { useKnowledgeBankStore } = await import('../stores/knowledgeBankStore');
         useKnowledgeBankStore.setState({
-            entries: [{ id: '1', workspaceId: 'w1', title: 'A', content: 'Alpha', enabled: true, type: 'text' as const, createdAt: new Date(), updatedAt: new Date() }],
+            entries: [makeEntry({ id: '1', title: 'A', content: 'Alpha' })],
         });
         const { result } = renderHook(() => useKnowledgeBankContext());
         const ctx1 = result.current.getKBContext();
         expect(ctx1).toContain('Alpha');
 
         useKnowledgeBankStore.setState({
-            entries: [{ id: '2', workspaceId: 'w1', title: 'B', content: 'Beta', enabled: true, type: 'text' as const, createdAt: new Date(), updatedAt: new Date() }],
+            entries: [makeEntry({ id: '2', title: 'B', content: 'Beta' })],
         });
         const ctx2 = result.current.getKBContext();
         expect(ctx2).toContain('Beta');

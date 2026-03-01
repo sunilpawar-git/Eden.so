@@ -41,9 +41,10 @@ describe('groupEntriesByDocument', () => {
         const result = groupEntriesByDocument([parent, child1, child2]);
 
         expect(result.documents).toHaveLength(1);
-        expect(result.documents[0].parent.id).toBe('parent-1');
-        expect(result.documents[0].children).toHaveLength(2);
-        expect(result.documents[0].totalParts).toBe(3);
+        const doc0 = result.documents[0]!;
+        expect(doc0.parent.id).toBe('parent-1');
+        expect(doc0.children).toHaveLength(2);
+        expect(doc0.totalParts).toBe(3);
         expect(result.standalone).toHaveLength(0);
     });
 
@@ -54,9 +55,9 @@ describe('groupEntriesByDocument', () => {
         const result = groupEntriesByDocument([standalone, parent, child]);
 
         expect(result.standalone).toHaveLength(1);
-        expect(result.standalone[0].id).toBe('solo-1');
+        expect(result.standalone[0]!.id).toBe('solo-1');
         expect(result.documents).toHaveLength(1);
-        expect(result.documents[0].totalParts).toBe(2);
+        expect(result.documents[0]!.totalParts).toBe(2);
     });
 
     it('treats orphaned children (no matching parent) as standalone', () => {
@@ -64,7 +65,7 @@ describe('groupEntriesByDocument', () => {
         const result = groupEntriesByDocument([orphan]);
 
         expect(result.standalone).toHaveLength(1);
-        expect(result.standalone[0].id).toBe('orphan-1');
+        expect(result.standalone[0]!.id).toBe('orphan-1');
         expect(result.documents).toHaveLength(0);
     });
 
@@ -83,7 +84,7 @@ describe('groupEntriesByDocument', () => {
         );
         const result = groupEntriesByDocument([parent, ...children]);
 
-        expect(result.documents[0].totalParts).toBe(10);
+        expect(result.documents[0]!.totalParts).toBe(10);
     });
 
     it('handles multiple document groups simultaneously', () => {
@@ -95,8 +96,8 @@ describe('groupEntriesByDocument', () => {
         const result = groupEntriesByDocument([p1, c1, p2, c2a, c2b]);
 
         expect(result.documents).toHaveLength(2);
-        expect(result.documents.find((d) => d.parent.id === 'p1')?.totalParts).toBe(2);
-        expect(result.documents.find((d) => d.parent.id === 'p2')?.totalParts).toBe(3);
+        expect(result.documents.find((d) => d.parent.id === 'p1')!.totalParts).toBe(2);
+        expect(result.documents.find((d) => d.parent.id === 'p2')!.totalParts).toBe(3);
     });
 
     it('preserves entry references (no cloning)', () => {
@@ -104,8 +105,8 @@ describe('groupEntriesByDocument', () => {
         const child = makeEntry({ id: 'c1', parentEntryId: 'p1' });
         const result = groupEntriesByDocument([parent, child]);
 
-        expect(result.documents[0].parent).toBe(parent);
-        expect(result.documents[0].children[0]).toBe(child);
+        expect(result.documents[0]!.parent).toBe(parent);
+        expect(result.documents[0]!.children[0]).toBe(child);
     });
 });
 

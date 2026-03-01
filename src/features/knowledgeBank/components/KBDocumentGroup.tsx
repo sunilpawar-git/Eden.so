@@ -51,7 +51,7 @@ export const KBDocumentGroup = React.memo(function KBDocumentGroup({
                     type="checkbox"
                     checked={isGroupEnabled}
                     onClick={handleToggle}
-                    onChange={() => {}}
+                    onChange={() => undefined}
                     className={styles.checkbox}
                     aria-label={kb.documentGroup.toggleAll}
                 />

@@ -63,7 +63,7 @@ describe('document group store actions', () => {
             useKnowledgeBankStore.getState().toggleDocumentGroup('p1');
 
             const entries = useKnowledgeBankStore.getState().entries;
-            expect(entries.every((e) => e.enabled === false)).toBe(true);
+            expect(entries.every((e) => !e.enabled)).toBe(true);
         });
 
         it('is a no-op for non-existent parentId', () => {
@@ -73,7 +73,7 @@ describe('document group store actions', () => {
             useKnowledgeBankStore.getState().toggleDocumentGroup('nonexistent');
 
             expect(useKnowledgeBankStore.getState().entries).toHaveLength(1);
-            expect(useKnowledgeBankStore.getState().entries[0].enabled).toBe(true);
+            expect(useKnowledgeBankStore.getState().entries[0]!.enabled).toBe(true);
         });
 
         it('does not affect unrelated entries', () => {
@@ -110,7 +110,7 @@ describe('document group store actions', () => {
 
             const remaining = useKnowledgeBankStore.getState().entries;
             expect(remaining).toHaveLength(1);
-            expect(remaining[0].id).toBe('u1');
+            expect(remaining[0]!.id).toBe('u1');
         });
     });
 

@@ -3,6 +3,8 @@
  * Handles both individual chunk summaries and document-level summary
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { runPostUploadSummarization } from '../../services/postUploadSummarizer';
+import type { KnowledgeBankEntry } from '../../types/knowledgeBank';
 
 const mockSummarizeEntries = vi.fn().mockResolvedValue(undefined);
 const mockSummarizeDocument = vi.fn();
@@ -19,9 +21,6 @@ vi.mock('../../services/documentSummarizer', () => ({
 vi.mock('../../services/knowledgeBankService', () => ({
     updateKBEntry: (...args: unknown[]) => mockUpdateKBEntry(...args),
 }));
-
-import { runPostUploadSummarization } from '../../services/postUploadSummarizer';
-import type { KnowledgeBankEntry } from '../../types/knowledgeBank';
 
 function makeEntry(overrides: Partial<KnowledgeBankEntry> = {}): KnowledgeBankEntry {
     return {

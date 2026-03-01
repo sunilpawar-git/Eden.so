@@ -3,10 +3,10 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
-import { buildKBContextBlock } from '../hooks/useKnowledgeBankContext';
+import { buildHierarchicalKBContext } from '../services/hierarchicalContextBuilder';
 import { sanitizeContent } from '../utils/sanitizer';
 import { calculateDimensions } from '../utils/imageCompressor';
-import { KB_MAX_ENTRIES, KB_MAX_CONTENT_SIZE } from '../types/knowledgeBank';
+import { KB_MAX_DOCUMENTS, KB_MAX_CONTENT_SIZE } from '../types/knowledgeBank';
 import type { KnowledgeBankEntry } from '../types/knowledgeBank';
 
 const createMockEntry = (overrides?: Partial<KnowledgeBankEntry>): KnowledgeBankEntry => ({
@@ -34,9 +34,7 @@ describe('Knowledge Bank Integration', () => {
             useKnowledgeBankStore.getState().addEntry(entry);
 
             const enabled = useKnowledgeBankStore.getState().getEnabledEntries();
-            const context = buildKBContextBlock(
-                enabled.map((e) => ({ title: e.title, content: e.content }))
-            );
+            const context = buildHierarchicalKBContext(enabled);
             expect(context).toContain('Brand Guide');
             expect(context).toContain('Use blue tones');
         });
@@ -48,9 +46,7 @@ describe('Knowledge Bank Integration', () => {
             const enabled = useKnowledgeBankStore.getState().getEnabledEntries();
             expect(enabled).toHaveLength(0);
 
-            const context = buildKBContextBlock(
-                enabled.map((e) => ({ title: e.title, content: e.content }))
-            );
+            const context = buildHierarchicalKBContext(enabled);
             expect(context).toBe('');
         });
 
@@ -90,15 +86,15 @@ describe('Knowledge Bank Integration', () => {
     });
 
     describe('Max entries enforcement', () => {
-        it('entry count tracks correctly', () => {
+        it('document count tracks correctly', () => {
             for (let i = 0; i < 5; i++) {
                 useKnowledgeBankStore.getState().addEntry(createMockEntry({ id: `kb-${i}` }));
             }
-            expect(useKnowledgeBankStore.getState().getEntryCount()).toBe(5);
+            expect(useKnowledgeBankStore.getState().getDocumentCount()).toBe(5);
         });
 
-        it('KB_MAX_ENTRIES constant is 50', () => {
-            expect(KB_MAX_ENTRIES).toBe(50);
+        it('KB_MAX_DOCUMENTS constant is 25', () => {
+            expect(KB_MAX_DOCUMENTS).toBe(25);
         });
 
         it('KB_MAX_CONTENT_SIZE constant is 10000', () => {
