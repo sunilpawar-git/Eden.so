@@ -10,23 +10,43 @@ import type { GeminiRequestBody } from '@/features/knowledgeBank/services/gemini
 
 // ── System Instruction Helpers ───────────────────────────
 
-/** Build system instruction text: base prompt + optional KB guidance */
+/** Max chars for the combined system instruction (~25k tokens) */
+const MAX_SYSTEM_CHARS = 100_000;
+
+/** Build system instruction text: base prompt + optional NodePool + optional KB.
+ *  If total exceeds MAX_SYSTEM_CHARS, KB context is truncated (lower priority). */
 function buildSystemText(
     basePrompt: string,
+    nodePoolContext: string | undefined,
+    nodePoolGuidance: string,
     knowledgeBankContext: string | undefined,
-    guidanceString: string
+    kbGuidance: string
 ): string {
-    if (!knowledgeBankContext) return basePrompt;
-    return `${basePrompt}\n\n${guidanceString}\n\n${knowledgeBankContext}`;
+    let text = basePrompt;
+    if (nodePoolContext) text += `\n\n${nodePoolGuidance}\n\n${nodePoolContext}`;
+
+    if (knowledgeBankContext) {
+        const kbBlock = `\n\n${kbGuidance}\n\n${knowledgeBankContext}`;
+        const remaining = MAX_SYSTEM_CHARS - text.length;
+        if (remaining >= kbBlock.length) {
+            text += kbBlock;
+        } else if (remaining > kbGuidance.length + 10) {
+            text += kbBlock.slice(0, remaining);
+        }
+    }
+
+    return text;
 }
 
 /** Build the systemInstruction field for Gemini API */
 function buildSystemInstruction(
     basePrompt: string,
+    nodePoolContext: string | undefined,
+    nodePoolGuidance: string,
     knowledgeBankContext: string | undefined,
-    guidanceString: string
+    kbGuidance: string
 ): { parts: Array<{ text: string }> } {
-    const text = buildSystemText(basePrompt, knowledgeBankContext, guidanceString);
+    const text = buildSystemText(basePrompt, nodePoolContext, nodePoolGuidance, knowledgeBankContext, kbGuidance);
     return { parts: [{ text }] };
 }
 
@@ -111,6 +131,7 @@ async function callAndExtract(body: GeminiRequestBody): Promise<string> {
 /** Generate content from a single prompt */
 export async function generateContent(
     prompt: string,
+    nodePoolContext?: string,
     knowledgeBankContext?: string
 ): Promise<string> {
     if (!isGeminiAvailable()) {
@@ -122,6 +143,8 @@ export async function generateContent(
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
         systemInstruction: buildSystemInstruction(
             SYSTEM_PROMPTS.singleNode,
+            nodePoolContext,
+            strings.nodePool.ai.usageGuidance,
             knowledgeBankContext,
             strings.knowledgeBank.ai.kbUsageGuidance
         ),
@@ -134,10 +157,11 @@ export async function generateContent(
 export async function generateContentWithContext(
     prompt: string,
     contextChain: string[],
+    nodePoolContext?: string,
     knowledgeBankContext?: string
 ): Promise<string> {
     if (contextChain.length === 0) {
-        return generateContent(prompt, knowledgeBankContext);
+        return generateContent(prompt, nodePoolContext, knowledgeBankContext);
     }
 
     if (!isGeminiAvailable()) {
@@ -160,6 +184,8 @@ Generate content that synthesizes and builds upon the connected ideas above.`;
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
         systemInstruction: buildSystemInstruction(
             SYSTEM_PROMPTS.chainGeneration,
+            nodePoolContext,
+            strings.nodePool.ai.usageGuidance,
             knowledgeBankContext,
             strings.knowledgeBank.ai.kbUsageGuidance
         ),
@@ -172,6 +198,7 @@ Generate content that synthesizes and builds upon the connected ideas above.`;
 export async function transformContent(
     content: string,
     type: TransformationType,
+    nodePoolContext?: string,
     knowledgeBankContext?: string
 ): Promise<string> {
     if (!isGeminiAvailable()) {
@@ -188,6 +215,8 @@ Transformed text:`;
         generationConfig: { temperature: 0.5, maxOutputTokens: 1024 },
         systemInstruction: buildSystemInstruction(
             TRANSFORMATION_PROMPTS[type],
+            nodePoolContext,
+            strings.nodePool.ai.transformGuidance,
             knowledgeBankContext,
             strings.knowledgeBank.ai.kbTransformGuidance
         ),

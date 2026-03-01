@@ -1,0 +1,17 @@
+.badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--color-pool-active);
+    color: var(--color-text-on-primary);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    line-height: 16px;
+    text-align: center;
+    pointer-events: none;
+    box-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.2);
+}

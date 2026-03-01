@@ -28,6 +28,7 @@ export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
 
     const handlePinToggle = useCallback(() => { useCanvasStore.getState().toggleNodePinned(id); }, [id]);
     const handleCollapseToggle = useCallback(() => { useCanvasStore.getState().toggleNodeCollapsed(id); }, [id]);
+    const handlePoolToggle = useCallback(() => { useCanvasStore.getState().toggleNodePoolMembership(id); }, [id]);
     const handleColorChange = useCallback((colorKey: NodeColorKey) => {
         useCanvasStore.getState().updateNodeColor(id, colorKey);
     }, [id]);
@@ -56,7 +57,7 @@ export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
     return {
         slashHandler, handleImageClick, handleDelete, handleRegenerate, handleConnectClick,
         handleTransform, handleHeadingChange, handleCopy, handleDuplicate, handleShare,
-        isSharing, isTransforming, handlePinToggle, handleCollapseToggle, handleColorChange,
+        isSharing, isTransforming, handlePinToggle, handleCollapseToggle, handlePoolToggle, handleColorChange,
         handleTagOpen, handleFocusClick, handleDoubleClick, onSubmitAI,
         onTagsChange, onKeyDownReact, focusBody,
     };

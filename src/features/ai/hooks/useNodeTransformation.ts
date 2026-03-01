@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
 import { useCanvasStore, getNodeMap } from '@/features/canvas/stores/canvasStore';
 import { transformContent, type TransformationType } from '../services/geminiService';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
+import { useNodePoolContext } from './useNodePoolContext';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 
@@ -16,6 +17,7 @@ import { toast } from '@/shared/stores/toastStore';
 export function useNodeTransformation() {
     const [isTransforming, setIsTransforming] = useState(false);
     const { getKBContext } = useKnowledgeBankContext();
+    const { getPoolContext } = useNodePoolContext();
 
     /**
      * Transform node content using the specified transformation type
@@ -32,8 +34,10 @@ export function useNodeTransformation() {
             setIsTransforming(true);
 
             try {
+                const excludeIds = new Set([nodeId]);
+                const poolContext = getPoolContext(content, 'transform', excludeIds);
                 const kbContext = getKBContext(content, 'transform');
-                const transformedContent = await transformContent(content, type, kbContext);
+                const transformedContent = await transformContent(content, type, poolContext, kbContext);
                 useCanvasStore.getState().updateNodeOutput(nodeId, transformedContent);
             } catch (error) {
                 const message = error instanceof Error ? error.message : strings.errors.aiError;
@@ -42,7 +46,7 @@ export function useNodeTransformation() {
                 setIsTransforming(false);
             }
         },
-        [getKBContext]
+        [getKBContext, getPoolContext]
     );
 
     return {

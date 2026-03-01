@@ -48,6 +48,7 @@ export async function saveWorkspace(userId: string, workspace: Workspace): Promi
         orderIndex: workspace.orderIndex ?? Date.now(),
         type: workspace.type ?? 'workspace',
         nodeCount: workspace.nodeCount ?? 0,
+        includeAllNodesInPool: workspace.includeAllNodesInPool ?? false,
     });
 }
 
@@ -70,6 +71,7 @@ interface WorkspaceDoc {
     orderIndex?: number;
     type?: 'workspace' | 'divider';
     nodeCount?: number;
+    includeAllNodesInPool?: boolean;
 }
 
 /** Load workspace from Firestore */
@@ -105,6 +107,7 @@ export async function loadWorkspace(userId: string, workspaceId: string): Promis
         orderIndex: data.orderIndex ?? Date.now(),
         type: data.type ?? 'workspace',
         nodeCount: nodeCount ?? 0,
+        includeAllNodesInPool: data.includeAllNodesInPool ?? false,
     };
 }
 
@@ -148,6 +151,7 @@ export async function loadUserWorkspaces(userId: string): Promise<Workspace[]> {
                 orderIndex: data.orderIndex ?? Date.now(),
                 type: data.type ?? 'workspace',
                 nodeCount: nodeCount ?? 0,
+                includeAllNodesInPool: data.includeAllNodesInPool ?? false,
             };
         }));
 

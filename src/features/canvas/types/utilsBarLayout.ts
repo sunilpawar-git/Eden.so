@@ -9,7 +9,8 @@
 /** Every action that can appear in the node utils bar */
 export type UtilsBarActionId =
     | 'ai' | 'connect' | 'copy' | 'pin' | 'delete'
-    | 'tags' | 'image' | 'duplicate' | 'focus' | 'collapse' | 'color' | 'share';
+    | 'tags' | 'image' | 'duplicate' | 'focus' | 'collapse' | 'color' | 'share'
+    | 'pool';
 
 /** Which deck (horizontal bar) an action is assigned to */
 export type UtilsBarDeck = 1 | 2;
@@ -26,7 +27,7 @@ export interface UtilsBarLayout {
 /** Complete ordered list of all action IDs (used for validation and fallback) */
 export const ALL_ACTION_IDS: readonly UtilsBarActionId[] = [
     'ai', 'connect', 'copy', 'pin', 'delete',
-    'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share',
+    'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool',
 ] as const;
 
 /** Minimum actions allowed per deck (prevents empty or single-button bars) */
@@ -35,7 +36,7 @@ export const MIN_ACTIONS_PER_DECK = 2;
 /** Default layout: primary actions in deck 1, secondary in deck 2 */
 export const DEFAULT_UTILS_BAR_LAYOUT: UtilsBarLayout = {
     deck1: ['ai', 'connect', 'copy', 'pin', 'delete'],
-    deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+    deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
 };
 
 const ALL_ACTION_IDS_SET = new Set<string>(ALL_ACTION_IDS);

@@ -13,3 +13,5 @@ export * from './PinIcon';
 export * from './DragHandleIcon';
 export * from './ChevronDownIcon';
 export * from './FreeFlowIcon';
+export * from './MemoryChipIcon';
+export * from './BrainIcon';

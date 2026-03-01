@@ -18,6 +18,11 @@ vi.mock('@/features/knowledgeBank/hooks/useKnowledgeBankContext', () => ({
     useKnowledgeBankContext: () => ({ getKBContext: () => '' }),
 }));
 
+// Mock Node Pool context hook (returns empty string = no context)
+vi.mock('../hooks/useNodePoolContext', () => ({
+    useNodePoolContext: () => ({ getPoolContext: () => '' }),
+}));
+
 describe('useNodeTransformation - Phase 4', () => {
     const mockTransformContent = vi.mocked(geminiService.transformContent);
 
@@ -56,6 +61,7 @@ describe('useNodeTransformation - Phase 4', () => {
         expect(mockTransformContent).toHaveBeenCalledWith(
             'Original content to transform',
             'refine',
+            '',
             ''
         );
     });

@@ -23,11 +23,12 @@ const ACTION_LABELS: Record<UtilsBarActionId, string> = {
     collapse: strings.nodeUtils.collapse,
     color: strings.nodeUtils.color,
     share: strings.nodeUtils.share,
+    pool: strings.nodePool.addToPool,
 };
 
 const ACTION_ICONS: Record<UtilsBarActionId, string> = {
     ai: '✨', connect: '🔗', copy: '📋', pin: '📌', delete: '🗑️',
-    tags: '🏷️', image: '🖼️', duplicate: '📑', focus: '🔍', collapse: '▾', color: '🎨', share: '📤',
+    tags: '🏷️', image: '🖼️', duplicate: '📑', focus: '🔍', collapse: '▾', color: '🎨', share: '📤', pool: '🧠',
 };
 
 interface DeckColumnProps {

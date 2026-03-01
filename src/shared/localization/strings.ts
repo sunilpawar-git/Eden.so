@@ -3,6 +3,7 @@ import { workspaceStrings } from './workspaceStrings';
 import { canvasStrings } from './canvasStrings';
 import { knowledgeBankStrings } from './knowledgeBankStrings';
 import { calendarStrings } from './calendarStrings';
+import { nodePoolStrings } from './nodePoolStrings';
 import { settingsStrings } from './settingsStrings';
 
 export const strings = {
@@ -266,6 +267,7 @@ export const strings = {
         codeDisplay: '</>',
     },
     knowledgeBank: knowledgeBankStrings,
+    nodePool: nodePoolStrings,
     calendar: calendarStrings,
 } as const;
 

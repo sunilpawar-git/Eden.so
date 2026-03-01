@@ -21,6 +21,8 @@ import {
     arrangeNodesAfterResize,
     toggleNodePinnedInArray,
     toggleNodeCollapsedInArray,
+    toggleNodePoolInArray,
+    clearAllNodePoolInArray,
     setNodeColorInArray,
 } from './canvasStoreHelpers';
 import { duplicateNode as cloneNode } from '../services/nodeDuplicationService';
@@ -72,6 +74,8 @@ interface CanvasActions {
     togglePromptCollapsed: (nodeId: string) => void;
     toggleNodePinned: (nodeId: string) => void;
     toggleNodeCollapsed: (nodeId: string) => void;
+    toggleNodePoolMembership: (nodeId: string) => void;
+    clearAllNodePool: () => void;
 
     // Edge actions
     addEdge: (edge: CanvasEdge) => void;
@@ -176,6 +180,12 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     toggleNodeCollapsed: (nodeId) =>
         set((s) => ({ nodes: toggleNodeCollapsedInArray(s.nodes, nodeId) })),
+
+    toggleNodePoolMembership: (nodeId) =>
+        set((s) => ({ nodes: toggleNodePoolInArray(s.nodes, nodeId) })),
+
+    clearAllNodePool: () =>
+        set((s) => ({ nodes: clearAllNodePoolInArray(s.nodes) })),
 
     deleteNode: (nodeId) =>
         set((s) => ({

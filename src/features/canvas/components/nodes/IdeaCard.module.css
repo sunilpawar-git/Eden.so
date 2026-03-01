@@ -217,6 +217,18 @@
     padding-bottom: var(--space-sm);
 }
 
+/* Pool badge — subtle AI Memory indicator, top-right corner */
+.poolBadge {
+    position: absolute;
+    top: var(--space-xs);
+    right: var(--space-xs);
+    color: var(--color-pool-active);
+    pointer-events: none;
+    z-index: 1;
+    line-height: 1;
+    opacity: 0.8;
+}
+
 /* Wrapper must also auto-size so ReactFlow container doesn't force full height */
 .cardWrapperCollapsed {
     height: auto !important;

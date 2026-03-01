@@ -170,6 +170,35 @@
     text-align: right;
 }
 
+/* AI Memory info row */
+.memoryInfo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+}
+
+.memoryCount {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.clearButton {
+    padding: var(--space-xs) var(--space-sm);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.clearButton:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+
 /* Keyboard Shortcuts */
 .shortcutList {
     display: flex;

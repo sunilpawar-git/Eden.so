@@ -228,6 +228,33 @@ export function toggleNodeCollapsedInArray(
 }
 
 /**
+ * Toggles includeInAIPool on a single node. No-op if nodeId not found.
+ */
+export function toggleNodePoolInArray(
+    nodes: CanvasNode[],
+    nodeId: string
+): CanvasNode[] {
+    if (!nodes.some((n) => n.id === nodeId)) return nodes;
+    return nodes.map((node) =>
+        node.id === nodeId
+            ? { ...node, data: { ...node.data, includeInAIPool: !node.data.includeInAIPool }, updatedAt: new Date() }
+            : node
+    );
+}
+
+/**
+ * Clears includeInAIPool on all nodes. Only mutates nodes that were pooled.
+ */
+export function clearAllNodePoolInArray(nodes: CanvasNode[]): CanvasNode[] {
+    if (!nodes.some((n) => n.data.includeInAIPool)) return nodes;
+    return nodes.map((node) =>
+        node.data.includeInAIPool
+            ? { ...node, data: { ...node.data, includeInAIPool: false }, updatedAt: new Date() }
+            : node
+    );
+}
+
+/**
  * Sets node color in an idempotent way (no-op when unchanged or missing node).
  */
 export function setNodeColorInArray(

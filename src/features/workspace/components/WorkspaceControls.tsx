@@ -9,6 +9,7 @@ import { useAddNode } from '@/features/canvas/hooks/useAddNode';
 import { useArrangeAnimation } from '@/features/canvas/hooks/useArrangeAnimation';
 import { DeleteWorkspaceButton } from './DeleteWorkspaceButton';
 import { ClearCanvasButton } from './ClearCanvasButton';
+import { WorkspacePoolButton } from './WorkspacePoolButton';
 import styles from './WorkspaceControls.module.css';
 
 export function WorkspaceControls() {
@@ -64,6 +65,8 @@ export function WorkspaceControls() {
             </button>
             <div className={styles.divider} />
             <ClearCanvasButton nodeCount={nodeCount} />
+            <div className={styles.divider} />
+            <WorkspacePoolButton />
             <div className={styles.divider} />
             <DeleteWorkspaceButton />
         </div>

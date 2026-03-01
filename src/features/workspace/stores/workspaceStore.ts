@@ -21,6 +21,7 @@ interface WorkspaceActions {
     setNodeCount: (workspaceId: string, count: number) => void;
     removeWorkspace: (workspaceId: string) => void;
     reorderWorkspaces: (sourceIndex: number, destinationIndex: number) => void;
+    toggleWorkspacePool: (workspaceId: string) => void;
     setLoading: (isLoading: boolean) => void;
     setSwitching: (isSwitching: boolean) => void;
 }
@@ -94,6 +95,15 @@ export const useWorkspaceStore = create<WorkspaceStore>()((set) => ({
             return { workspaces: list.map((ws, i) => ({ ...ws, orderIndex: i })) };
         });
     },
+
+    toggleWorkspacePool: (workspaceId: string) =>
+        set((state) => ({
+            workspaces: state.workspaces.map((ws) =>
+                ws.id === workspaceId
+                    ? { ...ws, includeAllNodesInPool: !(ws.includeAllNodesInPool ?? false), updatedAt: new Date() }
+                    : ws
+            ),
+        })),
 
     setLoading: (isLoading: boolean) => set({ isLoading }),
     setSwitching: (isSwitching: boolean) => set({ isSwitching }),

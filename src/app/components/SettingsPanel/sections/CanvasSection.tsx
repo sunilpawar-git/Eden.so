@@ -1,5 +1,5 @@
 /**
- * Canvas Section - Canvas display, scroll mode, connector style, and auto-save settings
+ * Canvas Section - Canvas display, scroll mode, connector style, auto-save, and AI Memory settings
  */
 import React from 'react';
 import { strings } from '@/shared/localization/strings';
@@ -7,6 +7,7 @@ import { useSettingsStore, type CanvasScrollMode } from '@/shared/stores/setting
 import { Toggle } from '@/shared/components/Toggle';
 import { SegmentedControl } from '@/shared/components/SegmentedControl';
 import { ConnectorStylePicker } from './ConnectorStylePicker';
+import { AIMemorySection } from './AIMemorySection';
 import styles from '../SettingsPanel.module.css';
 
 const SCROLL_MODE_OPTIONS = [
@@ -80,6 +81,8 @@ export const CanvasSection = React.memo(function CanvasSection() {
                     </span>
                 </div>
             )}
+
+            <AIMemorySection />
         </div>
     );
 });
