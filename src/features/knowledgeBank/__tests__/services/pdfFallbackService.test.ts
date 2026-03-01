@@ -9,7 +9,7 @@ import type { FileParser, ParseResult } from '../../parsers/types';
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockExtractPdfWithGemini = vi.fn();
-const mockChunkDocument = vi.fn(() => [] as { title: string; content: string; index: number }[]);
+const mockChunkDocument = vi.fn();
 
 vi.mock('../../services/geminiPdfExtractor', () => ({
     extractPdfWithGemini: (...args: unknown[]) => mockExtractPdfWithGemini(...args),
@@ -64,7 +64,7 @@ describe('parseWithPdfFallback', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockChunkDocument.mockReturnValue([]);
+        mockChunkDocument.mockReturnValue([] as Array<{ title: string; content: string; index: number }>);
     });
 
     // ── Primary parser succeeds ────────────────────────────────────────────
@@ -121,10 +121,11 @@ describe('parseWithPdfFallback', () => {
 
         const result = await parseWithPdfFallback(makeParser(new ParserError('no text', 'PDF_SCANNED')), makePdfFile(), onFallback);
 
-        expect(result.chunks).toHaveLength(2);
-        expect(result.chunks![0].mimeType).toBe('application/pdf');
-        expect(result.chunks![0].originalFileName).toBe('lecture.pdf');
-        expect(result.chunks![1].content).toBe('part two');
+        const chunks = result.chunks ?? [];
+        expect(chunks).toHaveLength(2);
+        expect(chunks[0]?.mimeType).toBe('application/pdf');
+        expect(chunks[0]?.originalFileName).toBe('lecture.pdf');
+        expect(chunks[1]?.content).toBe('part two');
     });
 
     it('produces no chunks when chunkDocument returns empty array', async () => {

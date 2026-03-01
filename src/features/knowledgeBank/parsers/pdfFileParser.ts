@@ -7,14 +7,14 @@
 import type { FileParser, ParseResult } from './types';
 import { ParserError } from './types';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-
-/** Ensures the pdfjs worker URL is only assigned once across all parse calls */
-let workerInitialised = false;
 import { readFileAsArrayBuffer } from './fileReaderUtil';
 import { chunkDocument } from '../services/chunkingService';
 import { sanitizeContent } from '../utils/sanitizer';
 import { strings } from '@/shared/localization/strings';
 import { titleFromFilename } from './parserUtils';
+
+/** Ensures the pdfjs worker URL is only assigned once across all parse calls */
+let workerInitialised = false;
 
 const SUPPORTED_MIME_TYPES = ['application/pdf'] as const;
 const SUPPORTED_EXTENSIONS = ['.pdf'] as const;

@@ -87,7 +87,7 @@ describe('extractPdfWithGemini', () => {
         // Prompt must be in systemInstruction
         expect(body.systemInstruction?.parts[0]?.text).toBe('Extract all text from this PDF.');
         // Prompt must NOT leak into contents.parts
-        const textPart = body.contents[0].parts.find(
+        const textPart = body.contents[0]!.parts.find(
             (p): p is { text: string } => typeof p === 'object' && p !== null && 'text' in p
         );
         expect(textPart).toBeUndefined();
@@ -97,7 +97,7 @@ describe('extractPdfWithGemini', () => {
         await extractPdfWithGemini(makePdfFile());
 
         const [body] = mockCallGemini.mock.calls[0] as [{ contents: Array<{ parts: unknown[] }> }];
-        const inlinePart = body.contents[0].parts.find(
+        const inlinePart = body.contents[0]!.parts.find(
             (p): p is { inlineData: { mimeType: string; data: string } } =>
                 typeof p === 'object' && p !== null && 'inlineData' in p
         );
