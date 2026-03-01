@@ -71,13 +71,21 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
         },
     });
 
-    // Sync editable prop reactively — TipTap only reads it at creation time.
-    // isEditorReady is module-level so there is no stale-closure risk here.
+    // Keep a stable ref to the editor so the editable-sync effect can read
+    // the current editor without listing it as a dep (which causes a cascade).
+    const editorRef = useRef(editor);
+    editorRef.current = editor;
+
+    // Sync editable reactively — TipTap only reads it at creation time.
+    // Depend only on [editable]: setEditable() dispatches a ProseMirror
+    // transaction which would mutate editor state → re-render → effect re-fires
+    // → "Maximum update depth exceeded" if editor is also a dep.
     useEffect(() => {
-        if (isEditorReady(editor) && editor.isEditable !== editable) {
-            editor.setEditable(editable);
+        const e = editorRef.current;
+        if (isEditorReady(e) && e.isEditable !== editable) {
+            e.setEditable(editable);
         }
-    }, [editor, editable]);
+    }, [editable]); // eslint-disable-line react-hooks/exhaustive-deps — editorRef is always current
 
     const getMarkdown = useCallback((): string => {
         return isEditorReady(editor) ? htmlToMarkdown(editor.getHTML()) : '';
