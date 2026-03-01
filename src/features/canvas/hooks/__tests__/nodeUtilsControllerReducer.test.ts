@@ -6,10 +6,7 @@
  *  OUTSIDE_POINTER → always closes everything (click-outside is always intentional)
  */
 import { describe, it, expect } from 'vitest';
-import {
-    nodeUtilsControllerReducer,
-    initialNodeUtilsControllerState,
-} from '../nodeUtilsControllerReducer';
+import { nodeUtilsControllerReducer } from '../nodeUtilsControllerReducer';
 
 describe('nodeUtilsControllerReducer – PROXIMITY_LOST vs OUTSIDE_POINTER semantics', () => {
     it('PROXIMITY_LOST with activeSubmenu="color" returns state unchanged (portal must stay accessible)', () => {

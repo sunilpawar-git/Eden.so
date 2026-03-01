@@ -8,8 +8,7 @@
  * Fix: PROXIMITY_LOST now returns state unchanged when activeSubmenu !== 'none'.
  */
 import { describe, it, expect } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { renderHook, act, render, screen, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
 import {
     nodeUtilsControllerReducer,
