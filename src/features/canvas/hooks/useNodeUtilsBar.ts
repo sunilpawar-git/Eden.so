@@ -25,6 +25,7 @@ export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
         handleDeckTwoHoverLeave,
         openSubmenu,
         closeSubmenu,
+        handleProximityLost,
     } = controllerActions;
 
     const handleHoverLeave = useCallback((event?: { relatedTarget?: EventTarget | null }) => {
@@ -70,6 +71,7 @@ export function useNodeUtilsBar(props: UseNodeUtilsBarProps) {
         containerRef,
         handleHoverEnter,
         handleHoverLeave,
+        handleProximityLost,
         toggleDeckTwo,
         handleDeckTwoHoverEnter,
         handleDeckTwoHoverLeave,

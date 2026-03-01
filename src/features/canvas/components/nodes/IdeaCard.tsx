@@ -22,7 +22,7 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
         handleTransform, handleHeadingChange, handleCopy, handleDuplicate, handleShare,
         isSharing, isTransforming, handlePinToggle, handleCollapseToggle, handleColorChange, handleTagOpen,
         handleFocusClick, handleImageClick, slashHandler, onSubmitAI, onTagsChange, onKeyDownReact,
-        hasContent, isEditing, isPinnedOpen, calendar, focusBody,
+        hasContent, isEditing, isPinnedOpen, calendar, focusBody, registerProximityLostFn,
     } = api;
     const nodeColorKey = normalizeNodeColorKey(resolvedData.colorKey);
 
@@ -55,6 +55,7 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
                     visible={!isCollapsed && (showTagInput || tagIds.length > 0)} />
             </div>
             <NodeUtilsBar ref={barContainerRef}
+                registerProximityLostFn={registerProximityLostFn}
                 onTagClick={handleTagOpen} onImageClick={handleImageClick}
                 onConnectClick={handleConnectClick}
                 onCopyClick={handleCopy} onDuplicateClick={handleDuplicate}

@@ -25,4 +25,6 @@ export interface NodeUtilsBarProps {
     disabled?: boolean;
     /** Bar stays visible regardless of hover (right-click/long-press pin) */
     isPinnedOpen?: boolean;
+    /** Called once on mount with the handleProximityLost callback, so the card wrapper can trigger it on mouse leave. */
+    registerProximityLostFn?: (fn: () => void) => void;
 }

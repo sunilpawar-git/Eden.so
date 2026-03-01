@@ -23,7 +23,8 @@ export type NodeUtilsControllerEvent =
     | { type: 'OPEN_SUBMENU'; submenu: Exclude<NodeUtilsSubmenu, 'none'> }
     | { type: 'CLOSE_SUBMENU' }
     | { type: 'ESCAPE' }
-    | { type: 'OUTSIDE_POINTER' };
+    | { type: 'OUTSIDE_POINTER' }
+    | { type: 'PROXIMITY_LOST' };
 
 export const initialNodeUtilsControllerState: NodeUtilsControllerState = {
     isDeckTwoOpen: false,
@@ -60,6 +61,7 @@ export function nodeUtilsControllerReducer(
             }
             if (state.mode === 'auto') return state;
             return { ...state, isDeckTwoOpen: false, activeSubmenu: 'none', mode: 'auto' };
+        case 'PROXIMITY_LOST':
         case 'OUTSIDE_POINTER':
             if (!state.isDeckTwoOpen && state.activeSubmenu === 'none' && state.mode === 'auto') return state;
             return { ...state, isDeckTwoOpen: false, activeSubmenu: 'none', mode: 'auto' };

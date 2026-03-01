@@ -218,5 +218,52 @@ describe('useNodeUtilsController', () => {
             act(() => { vi.advanceTimersByTime(HOVER_INTENT_DELAY_MS); });
             expect(result.current.state.isDeckTwoOpen).toBe(false);
         });
+
+        it('handleProximityLost closes deck two in manual mode immediately', () => {
+            const { result } = renderHook(() => useNodeUtilsController());
+            act(() => { result.current.actions.toggleDeckTwo(); });
+            expect(result.current.state.isDeckTwoOpen).toBe(true);
+            expect(result.current.state.mode).toBe('manual');
+            act(() => { result.current.actions.handleProximityLost(); });
+            expect(result.current.state.isDeckTwoOpen).toBe(false);
+            expect(result.current.state.mode).toBe('auto');
+        });
+
+        it('handleProximityLost also closes open submenus in manual mode', () => {
+            const { result } = renderHook(() => useNodeUtilsController());
+            act(() => { result.current.actions.openSubmenu('color'); });
+            expect(result.current.state.activeSubmenu).toBe('color');
+            act(() => { result.current.actions.handleProximityLost(); });
+            expect(result.current.state.activeSubmenu).toBe('none');
+            expect(result.current.state.mode).toBe('auto');
+        });
+
+        it('handleProximityLost is a no-op when isPinnedOpen=true', () => {
+            const { result } = renderHook(() => useNodeUtilsController(true));
+            act(() => { result.current.actions.toggleDeckTwo(); });
+            expect(result.current.state.isDeckTwoOpen).toBe(true);
+            act(() => { result.current.actions.handleProximityLost(); });
+            expect(result.current.state.isDeckTwoOpen).toBe(true);
+        });
+    });
+});
+
+describe('nodeUtilsControllerReducer – PROXIMITY_LOST', () => {
+    it('closes deck two and resets mode regardless of manual mode', () => {
+        const state = { isDeckTwoOpen: true, mode: 'manual' as const, activeSubmenu: 'none' as const };
+        const next = nodeUtilsControllerReducer(state, { type: 'PROXIMITY_LOST' });
+        expect(next.isDeckTwoOpen).toBe(false);
+        expect(next.mode).toBe('auto');
+    });
+
+    it('closes active submenus', () => {
+        const state = { isDeckTwoOpen: false, mode: 'manual' as const, activeSubmenu: 'share' as const };
+        const next = nodeUtilsControllerReducer(state, { type: 'PROXIMITY_LOST' });
+        expect(next.activeSubmenu).toBe('none');
+    });
+
+    it('returns same reference when already fully closed', () => {
+        expect(nodeUtilsControllerReducer(initialNodeUtilsControllerState, { type: 'PROXIMITY_LOST' }))
+            .toBe(initialNodeUtilsControllerState);
     });
 });

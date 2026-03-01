@@ -12,13 +12,8 @@ import {
 } from './nodeUtilsControllerReducer';
 import type { NodeUtilsSubmenu } from './nodeUtilsControllerReducer';
 
-export { NODE_UTILS_PORTAL_ATTR } from './nodeUtilsControllerReducer';
+export { NODE_UTILS_PORTAL_ATTR, HOVER_INTENT_DELAY_MS, initialNodeUtilsControllerState, nodeUtilsControllerReducer } from './nodeUtilsControllerReducer';
 export type { NodeUtilsSubmenu, NodeUtilsMode, NodeUtilsControllerState, NodeUtilsControllerEvent } from './nodeUtilsControllerReducer';
-export { HOVER_INTENT_DELAY_MS, initialNodeUtilsControllerState, nodeUtilsControllerReducer } from './nodeUtilsControllerReducer';
-
-interface HoverLeaveLike {
-    relatedTarget?: EventTarget | null;
-}
 
 export function useNodeUtilsController(isPinnedOpen = false) {
     const [state, dispatch] = useReducer(nodeUtilsControllerReducer, initialNodeUtilsControllerState);
@@ -34,7 +29,7 @@ export function useNodeUtilsController(isPinnedOpen = false) {
         deckTwoHover.cancel();
     }, [deckTwoHover]);
 
-    const handleHoverLeave = useCallback((event?: HoverLeaveLike) => {
+    const handleHoverLeave = useCallback((event?: { relatedTarget?: EventTarget | null }) => {
         deckTwoHover.cancel();
         if (isPinnedRef.current) return;
         if (isPortalBoundaryTarget(event?.relatedTarget)) return;
@@ -64,12 +59,14 @@ export function useNodeUtilsController(isPinnedOpen = false) {
         dispatch({ type: 'OUTSIDE_POINTER' });
     }, []);
 
+    const handleProximityLost = useCallback(() => { if (!isPinnedRef.current) dispatch({ type: 'PROXIMITY_LOST' }); }, []);
+
     return {
         state,
         actions: {
             handleHoverEnter, handleHoverLeave,
             toggleDeckTwo, handleDeckTwoHoverEnter, handleDeckTwoHoverLeave,
-            openSubmenu, closeSubmenu, onEscape, onOutsidePointer,
+            openSubmenu, closeSubmenu, onEscape, onOutsidePointer, handleProximityLost,
         },
     };
 }

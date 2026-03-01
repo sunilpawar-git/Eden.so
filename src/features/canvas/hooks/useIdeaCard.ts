@@ -38,7 +38,9 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
     const cardWrapperRef = useRef<HTMLDivElement>(null);
     const barContainerRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<NodeHeadingHandle>(null);
-    useProximityBar(cardWrapperRef, barContainerRef);
+    const proximityLostFnRef = useRef<(() => void) | undefined>(undefined);
+    const registerProximityLostFn = useCallback((fn: () => void) => { proximityLostFnRef.current = fn; }, []);
+    useProximityBar(cardWrapperRef, barContainerRef, () => { proximityLostFnRef.current?.(); });
     const { isPinnedOpen, handlers: pinOpenHandlers } = useBarPinOpen();
 
     const { generateFromPrompt, branchFromNode } = useNodeGeneration();
@@ -72,6 +74,6 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
     return {
         resolvedData, heading, prompt, output, isGenerating, isPinned, isCollapsed, tagIds, linkPreviews, calendarEvent,
         isAICard, showTagInput, contentRef, cardWrapperRef, barContainerRef, headingRef,
-        pinOpenHandlers, editor, hasContent, isEditing, isPinnedOpen, calendar, ...handlers,
+        pinOpenHandlers, editor, hasContent, isEditing, isPinnedOpen, calendar, registerProximityLostFn, ...handlers,
     };
 }

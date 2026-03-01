@@ -4,7 +4,7 @@
  * Layout driven by useUtilsBarLayout (settings store).
  * Memoized per CLAUDE.md performance rules (500+ node canvases).
  */
-import React, { forwardRef, useCallback } from 'react';
+import React, { forwardRef, useCallback, useEffect } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { NodeUtilsBarDeckButtons } from './NodeUtilsBarDeckButtons';
 import { TooltipButton } from './TooltipButton';
@@ -14,8 +14,12 @@ import type { NodeUtilsBarProps } from './NodeUtilsBar.types';
 import styles from './NodeUtilsBar.module.css';
 
 export const NodeUtilsBar = React.memo(forwardRef<HTMLDivElement, NodeUtilsBarProps>(function NodeUtilsBar(props, ref) {
-    const { disabled = false, isPinnedOpen = false } = props;
+    const { disabled = false, isPinnedOpen = false, registerProximityLostFn } = props;
     const bar = useNodeUtilsBar({ isPinnedOpen });
+
+    useEffect(() => {
+        registerProximityLostFn?.(bar.handleProximityLost);
+    }, [registerProximityLostFn, bar.handleProximityLost]);
     const { deckOneActions, deckTwoActions } = useUtilsBarLayout();
     const deckOneCls = isPinnedOpen ? styles.deckOnePinned : styles.deckOne;
     const deckTwoBase = isPinnedOpen ? styles.deckTwoPinned : styles.deckTwo;

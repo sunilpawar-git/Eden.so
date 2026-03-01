@@ -181,6 +181,43 @@ describe('useProximityBar', () => {
     });
 
 
+    describe('onProximityLost callback', () => {
+        it('calls onProximityLost after mouseleave debounce', () => {
+            const onProximityLost = vi.fn();
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+            renderHook(() => useProximityBar(cardRef, barRef, onProximityLost));
+
+            card.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+            card.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+            expect(onProximityLost).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(300);
+            expect(onProximityLost).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT call onProximityLost if mouse re-enters within debounce window', () => {
+            const onProximityLost = vi.fn();
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+            renderHook(() => useProximityBar(cardRef, barRef, onProximityLost));
+
+            card.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+            vi.advanceTimersByTime(200);
+            card.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+            vi.advanceTimersByTime(300);
+            expect(onProximityLost).not.toHaveBeenCalled();
+        });
+
+        it('works without onProximityLost (no crash when undefined)', () => {
+            const cardRef = { current: card };
+            const barRef = { current: bar };
+            renderHook(() => useProximityBar(cardRef, barRef));
+            card.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+            vi.advanceTimersByTime(300);
+            // No throw expected
+        });
+    });
+
     describe('data-bar-deck removed (deck 2 controlled by controller)', () => {
         it('does NOT set data-bar-deck on mousemove', () => {
             const cardRef = { current: card };

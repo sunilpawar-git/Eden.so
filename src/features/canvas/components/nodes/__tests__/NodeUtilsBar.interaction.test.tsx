@@ -116,6 +116,41 @@ describe('NodeUtilsBar interaction', () => {
         });
     });
 
+    describe('proximity lost — deck 2 cascade-in bug fix', () => {
+        it('registerProximityLostFn provides a callback that closes deck 2 even in manual mode', () => {
+            let proximityLostFn: (() => void) | null = null;
+            render(
+                <NodeUtilsBar
+                    {...defaultProps}
+                    registerProximityLostFn={(fn) => { proximityLostFn = fn; }}
+                />
+            );
+
+            fireEvent.click(screen.getByLabelText('Show more actions'));
+            const deck2 = screen.getAllByRole('toolbar')[1] as HTMLElement;
+            expect(deck2.className).toContain('deckTwoOpen');
+
+            expect(proximityLostFn).not.toBeNull();
+            act(() => { proximityLostFn?.(); });
+            expect(deck2.className).not.toContain('deckTwoOpen');
+        });
+
+        it('isPinnedOpen=true prevents proximityLost from closing deck 2', () => {
+            let proximityLostFn: (() => void) | null = null;
+            render(
+                <NodeUtilsBar
+                    {...defaultProps}
+                    isPinnedOpen
+                    registerProximityLostFn={(fn) => { proximityLostFn = fn; }}
+                />
+            );
+
+            const deck2 = screen.getAllByRole('toolbar')[1] as HTMLElement;
+            act(() => { proximityLostFn?.(); });
+            expect(deck2.className).not.toContain('deckTwoOpen');
+        });
+    });
+
     describe('CSS z-index protection via data attributes', () => {
         it('sets data-bar-active on the container when deck 2 is opened', () => {
             render(<NodeUtilsBar {...defaultProps} />);

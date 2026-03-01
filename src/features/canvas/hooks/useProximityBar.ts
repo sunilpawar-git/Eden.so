@@ -1,9 +1,5 @@
-/**
- * useProximityBar — Ref-based proximity detection for NodeUtilsBar.
- * Sets data attributes on the DOM (zero React state, zero re-renders).
- * Pure math helpers live in proximityHelpers.ts (SRP).
- */
-import { useEffect, type RefObject } from 'react';
+/** Ref-based proximity detection for NodeUtilsBar — sets data attributes (zero React re-renders). */
+import { useEffect, useRef, type RefObject } from 'react';
 import { recalculatePlacement, checkProximity } from './proximityHelpers';
 
 export { PROXIMITY_THRESHOLD_PX, FLIP_THRESHOLD_PX } from './proximityHelpers';
@@ -11,7 +7,11 @@ export { PROXIMITY_THRESHOLD_PX, FLIP_THRESHOLD_PX } from './proximityHelpers';
 export function useProximityBar(
     cardRef: RefObject<HTMLElement | null>,
     barRef: RefObject<HTMLElement | null>,
+    onProximityLost?: () => void,
 ): void {
+    const onProximityLostRef = useRef(onProximityLost);
+    onProximityLostRef.current = onProximityLost;
+
     useEffect(() => {
         const card = cardRef.current;
         if (!card) return;
@@ -39,6 +39,7 @@ export function useProximityBar(
             leaveTimeout = setTimeout(() => {
                 card.removeAttribute('data-hovered');
                 card.removeAttribute('data-bar-proximity');
+                onProximityLostRef.current?.();
             }, 300);
         };
 
