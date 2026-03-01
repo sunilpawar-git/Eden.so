@@ -6,6 +6,7 @@
  */
 import type { FileParser, ParseResult } from './types';
 import { ParserError } from './types';
+import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { readFileAsArrayBuffer } from './fileReaderUtil';
 import { chunkDocument } from '../services/chunkingService';
 import { sanitizeContent } from '../utils/sanitizer';
@@ -65,10 +66,8 @@ async function extractTextFromPdf(data: ArrayBuffer): Promise<string[]> {
     try {
         const pdfjsLib = await import('pdfjs-dist');
 
-        // Configure worker from CDN (avoids Vite bundling issues)
-        const cdnBase = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js';
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-            `${cdnBase}/${pdfjsLib.version}/pdf.worker.min.mjs`;
+        // Use locally-bundled worker (Vite ?url import) — no CDN dependency
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
         const loadingTask = pdfjsLib.getDocument({ data });
         const pdf = await loadingTask.promise;
