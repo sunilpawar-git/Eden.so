@@ -35,6 +35,8 @@ export const knowledgeBankStrings = {
     imageDescriptionPrompt: 'Describe this image in detail for use as reference context in a knowledge base. Focus on key visual elements, text content if any, diagrams, charts, or notable features. Be concise but comprehensive.',
     processingDocx: 'Extracting text from Word document...',
     processingPdf: 'Extracting text from PDF...',
+    pdfScannedFallback: 'Scanned PDF detected — switching to AI-powered reading...',
+    pdfExtractionPrompt: 'Extract all text from this PDF document exactly as it appears. Output only the extracted text content, preserving paragraph structure and line breaks. Do not add commentary, headers, or formatting beyond what exists in the original document.',
     chunkingDocument: 'Splitting large document into sections...',
     pdfExtracted: 'PDF content extracted',
     documentChunkTitle: 'Part',

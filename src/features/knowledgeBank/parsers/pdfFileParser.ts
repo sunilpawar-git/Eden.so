@@ -7,6 +7,9 @@
 import type { FileParser, ParseResult } from './types';
 import { ParserError } from './types';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+/** Ensures the pdfjs worker URL is only assigned once across all parse calls */
+let workerInitialised = false;
 import { readFileAsArrayBuffer } from './fileReaderUtil';
 import { chunkDocument } from '../services/chunkingService';
 import { sanitizeContent } from '../utils/sanitizer';
@@ -33,7 +36,7 @@ export class PdfFileParser implements FileParser {
         if (!fullText.trim()) {
             throw new ParserError(
                 strings.knowledgeBank.errors.pdfEmpty,
-                'PARSE_FAILED'
+                'PDF_SCANNED'
             );
         }
 
@@ -66,8 +69,11 @@ async function extractTextFromPdf(data: ArrayBuffer): Promise<string[]> {
     try {
         const pdfjsLib = await import('pdfjs-dist');
 
-        // Use locally-bundled worker (Vite ?url import) — no CDN dependency
-        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+        // Assign the locally-bundled worker URL only once (idempotent but avoids global side effects)
+        if (!workerInitialised) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+            workerInitialised = true;
+        }
 
         const loadingTask = pdfjsLib.getDocument({ data });
         const pdf = await loadingTask.promise;
@@ -83,8 +89,7 @@ async function extractTextFromPdf(data: ArrayBuffer): Promise<string[]> {
         }
 
         return pageTexts;
-    } catch (error) {
-        if (error instanceof ParserError) throw error;
+    } catch {
         throw new ParserError(
             strings.knowledgeBank.errors.pdfParseFailed,
             'PARSE_FAILED'

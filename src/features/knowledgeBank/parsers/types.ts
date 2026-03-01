@@ -38,7 +38,7 @@ export interface FileParser {
 export class ParserError extends Error {
     constructor(
         message: string,
-        public readonly code: 'UNSUPPORTED_TYPE' | 'PARSE_FAILED'
+        public readonly code: 'UNSUPPORTED_TYPE' | 'PARSE_FAILED' | 'PDF_SCANNED'
     ) {
         super(message);
         this.name = 'ParserError';

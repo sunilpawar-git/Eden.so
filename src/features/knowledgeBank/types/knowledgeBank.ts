@@ -119,6 +119,7 @@ export const KB_CHARS_PER_TOKEN = 4;               // Approx chars per token (1 
 export const KB_CONTEXT_ENTRY_OVERHEAD = 30;       // ~chars per entry for "[Knowledge: ...]\n" wrapper
 export const KB_CHUNK_THRESHOLD = 8_000;           // Chars before auto-chunking
 export const KB_SUMMARY_THRESHOLD = 500;           // Chars before auto-summarization
+export const KB_PDF_EXTRACTION_MAX_TOKENS = 8192;  // Max output tokens for Gemini PDF extraction
 export const KB_MAX_TITLE_LENGTH = 100;             // Max chars per title
 export const KB_PREVIEW_LENGTH = 120;              // Content preview truncation
 export const KB_MAX_TAGS_PER_ENTRY = 5;            // Max tags per entry
