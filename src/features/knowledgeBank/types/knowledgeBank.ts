@@ -18,7 +18,8 @@ export interface KnowledgeBankEntry {
     originalFileName?: string;
     storageUrl?: string;         // Firebase Storage URL (images only)
     mimeType?: string;
-    parentEntryId?: string;      // Links chunks to parent document entry
+    parentEntryId?: string | null; // Links chunks to parent document entry (null = standalone/parent)
+    documentSummaryStatus?: 'pending' | 'ready'; // Tracks document-level summary availability
     pinned?: boolean;             // Pinned entries always rank first in AI context
     enabled: boolean;
     createdAt: Date;
@@ -54,6 +55,19 @@ export interface KnowledgeBankState {
     summarizingEntryIds: string[];
 }
 
+/** A parent document entry grouped with its child chunks */
+export interface DocumentGroup {
+    parent: KnowledgeBankEntry;
+    children: KnowledgeBankEntry[];
+    totalParts: number;
+}
+
+/** Result of grouping entries by document relationship */
+export interface GroupedEntries {
+    standalone: KnowledgeBankEntry[];
+    documents: DocumentGroup[];
+}
+
 /** Zustand store actions */
 export interface KnowledgeBankActions {
     setEntries: (entries: KnowledgeBankEntry[]) => void;
@@ -75,6 +89,9 @@ export interface KnowledgeBankActions {
     getFilteredEntries: () => KnowledgeBankEntry[];
     getAllTags: () => string[];
     getEntryCount: () => number;
+    toggleDocumentGroup: (parentId: string) => void;
+    removeDocumentGroup: (parentId: string) => void;
+    getDocumentCount: () => number;
 }
 
 // ── Generation Type Budgets ─────────────────────────────
@@ -109,7 +126,9 @@ export const KB_SUMMARY_TOKEN_LIMITS: Record<SummaryTier, number> = {
 
 // ── Constants ──────────────────────────────────────────
 
+/** @deprecated Use KB_MAX_DOCUMENTS for limit checks */
 export const KB_MAX_ENTRIES = 50;
+export const KB_MAX_DOCUMENTS = 25;
 export const KB_MAX_CONTENT_SIZE = 10_000;        // 10KB text per entry
 export const KB_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
 export const KB_MAX_IMAGE_DIMENSION = 1024;        // px — longest side

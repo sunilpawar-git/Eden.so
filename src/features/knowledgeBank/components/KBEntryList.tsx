@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
 import { KnowledgeBankEntryCard } from './KnowledgeBankEntryCard';
+import { KBDocumentGroup } from './KBDocumentGroup';
+import { groupEntriesByDocument } from '../services/documentGrouper';
 import { strings } from '@/shared/localization/strings';
 import type { KnowledgeBankEntry } from '../types/knowledgeBank';
 import styles from './KnowledgeBankPanel.module.css';
@@ -12,23 +15,38 @@ interface KBEntryListProps {
     onPin: (entryId: string) => void;
     onUpdate: (entryId: string, u: { title: string; content: string; tags: string[] }) => void;
     onDelete: (entryId: string) => void;
+    onToggleGroup: (parentId: string) => void;
+    onDeleteGroup: (parentId: string) => void;
 }
 
 export function KBEntryList({
-    showEmpty,
-    showNoResults,
-    filteredEntries,
-    summarizingEntryIds,
-    onToggle,
-    onPin,
-    onUpdate,
-    onDelete,
+    showEmpty, showNoResults, filteredEntries, summarizingEntryIds,
+    onToggle, onPin, onUpdate, onDelete,
+    onToggleGroup, onDeleteGroup,
 }: KBEntryListProps) {
+    const grouped = useMemo(
+        () => groupEntriesByDocument(filteredEntries),
+        [filteredEntries]
+    );
+
     return (
         <div className={styles.panelEntries}>
             {showEmpty && <EmptyState />}
             {showNoResults && <NoResultsState />}
-            {filteredEntries.map((entry) => (
+            {grouped.documents.map((group) => (
+                <KBDocumentGroup
+                    key={group.parent.id}
+                    group={group}
+                    summarizingEntryIds={summarizingEntryIds}
+                    onToggleGroup={onToggleGroup}
+                    onDeleteGroup={onDeleteGroup}
+                    onToggle={onToggle}
+                    onPin={onPin}
+                    onUpdate={onUpdate}
+                    onDelete={onDelete}
+                />
+            ))}
+            {grouped.standalone.map((entry) => (
                 <KnowledgeBankEntryCard
                     key={entry.id}
                     entry={entry}

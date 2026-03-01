@@ -6,7 +6,7 @@ import { useCallback, useState } from 'react';
 import { kbParserRegistry } from '../parsers/parserRegistry';
 import { persistParseResult } from '../services/parseResultPersister';
 import { parseWithPdfFallback } from '../services/pdfFallbackService';
-import { summarizeEntries } from '../services/summarizeEntries';
+import { runPostUploadSummarization } from '../services/postUploadSummarizer';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -47,8 +47,7 @@ export function useFileProcessor() {
                 ? strings.knowledgeBank.pdfExtracted
                 : strings.knowledgeBank.saveEntry);
 
-            // Background summarization with observable lifecycle
-            void summarizeEntries(userId, workspaceId, entries, {
+            void runPostUploadSummarization(userId, workspaceId, entries, {
                 onStart: (entryIds) => {
                     useKnowledgeBankStore.getState().setSummarizingEntryIds(entryIds);
                 },

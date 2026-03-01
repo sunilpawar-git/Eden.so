@@ -17,6 +17,9 @@ vi.mock('firebase/firestore', () => ({
     deleteDoc: vi.fn().mockResolvedValue(undefined),
     serverTimestamp: vi.fn(() => new Date()),
     getCountFromServer: vi.fn().mockResolvedValue({ data: () => ({ count: 0 }) }),
+    query: vi.fn((...args: unknown[]) => args[0]),
+    where: vi.fn(),
+    writeBatch: vi.fn(() => ({ delete: vi.fn(), commit: vi.fn() })),
 }));
 
 vi.mock('../utils/sanitizer', () => ({
@@ -65,9 +68,9 @@ describe('knowledgeBankService', () => {
             ).rejects.toThrow();
         });
 
-        it('rejects when max entries reached (server count)', async () => {
+        it('rejects when max documents reached (server count)', async () => {
             vi.mocked(getCountFromServer).mockResolvedValueOnce(
-                { data: () => ({ count: 50 }) } as never
+                { data: () => ({ count: 25 }) } as never
             );
 
             await expect(
