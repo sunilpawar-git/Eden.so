@@ -172,4 +172,31 @@ describe('rehypeCompact', () => {
         const li = (tree.children[0] as Element).children[0] as Element;
         expect((li.children[0] as Text).value).toBe('Keep me');
     });
+
+    it('strips whitespace text nodes from table', () => {
+        const tree = root([
+            el('table', [text('\n'), el('thead', [text('\n'), el('tr', [text('\n'), el('th', [text('Header')]), text('\n')]), text('\n')]), text('\n')]),
+        ]);
+        plugin(tree);
+        const table = tree.children[0] as Element;
+        // table should have no whitespace-only text children
+        const textChildren = table.children.filter(c => c.type === 'text');
+        expect(textChildren).toHaveLength(0);
+    });
+
+    it('strips whitespace text nodes from tbody and tr', () => {
+        const tree = root([
+            el('table', [
+                el('tbody', [
+                    text('\n'),
+                    el('tr', [text('\n'), el('td', [text('cell')]), text('\n')]),
+                    text('\n'),
+                ]),
+            ]),
+        ]);
+        plugin(tree);
+        const tbody = (tree.children[0] as Element).children[0] as Element;
+        const textInTbody = tbody.children.filter(c => c.type === 'text');
+        expect(textInTbody).toHaveLength(0);
+    });
 });

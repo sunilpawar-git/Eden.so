@@ -2,10 +2,11 @@
  * useTipTapEditor Hook - Encapsulates TipTap editor setup with markdown I/O
  * Bridges TipTap's document model with the store's string-based contract
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table';
 import type { Extension } from '@tiptap/core';
 import { NodeImage } from '../extensions/imageExtension';
 import { markdownToHtml, htmlToMarkdown } from '../services/markdownConverter';
@@ -27,6 +28,15 @@ interface UseTipTapEditorReturn {
     setContent: (markdown: string) => void;
 }
 
+/**
+ * Pure guard: useEditor returns Editor | null at runtime despite TS types.
+ * Module-level to avoid redefinition on every render and hook dep issues.
+ */
+function isEditorReady(e: ReturnType<typeof useEditor>): e is NonNullable<typeof e> {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    return e != null && !e.isDestroyed;
+}
+
 /** Hook for managing a TipTap editor with markdown serialization */
 export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEditorReturn {
     const { initialContent, placeholder, editable = true, onBlur, onUpdate, extraExtensions = [] } = options;
@@ -42,7 +52,16 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
     placeholderRef.current = placeholder;
 
     const editor = useEditor({
-        extensions: [StarterKit, Placeholder.configure({ placeholder: () => placeholderRef.current }), NodeImage, ...extraExtensions],
+        extensions: [
+            StarterKit,
+            Placeholder.configure({ placeholder: () => placeholderRef.current }),
+            Table.configure({ resizable: false }),
+            TableRow,
+            TableCell,
+            TableHeader,
+            NodeImage,
+            ...extraExtensions,
+        ],
         content: initialContent ? markdownToHtml(initialContent) : '',
         editable,
         onBlur: ({ editor: e }) => { onBlur?.(htmlToMarkdown(e.getHTML())); },
@@ -51,18 +70,6 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
             onUpdate?.(htmlToMarkdown(e.getHTML()));
         },
     });
-
-    /** Type guard: useEditor returns Editor | null at runtime despite TS types */
-    function isEditorReady(e: ReturnType<typeof useEditor>): e is NonNullable<typeof e> {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        return e != null && !e.isDestroyed;
-    }
-
-    useEffect(() => {
-        if (isEditorReady(editor) && editor.isEditable !== editable) {
-            editor.setEditable(editable);
-        }
-    }, [editor, editable]);
 
     const getMarkdown = useCallback((): string => {
         return isEditorReady(editor) ? htmlToMarkdown(editor.getHTML()) : '';

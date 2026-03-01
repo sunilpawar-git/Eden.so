@@ -5,6 +5,7 @@
  */
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
+import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import { rehypeWrapListItems, rehypeFixOlContinuity, rehypeCompact, rehypeUnwrapImages } from './rehypePlugins';
@@ -13,6 +14,7 @@ import { isSafeImageSrc } from '../extensions/imageExtension';
 /** Unified processor — built once, reused for every conversion */
 const processor = unified()
     .use(remarkParse)
+    .use(remarkGfm)               // GFM: tables, strikethrough, task lists, autolinks
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeCompact)           // Strip whitespace text nodes first
     .use(rehypeUnwrapImages)      // Unwrap <img> from <p> for TipTap block compatibility
@@ -41,8 +43,11 @@ const HEADING_PREFIXES: Record<string, string> = {
 
 /** Tags that represent block-level elements requiring newline separation */
 const BLOCK_TAGS = new Set([
-    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre', 'img', 'hr',
+    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre', 'img', 'hr', 'table',
 ]);
+
+/** Table sub-tags handled wholesale by tableToMarkdown — must not enter recursive childMd path */
+const TABLE_SUB_TAGS = new Set(['thead', 'tbody', 'tr', 'td', 'th']);
 
 /** Recursively convert DOM node tree to markdown */
 function nodeToMarkdown(node: Node): string {
@@ -83,6 +88,9 @@ function joinBlockChildren(el: Element): string {
 
 /** Convert a single element to markdown based on its tag */
 function elementToMarkdown(el: Element, tag: string, childMd: string): string {
+    if (tag === 'table') return tableToMarkdown(el);
+    // Sub-tags are owned by tableToMarkdown; returning '' prevents double-rendering
+    if (TABLE_SUB_TAGS.has(tag)) return '';
     if (tag === 'strong' || tag === 'b') return `**${childMd}**`;
     if (tag === 'em' || tag === 'i') return `*${childMd}*`;
     if (tag === 'code') return codeToMarkdown(el, childMd);
@@ -96,6 +104,53 @@ function elementToMarkdown(el: Element, tag: string, childMd: string): string {
     if (tag === 'br') return '\n';
     if (tag === 'hr') return '---';
     return childMd;
+}
+
+/** Escape pipe characters in GFM table cell text to prevent parse corruption */
+function escapeCellText(text: string): string {
+    return text.replace(/\|/g, '\\|');
+}
+
+/** Extract plain text from a table cell element (ignoring nested block tags) */
+function cellText(cell: Element): string {
+    return escapeCellText((cell.textContent ?? '').trim());
+}
+
+/**
+ * Serialize an HTML <table> element to GFM pipe-table markdown.
+ * Handles: thead (as header row), tbody rows, missing thead, pipe escaping.
+ * Does NOT support colspan/rowspan — GFM tables have no spanning syntax.
+ */
+function tableToMarkdown(table: Element): string {
+    const headerCells = Array.from(table.querySelectorAll('thead tr th'));
+    const bodyRows = Array.from(table.querySelectorAll('tbody tr'));
+
+    if (headerCells.length === 0 && bodyRows.length === 0) return '';
+
+    const lines: string[] = [];
+
+    if (headerCells.length > 0) {
+        // Header row + separator
+        lines.push(`| ${headerCells.map(cellText).join(' | ')} |`);
+        lines.push(`| ${headerCells.map(() => '---').join(' | ')} |`);
+        // Body rows
+        for (const row of bodyRows) {
+            const cells = Array.from(row.querySelectorAll('td, th'));
+            lines.push(`| ${cells.map(cellText).join(' | ')} |`);
+        }
+    } else {
+        // No thead — treat all rows as data; synthesise separator after first row
+        const allRows = Array.from(table.querySelectorAll('tr'));
+        allRows.forEach((row, idx) => {
+            const cells = Array.from(row.querySelectorAll('td, th'));
+            lines.push(`| ${cells.map(cellText).join(' | ')} |`);
+            if (idx === 0) {
+                lines.push(`| ${cells.map(() => '---').join(' | ')} |`);
+            }
+        });
+    }
+
+    return lines.join('\n');
 }
 
 /** Handle code element (inline vs inside pre) */

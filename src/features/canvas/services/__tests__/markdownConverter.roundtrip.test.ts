@@ -56,3 +56,32 @@ describe('round-trip', () => {
         expect(result).toContain('3. Third');
     });
 });
+
+describe('round-trip tables (GFM)', () => {
+    it('preserves basic 2-column table', () => {
+        const md = '| A | B |\n| --- | --- |\n| 1 | 2 |';
+        const result = htmlToMarkdown(markdownToHtml(md));
+        expect(result).toContain('| A | B |');
+        expect(result).toContain('| --- | --- |');
+        expect(result).toContain('| 1 | 2 |');
+    });
+
+    it('preserves table mixed with heading and paragraph', () => {
+        const md = '## Comparison\n\n| X | Y |\n| --- | --- |\n| a | b |\n\nSome text';
+        const result = htmlToMarkdown(markdownToHtml(md));
+        expect(result).toContain('## Comparison');
+        expect(result).toContain('| X | Y |');
+        expect(result).toContain('| --- | --- |');
+        expect(result).toContain('| a | b |');
+        expect(result).toContain('Some text');
+    });
+
+    it('preserves single-column table', () => {
+        const md = '| Item |\n| --- |\n| Alpha |\n| Beta |';
+        const result = htmlToMarkdown(markdownToHtml(md));
+        expect(result).toContain('| Item |');
+        expect(result).toContain('| --- |');
+        expect(result).toContain('| Alpha |');
+        expect(result).toContain('| Beta |');
+    });
+});

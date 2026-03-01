@@ -147,3 +147,47 @@ describe('useTipTapEditor', () => {
         });
     });
 });
+
+describe('useTipTapEditor — table content', () => {
+    const TABLE_MD = '| Name | Age |\n|---|---|\n| Alice | 30 |';
+    // Raw GFM table HTML — TipTap must retain <table> structure, not collapse to plain text
+    const TABLE_HTML = '<table><thead><tr><th>Name</th><th>Age</th></tr></thead><tbody><tr><td>Alice</td><td>30</td></tr></tbody></table>';
+
+    it('initialises editor with table markdown without stripping content', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: TABLE_MD, placeholder: '' })
+        );
+        const html = result.current.editor!.getHTML();
+        expect(html).toContain('Alice');
+        expect(html).toContain('Name');
+    });
+
+    it('isEmpty is false when content is a table', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: TABLE_MD, placeholder: '' })
+        );
+        expect(result.current.isEmpty).toBe(false);
+    });
+
+    it('setContent with table markdown updates editor', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: '', placeholder: '' })
+        );
+        act(() => { result.current.setContent(TABLE_MD); });
+        const html = result.current.editor!.getHTML();
+        expect(html).toContain('Alice');
+    });
+
+    it('accepts raw table HTML via setContent without stripping', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: '', placeholder: '' })
+        );
+        act(() => { result.current.editor!.commands.setContent(TABLE_HTML); });
+        const html = result.current.editor!.getHTML();
+        // TipTap v3 wraps cells with colspan/rowspan attributes and text in <p>
+        // Core assertion: table structure is preserved (not collapsed to plain text)
+        expect(html).toContain('<table');
+        expect(html).toContain('Alice');
+        expect(html).toContain('Name');
+    });
+});
