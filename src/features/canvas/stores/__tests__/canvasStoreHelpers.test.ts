@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-deprecated */
 import { describe, it, expect } from 'vitest';
 import {
-    updateNodePositionInArray,
     updateNodeDimensionsInArray,
     updateNodeDataField,
     appendToNodeOutputInArray,
@@ -39,24 +38,6 @@ const createMockEdge = (id: string, source: string, target: string): CanvasEdge 
 });
 
 describe('canvasStoreHelpers', () => {
-    describe('updateNodePositionInArray', () => {
-        it('should update position of matching node', () => {
-            const nodes = [createMockNode('n1'), createMockNode('n2')];
-            const result = updateNodePositionInArray(nodes, 'n1', { x: 100, y: 200 });
-
-            expect(result[0]!.position).toEqual({ x: 100, y: 200 });
-            expect(result[1]!.position).toEqual({ x: 0, y: 0 });
-        });
-
-        it('should not mutate original array', () => {
-            const nodes = [createMockNode('n1')];
-            const result = updateNodePositionInArray(nodes, 'n1', { x: 100, y: 200 });
-
-            expect(result).not.toBe(nodes);
-            expect(nodes[0]!.position).toEqual({ x: 0, y: 0 });
-        });
-    });
-
     describe('updateNodeDimensionsInArray', () => {
         it('should update dimensions with clamping', () => {
             const nodes = [createMockNode('n1')];

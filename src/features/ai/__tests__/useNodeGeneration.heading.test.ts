@@ -22,6 +22,10 @@ vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
     usePanToNode: () => ({ panToPosition: vi.fn() }),
 }));
 
+vi.mock('../hooks/useNodePoolContext', () => ({
+    useNodePoolContext: () => ({ getPoolContext: vi.fn(() => '') }),
+}));
+
 const createTestIdeaNode = (id: string, prompt: string, output?: string, heading?: string) => ({
     id,
     workspaceId: 'ws-1',

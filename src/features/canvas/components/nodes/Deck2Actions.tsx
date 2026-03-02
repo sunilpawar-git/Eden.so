@@ -5,6 +5,7 @@
 import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { TooltipButton } from './TooltipButton';
+import { PoolAction } from './PoolAction';
 import { ColorMenu } from './ColorMenu';
 import { ShareMenu } from './ShareMenu';
 import { normalizeNodeColorKey } from '../../types/node';
@@ -58,6 +59,12 @@ export function renderDeck2Action(id: UtilsBarActionId, ctx: RenderContext): Rea
                     isOpen={bar.isShareOpen} onToggle={bar.handleShareToggle}
                     onClose={bar.closeSubmenu} onShare={p.onShareClick}
                     isSharing={p.isSharing ?? false} disabled={disabled} tooltipPlacement={placement} />
+            ) : null;
+        case 'pool':
+            return p.onPoolToggle ? (
+                <PoolAction key={id}
+                    isInPool={p.isInPool ?? false} onToggle={p.onPoolToggle}
+                    disabled={disabled} tooltipPlacement={placement} />
             ) : null;
         default: return null;
     }

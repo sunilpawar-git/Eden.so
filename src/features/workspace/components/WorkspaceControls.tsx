@@ -9,13 +9,16 @@ import { useAddNode } from '@/features/canvas/hooks/useAddNode';
 import { useArrangeAnimation } from '@/features/canvas/hooks/useArrangeAnimation';
 import { DeleteWorkspaceButton } from './DeleteWorkspaceButton';
 import { ClearCanvasButton } from './ClearCanvasButton';
+import { WorkspacePoolButton } from './WorkspacePoolButton';
 import styles from './WorkspaceControls.module.css';
 
 export function WorkspaceControls() {
     const handleAddNode = useAddNode();
     const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
     const nodeCount = useCanvasStore((s) => s.nodes.length);
-    const pinnedCount = useCanvasStore((s) => s.nodes.filter(isNodePinned).length);
+    const pinnedCount = useCanvasStore(
+        (s) => s.nodes.reduce((n, node) => n + (isNodePinned(node) ? 1 : 0), 0),
+    );
 
     const arrangeNodes = useCallback(() => { useCanvasStore.getState().arrangeNodes(); }, []);
     const { animatedArrange } = useArrangeAnimation(null, arrangeNodes);
@@ -64,6 +67,8 @@ export function WorkspaceControls() {
             </button>
             <div className={styles.divider} />
             <ClearCanvasButton nodeCount={nodeCount} />
+            <div className={styles.divider} />
+            <WorkspacePoolButton />
             <div className={styles.divider} />
             <DeleteWorkspaceButton />
         </div>

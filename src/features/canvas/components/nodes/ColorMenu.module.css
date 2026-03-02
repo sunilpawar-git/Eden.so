@@ -45,6 +45,7 @@
 
 .dotDefault {
     background: var(--color-surface-elevated);
+    border: 1.5px solid var(--color-text-muted);
 }
 
 .dotDanger {

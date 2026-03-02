@@ -41,6 +41,10 @@ vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
     usePanToNode: () => ({ panToPosition: vi.fn() }),
 }));
 
+vi.mock('../hooks/useNodePoolContext', () => ({
+    useNodePoolContext: () => ({ getPoolContext: vi.fn(() => '') }),
+}));
+
 // eslint-disable-next-line import-x/first
 import { useNodeGeneration } from '../hooks/useNodeGeneration';
 // eslint-disable-next-line import-x/first

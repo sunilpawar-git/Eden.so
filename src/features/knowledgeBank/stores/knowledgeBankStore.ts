@@ -117,8 +117,35 @@ export const useKnowledgeBankStore = create<KnowledgeBankStore>()((set, get) => 
         return extractAllTags(get().entries);
     },
 
+    /** @deprecated Use getDocumentCount — entry count includes chunks. */
     getEntryCount: () => {
         return get().entries.length;
+    },
+
+    toggleDocumentGroup: (parentId: string) => {
+        const parent = get().entries.find((e) => e.id === parentId);
+        if (!parent) return;
+        const newEnabled = !parent.enabled;
+        set((state) => ({
+            entries: state.entries.map((e) => {
+                if (e.id === parentId || e.parentEntryId === parentId) {
+                    return { ...e, enabled: newEnabled, updatedAt: new Date() };
+                }
+                return e;
+            }),
+        }));
+    },
+
+    removeDocumentGroup: (parentId: string) => {
+        set((state) => ({
+            entries: state.entries.filter(
+                (e) => e.id !== parentId && e.parentEntryId !== parentId
+            ),
+        }));
+    },
+
+    getDocumentCount: () => {
+        return get().entries.filter((e) => !e.parentEntryId).length;
     },
 }));
 

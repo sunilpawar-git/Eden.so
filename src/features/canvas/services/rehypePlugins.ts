@@ -6,7 +6,7 @@ import type { Root, Element } from 'hast';
 import { visit, SKIP } from 'unist-util-visit';
 
 /** Tags whose whitespace-only text children should be stripped */
-const BLOCK_CONTAINERS = new Set(['blockquote', 'ul', 'ol', 'li']);
+const BLOCK_CONTAINERS = new Set(['blockquote', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'td', 'th']);
 
 /** Tags that reset ordered list numbering (semantic section breaks) */
 const OL_RESET_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'pre']);

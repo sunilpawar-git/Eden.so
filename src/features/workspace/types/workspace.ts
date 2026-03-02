@@ -19,6 +19,8 @@ export interface Workspace {
     orderIndex?: number;
     type?: WorkspaceType; // Undefined means 'workspace'
     nodeCount?: number;
+    /** Include ALL nodes in this workspace in the AI Canvas Memory pool */
+    includeAllNodesInPool?: boolean;
 }
 
 /**

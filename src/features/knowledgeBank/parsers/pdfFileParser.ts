@@ -6,11 +6,15 @@
  */
 import type { FileParser, ParseResult } from './types';
 import { ParserError } from './types';
+import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { readFileAsArrayBuffer } from './fileReaderUtil';
 import { chunkDocument } from '../services/chunkingService';
 import { sanitizeContent } from '../utils/sanitizer';
 import { strings } from '@/shared/localization/strings';
 import { titleFromFilename } from './parserUtils';
+
+/** Ensures the pdfjs worker URL is only assigned once across all parse calls */
+let workerInitialised = false;
 
 const SUPPORTED_MIME_TYPES = ['application/pdf'] as const;
 const SUPPORTED_EXTENSIONS = ['.pdf'] as const;
@@ -32,7 +36,7 @@ export class PdfFileParser implements FileParser {
         if (!fullText.trim()) {
             throw new ParserError(
                 strings.knowledgeBank.errors.pdfEmpty,
-                'PARSE_FAILED'
+                'PDF_SCANNED'
             );
         }
 
@@ -65,10 +69,11 @@ async function extractTextFromPdf(data: ArrayBuffer): Promise<string[]> {
     try {
         const pdfjsLib = await import('pdfjs-dist');
 
-        // Configure worker from CDN (avoids Vite bundling issues)
-        const cdnBase = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js';
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-            `${cdnBase}/${pdfjsLib.version}/pdf.worker.min.mjs`;
+        // Assign the locally-bundled worker URL only once (idempotent but avoids global side effects)
+        if (!workerInitialised) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+            workerInitialised = true;
+        }
 
         const loadingTask = pdfjsLib.getDocument({ data });
         const pdf = await loadingTask.promise;
@@ -84,8 +89,7 @@ async function extractTextFromPdf(data: ArrayBuffer): Promise<string[]> {
         }
 
         return pageTexts;
-    } catch (error) {
-        if (error instanceof ParserError) throw error;
+    } catch {
         throw new ParserError(
             strings.knowledgeBank.errors.pdfParseFailed,
             'PARSE_FAILED'

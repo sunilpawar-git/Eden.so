@@ -96,6 +96,8 @@ export interface IdeaNodeData {
     linkPreviews?: Record<string, LinkPreviewMetadata>;
     calendarEvent?: CalendarEventMetadata;
     colorKey?: NodeColorKey;
+    /** Opts this node into the AI Canvas Memory pool */
+    includeInAIPool?: boolean;
     [key: string]: unknown;
 }
 

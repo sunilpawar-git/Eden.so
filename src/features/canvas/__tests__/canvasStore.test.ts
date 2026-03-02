@@ -79,25 +79,6 @@ describe('CanvasStore', () => {
         });
     });
 
-    describe('updateNodePosition', () => {
-        it('should update node position', () => {
-            useCanvasStore.getState().addNode(mockNode);
-            useCanvasStore.getState().updateNodePosition('node-1', { x: 500, y: 600 });
-
-            const node = useCanvasStore.getState().nodes[0];
-            expect(node?.position).toEqual({ x: 500, y: 600 });
-        });
-
-        it('should not affect other nodes', () => {
-            useCanvasStore.getState().addNode(mockNode);
-            useCanvasStore.getState().addNode(mockNode2);
-            useCanvasStore.getState().updateNodePosition('node-1', { x: 500, y: 600 });
-
-            const node2 = useCanvasStore.getState().nodes[1];
-            expect(node2?.position).toEqual({ x: 300, y: 400 });
-        });
-    });
-
     describe('updateNodeContent', () => {
         it('should update node content', () => {
             useCanvasStore.getState().addNode(mockNode);

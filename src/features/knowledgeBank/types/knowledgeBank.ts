@@ -18,7 +18,8 @@ export interface KnowledgeBankEntry {
     originalFileName?: string;
     storageUrl?: string;         // Firebase Storage URL (images only)
     mimeType?: string;
-    parentEntryId?: string;      // Links chunks to parent document entry
+    parentEntryId?: string | null; // Links chunks to parent document entry (null = standalone/parent)
+    documentSummaryStatus?: 'pending' | 'ready'; // Tracks document-level summary availability
     pinned?: boolean;             // Pinned entries always rank first in AI context
     enabled: boolean;
     createdAt: Date;
@@ -54,6 +55,19 @@ export interface KnowledgeBankState {
     summarizingEntryIds: string[];
 }
 
+/** A parent document entry grouped with its child chunks */
+export interface DocumentGroup {
+    parent: KnowledgeBankEntry;
+    children: KnowledgeBankEntry[];
+    totalParts: number;
+}
+
+/** Result of grouping entries by document relationship */
+export interface GroupedEntries {
+    standalone: KnowledgeBankEntry[];
+    documents: DocumentGroup[];
+}
+
 /** Zustand store actions */
 export interface KnowledgeBankActions {
     setEntries: (entries: KnowledgeBankEntry[]) => void;
@@ -75,6 +89,9 @@ export interface KnowledgeBankActions {
     getFilteredEntries: () => KnowledgeBankEntry[];
     getAllTags: () => string[];
     getEntryCount: () => number;
+    toggleDocumentGroup: (parentId: string) => void;
+    removeDocumentGroup: (parentId: string) => void;
+    getDocumentCount: () => number;
 }
 
 // ── Generation Type Budgets ─────────────────────────────
@@ -109,7 +126,9 @@ export const KB_SUMMARY_TOKEN_LIMITS: Record<SummaryTier, number> = {
 
 // ── Constants ──────────────────────────────────────────
 
+/** @deprecated Use KB_MAX_DOCUMENTS for limit checks */
 export const KB_MAX_ENTRIES = 50;
+export const KB_MAX_DOCUMENTS = 25;
 export const KB_MAX_CONTENT_SIZE = 10_000;        // 10KB text per entry
 export const KB_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
 export const KB_MAX_IMAGE_DIMENSION = 1024;        // px — longest side
@@ -119,6 +138,7 @@ export const KB_CHARS_PER_TOKEN = 4;               // Approx chars per token (1 
 export const KB_CONTEXT_ENTRY_OVERHEAD = 30;       // ~chars per entry for "[Knowledge: ...]\n" wrapper
 export const KB_CHUNK_THRESHOLD = 8_000;           // Chars before auto-chunking
 export const KB_SUMMARY_THRESHOLD = 500;           // Chars before auto-summarization
+export const KB_PDF_EXTRACTION_MAX_TOKENS = 8192;  // Max output tokens for Gemini PDF extraction
 export const KB_MAX_TITLE_LENGTH = 100;             // Max chars per title
 export const KB_PREVIEW_LENGTH = 120;              // Content preview truncation
 export const KB_MAX_TAGS_PER_ENTRY = 5;            // Max tags per entry

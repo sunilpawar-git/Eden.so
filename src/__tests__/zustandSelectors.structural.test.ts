@@ -218,6 +218,45 @@ describe('Zustand selector enforcement', () => {
         }
     );
 
+    describe('per-node hook enforcement', () => {
+        const PER_NODE_FILES = [
+            'features/canvas/hooks/useIdeaCard.ts',
+            'features/canvas/hooks/useNodeInput.ts',
+            'features/canvas/hooks/useNodeResize.ts',
+            'features/canvas/hooks/useFocusMode.ts',
+        ];
+
+        it.each(PER_NODE_FILES)(
+            '%s must NOT contain useCanvasStore((s) => s.nodes)',
+            (filePath) => {
+                const content = readFileSync(join(SRC_DIR, filePath), 'utf-8');
+                const hasFullNodesSub = /useCanvasStore\(\s*\(\s*\w+\s*\)\s*=>\s*\w+\.nodes\s*\)/.test(content);
+                expect(
+                    hasFullNodesSub,
+                    `${filePath} subscribes to s.nodes — use useNode/useNodeData/useNodeDimensions instead`,
+                ).toBe(false);
+            },
+        );
+
+        const PER_NODE_IMPORTS = [
+            { file: 'features/canvas/hooks/useIdeaCard.ts', hook: 'useNodeData' },
+            { file: 'features/canvas/hooks/useNodeInput.ts', hook: 'useNodeData' },
+            { file: 'features/canvas/hooks/useNodeResize.ts', hook: 'useNodeDimensions' },
+            { file: 'features/canvas/hooks/useFocusMode.ts', hook: 'useNode' },
+        ];
+
+        it.each(PER_NODE_IMPORTS)(
+            '$file must import $hook',
+            ({ file, hook }) => {
+                const content = readFileSync(join(SRC_DIR, file), 'utf-8');
+                expect(
+                    content.includes(hook),
+                    `${file} should import ${hook}`,
+                ).toBe(true);
+            },
+        );
+    });
+
     it('provides documentation on correct patterns', () => {
         const correctPatterns = [
             '// ✅ CORRECT: Selector pattern - only re-renders when value changes',

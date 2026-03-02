@@ -16,6 +16,7 @@ import { buildContextChain } from '../services/contextChainBuilder';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
+import { useNodePoolContext } from './useNodePoolContext';
 import { processCalendarIntent } from '@/features/calendar/services/calendarIntentHandler';
 
 /**
@@ -23,6 +24,7 @@ import { processCalendarIntent } from '@/features/calendar/services/calendarInte
  */
 export function useNodeGeneration() {
     const { getKBContext } = useKnowledgeBankContext();
+    const { getPoolContext } = useNodePoolContext();
     const { panToPosition } = usePanToNode();
 
     /**
@@ -53,8 +55,11 @@ export function useNodeGeneration() {
 
                 useAIStore.getState().startGeneration(nodeId);
                 const generationType = contextChain.length > 0 ? 'chain' as const : 'single' as const;
+
+                const excludeIds = new Set([nodeId, ...upstreamNodes.map((n) => n.id)]);
+                const poolContext = getPoolContext(promptText, generationType, excludeIds);
                 const kbContext = getKBContext(promptText, generationType);
-                const content = await generateContentWithContext(promptText, contextChain, kbContext);
+                const content = await generateContentWithContext(promptText, contextChain, poolContext, kbContext);
 
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);
                 useAIStore.getState().completeGeneration();
@@ -66,7 +71,7 @@ export function useNodeGeneration() {
                 useCanvasStore.getState().setNodeGenerating(nodeId, false);
             }
         },
-        [getKBContext]
+        [getKBContext, getPoolContext]
     );
 
     /**

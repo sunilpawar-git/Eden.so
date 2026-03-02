@@ -8,6 +8,8 @@ import { IdeaCardHeadingSection } from './IdeaCardHeadingSection';
 import { IdeaCardContentSection } from './IdeaCardContentSection';
 import { IdeaCardTagsSection } from './IdeaCardTagsSection';
 import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT, normalizeNodeColorKey } from '../../types/node';
+import { MemoryChipIcon } from '@/shared/components/icons';
+import { strings } from '@/shared/localization/strings';
 import styles from './IdeaCard.module.css';
 import colorStyles from './nodeColorStyles.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
@@ -20,8 +22,8 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
         isAICard, showTagInput, contentRef, cardWrapperRef, barContainerRef, headingRef,
         pinOpenHandlers, editor, handleDoubleClick, handleDelete, handleRegenerate, handleConnectClick,
         handleTransform, handleHeadingChange, handleCopy, handleDuplicate, handleShare,
-        isSharing, isTransforming, handlePinToggle, handleCollapseToggle, handleColorChange, handleTagOpen,
-        handleFocusClick, handleImageClick, slashHandler, onSubmitAI, onTagsChange, onKeyDownReact,
+        isSharing, isTransforming, handlePinToggle, handleCollapseToggle, handlePoolToggle, handleColorChange,
+        handleTagOpen, handleFocusClick, handleImageClick, slashHandler, onSubmitAI, onTagsChange, onKeyDownReact,
         hasContent, isEditing, isPinnedOpen, calendar, focusBody, registerProximityLostFn,
     } = api;
     const nodeColorKey = normalizeNodeColorKey(resolvedData.colorKey);
@@ -38,6 +40,11 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleTop}`} />
             <div className={`${styles.ideaCard} ${colorStyles.colorContainer} ${isCollapsed ? styles.collapsed : ''}`}
                 data-color={nodeColorKey}>
+                {resolvedData.includeInAIPool && (
+                    <span className={styles.poolBadge} aria-label={strings.nodePool.inPool}>
+                        <MemoryChipIcon size={10} filled />
+                    </span>
+                )}
                 <IdeaCardHeadingSection headingRef={headingRef} heading={heading ?? ''} isEditing={isEditing}
                     onHeadingChange={handleHeadingChange} onEnterKey={focusBody}
                     onDoubleClick={handleDoubleClick} onSlashCommand={slashHandler}
@@ -64,7 +71,9 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
                 onDelete={handleDelete} onTransform={handleTransform}
                 onRegenerate={handleRegenerate} onPinToggle={handlePinToggle}
                 onColorChange={handleColorChange} nodeColorKey={nodeColorKey}
-                onCollapseToggle={handleCollapseToggle} hasContent={hasContent}
+                onCollapseToggle={handleCollapseToggle} onPoolToggle={handlePoolToggle}
+                isInPool={resolvedData.includeInAIPool ?? false}
+                hasContent={hasContent}
                 isTransforming={isTransforming} isPinned={isPinned ?? false}
                 isCollapsed={isCollapsed ?? false} disabled={isGenerating ?? false}
                 isPinnedOpen={isPinnedOpen} />

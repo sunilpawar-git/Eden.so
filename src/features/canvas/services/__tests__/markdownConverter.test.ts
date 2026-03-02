@@ -155,3 +155,82 @@ describe('htmlToMarkdown start attribute', () => {
     });
 });
 
+describe('markdownToHtml tables (GFM)', () => {
+    it('converts basic 2-column table to table HTML', () => {
+        const md = '| A | B |\n|---|---|\n| 1 | 2 |';
+        const html = markdownToHtml(md);
+        expect(html).toContain('<table>');
+        expect(html).toContain('<thead>');
+        expect(html).toContain('<tbody>');
+    });
+
+    it('renders th cells in thead', () => {
+        const md = '| Name | Age |\n|---|---|\n| Alice | 30 |';
+        const html = markdownToHtml(md);
+        expect(html).toContain('<th>');
+        expect(html).toContain('Name');
+        expect(html).toContain('Age');
+    });
+
+    it('renders td cells in tbody', () => {
+        const md = '| Name | Age |\n|---|---|\n| Alice | 30 |';
+        const html = markdownToHtml(md);
+        expect(html).toContain('<td>');
+        expect(html).toContain('Alice');
+        expect(html).toContain('30');
+    });
+
+    it('handles empty cell values', () => {
+        const md = '| A | B |\n|---|---|\n|   | 2 |';
+        const html = markdownToHtml(md);
+        expect(html).toContain('<table>');
+        expect(html).toContain('<td>');
+    });
+
+    it('renders table mixed with heading above and paragraph below', () => {
+        const md = '## Comparison\n\n| X | Y |\n|---|---|\n| a | b |\n\nSome text';
+        const html = markdownToHtml(md);
+        expect(html).toContain('<h2>Comparison</h2>');
+        expect(html).toContain('<table>');
+        expect(html).toContain('<p>Some text</p>');
+    });
+
+    it('handles single-column table', () => {
+        const md = '| Item |\n|---|\n| Alpha |\n| Beta |';
+        const html = markdownToHtml(md);
+        expect(html).toContain('<table>');
+        expect(html).toContain('Alpha');
+        expect(html).toContain('Beta');
+    });
+});
+
+describe('htmlToMarkdown tables', () => {
+    it('converts table with thead/tbody to GFM markdown', () => {
+        const html = '<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>';
+        const md = htmlToMarkdown(html);
+        expect(md).toContain('| A | B |');
+        expect(md).toContain('| --- | --- |');
+        expect(md).toContain('| 1 | 2 |');
+    });
+
+    it('escapes pipe characters in cell content', () => {
+        const html = '<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>x | y</td></tr></tbody></table>';
+        const md = htmlToMarkdown(html);
+        expect(md).toContain('x \\| y');
+    });
+
+    it('handles table without thead (all rows in tbody)', () => {
+        const html = '<table><tbody><tr><td>r1c1</td><td>r1c2</td></tr><tr><td>r2c1</td><td>r2c2</td></tr></tbody></table>';
+        const md = htmlToMarkdown(html);
+        expect(md).toContain('|');
+        expect(md).toContain('r1c1');
+    });
+
+    it('handles single-column table', () => {
+        const html = '<table><thead><tr><th>Item</th></tr></thead><tbody><tr><td>Alpha</td></tr><tr><td>Beta</td></tr></tbody></table>';
+        const md = htmlToMarkdown(html);
+        expect(md).toContain('| Item |');
+        expect(md).toContain('| Alpha |');
+        expect(md).toContain('| Beta |');
+    });
+});

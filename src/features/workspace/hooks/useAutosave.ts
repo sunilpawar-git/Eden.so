@@ -8,20 +8,33 @@ import { saveNodes, saveEdges, saveWorkspace } from '@/features/workspace/servic
 import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { useSaveStatusStore } from '@/shared/stores/saveStatusStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
+import type { Workspace } from '@/features/workspace/types/workspace';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 
-const AUTOSAVE_DELAY_MS = 2000; // 2 second debounce
+const AUTOSAVE_DELAY_MS = 2000;
+const POSITION_SAVE_DELAY_MS = 5000;
 
+/** Serializes workspace-level fields that should trigger auto-save */
+function serializeWorkspacePoolFields(workspaces: Workspace[], workspaceId: string): string {
+    const ws = workspaces.find((w) => w.id === workspaceId);
+    if (!ws) return '';
+    return JSON.stringify({ includeAllNodesInPool: ws.includeAllNodesInPool ?? false });
+}
 
 export function useAutosave(workspaceId: string, isWorkspaceLoading: boolean = false) {
     const nodes = useCanvasStore((s) => s.nodes);
     const edges = useCanvasStore((s) => s.edges);
+    const workspaces = useWorkspaceStore((s) => s.workspaces);
     const user = useAuthStore((s) => s.user);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastSavedRef = useRef({ nodes: '', edges: '' });
+    const lastSavedRef = useRef({ nodes: '', edges: '', workspace: '', positions: '' });
+    // Tracks the last workspace state successfully persisted to Firestore.
+    // Separate from lastSavedRef.current.workspace (updated pre-save for change detection)
+    // so save() correctly detects pool-toggle changes even after the debounce ref is updated.
+    const lastPersistedWorkspaceRef = useRef('');
 
     const save = useCallback(async () => {
         if (!user || !workspaceId) return;
@@ -49,11 +62,17 @@ export function useAutosave(workspaceId: string, isWorkspaceLoading: boolean = f
             ]);
             workspaceCache.update(workspaceId, nodes, edges);
 
-            // Phase R1: Only update the workspace document in Firestore if the node count has actually changed
             const newNodeCount = nodes.length;
-            if (currentWorkspace && currentWorkspace.nodeCount !== newNodeCount) {
+            const nodeCountChanged = currentWorkspace && currentWorkspace.nodeCount !== newNodeCount;
+            const currentWorkspaceJson = serializeWorkspacePoolFields(useWorkspaceStore.getState().workspaces, workspaceId);
+            const workspaceFieldsChanged = lastPersistedWorkspaceRef.current !== currentWorkspaceJson;
+
+            if (currentWorkspace && (nodeCountChanged || workspaceFieldsChanged)) {
                 await saveWorkspace(user.id, { ...currentWorkspace, nodeCount: newNodeCount });
-                useWorkspaceStore.getState().setNodeCount(workspaceId, newNodeCount);
+                if (nodeCountChanged) {
+                    useWorkspaceStore.getState().setNodeCount(workspaceId, newNodeCount);
+                }
+                lastPersistedWorkspaceRef.current = currentWorkspaceJson;
             }
 
             setSaved();
@@ -65,44 +84,58 @@ export function useAutosave(workspaceId: string, isWorkspaceLoading: boolean = f
     }, [user, workspaceId, nodes, edges]);
 
     useEffect(() => {
-        const nodesJson = JSON.stringify(
+        const contentJson = JSON.stringify(
             nodes.map((n) => ({
                 id: n.id,
-                workspaceId: n.workspaceId,
-                type: n.type,
-                position: n.position,
                 data: n.data,
+                width: n.width,
+                height: n.height,
             }))
         );
+        const positionJson = JSON.stringify(
+            nodes.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }))
+        );
         const edgesJson = JSON.stringify(edges);
+        const workspaceJson = serializeWorkspacePoolFields(workspaces, workspaceId);
 
-        if (
-            nodesJson === lastSavedRef.current.nodes &&
-            edgesJson === lastSavedRef.current.edges
-        ) {
-            return;
-        }
+        const contentChanged = contentJson !== lastSavedRef.current.nodes ||
+            edgesJson !== lastSavedRef.current.edges ||
+            workspaceJson !== lastSavedRef.current.workspace;
+        const positionChanged = positionJson !== lastSavedRef.current.positions;
 
-        // Phase R2: If the workspace is currently loading, absorb the state as our baseline
-        // without triggering a save. This prevents a "mount save" tech debt trap.
+        if (!contentChanged && !positionChanged) return;
+
         if (isWorkspaceLoading) {
-            lastSavedRef.current = { nodes: nodesJson, edges: edgesJson };
+            lastSavedRef.current = {
+                nodes: contentJson, edges: edgesJson, workspace: workspaceJson, positions: positionJson,
+            };
+            lastPersistedWorkspaceRef.current = workspaceJson;
             return;
         }
 
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
+        const delay = contentChanged ? AUTOSAVE_DELAY_MS : POSITION_SAVE_DELAY_MS;
         timeoutRef.current = setTimeout(() => {
-            lastSavedRef.current = { nodes: nodesJson, edges: edgesJson };
+            lastSavedRef.current = {
+                nodes: contentJson, edges: edgesJson, workspace: workspaceJson, positions: positionJson,
+            };
             void save();
-        }, AUTOSAVE_DELAY_MS);
+        }, delay);
 
-        return () => {
-            if (timeoutRef.current) {
+        return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+    }, [nodes, edges, workspaces, save, isWorkspaceLoading, workspaceId]);
+
+    // Flush pending save when tab becomes hidden (prevents data loss on close)
+    useEffect(() => {
+        const flush = () => {
+            if (document.hidden && timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+                void save();
             }
         };
-    }, [nodes, edges, save, isWorkspaceLoading]);
+        document.addEventListener('visibilitychange', flush);
+        return () => document.removeEventListener('visibilitychange', flush);
+    }, [save]);
 }

@@ -29,7 +29,7 @@ describe('CanvasView React.memo', () => {
 
     it('does NOT select store action functions via selectors (prevents unstable refs)', () => {
         const actionNames = [
-            'addNode', 'updateNodeDimensions', 'updateNodePosition',
+            'addNode', 'updateNodeDimensions',
             'updateNodeContent', 'deleteNode', 'setNodes', 'clearCanvas',
             'addEdge', 'deleteEdge', 'arrangeNodes', 'startEditing', 'stopEditing',
         ];

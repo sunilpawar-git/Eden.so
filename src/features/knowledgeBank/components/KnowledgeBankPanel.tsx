@@ -5,6 +5,7 @@
 import { useCallback, useMemo } from 'react';
 import { useKnowledgeBankStore, filterEntries } from '../stores/knowledgeBankStore';
 import { useKnowledgeBankPanelHandlers } from '../hooks/useKnowledgeBankPanelHandlers';
+import { useDocumentGroupHandlers } from '../hooks/useDocumentGroupHandlers';
 import { KBSearchBar } from './KBSearchBar';
 import { KBEntryList } from './KBEntryList';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
@@ -20,6 +21,7 @@ export function KnowledgeBankPanel() {
     const selectedTag = useKnowledgeBankStore((s) => s.selectedTag);
     const summarizingEntryIds = useKnowledgeBankStore((s) => s.summarizingEntryIds);
     const { handleToggle, handlePin, handleUpdate, handleDelete } = useKnowledgeBankPanelHandlers();
+    const { handleToggleGroup, handleDeleteGroup } = useDocumentGroupHandlers();
 
     const filteredEntries = useMemo(
         () => filterEntries(entries, searchQuery, typeFilter, selectedTag),
@@ -50,6 +52,8 @@ export function KnowledgeBankPanel() {
                 onPin={handlePin}
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
+                onToggleGroup={handleToggleGroup}
+                onDeleteGroup={handleDeleteGroup}
             />
         </div>
     );

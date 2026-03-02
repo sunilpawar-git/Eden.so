@@ -4,12 +4,11 @@
  */
 import { create } from 'zustand';
 import type { Viewport } from '@xyflow/react';
-import type { CanvasNode, NodePosition, LinkPreviewMetadata, NodeColorKey } from '../types/node';
+import type { CanvasNode, LinkPreviewMetadata, NodeColorKey } from '../types/node';
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
 import {
-    updateNodePositionInArray,
     updateNodeDimensionsInArray,
     updateNodeDataField,
     appendToNodeOutputInArray,
@@ -21,6 +20,8 @@ import {
     arrangeNodesAfterResize,
     toggleNodePinnedInArray,
     toggleNodeCollapsedInArray,
+    toggleNodePoolInArray,
+    clearAllNodePoolInArray,
     setNodeColorInArray,
 } from './canvasStoreHelpers';
 import { duplicateNode as cloneNode } from '../services/nodeDuplicationService';
@@ -56,7 +57,6 @@ interface CanvasActions {
     // Node actions
     addNode: (node: CanvasNode) => void;
     duplicateNode: (nodeId: string) => string | undefined;
-    updateNodePosition: (nodeId: string, position: NodePosition) => void;
     updateNodeDimensions: (nodeId: string, width: number, height: number) => void;
     updateNodeContent: (nodeId: string, content: string) => void;
     deleteNode: (nodeId: string) => void;
@@ -72,6 +72,8 @@ interface CanvasActions {
     togglePromptCollapsed: (nodeId: string) => void;
     toggleNodePinned: (nodeId: string) => void;
     toggleNodeCollapsed: (nodeId: string) => void;
+    toggleNodePoolMembership: (nodeId: string) => void;
+    clearAllNodePool: () => void;
 
     // Edge actions
     addEdge: (edge: CanvasEdge) => void;
@@ -138,9 +140,6 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
         return newNode.id;
     },
 
-    updateNodePosition: (nodeId, position) =>
-        set((s) => ({ nodes: updateNodePositionInArray(s.nodes, nodeId, position) })),
-
     updateNodeDimensions: (nodeId, width, height) =>
         set((s) => ({ nodes: updateNodeDimensionsInArray(s.nodes, nodeId, width, height) })),
 
@@ -176,6 +175,12 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     toggleNodeCollapsed: (nodeId) =>
         set((s) => ({ nodes: toggleNodeCollapsedInArray(s.nodes, nodeId) })),
+
+    toggleNodePoolMembership: (nodeId) =>
+        set((s) => ({ nodes: toggleNodePoolInArray(s.nodes, nodeId) })),
+
+    clearAllNodePool: () =>
+        set((s) => ({ nodes: clearAllNodePoolInArray(s.nodes) })),
 
     deleteNode: (nodeId) =>
         set((s) => ({

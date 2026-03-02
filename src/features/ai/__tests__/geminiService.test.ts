@@ -79,7 +79,7 @@ describe('GeminiService', () => {
         it('should include KB usage guidance in systemInstruction when KB context provided', async () => {
             mockSuccess('KB response');
             const kbContext = '--- Workspace Knowledge Bank ---\n[Knowledge: Style]\nUse formal tone.\n--- End Knowledge Bank ---';
-            await generateContent('Write a post', kbContext);
+            await generateContent('Write a post', undefined, kbContext);
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
             const sysText = body.systemInstruction?.parts[0]?.text as string;
@@ -130,7 +130,7 @@ describe('GeminiService', () => {
         it('should include KB usage guidance in systemInstruction when KB context provided', async () => {
             mockSuccess('KB-aware response');
             const kbContext = '--- Workspace Knowledge Bank ---\n[Knowledge: Brand]\nUse formal tone.\n--- End Knowledge Bank ---';
-            await generateContentWithContext('Write a post', ['Idea 1'], kbContext);
+            await generateContentWithContext('Write a post', ['Idea 1'], undefined, kbContext);
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
             const sysText = body.systemInstruction?.parts[0]?.text as string;
@@ -233,7 +233,7 @@ describe('GeminiService', () => {
         it('should include KB transform guidance in systemInstruction when KB context provided', async () => {
             mockSuccess('Transformed');
             const kbContext = '--- Workspace Knowledge Bank ---\n[Knowledge: Tone]\nAlways formal.\n--- End Knowledge Bank ---';
-            await transformContent('Draft text', 'refine', kbContext);
+            await transformContent('Draft text', 'refine', undefined, kbContext);
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
             const sysText = body.systemInstruction?.parts[0]?.text as string;
@@ -267,7 +267,7 @@ describe('GeminiService', () => {
         it('generateContentWithContext sends system + KB in systemInstruction', async () => {
             mockSuccess('Response');
             const kbContext = '--- KB ---\nBrand voice: formal\n--- End KB ---';
-            await generateContentWithContext('Write post', ['Idea 1'], kbContext);
+            await generateContentWithContext('Write post', ['Idea 1'], undefined, kbContext);
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
             const sysText = body.systemInstruction?.parts[0]?.text as string;
@@ -283,7 +283,7 @@ describe('GeminiService', () => {
         it('transformContent sends transform prompt in systemInstruction', async () => {
             mockSuccess('Refined');
             const kbContext = '--- KB ---\nTone: casual\n--- End KB ---';
-            await transformContent('Draft text', 'refine', kbContext);
+            await transformContent('Draft text', 'refine', undefined, kbContext);
 
             const body = vi.mocked(callGemini).mock.calls[0]![0];
             const sysText = body.systemInstruction?.parts[0]?.text as string;

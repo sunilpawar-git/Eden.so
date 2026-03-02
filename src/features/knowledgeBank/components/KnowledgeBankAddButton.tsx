@@ -7,10 +7,14 @@ import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
 import { useFileProcessor } from '../hooks/useFileProcessor';
 import { usePasteTextHandler } from '../hooks/usePasteTextHandler';
 import { PasteTextModal } from './PasteTextModal';
-import { KB_MAX_ENTRIES } from '../types/knowledgeBank';
+import { KB_MAX_DOCUMENTS } from '../types/knowledgeBank';
 import { kbParserRegistry } from '../parsers/parserRegistry';
 import { strings } from '@/shared/localization/strings';
 import { useOutsideClick } from '@/shared/hooks/useOutsideClick';
+import {
+    PaperclipIcon, AlertTriangleIcon, FileTextIcon,
+    EditIcon, BookOpenIcon,
+} from '@/shared/components/icons';
 import styles from './KnowledgeBankAddButton.module.css';
 
 const ACCEPTED_EXTENSIONS = kbParserRegistry.getSupportedExtensions().join(',');
@@ -20,12 +24,14 @@ export function KnowledgeBankAddButton() {
     const [isModalOpen, setModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const entryCount = useKnowledgeBankStore((s) => s.entries.length);
+    const documentCount = useKnowledgeBankStore((s) =>
+        s.entries.filter((e) => !e.parentEntryId).length
+    );
     const { processFile, isProcessing } = useFileProcessor();
     const handlePasteSave = usePasteTextHandler(useCallback(() => setModalOpen(false), []));
     const handleModalClose = useCallback(() => setModalOpen(false), []);
 
-    const isMaxReached = entryCount >= KB_MAX_ENTRIES;
+    const isMaxReached = documentCount >= KB_MAX_DOCUMENTS;
     const kb = strings.knowledgeBank;
 
     const handleOutsideClick = useCallback(() => setDropdownOpen(false), []);
@@ -64,13 +70,15 @@ export function KnowledgeBankAddButton() {
                     title={kb.addButton}
                     disabled={isProcessing}
                 >
-                    <span className={styles.icon}>📎</span>
-                    {entryCount > 0 && <span className={styles.badge}>{entryCount}</span>}
+                    <span className={styles.icon}>
+                        <PaperclipIcon size={16} />
+                    </span>
+                    {documentCount > 0 && <span className={styles.badge}>{documentCount}</span>}
                 </button>
                 {isDropdownOpen && (
                     <DropdownMenu
                         isMaxReached={isMaxReached}
-                        entryCount={entryCount}
+                        documentCount={documentCount}
                         onUpload={handleUploadClick}
                         onPaste={handlePasteClick}
                         onView={handleViewClick}
@@ -94,8 +102,8 @@ export function KnowledgeBankAddButton() {
 }
 
 /** Sub-component: dropdown menu */
-function DropdownMenu({ isMaxReached, entryCount, onUpload, onPaste, onView }: {
-    isMaxReached: boolean; entryCount: number;
+function DropdownMenu({ isMaxReached, documentCount, onUpload, onPaste, onView }: {
+    isMaxReached: boolean; documentCount: number;
     onUpload: () => void; onPaste: () => void; onView: () => void;
 }) {
     const kb = strings.knowledgeBank;
@@ -103,7 +111,9 @@ function DropdownMenu({ isMaxReached, entryCount, onUpload, onPaste, onView }: {
         <div className={styles.dropdown}>
             {isMaxReached ? (
                 <div className={styles.maxReached}>
-                    <span className={styles.dropdownIcon}>⚠️</span>
+                    <span className={styles.dropdownIcon}>
+                        <AlertTriangleIcon size={14} />
+                    </span>
                     <div>
                         <div className={styles.dropdownLabel}>{kb.maxEntriesReached}</div>
                         <div className={styles.dropdownHint}>{kb.maxEntriesDescription}</div>
@@ -112,17 +122,19 @@ function DropdownMenu({ isMaxReached, entryCount, onUpload, onPaste, onView }: {
             ) : (
                 <>
                     <button className={styles.dropdownItem} onClick={onUpload}>
-                        <span className={styles.dropdownIcon}>📄</span> {kb.uploadFile}
+                        <span className={styles.dropdownIcon}><FileTextIcon size={14} /></span>
+                        {kb.uploadFile}
                     </button>
                     <button className={styles.dropdownItem} onClick={onPaste}>
-                        <span className={styles.dropdownIcon}>📝</span> {kb.pasteText}
+                        <span className={styles.dropdownIcon}><EditIcon size={14} /></span>
+                        {kb.pasteText}
                     </button>
                 </>
             )}
             <div className={styles.divider} />
             <button className={styles.dropdownItem} onClick={onView}>
-                <span className={styles.dropdownIcon}>📚</span>
-                {kb.viewBank} ({entryCount})
+                <span className={styles.dropdownIcon}><BookOpenIcon size={14} /></span>
+                {kb.viewBank} ({documentCount})
             </button>
         </div>
     );

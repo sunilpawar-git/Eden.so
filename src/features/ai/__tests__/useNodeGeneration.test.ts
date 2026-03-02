@@ -24,6 +24,12 @@ vi.mock('@/features/knowledgeBank/hooks/useKnowledgeBankContext', () => ({
     useKnowledgeBankContext: () => ({ getKBContext: mockGetKBContext }),
 }));
 
+// Mock Node Pool context hook
+const mockGetPoolContext = vi.fn(() => '');
+vi.mock('../hooks/useNodePoolContext', () => ({
+    useNodePoolContext: () => ({ getPoolContext: mockGetPoolContext }),
+}));
+
 // Helper to create IdeaCard node
 const createTestIdeaNode = (id: string, prompt: string, output?: string, heading?: string) => ({
     id,
@@ -102,6 +108,7 @@ describe('useNodeGeneration', () => {
             expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
                 'Updated prompt',
                 [],
+                '',
                 ''
             );
         });
@@ -123,6 +130,7 @@ describe('useNodeGeneration', () => {
             expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
                 'Heading prompt',
                 [],
+                '',
                 ''
             );
         });
@@ -143,6 +151,7 @@ describe('useNodeGeneration', () => {
             expect(geminiService.generateContentWithContext).toHaveBeenCalledWith(
                 'Legacy prompt',
                 [],
+                '',
                 ''
             );
         });

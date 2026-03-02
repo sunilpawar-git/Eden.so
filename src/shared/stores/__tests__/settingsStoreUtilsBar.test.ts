@@ -31,16 +31,16 @@ describe('SettingsStore — utilsBarLayout', () => {
             expect(state.utilsBarLayout).toEqual(DEFAULT_UTILS_BAR_LAYOUT);
         });
 
-        it('layout.deck1 and layout.deck2 together contain all 12 action IDs', () => {
+        it('layout.deck1 and layout.deck2 together contain all 13 action IDs', () => {
             const { deck1, deck2 } = useSettingsStore.getState().utilsBarLayout;
             const combined = [...deck1, ...deck2].sort();
             expect(combined).toEqual([...ALL_ACTION_IDS].sort());
         });
 
-        it('default deck1 has 5 actions and deck2 has 7', () => {
+        it('default deck1 has 5 actions and deck2 has 8', () => {
             const { deck1, deck2 } = useSettingsStore.getState().utilsBarLayout;
             expect(deck1).toHaveLength(5);
-            expect(deck2).toHaveLength(7);
+            expect(deck2).toHaveLength(8);
         });
     });
 
@@ -106,7 +106,7 @@ describe('SettingsStore — utilsBarLayout', () => {
             expect(before.deck1).toEqual(beforeDeck1);
         });
 
-        it('total action count stays at 12 after move', () => {
+        it('total action count stays at 13 after move', () => {
             useSettingsStore.getState().setUtilsBarActionDeck('connect', 2);
             const { deck1, deck2 } = useSettingsStore.getState().utilsBarLayout;
             expect(deck1.length + deck2.length).toBe(ALL_ACTION_IDS.length);
@@ -166,7 +166,7 @@ describe('SettingsStore — utilsBarLayout', () => {
             );
         });
 
-        it('total action count stays at 12 after cross-deck reorder', () => {
+        it('total action count stays at 13 after cross-deck reorder', () => {
             useSettingsStore.getState().reorderUtilsBarAction('tags', 1, 0);
             const { deck1, deck2 } = useSettingsStore.getState().utilsBarLayout;
             expect(deck1.length + deck2.length).toBe(ALL_ACTION_IDS.length);
@@ -193,7 +193,7 @@ describe('SettingsStore — utilsBarLayout', () => {
         it('loads valid layout from localStorage', () => {
             const custom: typeof DEFAULT_UTILS_BAR_LAYOUT = {
                 deck1: ['ai', 'connect'],
-                deck2: ['copy', 'pin', 'delete', 'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'],
+                deck2: ['copy', 'pin', 'delete', 'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
             };
             localStorageMock.getItem.mockImplementation((key: string) => {
                 if (key === 'settings-utilsBarLayout') return JSON.stringify(custom);
@@ -214,7 +214,7 @@ describe('SettingsStore — utilsBarLayout', () => {
 
         it('falls back to defaults on old Record format', () => {
             // Old format: { ai: 1, connect: 1, ... }
-            const oldFormat = { ai: 1, connect: 1, copy: 1, pin: 1, delete: 1, tags: 2, image: 2, duplicate: 2, focus: 2, collapse: 2, color: 2, share: 2 };
+            const oldFormat = { ai: 1, connect: 1, copy: 1, pin: 1, delete: 1, tags: 2, image: 2, duplicate: 2, focus: 2, collapse: 2, color: 2, share: 2, pool: 2 };
             localStorageMock.getItem.mockImplementation((key: string) => {
                 if (key === 'settings-utilsBarLayout') return JSON.stringify(oldFormat);
                 return null;
@@ -246,7 +246,7 @@ describe('SettingsStore — utilsBarLayout', () => {
         it('falls back to defaults on duplicate action IDs', () => {
             localStorageMock.getItem.mockImplementation((key: string) => {
                 if (key === 'settings-utilsBarLayout') {
-                    return JSON.stringify({ deck1: ['ai', 'ai', 'connect', 'pin', 'delete'], deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share'] });
+                    return JSON.stringify({ deck1: ['ai', 'ai', 'connect', 'pin', 'delete'], deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'] });
                 }
                 return null;
             });

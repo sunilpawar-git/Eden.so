@@ -13,3 +13,8 @@ export * from './PinIcon';
 export * from './DragHandleIcon';
 export * from './ChevronDownIcon';
 export * from './FreeFlowIcon';
+export * from './MemoryChipIcon';
+export * from './BrainIcon';
+export * from './PaperclipIcon';
+export * from './AlertTriangleIcon';
+export * from './BookOpenIcon';

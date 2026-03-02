@@ -1,9 +1,9 @@
 /**
  * Tests for useAutosave hook
- * Covers debounced autosave, save status lifecycle, and offline queueing
+ * Covers debounced autosave, save status lifecycle, and offline queueing.
+ * Structural tests → useAutosave.structural.test.ts
+ * Pool toggle tests → useAutosave.poolToggle.test.ts
  */
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAutosave } from '../hooks/useAutosave';
@@ -228,7 +228,7 @@ describe('useAutosave', () => {
         expect(workspaceCache.update).toHaveBeenCalled();
     });
 
-    it('should cleanup timeout on unmount', () => {
+    it('should cleanup timeout on unmount — no save fires after unmount', async () => {
         setAuthState({ user: { id: 'u-1' } });
         setCanvasState({
             nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
@@ -237,16 +237,47 @@ describe('useAutosave', () => {
 
         const { unmount } = renderHook(() => useAutosave('workspace-1'));
         unmount();
-        vi.useRealTimers();
+
+        // Advance past debounce — no save should fire after the hook is unmounted
+        await act(async () => { vi.advanceTimersByTime(3000); });
+        expect(saveNodes).not.toHaveBeenCalled();
     });
 
-    describe('selector isolation (prevents full-tree rerenders)', () => {
-        it('uses targeted selectors instead of bare useCanvasStore()', () => {
-            const src = readFileSync(
-                resolve(__dirname, '../hooks/useAutosave.ts'), 'utf-8'
-            );
-            expect(src).not.toMatch(/useCanvasStore\(\s*\)/);
-            expect(src).toMatch(/useCanvasStore\(\s*\(\s*s\s*\)/);
+    it('should not schedule save when isWorkspaceLoading is true', async () => {
+        setAuthState({ user: { id: 'u-1' } });
+        setCanvasState({
+            nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
+            edges: [],
         });
+
+        renderHook(() => useAutosave('workspace-1', true));
+        await act(async () => { vi.advanceTimersByTime(3000); });
+
+        expect(saveNodes).not.toHaveBeenCalled();
     });
+
+    it('should flush pending save immediately when tab becomes hidden', async () => {
+        setAuthState({ user: { id: 'u-1' } });
+        setCanvasState({
+            nodes: [{ id: 'n-1', workspaceId: 'ws-1', type: 'idea', position: { x: 0, y: 0 }, data: {} }],
+            edges: [],
+        });
+
+        renderHook(() => useAutosave('workspace-1'));
+        // Debounce timer is set but has not fired yet
+        await act(async () => { vi.advanceTimersByTime(100); });
+        expect(saveNodes).not.toHaveBeenCalled();
+
+        // Simulate tab becoming hidden — should flush immediately
+        Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+        await act(async () => {
+            document.dispatchEvent(new Event('visibilitychange'));
+            await Promise.resolve();
+        });
+
+        expect(saveNodes).toHaveBeenCalled();
+
+        Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    });
+
 });

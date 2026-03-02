@@ -3,14 +3,13 @@
  * Handles: image upload, document chunking (parent + children)
  * Single responsibility: ParseResult → KnowledgeBankEntry[]
  *
- * Entry count is validated server-side via getServerEntryCount before
- * persisting. Batch operations (chunked docs) make a single server count
- * call at the start and track locally for subsequent children.
+ * Document count is validated server-side via getServerDocumentCount before
+ * persisting. Child chunks bypass the document limit check.
  */
 import type { ParseResult } from '../parsers/types';
 import type { KnowledgeBankEntry } from '../types/knowledgeBank';
 import { uploadKBFile } from './storageService';
-import { addKBEntry, getServerEntryCount } from './knowledgeBankService';
+import { addKBEntry, getServerDocumentCount } from './knowledgeBankService';
 
 /** Generate a unique KB entry ID */
 function generateEntryId(): string {
@@ -23,8 +22,7 @@ export async function persistParseResult(
     workspaceId: string,
     result: ParseResult,
 ): Promise<KnowledgeBankEntry[]> {
-    // Get server-side count once for the entire batch
-    const serverCount = await getServerEntryCount(userId, workspaceId);
+    const serverCount = await getServerDocumentCount(userId, workspaceId);
 
     // Chunked documents: persist parent + children
     if (result.chunks && result.chunks.length > 0) {

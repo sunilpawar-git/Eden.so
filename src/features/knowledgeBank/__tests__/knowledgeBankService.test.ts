@@ -17,6 +17,9 @@ vi.mock('firebase/firestore', () => ({
     deleteDoc: vi.fn().mockResolvedValue(undefined),
     serverTimestamp: vi.fn(() => new Date()),
     getCountFromServer: vi.fn().mockResolvedValue({ data: () => ({ count: 0 }) }),
+    query: vi.fn((...args: unknown[]) => args[0]),
+    where: vi.fn(),
+    writeBatch: vi.fn(() => ({ delete: vi.fn(), commit: vi.fn() })),
 }));
 
 vi.mock('../utils/sanitizer', () => ({
@@ -24,7 +27,7 @@ vi.mock('../utils/sanitizer', () => ({
 }));
 
 // eslint-disable-next-line import-x/first -- Must import after vi.mock
-import { addKBEntry, updateKBEntry, deleteKBEntry, loadKBEntries, getServerEntryCount } from '../services/knowledgeBankService';
+import { addKBEntry, updateKBEntry, deleteKBEntry, loadKBEntries, getServerDocumentCount } from '../services/knowledgeBankService';
 // eslint-disable-next-line import-x/first
 import { setDoc, getDocs, deleteDoc, getCountFromServer } from 'firebase/firestore';
 // eslint-disable-next-line import-x/first
@@ -65,9 +68,9 @@ describe('knowledgeBankService', () => {
             ).rejects.toThrow();
         });
 
-        it('rejects when max entries reached (server count)', async () => {
+        it('rejects when max documents reached (server count)', async () => {
             vi.mocked(getCountFromServer).mockResolvedValueOnce(
-                { data: () => ({ count: 50 }) } as never
+                { data: () => ({ count: 25 }) } as never
             );
 
             await expect(
@@ -171,21 +174,21 @@ describe('knowledgeBankService', () => {
         });
     });
 
-    describe('getServerEntryCount', () => {
-        it('returns server-side count via getCountFromServer', async () => {
+    describe('getServerDocumentCount', () => {
+        it('returns server-side document count via getCountFromServer', async () => {
             vi.mocked(getCountFromServer).mockResolvedValueOnce(
                 { data: () => ({ count: 12 }) } as never
             );
-            const count = await getServerEntryCount('user-1', 'ws-1');
+            const count = await getServerDocumentCount('user-1', 'ws-1');
             expect(count).toBe(12);
             expect(getCountFromServer).toHaveBeenCalledTimes(1);
         });
 
-        it('returns zero when collection is empty', async () => {
+        it('returns zero when no documents', async () => {
             vi.mocked(getCountFromServer).mockResolvedValueOnce(
                 { data: () => ({ count: 0 }) } as never
             );
-            const count = await getServerEntryCount('user-1', 'ws-1');
+            const count = await getServerDocumentCount('user-1', 'ws-1');
             expect(count).toBe(0);
         });
     });

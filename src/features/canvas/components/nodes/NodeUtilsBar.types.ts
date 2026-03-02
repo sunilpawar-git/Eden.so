@@ -22,6 +22,8 @@ export interface NodeUtilsBarProps {
     isTransforming?: boolean;
     isPinned?: boolean;
     isCollapsed?: boolean;
+    isInPool?: boolean;
+    onPoolToggle?: () => void;
     disabled?: boolean;
     /** Bar stays visible regardless of hover (right-click/long-press pin) */
     isPinnedOpen?: boolean;

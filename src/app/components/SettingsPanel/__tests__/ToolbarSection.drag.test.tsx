@@ -47,7 +47,7 @@ describe('ToolbarSection — drag-and-drop reordering', () => {
     it('renders drag handles for all action rows', () => {
         render(<ToolbarSection />);
         const handles = screen.getAllByTestId('drag-handle');
-        expect(handles).toHaveLength(12); // one per action
+        expect(handles).toHaveLength(13); // one per action
     });
 
     it('dragging first deck1 item to second position reorders within deck1', () => {
@@ -131,6 +131,6 @@ describe('ToolbarSection — drag-and-drop reordering', () => {
         fireEvent.drop(deck1Items[2]!);
 
         const { deck1, deck2 } = useSettingsStore.getState().utilsBarLayout;
-        expect(deck1.length + deck2.length).toBe(12);
+        expect(deck1.length + deck2.length).toBe(13);
     });
 });

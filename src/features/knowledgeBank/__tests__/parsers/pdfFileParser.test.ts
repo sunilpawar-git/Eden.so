@@ -13,6 +13,12 @@ vi.mock('pdfjs-dist', () => ({
     version: '5.0.0',
 }));
 
+// Mock fileReaderUtil — overridden per-describe block where needed
+const mockReadFileAsArrayBuffer = vi.fn().mockResolvedValue(new ArrayBuffer(8));
+vi.mock('../../parsers/fileReaderUtil', () => ({
+    readFileAsArrayBuffer: (...args: unknown[]) => mockReadFileAsArrayBuffer(...args),
+}));
+
 /** Helper to build a mock PDF document proxy */
 function createMockPdfDoc(pageTexts: string[]) {
     const pages = pageTexts.map((text) => ({
@@ -134,13 +140,15 @@ describe('PdfFileParser', () => {
             expect(result.chunks).toBeUndefined();
         });
 
-        it('throws on empty PDF', async () => {
+        it('throws PDF_SCANNED on empty PDF (signals scanned document)', async () => {
             mockGetDocument.mockReturnValue(
                 createMockPdfDoc([''])
             );
 
             const file = new File(['fake'], 'empty.pdf', { type: 'application/pdf' });
-            await expect(parser.parse(file)).rejects.toThrow();
+            await expect(parser.parse(file)).rejects.toMatchObject({
+                code: 'PDF_SCANNED',
+            });
         });
 
         it('includes page count in metadata', async () => {
@@ -151,6 +159,19 @@ describe('PdfFileParser', () => {
             const file = new File(['fake'], 'doc.pdf', { type: 'application/pdf' });
             const result = await parser.parse(file);
             expect(result.metadata?.pageCount).toBe('3');
+        });
+    });
+
+    describe('parse — error propagation', () => {
+        it('maps readFileAsArrayBuffer errors to the generic uploadFailed path (not a ParserError)', async () => {
+            mockReadFileAsArrayBuffer.mockRejectedValueOnce(new Error('disk read error'));
+
+            const file = new File(['fake'], 'broken.pdf', { type: 'application/pdf' });
+            const error = await parser.parse(file).catch((e: unknown) => e);
+
+            // Must be a plain Error, not a ParserError — so useFileProcessor maps it to uploadFailed
+            expect(error).toBeInstanceOf(Error);
+            expect((error as { code?: string }).code).toBeUndefined();
         });
     });
 });

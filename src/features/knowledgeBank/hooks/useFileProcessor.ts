@@ -5,7 +5,8 @@
 import { useCallback, useState } from 'react';
 import { kbParserRegistry } from '../parsers/parserRegistry';
 import { persistParseResult } from '../services/parseResultPersister';
-import { summarizeEntries } from '../services/summarizeEntries';
+import { parseWithPdfFallback } from '../services/pdfFallbackService';
+import { runPostUploadSummarization } from '../services/postUploadSummarizer';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -35,16 +36,18 @@ export function useFileProcessor() {
 
         setIsProcessing(true);
         try {
-            const result = await parser.parse(file);
+            const result = await parseWithPdfFallback(parser, file, () =>
+                toast.info(strings.knowledgeBank.pdfScannedFallback));
             const entries = await persistParseResult(userId, workspaceId, result);
             for (const entry of entries) {
                 useKnowledgeBankStore.getState().addEntry(entry);
             }
-            trackKbEntryAdded('file');
-            toast.success(strings.knowledgeBank.saveEntry);
+            entries.forEach(() => trackKbEntryAdded('file'));
+            toast.success(result.metadata?.aiExtracted === 'true'
+                ? strings.knowledgeBank.pdfExtracted
+                : strings.knowledgeBank.saveEntry);
 
-            // Background summarization with observable lifecycle
-            void summarizeEntries(userId, workspaceId, entries, {
+            void runPostUploadSummarization(userId, workspaceId, entries, {
                 onStart: (entryIds) => {
                     useKnowledgeBankStore.getState().setSummarizingEntryIds(entryIds);
                 },
@@ -57,7 +60,8 @@ export function useFileProcessor() {
                 },
             });
         } catch (error) {
-            const msg = error instanceof Error
+            // Only known ParserErrors (always localised) surface to the user; everything else uses uploadFailed.
+            const msg = error instanceof Error && 'code' in error
                 ? error.message
                 : strings.knowledgeBank.errors.uploadFailed;
             toast.error(msg);
