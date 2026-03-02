@@ -4,12 +4,11 @@
  */
 import { create } from 'zustand';
 import type { Viewport } from '@xyflow/react';
-import type { CanvasNode, NodePosition, LinkPreviewMetadata, NodeColorKey } from '../types/node';
+import type { CanvasNode, LinkPreviewMetadata, NodeColorKey } from '../types/node';
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
 import {
-    updateNodePositionInArray,
     updateNodeDimensionsInArray,
     updateNodeDataField,
     appendToNodeOutputInArray,
@@ -58,7 +57,6 @@ interface CanvasActions {
     // Node actions
     addNode: (node: CanvasNode) => void;
     duplicateNode: (nodeId: string) => string | undefined;
-    updateNodePosition: (nodeId: string, position: NodePosition) => void;
     updateNodeDimensions: (nodeId: string, width: number, height: number) => void;
     updateNodeContent: (nodeId: string, content: string) => void;
     deleteNode: (nodeId: string) => void;
@@ -141,9 +139,6 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
         set((s) => ({ nodes: [...s.nodes, newNode] }));
         return newNode.id;
     },
-
-    updateNodePosition: (nodeId, position) =>
-        set((s) => ({ nodes: updateNodePositionInArray(s.nodes, nodeId, position) })),
 
     updateNodeDimensions: (nodeId, width, height) =>
         set((s) => ({ nodes: updateNodeDimensionsInArray(s.nodes, nodeId, width, height) })),

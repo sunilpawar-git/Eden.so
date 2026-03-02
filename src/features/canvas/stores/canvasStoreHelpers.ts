@@ -12,21 +12,6 @@ import {
 } from '../services/gridLayoutService';
 
 /**
- * Updates a node's position in the nodes array
- */
-export function updateNodePositionInArray(
-    nodes: CanvasNode[],
-    nodeId: string,
-    position: NodePosition
-): CanvasNode[] {
-    return nodes.map((node) =>
-        node.id === nodeId
-            ? { ...node, position, updatedAt: new Date() }
-            : node
-    );
-}
-
-/**
  * Updates a node's dimensions with clamping
  */
 export function updateNodeDimensionsInArray(

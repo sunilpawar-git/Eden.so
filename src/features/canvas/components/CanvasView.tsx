@@ -57,9 +57,11 @@ function CanvasViewInner() {
     const [dragState, dragDispatch] = useReducer(dragPositionReducer, INITIAL_DRAG_STATE);
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked, dragDispatch);
 
+    const overridesRef = useRef(dragState.overrides);
+    overridesRef.current = dragState.overrides;
     const commitDragOverrides = useCallback(
-        () => commitOverridesToStore(dragState.overrides, dragDispatch),
-        [dragState],
+        () => commitOverridesToStore(overridesRef.current, dragDispatch),
+        [], // eslint-disable-line react-hooks/exhaustive-deps -- reads from ref
     );
 
     const handleMoveEnd = useCallback((_event: unknown, newViewport: Viewport) => {

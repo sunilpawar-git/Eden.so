@@ -32,7 +32,11 @@ describe('useNodeData', () => {
         renderCount = 0;
 
         act(() => {
-            useCanvasStore.getState().updateNodePosition('n1', { x: 999, y: 999 });
+            useCanvasStore.setState((s) => ({
+                nodes: s.nodes.map((n) =>
+                    n.id === 'n1' ? { ...n, position: { x: 999, y: 999 } } : n
+                ),
+            }));
         });
 
         expect(renderCount).toBe(0);

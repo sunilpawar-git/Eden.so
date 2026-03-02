@@ -240,18 +240,26 @@ describe('useAutosave', () => {
         vi.useRealTimers();
     });
 
-    describe('position-excluded fingerprinting', () => {
-        it('nodesJson fingerprint excludes position but includes data (structural)', () => {
+    describe('position-excluded content fingerprinting', () => {
+        it('contentJson fingerprint excludes position but includes data (structural)', () => {
             const src = readFileSync(
                 resolve(__dirname, '../hooks/useAutosave.ts'), 'utf-8'
             );
-            const nodesJsonBlock = src.slice(
-                src.indexOf('const nodesJson'),
-                src.indexOf(');', src.indexOf('const nodesJson')) + 2,
+            const contentBlock = src.slice(
+                src.indexOf('const contentJson'),
+                src.indexOf(');', src.indexOf('const contentJson')) + 2,
             );
-            expect(nodesJsonBlock).not.toContain('position');
-            expect(nodesJsonBlock).toContain('data');
-            expect(nodesJsonBlock).toContain('id');
+            expect(contentBlock).not.toContain('position');
+            expect(contentBlock).toContain('data');
+            expect(contentBlock).toContain('id');
+        });
+
+        it('positionJson fingerprint exists for position-only saves', () => {
+            const src = readFileSync(
+                resolve(__dirname, '../hooks/useAutosave.ts'), 'utf-8'
+            );
+            expect(src).toContain('const positionJson');
+            expect(src).toContain('POSITION_SAVE_DELAY_MS');
         });
     });
 

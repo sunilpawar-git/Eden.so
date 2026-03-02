@@ -14,8 +14,8 @@ import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 
-const AUTOSAVE_DELAY_MS = 2000; // 2 second debounce
-
+const AUTOSAVE_DELAY_MS = 2000;
+const POSITION_SAVE_DELAY_MS = 5000;
 
 /** Serializes workspace-level fields that should trigger auto-save */
 function serializeWorkspacePoolFields(workspaces: Workspace[], workspaceId: string): string {
@@ -30,7 +30,7 @@ export function useAutosave(workspaceId: string, isWorkspaceLoading: boolean = f
     const workspaces = useWorkspaceStore((s) => s.workspaces);
     const user = useAuthStore((s) => s.user);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastSavedRef = useRef({ nodes: '', edges: '', workspace: '' });
+    const lastSavedRef = useRef({ nodes: '', edges: '', workspace: '', positions: '' });
 
     const save = useCallback(async () => {
         if (!user || !workspaceId) return;
@@ -79,7 +79,7 @@ export function useAutosave(workspaceId: string, isWorkspaceLoading: boolean = f
     }, [user, workspaceId, nodes, edges]);
 
     useEffect(() => {
-        const nodesJson = JSON.stringify(
+        const contentJson = JSON.stringify(
             nodes.map((n) => ({
                 id: n.id,
                 data: n.data,
@@ -87,35 +87,49 @@ export function useAutosave(workspaceId: string, isWorkspaceLoading: boolean = f
                 height: n.height,
             }))
         );
+        const positionJson = JSON.stringify(
+            nodes.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }))
+        );
         const edgesJson = JSON.stringify(edges);
         const workspaceJson = serializeWorkspacePoolFields(workspaces, workspaceId);
 
-        if (
-            nodesJson === lastSavedRef.current.nodes &&
-            edgesJson === lastSavedRef.current.edges &&
-            workspaceJson === lastSavedRef.current.workspace
-        ) {
-            return;
-        }
+        const contentChanged = contentJson !== lastSavedRef.current.nodes ||
+            edgesJson !== lastSavedRef.current.edges ||
+            workspaceJson !== lastSavedRef.current.workspace;
+        const positionChanged = positionJson !== lastSavedRef.current.positions;
+
+        if (!contentChanged && !positionChanged) return;
 
         if (isWorkspaceLoading) {
-            lastSavedRef.current = { nodes: nodesJson, edges: edgesJson, workspace: workspaceJson };
+            lastSavedRef.current = {
+                nodes: contentJson, edges: edgesJson, workspace: workspaceJson, positions: positionJson,
+            };
             return;
         }
 
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
+        const delay = contentChanged ? AUTOSAVE_DELAY_MS : POSITION_SAVE_DELAY_MS;
         timeoutRef.current = setTimeout(() => {
-            lastSavedRef.current = { nodes: nodesJson, edges: edgesJson, workspace: workspaceJson };
+            lastSavedRef.current = {
+                nodes: contentJson, edges: edgesJson, workspace: workspaceJson, positions: positionJson,
+            };
             void save();
-        }, AUTOSAVE_DELAY_MS);
+        }, delay);
 
-        return () => {
-            if (timeoutRef.current) {
+        return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+    }, [nodes, edges, workspaces, save, isWorkspaceLoading, workspaceId]);
+
+    // Flush pending save when tab becomes hidden (prevents data loss on close)
+    useEffect(() => {
+        const flush = () => {
+            if (document.hidden && timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+                void save();
             }
         };
-    }, [nodes, edges, workspaces, save, isWorkspaceLoading, workspaceId]);
+        document.addEventListener('visibilitychange', flush);
+        return () => document.removeEventListener('visibilitychange', flush);
+    }, [save]);
 }
