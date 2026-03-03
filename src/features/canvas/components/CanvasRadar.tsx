@@ -34,7 +34,7 @@ export const CanvasRadar = memo(function CanvasRadar() {
     }, [nodes]);
 
     const handleClick = useCallback(() => {
-        fitView({ padding: 0.2, duration: 300 });
+        void fitView({ padding: 0.2, duration: 300 });
     }, [fitView]);
 
     const label = strings.canvas.zoomControls.radarLabel;
