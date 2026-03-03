@@ -17,6 +17,7 @@ export const canvasStrings = {
         fitView: 'Fit View',
         lockCanvas: 'Lock Canvas',
         unlockCanvas: 'Unlock Canvas',
+        radarLabel: 'Canvas radar — click to fit all nodes',
     },
     resize: {
         resizeNode: 'Resize node',

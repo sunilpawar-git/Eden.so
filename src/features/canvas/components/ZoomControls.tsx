@@ -2,6 +2,7 @@ import { memo, useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
+import { CanvasRadar } from './CanvasRadar';
 import styles from './ZoomControls.module.css';
 
 /**
@@ -22,6 +23,7 @@ export const ZoomControls = memo(function ZoomControls() {
 
     return (
         <div className={styles.container} data-testid="zoom-controls">
+            <CanvasRadar />
             <button
                 className={styles.button}
                 onClick={() => zoomIn()}
