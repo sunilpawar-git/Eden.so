@@ -232,6 +232,43 @@ describe('SettingsStore', () => {
         });
     });
 
+    describe('autoAnalyzeDocuments', () => {
+        it('should default to true', () => {
+            expect(useSettingsStore.getState().autoAnalyzeDocuments).toBe(true);
+        });
+
+        it('should toggle autoAnalyzeDocuments setting', () => {
+            expect(useSettingsStore.getState().autoAnalyzeDocuments).toBe(true);
+            useSettingsStore.getState().toggleAutoAnalyzeDocuments();
+            expect(useSettingsStore.getState().autoAnalyzeDocuments).toBe(false);
+            useSettingsStore.getState().toggleAutoAnalyzeDocuments();
+            expect(useSettingsStore.getState().autoAnalyzeDocuments).toBe(true);
+        });
+
+        it('should persist autoAnalyzeDocuments to localStorage', () => {
+            useSettingsStore.getState().toggleAutoAnalyzeDocuments();
+            expect(localStorageMock.setItem).toHaveBeenCalledWith('settings-autoAnalyzeDocuments', 'false');
+        });
+
+        it('should load autoAnalyzeDocuments from storage', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-autoAnalyzeDocuments') return 'false';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().autoAnalyzeDocuments).toBe(false);
+        });
+
+        it('should reject invalid autoAnalyzeDocuments localStorage value (non-"true" becomes false)', () => {
+            localStorageMock.getItem.mockImplementation((key: string) => {
+                if (key === 'settings-autoAnalyzeDocuments') return 'hacked';
+                return null;
+            });
+            useSettingsStore.getState().loadFromStorage();
+            expect(useSettingsStore.getState().autoAnalyzeDocuments).toBe(false);
+        });
+    });
+
     describe('localStorage persistence', () => {
         it('should load theme from localStorage via loadFromStorage', () => {
             localStorageMock.getItem.mockImplementation((key: string) => {

@@ -14,6 +14,7 @@ export type SubscriptionTier = (typeof SUBSCRIPTION_TIERS)[keyof typeof SUBSCRIP
 export const GATED_FEATURES = {
     offlinePin: 'offlinePin',
     backgroundSync: 'backgroundSync',
+    documentIntelligence: 'documentIntelligence',
 } as const;
 
 export type GatedFeature = (typeof GATED_FEATURES)[keyof typeof GATED_FEATURES];
@@ -22,6 +23,7 @@ export type GatedFeature = (typeof GATED_FEATURES)[keyof typeof GATED_FEATURES];
 export const FEATURE_TIER_MAP: Record<GatedFeature, SubscriptionTier> = {
     [GATED_FEATURES.offlinePin]: SUBSCRIPTION_TIERS.pro,
     [GATED_FEATURES.backgroundSync]: SUBSCRIPTION_TIERS.pro,
+    [GATED_FEATURES.documentIntelligence]: SUBSCRIPTION_TIERS.pro,
 };
 
 export interface SubscriptionInfo {

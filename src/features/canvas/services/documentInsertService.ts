@@ -25,6 +25,12 @@ export type DocumentUploadFn = (
     thumbnailBlob?: Blob,
 ) => Promise<DocumentUploadResult>;
 
+/** Result of a successful document insertion — meta for display + raw text for agent */
+export interface DocumentInsertResult {
+    meta: AttachmentMeta;
+    parsedText: string;
+}
+
 /** Known localized error messages that should be shown as-is */
 const KNOWN_DOC_ERRORS = new Set([
     strings.canvas.docFileTooLarge,
@@ -44,35 +50,30 @@ export function getDocumentErrorMessage(error: unknown): string {
 
 /**
  * Full document insertion pipeline:
- *   validate → parse → upload → return AttachmentMeta
+ *   validate → parse → upload → return DocumentInsertResult
  *
  * @param file - The user-selected document file
  * @param uploadFn - Uploads artifacts and returns URLs
- * @returns AttachmentMeta ready to be persisted into node.data.attachments
+ * @returns DocumentInsertResult with meta + parsedText, or null on failure
  */
 export async function processDocumentForNode(
     file: File,
     uploadFn: DocumentUploadFn,
-): Promise<AttachmentMeta | null> {
+): Promise<DocumentInsertResult | null> {
     try {
-        // Step 1: Validate
         await validateDocumentFile(file);
 
-        // Step 2: Parse (text extraction + thumbnail)
         toast.info(strings.canvas.docProcessing);
         const parseResult = await parseDocument(file);
 
-        // Step 3: Convert thumbnail data URL to blob for upload
         let thumbnailBlob: Blob | undefined;
         if (parseResult.thumbnailDataUrl) {
             thumbnailBlob = dataUrlToBlob(parseResult.thumbnailDataUrl);
         }
 
-        // Step 4: Upload all artifacts
         toast.info(strings.canvas.docUploading);
         const uploadResult = await uploadFn(file, parseResult.text, thumbnailBlob);
 
-        // Step 5: Build AttachmentMeta
         const meta: AttachmentMeta = {
             filename: file.name,
             url: uploadResult.documentUrl,
@@ -82,7 +83,7 @@ export async function processDocumentForNode(
             sizeBytes: file.size,
         };
 
-        return meta;
+        return { meta, parsedText: parseResult.text };
     } catch (error: unknown) {
         toast.error(getDocumentErrorMessage(error));
         return null;

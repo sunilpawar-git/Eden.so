@@ -91,10 +91,34 @@ export function trackKbEntryAdded(method: 'paste' | 'file'): void {
 type SettingKey =
     | 'theme' | 'canvasGrid' | 'autoSave' | 'autoSaveInterval'
     | 'compactMode' | 'canvasScrollMode' | 'connectorStyle'
-    | 'isCanvasLocked' | 'canvasFreeFlow' | 'data_export';
+    | 'isCanvasLocked' | 'canvasFreeFlow' | 'autoAnalyzeDocuments' | 'data_export';
 
 export function trackSettingsChanged(setting: SettingKey, value: string | boolean | number): void {
     track('settings_changed', { setting, value });
+}
+
+export function trackDocumentAgentTriggered(filename: string): void {
+    track('document_agent_triggered', { filename });
+}
+
+export function trackDocumentAgentCompleted(classification: string, confidence: string): void {
+    track('document_agent_completed', { classification, confidence });
+}
+
+export function trackDocumentAgentFailed(errorType: string): void {
+    track('document_agent_failed', { error_type: errorType });
+}
+
+export function trackDocumentAgentExpanded(sectionCount: number): void {
+    track('document_agent_expanded', { section_count: sectionCount });
+}
+
+export function trackCrossReferenceGenerated(matchCount: number): void {
+    track('cross_reference_generated', { match_count: matchCount });
+}
+
+export function trackAggregationGenerated(classificationCount: number): void {
+    track('aggregation_generated', { classification_count: classificationCount });
 }
 
 // ── Internal helper ───────────────────────────────────────────────────────────

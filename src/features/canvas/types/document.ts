@@ -6,6 +6,7 @@
  * DOCX/XLSX deferred to a follow-up feature.
  */
 import { strings } from '@/shared/localization/strings';
+import type { ExtractionResult } from '@/features/documentAgent/types/documentAgent';
 
 /** Allowed document MIME types for node attachments (MVP) */
 export const DOCUMENT_ACCEPTED_MIME_TYPES = [
@@ -102,4 +103,8 @@ export interface AttachmentMeta {
     mimeType: DocumentMimeType;
     /** File size in bytes */
     sizeBytes: number;
+    /** Cached extraction result from document agent (optional, backward-compatible) */
+    extraction?: ExtractionResult;
+    /** Timestamp when extraction was performed (epoch ms) */
+    analyzedAt?: number;
 }

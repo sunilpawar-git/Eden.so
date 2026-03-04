@@ -40,6 +40,9 @@ function updateAttachmentByTempId(
     if (tr.steps.length > 0) editor.view.dispatch(tr);
 }
 
+/** Optional callback fired after a document is successfully uploaded and parsed */
+export type DocumentReadyCallback = (parsedText: string, filename: string) => void;
+
 /**
  * Hook providing file-picker trigger and direct file insertion for document attachments.
  * - `triggerFilePicker`: opens OS file picker → user selects file → inserts
@@ -49,12 +52,14 @@ function updateAttachmentByTempId(
  * @param editor - Current TipTap editor instance
  * @param uploadFn - Bound upload function from useNodeDocumentUpload
  * @param getMarkdown - Returns current editor content as markdown
+ * @param onDocumentReady - Optional callback for post-upload processing (e.g. document agent)
  */
 export function useDocumentInsert(
     nodeId: string,
     editor: Editor | null,
     uploadFn: DocumentUploadFn,
     getMarkdown: () => string,
+    onDocumentReady?: DocumentReadyCallback,
 ): { triggerFilePicker: () => void; insertFileDirectly: (file: File) => Promise<void> } {
     const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -79,15 +84,15 @@ export function useDocumentInsert(
             } satisfies AttachmentNodeAttrs,
         });
 
-        const meta = await processDocumentForNode(file, uploadFn);
+        const result = await processDocumentForNode(file, uploadFn);
 
-        if (!meta) {
-            // processDocumentForNode already toasted the error; remove placeholder
+        if (!result) {
             updateAttachmentByTempId(editor, tempId, { status: ERROR, tempId: null });
             return;
         }
 
-        // Update placeholder to ready state with real URLs
+        const { meta } = result;
+
         updateAttachmentByTempId(editor, tempId, {
             url: meta.url,
             filename: meta.filename,
@@ -97,7 +102,6 @@ export function useDocumentInsert(
             tempId: null,
         });
 
-        // Persist markdown + update node attachments array in store
         const md = getMarkdown();
         const store = useCanvasStore.getState();
         store.updateNodeOutput(nodeId, md);
@@ -105,7 +109,11 @@ export function useDocumentInsert(
         const current = store.nodes.find((n) => n.id === nodeId);
         const existing = current?.data.attachments ?? [];
         store.updateNodeAttachments(nodeId, [...existing, meta]);
-    }, [editor, nodeId, uploadFn, getMarkdown]);
+
+        if (result.parsedText && onDocumentReady) {
+            onDocumentReady(result.parsedText, meta.filename);
+        }
+    }, [editor, nodeId, uploadFn, getMarkdown, onDocumentReady]);
 
     const triggerFilePicker = useCallback(() => {
         if (!editor || editor.isDestroyed) return;

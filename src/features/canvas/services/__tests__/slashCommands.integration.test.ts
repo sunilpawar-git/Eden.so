@@ -6,11 +6,12 @@ import { describe, it, expect } from 'vitest';
 import { slashCommands, filterCommands, getCommandById } from '@/features/canvas/services/slashCommands';
 
 describe('Slash Commands Integration', () => {
-    it('should have ai-generate, insert-image and insert-document commands', () => {
-        expect(slashCommands).toHaveLength(3);
+    it('should have ai-generate, insert-image, insert-document, and analyze-document commands', () => {
+        expect(slashCommands).toHaveLength(4);
         expect(slashCommands.some(c => c.id === 'ai-generate')).toBe(true);
         expect(slashCommands.some(c => c.id === 'insert-image')).toBe(true);
         expect(slashCommands.some(c => c.id === 'insert-document')).toBe(true);
+        expect(slashCommands.some(c => c.id === 'analyze-document')).toBe(true);
     });
 
     it('should find ai-generate by id', () => {
@@ -39,7 +40,7 @@ describe('Slash Commands Integration', () => {
 
     it('should return all commands when no filter', () => {
         const results = filterCommands('');
-        expect(results).toHaveLength(3);
+        expect(results).toHaveLength(4);
     });
 
     it('should return empty for unmatched query', () => {

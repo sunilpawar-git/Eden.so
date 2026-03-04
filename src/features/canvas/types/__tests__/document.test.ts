@@ -150,4 +150,36 @@ describe('AttachmentMeta type', () => {
         expect(meta.thumbnailUrl).toBeUndefined();
         expect(meta.parsedTextUrl).toBeUndefined();
     });
+
+    it('allows extraction cache fields (backward-compatible)', () => {
+        const meta: AttachmentMeta = {
+            filename: 'invoice.pdf',
+            url: 'https://storage.example.com/invoice.pdf',
+            mimeType: 'application/pdf' as DocumentMimeType,
+            sizeBytes: 2048,
+            extraction: {
+                classification: 'invoice',
+                confidence: 'high',
+                summary: 'Monthly invoice',
+                keyFacts: ['Total: $500'],
+                actionItems: [],
+                questions: [],
+                extendedFacts: ['Vendor: ACME'],
+            },
+            analyzedAt: Date.now(),
+        };
+        expect(meta.extraction?.classification).toBe('invoice');
+        expect(meta.analyzedAt).toBeGreaterThan(0);
+    });
+
+    it('extraction and analyzedAt default to undefined for existing data', () => {
+        const meta: AttachmentMeta = {
+            filename: 'old.pdf',
+            url: 'https://storage.example.com/old.pdf',
+            mimeType: 'application/pdf' as DocumentMimeType,
+            sizeBytes: 512,
+        };
+        expect(meta.extraction).toBeUndefined();
+        expect(meta.analyzedAt).toBeUndefined();
+    });
 });

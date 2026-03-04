@@ -46,17 +46,25 @@ describe('processDocumentForNode', () => {
         });
     });
 
-    it('returns AttachmentMeta on success', async () => {
+    it('returns DocumentInsertResult with meta and parsedText on success', async () => {
         const file = makePdfFile();
-        const meta = await processDocumentForNode(file, mockUploadFn);
+        const result = await processDocumentForNode(file, mockUploadFn);
 
-        expect(meta).not.toBeNull();
-        expect(meta?.filename).toBe('report.pdf');
-        expect(meta?.url).toBe('https://cdn.example.com/doc.pdf');
-        expect(meta?.thumbnailUrl).toBe('https://cdn.example.com/thumb.png');
-        expect(meta?.parsedTextUrl).toBe('https://cdn.example.com/text.txt');
-        expect(meta?.mimeType).toBe('application/pdf');
-        expect(meta?.sizeBytes).toBe(1024);
+        expect(result).not.toBeNull();
+        expect(result?.meta.filename).toBe('report.pdf');
+        expect(result?.meta.url).toBe('https://cdn.example.com/doc.pdf');
+        expect(result?.meta.thumbnailUrl).toBe('https://cdn.example.com/thumb.png');
+        expect(result?.meta.parsedTextUrl).toBe('https://cdn.example.com/text.txt');
+        expect(result?.meta.mimeType).toBe('application/pdf');
+        expect(result?.meta.sizeBytes).toBe(1024);
+    });
+
+    it('parsedText matches parseDocument output', async () => {
+        mockParse.mockResolvedValue({ text: 'Extracted PDF content' });
+        const file = makePdfFile();
+        const result = await processDocumentForNode(file, mockUploadFn);
+
+        expect(result?.parsedText).toBe('Extracted PDF content');
     });
 
     it('calls validate, parse, then upload in sequence', async () => {
@@ -71,9 +79,9 @@ describe('processDocumentForNode', () => {
     it('returns null and toasts error on validation failure', async () => {
         mockValidate.mockRejectedValue(new Error(strings.canvas.docFileTooLarge));
         const file = makePdfFile();
-        const meta = await processDocumentForNode(file, mockUploadFn);
+        const result = await processDocumentForNode(file, mockUploadFn);
 
-        expect(meta).toBeNull();
+        expect(result).toBeNull();
         expect(mockToastError).toHaveBeenCalledWith(strings.canvas.docFileTooLarge);
         expect(mockUploadFn).not.toHaveBeenCalled();
     });
@@ -81,18 +89,18 @@ describe('processDocumentForNode', () => {
     it('returns null and toasts error on parse failure', async () => {
         mockParse.mockRejectedValue(new Error(strings.canvas.docParsingFailed));
         const file = makePdfFile();
-        const meta = await processDocumentForNode(file, mockUploadFn);
+        const result = await processDocumentForNode(file, mockUploadFn);
 
-        expect(meta).toBeNull();
+        expect(result).toBeNull();
         expect(mockToastError).toHaveBeenCalledWith(strings.canvas.docParsingFailed);
     });
 
     it('returns null and toasts generic error on unknown failure', async () => {
         mockUploadFn.mockRejectedValue(new Error('network glitch'));
         const file = makePdfFile();
-        const meta = await processDocumentForNode(file, mockUploadFn);
+        const result = await processDocumentForNode(file, mockUploadFn);
 
-        expect(meta).toBeNull();
+        expect(result).toBeNull();
         expect(mockToastError).toHaveBeenCalledWith(strings.canvas.docUploadFailed);
     });
 
@@ -103,10 +111,11 @@ describe('processDocumentForNode', () => {
             parsedTextUrl: 'https://cdn.example.com/data.txt',
         });
         const file = new File([new ArrayBuffer(100)], 'data.csv', { type: 'text/csv' });
-        const meta = await processDocumentForNode(file, mockUploadFn);
+        const result = await processDocumentForNode(file, mockUploadFn);
 
-        expect(meta?.thumbnailUrl).toBeUndefined();
-        expect(meta?.parsedTextUrl).toBe('https://cdn.example.com/data.txt');
+        expect(result?.meta.thumbnailUrl).toBeUndefined();
+        expect(result?.meta.parsedTextUrl).toBe('https://cdn.example.com/data.txt');
+        expect(result?.parsedText).toBe('CSV data here');
     });
 });
 

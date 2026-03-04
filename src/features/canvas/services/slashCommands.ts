@@ -33,6 +33,14 @@ export const slashCommands: SlashCommand[] = [
         keywords: ['document', 'doc', 'pdf', 'file', 'attach', 'csv', 'txt'],
         prefix: 'doc',
     },
+    {
+        id: 'analyze-document',
+        labelKey: 'slashCommands.analyzeDocument.label',
+        descriptionKey: 'slashCommands.analyzeDocument.description',
+        icon: '🔍',
+        keywords: ['analyze', 'analyse', 'extract', 'insight', 'intelligence'],
+        prefix: 'analyze',
+    },
 ];
 
 /**

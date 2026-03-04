@@ -67,6 +67,16 @@ describe('subscriptionStore', () => {
         expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.backgroundSync)).toBe(false);
     });
 
+    it('hasAccess returns true for documentIntelligence on pro tier', () => {
+        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.pro });
+        expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.documentIntelligence)).toBe(true);
+    });
+
+    it('hasAccess returns false for documentIntelligence on free tier', () => {
+        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.free });
+        expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.documentIntelligence)).toBe(false);
+    });
+
     it('sets isLoading during load', async () => {
         let resolvePromise: (v: unknown) => void = () => {};
         mockGetSubscription.mockReturnValue(

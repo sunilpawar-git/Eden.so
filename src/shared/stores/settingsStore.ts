@@ -36,6 +36,7 @@ const STORAGE_KEYS = {
     connectorStyle: 'settings-connectorStyle',
     isCanvasLocked: 'settings-isCanvasLocked',
     canvasFreeFlow: 'settings-canvasFreeFlow',
+    autoAnalyzeDocuments: 'settings-autoAnalyzeDocuments',
     lastSettingsTab: 'settings-lastSettingsTab',
 } as const;
 
@@ -54,6 +55,7 @@ interface SettingsState {
     connectorStyle: ConnectorStyle;
     isCanvasLocked: boolean;
     canvasFreeFlow: boolean;
+    autoAnalyzeDocuments: boolean;
     lastSettingsTab: SettingsTabId;
     utilsBarLayout: UtilsBarLayout;
     setTheme: (theme: ThemeOption) => void;
@@ -65,6 +67,7 @@ interface SettingsState {
     setConnectorStyle: (style: ConnectorStyle) => void;
     toggleCanvasLocked: () => void;
     toggleCanvasFreeFlow: () => void;
+    toggleAutoAnalyzeDocuments: () => void;
     setLastSettingsTab: (tab: SettingsTabId) => void;
     setUtilsBarActionDeck: (actionId: UtilsBarActionId, deck: UtilsBarDeck) => void;
     reorderUtilsBarAction: (actionId: UtilsBarActionId, targetDeck: UtilsBarDeck, targetIndex: number) => void;
@@ -91,6 +94,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
     isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
     canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
+    autoAnalyzeDocuments: getStorageItem<boolean>(STORAGE_KEYS.autoAnalyzeDocuments, true),
     lastSettingsTab: getValidatedStorageItem(STORAGE_KEYS.lastSettingsTab, 'appearance', VALID_SETTINGS_TABS),
     utilsBarLayout: loadUtilsBarLayout(),
     setTheme: (theme: ThemeOption) => { set({ theme }); setStorageItem(STORAGE_KEYS.theme, theme); trackSettingsChanged('theme', theme); },
@@ -112,6 +116,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     },
     toggleCanvasFreeFlow: () => {
         const v = !get().canvasFreeFlow; set({ canvasFreeFlow: v }); setStorageItem(STORAGE_KEYS.canvasFreeFlow, v); trackSettingsChanged('canvasFreeFlow', v);
+    },
+    toggleAutoAnalyzeDocuments: () => {
+        const v = !get().autoAnalyzeDocuments; set({ autoAnalyzeDocuments: v }); setStorageItem(STORAGE_KEYS.autoAnalyzeDocuments, v); trackSettingsChanged('autoAnalyzeDocuments', v);
     },
     setLastSettingsTab: (tab: SettingsTabId) => { set({ lastSettingsTab: tab }); setStorageItem(STORAGE_KEYS.lastSettingsTab, tab); },
     setUtilsBarActionDeck: (actionId: UtilsBarActionId, deck: UtilsBarDeck) => {
@@ -146,6 +153,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
             connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
             isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
             canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
+            autoAnalyzeDocuments: getStorageItem<boolean>(STORAGE_KEYS.autoAnalyzeDocuments, true),
             lastSettingsTab: getValidatedStorageItem(STORAGE_KEYS.lastSettingsTab, 'appearance', VALID_SETTINGS_TABS),
             utilsBarLayout: loadUtilsBarLayout(),
         });

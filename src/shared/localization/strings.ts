@@ -6,6 +6,7 @@ import { calendarStrings } from './calendarStrings';
 import { nodePoolStrings } from './nodePoolStrings';
 import { securityStrings } from './securityStrings';
 import { settingsStrings } from './settingsStrings';
+import { documentAgentStrings } from '@/features/documentAgent/strings/documentAgentStrings';
 
 export const strings = {
     app: {
@@ -179,6 +180,10 @@ export const strings = {
             label: 'Attach Document',
             description: 'Attach a PDF, TXT, or CSV file',
         },
+        analyzeDocument: {
+            label: 'Analyze Document',
+            description: 'Extract insights from attached documents',
+        },
         noResults: 'No commands found',
         menuLabel: 'Slash commands',
         prefixSeparator: ':',
@@ -277,6 +282,7 @@ export const strings = {
     nodePool: nodePoolStrings,
     calendar: calendarStrings,
     security: securityStrings,
+    documentAgent: documentAgentStrings,
 } as const;
 
 export type StringKeys = typeof strings;
