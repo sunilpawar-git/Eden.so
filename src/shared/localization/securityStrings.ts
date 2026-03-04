@@ -3,4 +3,8 @@ export const securityStrings = {
     fetchTimeout: 'Request timed out. Please try again.',
     tokenInvalid: 'Invalid authentication token format.',
     storageQuotaExceeded: 'Local storage is full. Some changes may not be saved offline.',
+    idbReadFailed: 'IndexedDB read failed',
+    idbWriteFailed: 'IndexedDB write failed',
+    idbDeleteFailed: 'IndexedDB delete failed',
+    localStorageWriteFailed: 'localStorage write failed',
 } as const;
