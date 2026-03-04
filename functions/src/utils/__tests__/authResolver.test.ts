@@ -15,7 +15,7 @@ vi.mock('../authVerifier.js', () => ({
     }),
 }));
 
-const SECRET = 'test-secret-for-signing';
+const SECRET = 'unit-test-hmac-key-not-a-real-secret';
 const IMAGE_URL = 'https://example.com/photo.jpg';
 
 describe('resolveProxyAuth', () => {

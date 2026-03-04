@@ -220,7 +220,7 @@ describe('fetchLinkMeta', () => {
             const result = await handleFetchLinkMeta(
                 { url: 'https://example.com' },
                 'user-1',
-                'test-signing-secret',
+                'unit-test-hmac-key-not-a-real-secret',
             );
 
             expect(result.status).toBe(200);

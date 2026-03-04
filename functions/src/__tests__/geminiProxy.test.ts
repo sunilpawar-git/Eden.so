@@ -102,10 +102,10 @@ describe('geminiProxy', () => {
             });
             vi.stubGlobal('fetch', mockFetch);
 
-            await handleGeminiProxy(VALID_BODY, 'user-1', 'my-secret-key');
+            await handleGeminiProxy(VALID_BODY, 'user-1', 'test-api-key-placeholder');
 
             const calledUrl = mockFetch.mock.calls[0]?.[0] as string;
-            expect(calledUrl).toContain('key=my-secret-key');
+            expect(calledUrl).toContain('key=test-api-key-placeholder');
         });
 
         it('caps maxOutputTokens to 2048', async () => {

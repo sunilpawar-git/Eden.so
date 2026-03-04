@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createSignedParams, verifySignedParams } from '../urlSigner.js';
 
-const SECRET = 'test-signing-secret-abc123';
+const SECRET = 'unit-test-hmac-key-not-a-real-secret';
 const IMAGE_URL = 'https://example.com/image.png';
 
 describe('urlSigner', () => {
@@ -28,8 +28,8 @@ describe('urlSigner', () => {
         });
 
         it('produces different signatures for different secrets', () => {
-            const params1 = createSignedParams(IMAGE_URL, 'secret-a');
-            const params2 = createSignedParams(IMAGE_URL, 'secret-b');
+            const params1 = createSignedParams(IMAGE_URL, 'hmac-key-alpha-placeholder');
+            const params2 = createSignedParams(IMAGE_URL, 'hmac-key-beta-placeholder');
             const sig1 = params1.split('&')[0];
             const sig2 = params2.split('&')[0];
             expect(sig1).not.toBe(sig2);
