@@ -129,7 +129,7 @@ async function callViaProxy(body: GeminiRequestBody): Promise<GeminiCallResult> 
 
 /** Call Gemini API directly with API key (development fallback) */
 async function callDirect(body: GeminiRequestBody): Promise<GeminiCallResult> {
-    const url = `${DIRECT_API_BASE}/gemini-2.0-flash:generateContent?key=${getDirectApiKey()}`;
+    const url = `${DIRECT_API_BASE}/gemini-3.1-flash-lite-preview:generateContent?key=${getDirectApiKey()}`;
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
