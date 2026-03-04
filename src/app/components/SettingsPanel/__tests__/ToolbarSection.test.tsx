@@ -36,7 +36,7 @@ describe('ToolbarSection', () => {
         expect(screen.getByText(strings.settings.toolbarBar2)).toBeInTheDocument();
     });
 
-    it('renders all 12 action labels across both columns', () => {
+    it('renders all 13 action labels across both columns', () => {
         render(<ToolbarSection />);
         for (const id of ALL_ACTION_IDS) {
             const label = strings.nodeUtils[id as keyof typeof strings.nodeUtils];

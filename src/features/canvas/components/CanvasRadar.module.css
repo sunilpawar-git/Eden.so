@@ -1,0 +1,44 @@
+/**
+ * Canvas Radar Styles — squircle minimap indicator
+ * Uses CSS variables for theme-aware colors (no hardcoded values)
+ */
+.radar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.radar:hover {
+    background-color: var(--color-surface-hover);
+    border-color: var(--color-text-secondary);
+}
+
+.radar:active {
+    background-color: var(--color-border);
+}
+
+.radar:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.dot {
+    fill: var(--color-error);
+    opacity: 0.95;
+}
+
+.viewportRect {
+    fill: var(--color-primary);
+    fill-opacity: 0.12;
+    stroke: var(--color-primary);
+    stroke-width: 0.8;
+    pointer-events: none;
+}

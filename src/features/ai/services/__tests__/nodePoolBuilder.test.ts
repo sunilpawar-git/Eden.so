@@ -84,7 +84,7 @@ describe('nodeToPoolEntry', () => {
         expect(entry).toEqual({
             id: 'n1',
             title: 'My Idea',
-            content: 'Some text\n\nMy Idea',
+            content: 'My Idea\n\nSome text',
             tags: ['t1'],
         });
     });
@@ -117,41 +117,41 @@ describe('buildNodePoolContext', () => {
         makeNode('n3', { heading: 'Unstarred', output: 'Not in pool' }),
     ];
 
-    it('returns empty string when no nodes are pooled', () => {
+    it('returns empty string when no nodes are pooled', async () => {
         const unpooled = [makeNode('n1', { heading: 'X', output: 'Y' })];
-        const result = buildNodePoolContext(unpooled, makeWorkspace(false), 'test', 'single', new Set());
+        const result = await buildNodePoolContext(unpooled, makeWorkspace(false), 'test', 'single', new Set());
         expect(result).toBe('');
     });
 
-    it('wraps entries in AI Memory header/footer', () => {
-        const result = buildNodePoolContext(nodes, makeWorkspace(false), 'plan', 'single', new Set());
+    it('wraps entries in AI Memory header/footer', async () => {
+        const result = await buildNodePoolContext(nodes, makeWorkspace(false), 'plan', 'single', new Set());
         expect(result).toContain('--- AI Memory ---');
         expect(result).toContain('--- End AI Memory ---');
     });
 
-    it('formats entries as [Memory: Title]', () => {
-        const result = buildNodePoolContext(nodes, makeWorkspace(false), 'plan', 'single', new Set());
+    it('formats entries as [Memory: Title]', async () => {
+        const result = await buildNodePoolContext(nodes, makeWorkspace(false), 'plan', 'single', new Set());
         expect(result).toContain('[Memory: Strategy]');
         expect(result).toContain('[Memory: Vision]');
     });
 
-    it('does not include unstarred nodes when workspace pool is off', () => {
-        const result = buildNodePoolContext(nodes, makeWorkspace(false), 'plan', 'single', new Set());
+    it('does not include unstarred nodes when workspace pool is off', async () => {
+        const result = await buildNodePoolContext(nodes, makeWorkspace(false), 'plan', 'single', new Set());
         expect(result).not.toContain('Unstarred');
     });
 
-    it('includes all nodes when workspace pool is on', () => {
-        const result = buildNodePoolContext(nodes, makeWorkspace(true), 'plan', 'single', new Set());
+    it('includes all nodes when workspace pool is on', async () => {
+        const result = await buildNodePoolContext(nodes, makeWorkspace(true), 'plan', 'single', new Set());
         expect(result).toContain('[Memory: Unstarred]');
     });
 
-    it('excludes nodes in the exclusion set', () => {
-        const result = buildNodePoolContext(nodes, makeWorkspace(false), 'plan', 'single', new Set(['n1']));
+    it('excludes nodes in the exclusion set', async () => {
+        const result = await buildNodePoolContext(nodes, makeWorkspace(false), 'plan', 'single', new Set(['n1']));
         expect(result).not.toContain('Strategy');
         expect(result).toContain('Vision');
     });
 
-    it('respects token budget', () => {
+    it('respects token budget', async () => {
         const largeNodes = Array.from({ length: 100 }, (_, i) =>
             makeNode(`n${i}`, {
                 includeInAIPool: true,
@@ -159,7 +159,7 @@ describe('buildNodePoolContext', () => {
                 output: 'A'.repeat(1000),
             }),
         );
-        const result = buildNodePoolContext(largeNodes, makeWorkspace(false), 'test', 'transform', new Set());
+        const result = await buildNodePoolContext(largeNodes, makeWorkspace(false), 'test', 'transform', new Set());
         expect(result.length).toBeLessThan(100 * 1000);
     });
 });

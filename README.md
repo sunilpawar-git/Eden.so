@@ -144,6 +144,10 @@ Required GitHub Secrets:
 - `VITE_SENTRY_DSN` — Sentry DSN
 - `VITE_POSTHOG_KEY` — PostHog project key
 
+## Scaling
+
+See [docs/scaling-guide.md](docs/scaling-guide.md) for a phased plan covering 0→500→5K→50K+ users, including distributed rate limiting (Upstash Redis), per-user quotas, user tiers, and cost estimates.
+
 ## Security
 
 - Firestore rules enforce per-user data isolation (deny-all by default)

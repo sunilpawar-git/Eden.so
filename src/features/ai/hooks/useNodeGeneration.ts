@@ -51,14 +51,16 @@ export function useNodeGeneration() {
                 if (handled) return;
 
                 const upstreamNodes = useCanvasStore.getState().getUpstreamNodes(nodeId);
-                const contextChain = buildContextChain(upstreamNodes);
+                const contextChain = await buildContextChain(upstreamNodes);
 
                 useAIStore.getState().startGeneration(nodeId);
                 const generationType = contextChain.length > 0 ? 'chain' as const : 'single' as const;
 
                 const excludeIds = new Set([nodeId, ...upstreamNodes.map((n) => n.id)]);
-                const poolContext = getPoolContext(promptText, generationType, excludeIds);
-                const kbContext = getKBContext(promptText, generationType);
+                const [poolContext, kbContext] = await Promise.all([
+                    getPoolContext(promptText, generationType, excludeIds),
+                    Promise.resolve(getKBContext(promptText, generationType)),
+                ]);
                 const content = await generateContentWithContext(promptText, contextChain, poolContext, kbContext);
 
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);

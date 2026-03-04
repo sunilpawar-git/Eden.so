@@ -7,6 +7,7 @@ import { useIdeaCardShareAction } from './useIdeaCardShareAction';
 import { useIdeaCardImageHandlers } from './useIdeaCardImageHandlers';
 import { useNodeInput, type NodeShortcutMap } from './useNodeInput';
 import { useNodeShortcuts } from './useNodeShortcuts';
+import { deleteNodeAttachments } from '../services/documentUploadService';
 import type { UseIdeaCardHandlersParams, NodeColorKey } from './useIdeaCardHandlers.types';
 
 export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
@@ -16,7 +17,7 @@ export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field, heading is SSOT
     const { prompt = '', output, isGenerating } = resolvedData;
 
-    const { slashHandler, handleImageClick } = useIdeaCardImageHandlers({ id, editor, getMarkdown, imageUploadFn });
+    const { slashHandler, handleImageClick, handleAttachmentClick, documentInsertFn } = useIdeaCardImageHandlers({ id, editor, getMarkdown, imageUploadFn });
 
     const { handleDelete: rawDelete, handleRegenerate, handleConnectClick, handleTransform,
         handleHeadingChange, handleCopy, handleTagsChange, isTransforming } = useIdeaCardActions({
@@ -24,7 +25,13 @@ export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
     });
     const { handleDuplicate } = useIdeaCardDuplicateAction(id);
     const { handleShare, isSharing } = useIdeaCardShareAction(id);
-    const handleDelete = useCallback(() => { calendar.cleanupOnDelete(); rawDelete(); }, [calendar, rawDelete]);
+    const handleDelete = useCallback(() => {
+        calendar.cleanupOnDelete();
+        // Read attachments fresh from the store (resolvedData may be a stale prop snapshot).
+        const freshAttachments = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.attachments;
+        if (freshAttachments && freshAttachments.length > 0) void deleteNodeAttachments(freshAttachments);
+        rawDelete();
+    }, [calendar, id, rawDelete]);
 
     const handlePinToggle = useCallback(() => { useCanvasStore.getState().toggleNodePinned(id); }, [id]);
     const handleCollapseToggle = useCallback(() => { useCanvasStore.getState().toggleNodeCollapsed(id); }, [id]);
@@ -55,10 +62,10 @@ export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
     const onKeyDownReact = useCallback((e: React.KeyboardEvent) => handleKeyDown(e.nativeEvent), [handleKeyDown]);
 
     return {
-        slashHandler, handleImageClick, handleDelete, handleRegenerate, handleConnectClick,
-        handleTransform, handleHeadingChange, handleCopy, handleDuplicate, handleShare,
-        isSharing, isTransforming, handlePinToggle, handleCollapseToggle, handlePoolToggle, handleColorChange,
-        handleTagOpen, handleFocusClick, handleDoubleClick, onSubmitAI,
-        onTagsChange, onKeyDownReact, focusBody,
+        slashHandler, handleImageClick, handleAttachmentClick, documentInsertFn, handleDelete, handleRegenerate,
+        handleConnectClick, handleTransform, handleHeadingChange, handleCopy, handleDuplicate,
+        handleShare, isSharing, isTransforming, handlePinToggle, handleCollapseToggle,
+        handlePoolToggle, handleColorChange, handleTagOpen, handleFocusClick, handleDoubleClick,
+        onSubmitAI, onTagsChange, onKeyDownReact, focusBody,
     };
 }

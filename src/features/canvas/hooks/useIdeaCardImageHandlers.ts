@@ -3,6 +3,9 @@ import type { Editor } from '@tiptap/react';
 import { useCanvasStore } from '../stores/canvasStore';
 import { ensureEditorFocus } from '../services/imageInsertService';
 import { useImageInsert } from './useImageInsert';
+import { useDocumentInsert } from './useDocumentInsert';
+import { useNodeDocumentUpload } from './useNodeDocumentUpload';
+import type { DocumentInsertFn } from '../extensions/fileHandlerExtension';
 
 interface Params {
     id: string;
@@ -16,16 +19,40 @@ export function useIdeaCardImageHandlers({ id, editor, getMarkdown, imageUploadF
         const md = getMarkdown();
         if (md) useCanvasStore.getState().updateNodeOutput(id, md);
     }, [id, getMarkdown]);
-    const { triggerFilePicker } = useImageInsert(editor, imageUploadFn, handleAfterImageInsert);
+
+    const { triggerFilePicker: triggerImagePicker } = useImageInsert(editor, imageUploadFn, handleAfterImageInsert);
+    const documentUploadFn = useNodeDocumentUpload(id);
+    const { triggerFilePicker: triggerDocumentPicker, insertFileDirectly } = useDocumentInsert(id, editor, documentUploadFn, getMarkdown);
+
+    /**
+     * Adapter that matches DocumentInsertFn signature (editor, file) → (file).
+     * The editor arg is ignored because insertFileDirectly already closes over
+     * the editor from useDocumentInsert.
+     */
+    const documentInsertFn: DocumentInsertFn = useCallback(
+        (_editor: Editor, file: File) => insertFileDirectly(file),
+        [insertFileDirectly],
+    );
+
     const slashHandler = useCallback((c: string) => {
         if (c === 'ai-generate') useCanvasStore.getState().setInputMode('ai');
-        if (c === 'insert-image') triggerFilePicker();
-    }, [triggerFilePicker]);
+        if (c === 'insert-image') triggerImagePicker();
+        if (c === 'insert-document') triggerDocumentPicker();
+    }, [triggerImagePicker, triggerDocumentPicker]);
+
     const handleImageClick = useCallback(() => {
         const store = useCanvasStore.getState();
         if (store.editingNodeId !== id) store.startEditing(id);
         ensureEditorFocus(editor);
-        triggerFilePicker();
-    }, [id, editor, triggerFilePicker]);
-    return { slashHandler, handleImageClick };
+        triggerImagePicker();
+    }, [id, editor, triggerImagePicker]);
+
+    const handleAttachmentClick = useCallback(() => {
+        const store = useCanvasStore.getState();
+        if (store.editingNodeId !== id) store.startEditing(id);
+        ensureEditorFocus(editor);
+        triggerDocumentPicker();
+    }, [id, editor, triggerDocumentPicker]);
+
+    return { slashHandler, handleImageClick, handleAttachmentClick, documentInsertFn };
 }

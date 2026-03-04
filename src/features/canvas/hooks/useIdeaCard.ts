@@ -13,6 +13,7 @@ import { useNodeImageUpload } from './useNodeImageUpload';
 import { useIdeaCardCalendar } from '@/features/calendar/hooks/useIdeaCardCalendar';
 import type { IdeaNodeData } from '../types/node';
 import type { NodeHeadingHandle } from '../components/nodes/NodeHeading';
+import type { DocumentInsertFn } from '../extensions/fileHandlerExtension';
 
 interface UseIdeaCardParams {
     id: string;
@@ -50,10 +51,14 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
     const isEditing = editingNodeId === id && !isFocusTarget;
     const imageUploadFn = useNodeImageUpload(id);
 
+    // Ref populated synchronously after useIdeaCardHandlers runs — always set before user interaction.
+    const documentInsertFnRef = useRef<DocumentInsertFn | null>(null);
+
     const { editor, getMarkdown, setContent, submitHandlerRef } = useIdeaCardEditor({
         isEditing, output, getEditableContent, placeholder, saveContent,
         onExitEditing: useCallback((): void => { useCanvasStore.getState().stopEditing(); }, []),
         imageUploadFn,
+        documentInsertFnRef,
     });
 
     const handlers = useIdeaCardHandlers({
@@ -61,6 +66,10 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
         getEditableContent, saveContent, submitHandlerRef, imageUploadFn,
         generateFromPrompt, branchFromNode, calendar, resolvedData, isEditing, onSubmitAI,
     });
+
+    // Populate the document insert ref so FileHandlerExtension can route drag-drop/paste.
+    // This is safe to do synchronously in render (sets mutable ref, not state).
+    documentInsertFnRef.current = handlers.documentInsertFn;
 
     useLinkPreviewRetry(id, linkPreviews);
     const hasContent = Boolean(output);

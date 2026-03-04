@@ -113,6 +113,8 @@ export const strings = {
         focus: 'Focus',
         focusShortcut: 'F',
         image: 'Image',
+        attachment: 'Attachment',
+        attachmentTooltip: 'Attach a PDF, TXT, or CSV file',
         noOtherWorkspaces: 'No other workspaces available',
         pin: 'Pin',
         regenerate: 'Regenerate',
@@ -171,6 +173,10 @@ export const strings = {
         insertImage: {
             label: 'Insert Image',
             description: 'Upload an image from your device',
+        },
+        insertDocument: {
+            label: 'Attach Document',
+            description: 'Attach a PDF, TXT, or CSV file',
         },
         noResults: 'No commands found',
         menuLabel: 'Slash commands',

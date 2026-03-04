@@ -35,8 +35,10 @@ export function useNodeTransformation() {
 
             try {
                 const excludeIds = new Set([nodeId]);
-                const poolContext = getPoolContext(content, 'transform', excludeIds);
-                const kbContext = getKBContext(content, 'transform');
+                const [poolContext, kbContext] = await Promise.all([
+                    getPoolContext(content, 'transform', excludeIds),
+                    Promise.resolve(getKBContext(content, 'transform')),
+                ]);
                 const transformedContent = await transformContent(content, type, poolContext, kbContext);
                 useCanvasStore.getState().updateNodeOutput(nodeId, transformedContent);
             } catch (error) {

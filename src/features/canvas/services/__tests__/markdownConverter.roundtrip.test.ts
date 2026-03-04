@@ -85,3 +85,67 @@ describe('round-trip tables (GFM)', () => {
         expect(result).toContain('| Beta |');
     });
 });
+
+describe('round-trip nested lists — indentation (regression)', () => {
+    it('preserves nested bullet indentation through round-trip — Para 3 Assets case', () => {
+        // Exact structure from the "3. Assets:" section node (Cost-of-Loss sub-bullets)
+        const md = [
+            '- Asset Identification: Identifying all assets is critical for estimating risk.',
+            '- Asset Valuation: Can be quantitative (numerical), qualitative (interviews, surveys), or a combination.',
+            '- Criticality: The impact of loss measured in currency.',
+            '- Cost-of-Loss Formula: Asset values can be quantified using the formula: K= Cp + Ct + Cr + Ci - I- - K = total cost of loss',
+            '  - Cp = cost of permanent replacement',
+            '  - Ct = cost of temporary substitute',
+            '  - Cr = total related costs (removal, installation)',
+            '  - Ci = lost income cost',
+            '  - I = available insurance or indemnity',
+        ].join('\n');
+        const result = htmlToMarkdown(markdownToHtml(md));
+        // Sub-bullets must survive the round-trip as indented items
+        expect(result).toContain('  - Cp = cost of permanent replacement');
+        expect(result).toContain('  - Ct = cost of temporary substitute');
+        expect(result).toContain('  - Cr = total related costs (removal, installation)');
+        expect(result).toContain('  - Ci = lost income cost');
+        expect(result).toContain('  - I = available insurance or indemnity');
+        // They must NOT appear at the top level
+        expect(result).not.toMatch(/^- Cp /m);
+        expect(result).not.toMatch(/^- Ct /m);
+        expect(result).not.toMatch(/^- Cr /m);
+    });
+
+    it('preserves 2-level nested unordered list through round-trip', () => {
+        const md = '- Parent\n  - Child A\n  - Child B';
+        const result = htmlToMarkdown(markdownToHtml(md));
+        expect(result).toContain('- Parent');
+        expect(result).toContain('  - Child A');
+        expect(result).toContain('  - Child B');
+        expect(result).not.toMatch(/^- Child/m);
+    });
+});
+
+describe("round-trip nested lists — block separator (regression)", () => {
+    it("preserves parent-bullet text with partial sub-bullets — Chapter 2 Four Ds case", () => {
+        const md = [
+            "- The Four Ds must: Deter an adversary, Detect an attack,",
+            "  - Delay an attack, and",
+            "  - Deny an adversary access to the target.",
+            "- These four principles should be the basis for all physical security projects.",
+        ].join("\n");
+        const result = htmlToMarkdown(markdownToHtml(md));
+        expect(result).toContain("- The Four Ds must: Deter an adversary, Detect an attack,");
+        expect(result).toContain("  - Delay an attack, and");
+        expect(result).toContain("  - Deny an adversary access to the target.");
+        expect(result).not.toMatch(/^- Delay/m);
+        expect(result).not.toMatch(/^- Deny/m);
+        expect(result).not.toMatch(/Detect an attack,[^\n]*-/);
+    });
+
+    it("preserves parent-bullet with nested ordered sub-steps through round-trip", () => {
+        const md = "- Parent with sub-steps:\n  1. Step one\n  2. Step two";
+        const result = htmlToMarkdown(markdownToHtml(md));
+        expect(result).toContain("- Parent with sub-steps:");
+        expect(result).toContain("  1. Step one");
+        expect(result).toContain("  2. Step two");
+        expect(result).not.toMatch(/sub-steps:[^\n]*1\./);
+    });
+});

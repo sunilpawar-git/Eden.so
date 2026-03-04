@@ -34,6 +34,7 @@ coverage/
 # Firebase
 .firebase/
 firebase-debug.log
+cors.json
 
 # TypeScript build info
 *.tsbuildinfo

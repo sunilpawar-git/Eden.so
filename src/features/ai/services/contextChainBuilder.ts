@@ -1,28 +1,50 @@
 /**
  * Builds a context chain from upstream canvas nodes for AI generation.
- * Pure function - no store or side-effect dependencies.
+ * Async because attachment text may need to be fetched from Storage.
  */
 import type { CanvasNode } from '@/features/canvas/types/node';
+import { attachmentTextCache } from './attachmentTextCache';
+
+/**
+ * Fetch cached/remote attachment text for a node. Returns empty string if none.
+ */
+async function getAttachmentText(node: CanvasNode): Promise<string> {
+    const attachments = node.data.attachments;
+    if (!attachments || attachments.length === 0) return '';
+
+    const parts = await Promise.all(
+        attachments
+            .filter((att): att is typeof att & { parsedTextUrl: string } => Boolean(att.parsedTextUrl))
+            .map((att) => attachmentTextCache.getText(att.parsedTextUrl))
+    );
+    return parts.filter(Boolean).join('\n\n');
+}
 
 /**
  * Converts upstream nodes (closest-first) into an ordered array of context strings
- * for the AI prompt. Nodes without meaningful content are filtered out.
+ * for the AI prompt. Includes attachment text so connected-node AI generation
+ * can reference document contents. Nodes without any content are filtered out.
  */
-export function buildContextChain(upstreamNodes: CanvasNode[]): string[] {
-    return upstreamNodes
-        .reverse()
-        .filter((n) => {
+export async function buildContextChain(upstreamNodes: CanvasNode[]): Promise<string[]> {
+    const ordered = [...upstreamNodes].reverse();
+
+    const results = await Promise.all(
+        ordered.map(async (n) => {
             const d = n.data;
-            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-deprecated -- intentional: empty string fallback + legacy field
-            return !!(d.heading?.trim() || d.prompt || d.output);
-        })
-        .map((n) => {
-            const d = n.data;
-            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- intentional: empty string fallback
-            const heading = d.heading?.trim() || '';
+            const heading = d.heading?.trim() ?? '';
             // eslint-disable-next-line @typescript-eslint/no-deprecated -- legacy field access for backward compat
-            const content = d.output ?? d.prompt ?? '';
-            if (heading && content) return `${heading}\n\n${content}`;
-            return content || heading;
-        });
+            const textContent = d.output ?? d.prompt ?? '';
+
+            const attachmentText = await getAttachmentText(n);
+
+            const parts: string[] = [];
+            if (heading) parts.push(heading);
+            if (textContent) parts.push(textContent);
+            if (attachmentText) parts.push(`[Attached Document]\n${attachmentText}`);
+
+            return parts.join('\n\n');
+        })
+    );
+
+    return results.filter(Boolean);
 }

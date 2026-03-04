@@ -12,13 +12,14 @@ import type { NodePoolGenerationType } from '../types/nodePool';
 /**
  * Hook that provides a stable getter for the current node pool context string.
  * Accesses stores via getState() to avoid subscriptions and re-renders.
+ * Returns a Promise because attachment text may need to be fetched.
  */
 export function useNodePoolContext() {
     const getPoolContext = useCallback((
         prompt: string,
         generationType: NodePoolGenerationType,
         excludeNodeIds: ReadonlySet<string>
-    ): string => {
+    ): Promise<string> => {
         const nodes = useCanvasStore.getState().nodes;
         const { workspaces, currentWorkspaceId } = useWorkspaceStore.getState();
         const workspace = workspaces.find((w) => w.id === currentWorkspaceId) ?? null;
