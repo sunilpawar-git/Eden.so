@@ -83,7 +83,9 @@ function joinBlockChildren(el: Element, depth = 0): string {
         // Skip empty elements that aren't inherently self-closing/empty like hr or img
         if (!md && tag !== 'hr' && tag !== 'br' && tag !== 'img') continue;
 
-        if (BLOCK_TAGS.has(tag) && parts.length > 0) {
+        const isBlock = BLOCK_TAGS.has(tag)
+            || (tag === 'div' && (child as Element).hasAttribute('data-attachment'));
+        if (isBlock && parts.length > 0) {
             parts.push('\n\n');
         }
         parts.push(md);
