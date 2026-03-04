@@ -86,6 +86,9 @@ export function useDocumentInsert(
             } satisfies AttachmentNodeAttrs,
         });
 
+        const snapshotMd = getMarkdown();
+        useCanvasStore.getState().updateNodeOutput(nodeId, snapshotMd);
+
         toast.info(strings.canvas.docUploading);
 
         const result = await processDocumentForNode(file, uploadFn);

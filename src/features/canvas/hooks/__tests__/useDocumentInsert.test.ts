@@ -1,5 +1,5 @@
 /**
- * useDocumentInsert Hook Tests — toast notification on upload start
+ * useDocumentInsert Hook Tests — toast + immediate persistence on upload start
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
@@ -7,6 +7,8 @@ import { strings } from '@/shared/localization/strings';
 
 const mockInsertContent = vi.fn();
 const mockFocus = vi.fn();
+const mockUpdateNodeOutput = vi.fn();
+const mockUpdateNodeAttachments = vi.fn();
 
 function createMockEditor(destroyed = false) {
     return {
@@ -25,8 +27,8 @@ vi.mock('../../stores/canvasStore', () => ({
     useCanvasStore: Object.assign(vi.fn(), {
         getState: () => ({
             nodes: [{ id: 'n1', data: { attachments: [] } }],
-            updateNodeOutput: vi.fn(),
-            updateNodeAttachments: vi.fn(),
+            updateNodeOutput: mockUpdateNodeOutput,
+            updateNodeAttachments: mockUpdateNodeAttachments,
         }),
     }),
 }));
@@ -106,5 +108,23 @@ describe('useDocumentInsert', () => {
         });
 
         expect(toast.info).not.toHaveBeenCalled();
+    });
+
+    it('persists editor content to store immediately after inserting placeholder', async () => {
+        const editor = createMockEditor();
+        const { result } = renderHook(() =>
+            useDocumentInsert('n1', editor as never, mockUploadFn, mockGetMarkdown),
+        );
+
+        const file = new File([new ArrayBuffer(100)], 'test.pdf', { type: 'application/pdf' });
+
+        await act(async () => {
+            await result.current.insertFileDirectly(file);
+        });
+
+        expect(mockUpdateNodeOutput).toHaveBeenCalledWith('n1', 'md');
+        const firstOutputCall = mockUpdateNodeOutput.mock.invocationCallOrder[0] ?? 0;
+        const firstToastCall = (toast.info as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0] ?? 0;
+        expect(firstOutputCall).toBeLessThan(firstToastCall);
     });
 });

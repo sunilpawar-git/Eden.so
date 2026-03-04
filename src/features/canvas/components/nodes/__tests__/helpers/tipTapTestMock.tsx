@@ -54,11 +54,6 @@ export function extensionMock() {
     };
 }
 
-/** No-op event emitter methods so useEditorState can subscribe without errors */
-function makeEditorEventMethods() {
-    return { on: () => undefined, off: () => undefined };
-}
-
 /** useTipTapEditor mock factory — returns module shape */
 export function hookMock() {
     return {
@@ -79,7 +74,6 @@ export function hookMock() {
             state.placeholder = options.placeholder || '';
             return {
                 editor: {
-                    ...makeEditorEventMethods(),
                     view: { get dom() { return state.domElement ?? document.createElement('div'); } },
                     isEmpty: !state.content,
                     commands: {
@@ -121,7 +115,6 @@ export function useIdeaCardEditorMock() {
             };
             return {
                 editor: {
-                    ...makeEditorEventMethods(),
                     view: { get dom() { return state.domElement ?? document.createElement('div'); } },
                     isEmpty: !state.content,
                     commands: {
@@ -248,7 +241,6 @@ export function useHeadingEditorMock() {
             state.suggestionActiveRef = ref;
             return {
                 editor: {
-                    ...makeEditorEventMethods(),
                     view: { get dom() { return state.domElement ?? document.createElement('div'); } },
                     isEmpty: !state.content,
                     commands: { focus: () => undefined, insertContent: (t: string) => { state.content += t; } },
