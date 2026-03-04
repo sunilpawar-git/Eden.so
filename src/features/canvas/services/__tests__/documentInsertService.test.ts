@@ -26,6 +26,7 @@ import { toast } from '@/shared/stores/toastStore';
 
 const mockParse = vi.mocked(parseDocument);
 const mockValidate = vi.mocked(validateDocumentFile);
+const mockToastInfo = vi.mocked(toast.info);
 const mockToastError = vi.mocked(toast.error);
 
 function makePdfFile(): File {
@@ -102,6 +103,13 @@ describe('processDocumentForNode', () => {
 
         expect(result).toBeNull();
         expect(mockToastError).toHaveBeenCalledWith(strings.canvas.docUploadFailed);
+    });
+
+    it('does not show info toasts during successful upload (spinner handles feedback)', async () => {
+        const file = makePdfFile();
+        await processDocumentForNode(file, mockUploadFn);
+
+        expect(mockToastInfo).not.toHaveBeenCalled();
     });
 
     it('handles text-only files without thumbnail', async () => {

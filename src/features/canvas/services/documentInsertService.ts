@@ -62,8 +62,6 @@ export async function processDocumentForNode(
 ): Promise<DocumentInsertResult | null> {
     try {
         await validateDocumentFile(file);
-
-        toast.info(strings.canvas.docProcessing);
         const parseResult = await parseDocument(file);
 
         let thumbnailBlob: Blob | undefined;
@@ -71,7 +69,6 @@ export async function processDocumentForNode(
             thumbnailBlob = dataUrlToBlob(parseResult.thumbnailDataUrl);
         }
 
-        toast.info(strings.canvas.docUploading);
         const uploadResult = await uploadFn(file, parseResult.text, thumbnailBlob);
 
         const meta: AttachmentMeta = {

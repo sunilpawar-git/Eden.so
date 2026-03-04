@@ -77,9 +77,22 @@
 
 /* Status badges */
 .statusUploading {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xxs);
     font-size: var(--font-size-xxs);
     color: var(--color-text-muted);
     font-style: italic;
+}
+
+.spinner {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1.5px solid var(--color-text-muted);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
 }
 
 .statusReady {

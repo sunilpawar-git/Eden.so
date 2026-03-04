@@ -22,6 +22,7 @@ export const CanvasSection = React.memo(function CanvasSection() {
     const autoSaveInterval = useSettingsStore((s) => s.autoSaveInterval);
     const canvasScrollMode = useSettingsStore((s) => s.canvasScrollMode);
     const connectorStyle = useSettingsStore((s) => s.connectorStyle);
+    const autoAnalyze = useSettingsStore((s) => s.autoAnalyzeDocuments);
 
     return (
         <div className={styles.section}>
@@ -81,6 +82,15 @@ export const CanvasSection = React.memo(function CanvasSection() {
                     </span>
                 </div>
             )}
+
+            <h3 className={styles.sectionTitle}>{strings.settings.canvas}</h3>
+            <Toggle
+                id="canvas-auto-analyze"
+                checked={autoAnalyze}
+                onChange={() => useSettingsStore.getState().toggleAutoAnalyzeDocuments()}
+                label={strings.settings.autoAnalyzeDocuments}
+                description={strings.settings.autoAnalyzeDocumentsHint}
+            />
 
             <AIMemorySection />
         </div>

@@ -30,15 +30,20 @@ export function buildInsightSpawn(
     position: NodePosition,
     result: ExtractionResult,
     filename: string,
+    parentColorKey?: NodeColorKey,
 ): InsightSpawnResult {
     const nodeId = `insight-${crypto.randomUUID()}`;
     const node = createIdeaNode(nodeId, workspaceId, position);
+
+    const colorKey = (parentColorKey && parentColorKey !== 'default')
+        ? parentColorKey
+        : CONFIDENCE_COLOR[result.confidence];
 
     node.data = {
         ...node.data,
         heading: strings.documentAgent.insightHeading,
         output: formatInsightMarkdown(result, filename),
-        colorKey: CONFIDENCE_COLOR[result.confidence],
+        colorKey,
         tags: [result.classification, strings.documentAgent.autoExtractedTag],
         includeInAIPool: true,
     };

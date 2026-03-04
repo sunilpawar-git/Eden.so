@@ -104,6 +104,31 @@ describe('buildInsightSpawn', () => {
 
         expect(node.data.output).toContain('Monthly bill');
     });
+
+    it('inherits parent danger color over confidence-based success', () => {
+        const { node } = buildInsightSpawn('parent-1', 'ws-1', mockPosition, mockResult, 'f.pdf', 'danger');
+
+        expect(node.data.colorKey).toBe('danger');
+    });
+
+    it('inherits parent warning color over confidence-based success', () => {
+        const { node } = buildInsightSpawn('parent-1', 'ws-1', mockPosition, mockResult, 'f.pdf', 'warning');
+
+        expect(node.data.colorKey).toBe('warning');
+    });
+
+    it('falls back to confidence color when parent is default', () => {
+        const { node } = buildInsightSpawn('parent-1', 'ws-1', mockPosition, mockResult, 'f.pdf', 'default');
+
+        expect(node.data.colorKey).toBe('success');
+    });
+
+    it('falls back to confidence color when parentColorKey is undefined', () => {
+        const medResult = { ...mockResult, confidence: 'medium' as const };
+        const { node } = buildInsightSpawn('parent-1', 'ws-1', mockPosition, medResult, 'f.pdf');
+
+        expect(node.data.colorKey).toBe('warning');
+    });
 });
 
 describe('calculateInsightPosition', () => {

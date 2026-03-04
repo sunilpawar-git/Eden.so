@@ -1,8 +1,9 @@
 /**
- * AttachmentCardView Tests — getIconLabel utility and DRY compliance
+ * AttachmentCardView Tests — getIconLabel utility, DRY compliance, StatusBadge
  */
 import { describe, it, expect } from 'vitest';
 import { DOCUMENT_TYPE_LABELS, DOCUMENT_ACCEPTED_MIME_TYPES } from '../../../types/document';
+import { strings } from '@/shared/localization/strings';
 
 /**
  * Mirrors getIconLabel logic from AttachmentCardView.
@@ -49,3 +50,20 @@ function getIconLabel(mimeType: string, filename: string): string {
     const ext = filename.split('.').pop()?.toUpperCase();
     return ext && ext.length > 0 ? ext : '?';
 }
+
+describe('StatusBadge upload state contract', () => {
+    it('uses docUploading string (not docProcessing) for uploading status', () => {
+        expect(strings.canvas.docUploading).toBeDefined();
+        expect(strings.canvas.docUploading).not.toBe(strings.canvas.docProcessing);
+    });
+
+    it('has a spinner CSS class name available in the module', async () => {
+        const css = await import('../AttachmentCardView.module.css');
+        expect(css.default.spinner).toBeDefined();
+    });
+
+    it('has statusUploading CSS class name available in the module', async () => {
+        const css = await import('../AttachmentCardView.module.css');
+        expect(css.default.statusUploading).toBeDefined();
+    });
+});

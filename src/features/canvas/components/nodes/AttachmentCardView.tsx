@@ -25,7 +25,12 @@ interface StatusBadgeProps {
 
 const StatusBadge = React.memo(function StatusBadge({ status }: StatusBadgeProps) {
     if (status === 'uploading') {
-        return <span className={styles.statusUploading} aria-live="polite">{strings.canvas.docProcessing}</span>;
+        return (
+            <span className={styles.statusUploading} aria-live="polite">
+                <span className={styles.spinner} aria-hidden="true" />
+                {strings.canvas.docUploading}
+            </span>
+        );
     }
     if (status === 'ready') {
         return (

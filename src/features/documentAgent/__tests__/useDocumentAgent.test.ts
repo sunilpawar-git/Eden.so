@@ -18,6 +18,7 @@ const { mockSetState, mockAutoAnalyzeRef, mockHasAccessRef, mockUpdateNodeAttach
         position: { x: 0, y: 0 },
         data: {
             heading: 'Test',
+            colorKey: undefined as string | undefined,
             attachments: [{ filename: 'file.pdf', parsedTextUrl: 'https://example.com/text' }],
         },
     },
@@ -86,20 +87,20 @@ vi.mock('../services/insightNodeBuilder', () => ({
     calculateInsightPosition: vi.fn().mockReturnValue({ x: 300, y: 0 }),
 }));
 
+vi.mock('@/features/canvas/types/node', () => ({
+    normalizeNodeColorKey: vi.fn((v: unknown) => (typeof v === 'string' ? v : 'default')),
+    createIdeaNode: vi.fn(),
+}));
+
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
-
-vi.mock('@/shared/services/sentryService', () => ({
-    captureError: vi.fn(),
-}));
-
+vi.mock('@/shared/services/sentryService', () => ({ captureError: vi.fn() }));
 vi.mock('@/shared/services/analyticsService', () => ({
     trackDocumentAgentTriggered: vi.fn(),
     trackDocumentAgentCompleted: vi.fn(),
     trackDocumentAgentFailed: vi.fn(),
 }));
-
 vi.mock('@/features/subscription/types/subscription', () => ({
     GATED_FEATURES: { documentIntelligence: 'documentIntelligence' },
 }));
@@ -107,6 +108,7 @@ vi.mock('@/features/subscription/types/subscription', () => ({
 /* eslint-disable import-x/first -- Must import after vi.mock */
 import { useDocumentAgent } from '../hooks/useDocumentAgent';
 import { analyzeDocument } from '../services/documentAgentService';
+import { buildInsightSpawn } from '../services/insightNodeBuilder';
 import { toast } from '@/shared/stores/toastStore';
 import { captureError } from '@/shared/services/sentryService';
 import {
@@ -262,6 +264,25 @@ describe('useDocumentAgent', () => {
         });
 
         expect(mockUpdateNodeAttachments).toHaveBeenCalledWith('node-1', expect.any(Array));
+    });
+
+    it('passes parent node colorKey to buildInsightSpawn', async () => {
+        mockNode.data.colorKey = 'danger';
+        const { result } = renderHook(() => useDocumentAgent());
+        await act(async () => { await result.current.analyzeAndSpawn('node-1', 'text', 'file.pdf', 'ws-1'); });
+        expect(buildInsightSpawn).toHaveBeenCalledWith(
+            'node-1', 'ws-1', expect.any(Object), expect.any(Object), 'file.pdf', 'danger',
+        );
+        mockNode.data.colorKey = undefined;
+    });
+
+    it('passes default when parent has no colorKey', async () => {
+        mockNode.data.colorKey = undefined;
+        const { result } = renderHook(() => useDocumentAgent());
+        await act(async () => { await result.current.analyzeAndSpawn('node-1', 'text', 'file.pdf', 'ws-1'); });
+        expect(buildInsightSpawn).toHaveBeenCalledWith(
+            'node-1', 'ws-1', expect.any(Object), expect.any(Object), 'file.pdf', 'default',
+        );
     });
 
     it('agentState starts as idle', () => {

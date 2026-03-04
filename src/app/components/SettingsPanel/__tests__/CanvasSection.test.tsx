@@ -68,4 +68,26 @@ describe('CanvasSection', () => {
             expect(useSettingsStore.getState().autoSaveInterval).toBe(120);
         });
     });
+
+    describe('auto-analyze documents toggle', () => {
+        it('renders the auto-analyze toggle with label', () => {
+            render(<CanvasSection />);
+            expect(screen.getByText(strings.settings.autoAnalyzeDocuments)).toBeInTheDocument();
+        });
+
+        it('reflects autoAnalyzeDocuments setting state', () => {
+            useSettingsStore.setState({ autoAnalyzeDocuments: true });
+            render(<CanvasSection />);
+            const toggle = screen.getByRole('switch', { name: /Auto-analyze documents/i });
+            expect(toggle).toBeChecked();
+        });
+
+        it('toggles autoAnalyzeDocuments when clicked', () => {
+            useSettingsStore.setState({ autoAnalyzeDocuments: true });
+            render(<CanvasSection />);
+            const toggle = screen.getByRole('switch', { name: /Auto-analyze documents/i });
+            fireEvent.click(toggle);
+            expect(useSettingsStore.getState().autoAnalyzeDocuments).toBe(false);
+        });
+    });
 });

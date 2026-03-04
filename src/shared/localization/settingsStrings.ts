@@ -54,4 +54,6 @@ export const settingsStrings = {
     exportSuccess: 'Workspace data exported successfully.',
     changelogUrl: 'https://github.com/user/actionstation/blob/main/CHANGELOG.md',
     reportBugUrl: 'https://github.com/user/actionstation/issues/new',
+    autoAnalyzeDocuments: 'Auto-analyze documents',
+    autoAnalyzeDocumentsHint: 'Automatically generates an AI insight node when you attach a document',
 };

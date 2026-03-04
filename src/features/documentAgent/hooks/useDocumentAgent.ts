@@ -22,6 +22,7 @@ import type { AgentState } from '../types/documentAgent';
 import { agentReducer } from './agentReducer';
 import { analyzeDocument } from '../services/documentAgentService';
 import { buildInsightSpawn, calculateInsightPosition } from '../services/insightNodeBuilder';
+import { normalizeNodeColorKey } from '@/features/canvas/types/node';
 import { cacheExtraction } from '../services/extractionCacheService';
 import { safeCrossReference } from '../services/crossRefOrchestrator';
 import { incrementAndCheck, safeAggregation } from '../services/aggregationOrchestrator';
@@ -77,7 +78,8 @@ export function useDocumentAgent(): {
                 const freshNodes = useCanvasStore.getState().nodes;
                 const position = calculateInsightPosition(parentNode, freshNodes, isFreeFlow);
 
-                const { node, edge } = buildInsightSpawn(nodeId, workspaceId, position, result, filename);
+                const parentColorKey = normalizeNodeColorKey(parentNode.data.colorKey);
+                const { node, edge } = buildInsightSpawn(nodeId, workspaceId, position, result, filename, parentColorKey);
 
                 useCanvasStore.setState((s) => ({
                     nodes: [...s.nodes, node],
