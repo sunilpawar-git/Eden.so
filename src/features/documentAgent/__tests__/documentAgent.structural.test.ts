@@ -7,7 +7,13 @@ import { join, relative } from 'path';
 
 const FEATURE_ROOT = join(__dirname, '..');
 const EXCLUDED_DIRS = ['__tests__', 'strings'];
-const EXCLUDED_FILES = ['documentAgentPrompts.ts', 'crossReferenceService.ts', 'aggregationService.ts'];
+const EXCLUDED_FILES = [
+    'documentAgentPrompts.ts',
+    'crossReferenceService.ts',
+    'aggregationService.ts',
+    'crossRefOrchestrator.ts',
+    'aggregationOrchestrator.ts',
+];
 
 function collectSourceFiles(dir: string): string[] {
     const files: string[] = [];

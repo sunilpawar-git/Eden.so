@@ -32,7 +32,9 @@ export function useIdeaCardImageHandlers({ id, editor, getMarkdown, imageUploadF
     const { analyzeAndSpawn } = useDocumentAgent();
 
     const processQueueItem = useCallback((item: { nodeId: string; parsedText: string; filename: string; workspaceId: string }) => {
-        void analyzeAndSpawn(item.nodeId, item.parsedText, item.filename, item.workspaceId).catch((e: unknown) => captureError(e as Error));
+        void analyzeAndSpawn(item.nodeId, item.parsedText, item.filename, item.workspaceId).catch((e: unknown) =>
+            captureError(e instanceof Error ? e : new Error(String(e))),
+        );
     }, [analyzeAndSpawn]);
 
     const { enqueueIfOffline } = useOfflineQueue(processQueueItem);
@@ -40,7 +42,9 @@ export function useIdeaCardImageHandlers({ id, editor, getMarkdown, imageUploadF
     const onDocumentReady = useCallback((parsedText: string, filename: string) => {
         const workspaceId = useWorkspaceStore.getState().currentWorkspaceId;
         if (!workspaceId) return;
-        void analyzeAndSpawn(id, parsedText, filename, workspaceId).catch((e: unknown) => captureError(e as Error));
+        void analyzeAndSpawn(id, parsedText, filename, workspaceId).catch((e: unknown) =>
+            captureError(e instanceof Error ? e : new Error(String(e))),
+        );
     }, [id, analyzeAndSpawn]);
 
     const { triggerFilePicker: triggerDocumentPicker, insertFileDirectly } = useDocumentInsert(id, editor, documentUploadFn, getMarkdown, onDocumentReady);
@@ -66,12 +70,15 @@ export function useIdeaCardImageHandlers({ id, editor, getMarkdown, imageUploadF
             const { parsedText, filename, isCached } = resolved.result;
             if (isCached) {
                 toast.info(strings.documentAgent.cachedResult);
+                return;
             }
             const canProceed = enqueueIfOffline({ nodeId: id, parsedText, filename, workspaceId });
             if (!canProceed) return;
-            await analyzeAndSpawn(id, parsedText, filename, workspaceId);
+            await analyzeAndSpawn(id, parsedText, filename, workspaceId, true);
         };
-        void runAnalysis().catch((e: unknown) => captureError(e as Error));
+        void runAnalysis().catch((e: unknown) =>
+            captureError(e instanceof Error ? e : new Error(String(e))),
+        );
     }, [id, analyzeAndSpawn, enqueueIfOffline]);
 
     const slashHandler = useCallback((c: string) => {

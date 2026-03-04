@@ -93,6 +93,7 @@ export function queryEntityIndex(
 /**
  * Add or replace an entry in the index. Rebuilds IDF map.
  * Returns a new EntityIndex (immutable pattern).
+ * @internal Used for incremental index updates after single-document analysis.
  */
 export function addEntryToIndex(index: EntityIndex, entry: EntityIndexEntry): EntityIndex {
     const entries = index.entries.filter((e) => e.nodeId !== entry.nodeId);

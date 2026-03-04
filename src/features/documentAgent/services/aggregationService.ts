@@ -5,7 +5,8 @@
  */
 import { z } from 'zod';
 import { captureError } from '@/shared/services/sentryService';
-import { AGENT_INPUT_MAX_CHARS, AGENT_MAX_OUTPUT_TOKENS, AGENT_TEMPERATURE } from '../types/documentAgent';
+import { AGENT_INPUT_MAX_CHARS } from '../types/documentAgent';
+import { stripMarkdownFences, buildGeminiRequestBody } from '../utils/llmResponseUtils';
 import type { EntityIndexEntry } from '../types/entityIndex';
 
 export const AGGREGATION_INTERVAL_DOCS = 5;
@@ -80,23 +81,12 @@ Respond with ONLY the JSON object.`;
 
 /** Build request body for callGemini */
 export function buildAggregationRequestBody(prompt: string) {
-    return {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-            temperature: AGENT_TEMPERATURE,
-            maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS,
-        },
-    };
-}
-
-/** Strip markdown code fences */
-function stripFences(text: string): string {
-    return text.replace(/^```(?:json)?\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();
+    return buildGeminiRequestBody(prompt);
 }
 
 /** Parse aggregation response from Gemini */
 export function parseAggregationResponse(responseText: string): AggregationResponse {
-    const cleaned = stripFences(responseText);
+    const cleaned = stripMarkdownFences(responseText);
     try {
         const parsed: unknown = JSON.parse(cleaned);
         return AggregationResponseSchema.parse(parsed);

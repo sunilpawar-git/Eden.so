@@ -4,22 +4,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { strings } from '@/shared/localization/strings';
-import type { ExtractionResult } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
-const mockResult: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
-    summary: 'Monthly bill',
-    keyFacts: ['Amount: $100'],
-    actionItems: ['Pay now'],
-    questions: ['Auto-pay?'],
-    extendedFacts: [],
-};
+const mockResult = createMockExtraction();
 
-const { mockSetState, mockAutoAnalyzeRef, mockHasAccessRef } = vi.hoisted(() => ({
+const { mockSetState, mockAutoAnalyzeRef, mockHasAccessRef, mockUpdateNodeAttachments, mockNode } = vi.hoisted(() => ({
     mockSetState: vi.fn(),
     mockAutoAnalyzeRef: { value: true },
     mockHasAccessRef: { value: true },
+    mockUpdateNodeAttachments: vi.fn(),
+    mockNode: {
+        id: 'node-1',
+        position: { x: 0, y: 0 },
+        data: {
+            heading: 'Test',
+            attachments: [{ filename: 'file.pdf', parsedTextUrl: 'https://example.com/text' }],
+        },
+    },
 }));
 
 vi.mock('@/shared/stores/settingsStore', () => ({
@@ -49,27 +50,32 @@ vi.mock('@/features/subscription/stores/subscriptionStore', () => ({
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(
         vi.fn((selector?: (s: Record<string, unknown>) => unknown) => {
-            const state = {
-                nodes: [{ id: 'node-1', position: { x: 0, y: 0 }, data: { heading: 'Test' } }],
-                edges: [],
-            };
+            const state = { nodes: [mockNode], edges: [] };
             return typeof selector === 'function' ? selector(state) : state;
         }),
         {
             getState: () => ({
-                nodes: [{ id: 'node-1', position: { x: 0, y: 0 }, data: { heading: 'Test' } }],
+                nodes: [mockNode],
                 edges: [],
+                updateNodeAttachments: mockUpdateNodeAttachments,
             }),
             setState: mockSetState,
         },
     ),
-    getNodeMap: vi.fn().mockReturnValue(new Map([
-        ['node-1', { id: 'node-1', position: { x: 0, y: 0 }, data: { heading: 'Test' } }],
-    ])),
+    getNodeMap: vi.fn().mockReturnValue(new Map([['node-1', mockNode]])),
 }));
 
 vi.mock('../services/documentAgentService', () => ({
     analyzeDocument: vi.fn(),
+}));
+
+vi.mock('../services/extractionCacheService', () => ({
+    cacheExtraction: vi.fn((_meta: unknown, _result: unknown) => ({
+        filename: 'file.pdf',
+        parsedTextUrl: 'https://example.com/text',
+        extraction: _result,
+        analyzedAt: Date.now(),
+    })),
 }));
 
 vi.mock('../services/insightNodeBuilder', () => ({
@@ -151,6 +157,17 @@ describe('useDocumentAgent', () => {
         expect(mockAnalyze).not.toHaveBeenCalled();
     });
 
+    it('bypasses autoAnalyze check when isManual is true', async () => {
+        mockAutoAnalyzeRef.value = false;
+        const { result } = renderHook(() => useDocumentAgent());
+
+        await act(async () => {
+            await result.current.analyzeAndSpawn('node-1', 'text', 'file.pdf', 'ws-1', true);
+        });
+
+        expect(mockAnalyze).toHaveBeenCalledWith('text', 'file.pdf');
+    });
+
     it('returns immediately when hasAccess is false (no API call)', async () => {
         mockHasAccessRef.value = false;
         const { result } = renderHook(() => useDocumentAgent());
@@ -159,6 +176,18 @@ describe('useDocumentAgent', () => {
             await result.current.analyzeAndSpawn('node-1', 'text', 'file.pdf', 'ws-1');
         });
 
+        expect(mockAnalyze).not.toHaveBeenCalled();
+    });
+
+    it('shows feature-locked toast when hasAccess is false and isManual is true', async () => {
+        mockHasAccessRef.value = false;
+        const { result } = renderHook(() => useDocumentAgent());
+
+        await act(async () => {
+            await result.current.analyzeAndSpawn('node-1', 'text', 'file.pdf', 'ws-1', true);
+        });
+
+        expect(toast.info).toHaveBeenCalledWith(strings.subscription.featureLocked);
         expect(mockAnalyze).not.toHaveBeenCalled();
     });
 
@@ -223,6 +252,16 @@ describe('useDocumentAgent', () => {
         });
 
         expect(trackDocumentAgentFailed).toHaveBeenCalled();
+    });
+
+    it('caches extraction result on success by calling updateNodeAttachments', async () => {
+        const { result } = renderHook(() => useDocumentAgent());
+
+        await act(async () => {
+            await result.current.analyzeAndSpawn('node-1', 'text', 'file.pdf', 'ws-1');
+        });
+
+        expect(mockUpdateNodeAttachments).toHaveBeenCalledWith('node-1', expect.any(Array));
     });
 
     it('agentState starts as idle', () => {

@@ -3,6 +3,7 @@
  * Pure function, no side effects. All section headers from strings.
  */
 import { strings } from '@/shared/localization/strings';
+import { formatBulletList } from '../utils/llmResponseUtils';
 import type { ExtractionResult, ConfidenceLevel } from '../types/documentAgent';
 
 const CONFIDENCE_FOOTER: Record<ConfidenceLevel, string> = {
@@ -10,10 +11,6 @@ const CONFIDENCE_FOOTER: Record<ConfidenceLevel, string> = {
     medium: strings.documentAgent.confidenceFooterMedium,
     low: strings.documentAgent.confidenceFooterLow,
 };
-
-function formatBulletList(items: string[]): string {
-    return items.map((item) => `- ${item}`).join('\n');
-}
 
 /**
  * Format extraction result into structured markdown for the insight node.

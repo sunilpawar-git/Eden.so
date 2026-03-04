@@ -3,11 +3,8 @@
  * Pure function, no side effects. All section headers from strings.
  */
 import { strings } from '@/shared/localization/strings';
+import { formatBulletList } from '../utils/llmResponseUtils';
 import type { CrossReferenceResult } from '../types/entityIndex';
-
-function formatBulletList(items: string[]): string {
-    return items.map((item) => `- ${item}`).join('\n');
-}
 
 /**
  * Format cross-reference result into structured markdown for insight node.

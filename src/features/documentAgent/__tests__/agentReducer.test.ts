@@ -4,17 +4,15 @@
 import { describe, it, expect } from 'vitest';
 import { agentReducer } from '../hooks/agentReducer';
 import { INITIAL_AGENT_STATE } from '../types/documentAgent';
-import type { AgentState, ExtractionResult } from '../types/documentAgent';
+import type { AgentState } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
-const mockResult: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
+const mockResult = createMockExtraction({
     summary: 'Test summary',
     keyFacts: ['fact1'],
     actionItems: ['action1'],
     questions: ['question1'],
-    extendedFacts: [],
-};
+});
 
 describe('agentReducer', () => {
     it('START_ANALYSIS sets status to analyzing and clears previous state', () => {

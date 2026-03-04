@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { CrossReferenceMatch } from '../types/entityIndex';
-import type { ExtractionResult } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
 const mockCallGemini = vi.fn();
 
@@ -19,15 +19,12 @@ import {
 } from '../services/crossReferenceService';
 /* eslint-enable import-x/first */
 
-const newDocResult: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
+const newDocResult = createMockExtraction({
     summary: 'Electricity bill from Power Corp, $142 due March 15',
     keyFacts: ['Total: $142', 'Vendor: Power Corp'],
     actionItems: ['Pay before deadline'],
     questions: [],
-    extendedFacts: [],
-};
+});
 
 const matches: CrossReferenceMatch[] = [
     {

@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { AttachmentMeta } from '@/features/canvas/types/document';
-import type { ExtractionResult } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -11,15 +11,12 @@ const HOUR_MS = 60 * 60 * 1000;
 import { getCachedExtraction, cacheExtraction, CACHE_TTL_MS } from '../services/extractionCacheService';
 /* eslint-enable import-x/first */
 
-const mockExtraction: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
+const mockExtraction = createMockExtraction({
     summary: 'Monthly invoice',
     keyFacts: ['Total: $500'],
     actionItems: [],
     questions: [],
-    extendedFacts: [],
-};
+});
 
 describe('extractionCacheService', () => {
     beforeEach(() => {
@@ -131,7 +128,7 @@ describe('extractionCacheService', () => {
                 analyzedAt: Date.now() - HOUR_MS,
             };
 
-            const newResult: ExtractionResult = { ...mockExtraction, summary: 'New summary' };
+            const newResult = createMockExtraction({ ...mockExtraction, summary: 'New summary' });
             const updated = cacheExtraction(meta, newResult);
 
             expect(updated.extraction?.summary).toBe('New summary');

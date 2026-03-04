@@ -5,6 +5,7 @@
 import { createIdeaNode } from '@/features/canvas/types/node';
 import { createEdge } from '@/features/canvas/types/edge';
 import { strings } from '@/shared/localization/strings';
+import { formatBulletList } from '../utils/llmResponseUtils';
 import type { CanvasNode, NodeColorKey } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import type { ExtractionResult } from '../types/documentAgent';
@@ -70,13 +71,10 @@ function buildSections(result: ExtractionResult): SectionDef[] {
     return sections;
 }
 
-function formatSectionMarkdown(items: string[]): string {
-    return items.map((item) => `- ${item}`).join('\n');
-}
-
 /**
  * Expand an insight node into individual child nodes — one per section.
  * Returns nodes + edges for a single atomic canvas setState().
+ * @internal Planned for context-menu "Expand Insight" UI trigger.
  */
 export function expandInsightToNodes(
     insightNode: CanvasNode,
@@ -101,7 +99,7 @@ export function expandInsightToNodes(
         node.data = {
             ...node.data,
             heading: section.heading,
-            output: formatSectionMarkdown(section.items),
+            output: formatBulletList(section.items),
             colorKey: section.colorKey,
             tags: [strings.documentAgent.autoExtractedTag],
             includeInAIPool: true,

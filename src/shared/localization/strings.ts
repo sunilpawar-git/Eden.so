@@ -247,6 +247,7 @@ export const strings = {
         dismissUpgrade: 'Maybe later',
         currentPlan: 'Current plan',
         expiresAt: 'Expires',
+        featureLocked: 'This feature requires a Pro subscription',
     },
     backgroundSync: {
         syncing: 'Syncing in background...',

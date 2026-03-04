@@ -9,17 +9,15 @@ import {
     ENTITY_MAX_LENGTH,
     INDEX_STALE_MS,
 } from '../types/entityIndex';
-import type { ExtractionResult } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
-const mockResult: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
+const mockResult = createMockExtraction({
     summary: 'Monthly invoice from ACME Corp',
     keyFacts: ['Total: $500', 'Due: March 15'],
     actionItems: ['Pay before deadline'],
     questions: ['Is auto-pay enabled?'],
     extendedFacts: ['Vendor: ACME Corp', 'Account: 12345'],
-};
+});
 
 describe('extractEntities', () => {
     it('combines keyFacts, extendedFacts, and actionItems', () => {
@@ -40,24 +38,23 @@ describe('extractEntities', () => {
     });
 
     it('truncates long entities to ENTITY_MAX_LENGTH', () => {
-        const longResult: ExtractionResult = {
+        const longResult = createMockExtraction({
             ...mockResult,
             keyFacts: ['a'.repeat(300)],
             actionItems: [],
             extendedFacts: [],
-        };
+        });
         const entities = extractEntities(longResult);
 
         expect(entities[0]?.length).toBeLessThanOrEqual(ENTITY_MAX_LENGTH);
     });
 
     it('returns empty array when all fields are empty', () => {
-        const emptyResult: ExtractionResult = {
-            ...mockResult,
+        const emptyResult = createMockExtraction({
             keyFacts: [],
             actionItems: [],
             extendedFacts: [],
-        };
+        });
 
         expect(extractEntities(emptyResult)).toEqual([]);
     });

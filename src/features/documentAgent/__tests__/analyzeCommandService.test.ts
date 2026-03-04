@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { strings } from '@/shared/localization/strings';
 import type { AttachmentMeta } from '@/features/canvas/types/document';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
 const mockGetText = vi.fn();
 
@@ -55,15 +56,7 @@ describe('checkExtractionCache', () => {
     it('returns true when fresh cache exists', () => {
         const cached: AttachmentMeta = {
             ...validAttachment,
-            extraction: {
-                classification: 'invoice',
-                confidence: 'high',
-                summary: 'test',
-                keyFacts: [],
-                actionItems: [],
-                questions: [],
-                extendedFacts: [],
-            },
+            extraction: createMockExtraction({ summary: 'test', keyFacts: [], actionItems: [], questions: [] }),
             analyzedAt: Date.now(),
         };
         expect(checkExtractionCache(cached)).toBe(true);
@@ -106,15 +99,7 @@ describe('resolveAnalyzeCommand', () => {
         mockGetText.mockResolvedValue('text');
         const cached: AttachmentMeta = {
             ...validAttachment,
-            extraction: {
-                classification: 'invoice',
-                confidence: 'high',
-                summary: 'cached',
-                keyFacts: [],
-                actionItems: [],
-                questions: [],
-                extendedFacts: [],
-            },
+            extraction: createMockExtraction({ summary: 'cached', keyFacts: [], actionItems: [], questions: [] }),
             analyzedAt: Date.now(),
         };
 

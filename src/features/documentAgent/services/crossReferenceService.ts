@@ -4,8 +4,9 @@
  */
 import { z } from 'zod';
 import { captureError } from '@/shared/services/sentryService';
-import { AGENT_INPUT_MAX_CHARS, AGENT_MAX_OUTPUT_TOKENS, AGENT_TEMPERATURE } from '../types/documentAgent';
+import { AGENT_INPUT_MAX_CHARS } from '../types/documentAgent';
 import { sanitizeFilename } from './documentAgentPrompts';
+import { stripMarkdownFences, buildGeminiRequestBody } from '../utils/llmResponseUtils';
 import type { ExtractionResult } from '../types/documentAgent';
 import type { CrossReferenceMatch, CrossReferenceResult } from '../types/entityIndex';
 
@@ -16,11 +17,6 @@ export const CrossRefResultSchema = z.object({
     relatedDocuments: z.array(z.string()).catch([]),
 });
 
-/** Strip markdown code fences from Gemini response */
-function stripFences(text: string): string {
-    return text.replace(/^```(?:json)?\s*\n?/gm, '').replace(/\n?```\s*$/gm, '').trim();
-}
-
 /** Build a cross-reference prompt from a new document and its matches */
 export function buildCrossRefPrompt(
     newDoc: ExtractionResult,
@@ -30,7 +26,8 @@ export function buildCrossRefPrompt(
     const safeName = sanitizeFilename(filename);
     const matchSections = matches.map((m, i) => {
         const overlap = m.overlappingEntities.join(', ');
-        return `Document ${i + 1}: "${m.entry.filename}" (${m.entry.classification})
+        const safeMatchName = sanitizeFilename(m.entry.filename);
+        return `Document ${i + 1}: "${safeMatchName}" (${m.entry.classification})
 Summary: ${m.entry.summary}
 Overlapping entities: ${overlap}`;
     }).join('\n\n');
@@ -59,18 +56,12 @@ Respond with ONLY the JSON object. No explanation, no markdown fences.`;
 
 /** Build the request body for callGemini */
 export function buildCrossRefRequestBody(prompt: string) {
-    return {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-            temperature: AGENT_TEMPERATURE,
-            maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS,
-        },
-    };
+    return buildGeminiRequestBody(prompt);
 }
 
 /** Parse a cross-reference response from Gemini */
 export function parseCrossRefResponse(responseText: string): CrossReferenceResult {
-    const cleaned = stripFences(responseText);
+    const cleaned = stripMarkdownFences(responseText);
     try {
         const parsed: unknown = JSON.parse(cleaned);
         return CrossRefResultSchema.parse(parsed);

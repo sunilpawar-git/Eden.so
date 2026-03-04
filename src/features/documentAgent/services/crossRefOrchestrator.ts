@@ -44,10 +44,16 @@ export async function attemptCrossReference(
     const body = buildCrossRefRequestBody(prompt);
 
     const geminiResult = await callGemini(body);
-    if (!geminiResult.ok || !geminiResult.data) return;
+    if (!geminiResult.ok || !geminiResult.data) {
+        captureError(new Error('cross-ref: Gemini API failed'), { status: geminiResult.status });
+        return;
+    }
 
     const responseText = geminiResult.data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!responseText) return;
+    if (!responseText) {
+        captureError(new Error('cross-ref: empty Gemini response'));
+        return;
+    }
 
     const crossRefResult = parseCrossRefResponse(responseText);
     const hasContent = crossRefResult.connections.length > 0

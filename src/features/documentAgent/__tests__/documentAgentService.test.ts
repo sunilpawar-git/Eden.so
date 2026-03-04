@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { strings } from '@/shared/localization/strings';
 import type { GeminiCallResult } from '@/features/knowledgeBank/services/geminiClient';
 import { AGENT_INPUT_MAX_CHARS } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
 vi.mock('@/features/knowledgeBank/services/geminiClient', () => ({
     callGemini: vi.fn(),
@@ -33,15 +34,10 @@ function makeGeminiResult(text: string): GeminiCallResult {
     };
 }
 
-const VALID_JSON = JSON.stringify({
-    classification: 'invoice',
-    confidence: 'high',
-    summary: 'Monthly bill',
-    keyFacts: ['Amount: $100'],
+const VALID_JSON = JSON.stringify(createMockExtraction({
     actionItems: ['Pay by Friday'],
     questions: ['Is auto-pay on?'],
-    extendedFacts: [],
-});
+}));
 
 describe('analyzeDocument', () => {
     beforeEach(() => {

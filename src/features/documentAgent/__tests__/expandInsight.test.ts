@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { strings } from '@/shared/localization/strings';
-import type { ExtractionResult } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
 vi.mock('../../canvas/services/freeFlowPlacementService', () => ({
     calculateBranchPlacement: vi.fn().mockReturnValue({ x: 400, y: 0 }),
@@ -18,15 +18,13 @@ import { expandInsightToNodes } from '../services/expandInsightService';
 import type { CanvasNode } from '@/features/canvas/types/node';
 /* eslint-enable import-x/first */
 
-const fullResult: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
+const fullResult = createMockExtraction({
     summary: 'Monthly electricity bill.',
     keyFacts: ['Amount: $142'],
     actionItems: ['Pay by Friday'],
     questions: ['Is auto-pay on?'],
     extendedFacts: ['Vendor: Power Corp'],
-};
+});
 
 const insightNode: CanvasNode = {
     id: 'insight-1',
@@ -100,13 +98,13 @@ describe('expandInsightToNodes', () => {
     });
 
     it('omits sections with empty arrays', () => {
-        const sparseResult: ExtractionResult = {
+        const sparseResult = createMockExtraction({
             ...fullResult,
             keyFacts: [],
             actionItems: [],
             questions: [],
             extendedFacts: [],
-        };
+        });
 
         const result = expandInsightToNodes(insightNode, sparseResult, parentDocNodeId, existingNodes, false);
 

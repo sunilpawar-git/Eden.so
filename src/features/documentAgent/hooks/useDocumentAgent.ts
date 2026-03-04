@@ -22,6 +22,7 @@ import type { AgentState } from '../types/documentAgent';
 import { agentReducer } from './agentReducer';
 import { analyzeDocument } from '../services/documentAgentService';
 import { buildInsightSpawn, calculateInsightPosition } from '../services/insightNodeBuilder';
+import { cacheExtraction } from '../services/extractionCacheService';
 import { safeCrossReference } from '../services/crossRefOrchestrator';
 import { incrementAndCheck, safeAggregation } from '../services/aggregationOrchestrator';
 
@@ -31,18 +32,24 @@ export function useDocumentAgent(): {
         parsedText: string,
         filename: string,
         workspaceId: string,
+        isManual?: boolean,
     ) => Promise<void>;
     agentState: AgentState;
 } {
     const [state, dispatch] = useReducer(agentReducer, INITIAL_AGENT_STATE);
 
     const analyzeAndSpawn = useCallback(
-        async (nodeId: string, parsedText: string, filename: string, workspaceId: string) => {
-            const autoAnalyze = useSettingsStore.getState().autoAnalyzeDocuments;
-            if (!autoAnalyze) return;
+        async (nodeId: string, parsedText: string, filename: string, workspaceId: string, isManual = false) => {
+            if (!isManual) {
+                const autoAnalyze = useSettingsStore.getState().autoAnalyzeDocuments;
+                if (!autoAnalyze) return;
+            }
 
             const hasAccess = useSubscriptionStore.getState().hasAccess(GATED_FEATURES.documentIntelligence);
-            if (!hasAccess) return;
+            if (!hasAccess) {
+                if (isManual) toast.info(strings.subscription.featureLocked);
+                return;
+            }
 
             dispatch({ type: 'START_ANALYSIS' });
             toast.info(strings.documentAgent.analyzing);
@@ -55,8 +62,20 @@ export function useDocumentAgent(): {
                 const parentNode = getNodeMap(nodes).get(nodeId);
                 if (!parentNode) return;
 
+                const attachment = parentNode.data.attachments?.find(
+                    (a) => a.filename === filename,
+                );
+                if (attachment) {
+                    const updated = cacheExtraction(attachment, result);
+                    const newAttachments = parentNode.data.attachments?.map(
+                        (a) => (a.filename === filename ? updated : a),
+                    );
+                    useCanvasStore.getState().updateNodeAttachments(nodeId, newAttachments);
+                }
+
                 const isFreeFlow = useSettingsStore.getState().canvasFreeFlow;
-                const position = calculateInsightPosition(parentNode, nodes, isFreeFlow);
+                const freshNodes = useCanvasStore.getState().nodes;
+                const position = calculateInsightPosition(parentNode, freshNodes, isFreeFlow);
 
                 const { node, edge } = buildInsightSpawn(nodeId, workspaceId, position, result, filename);
 
@@ -69,10 +88,14 @@ export function useDocumentAgent(): {
                 toast.success(strings.documentAgent.analysisComplete);
                 trackDocumentAgentCompleted(result.classification, result.confidence);
 
-                void safeCrossReference(nodeId, workspaceId, result, filename).catch((e: unknown) => captureError(e as Error));
+                void safeCrossReference(nodeId, workspaceId, result, filename).catch((e: unknown) =>
+                    captureError(e instanceof Error ? e : new Error(String(e))),
+                );
 
                 if (incrementAndCheck()) {
-                    void safeAggregation(workspaceId).catch((e: unknown) => captureError(e as Error));
+                    void safeAggregation(workspaceId).catch((e: unknown) =>
+                        captureError(e instanceof Error ? e : new Error(String(e))),
+                    );
                 }
             } catch (error: unknown) {
                 captureError(error instanceof Error ? error : new Error(strings.documentAgent.analysisFailed));

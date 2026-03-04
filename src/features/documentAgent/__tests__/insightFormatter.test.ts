@@ -4,17 +4,14 @@
 import { describe, it, expect } from 'vitest';
 import { formatInsightMarkdown } from '../services/insightFormatter';
 import { strings } from '@/shared/localization/strings';
-import type { ExtractionResult } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
-const fullResult: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
+const fullResult = createMockExtraction({
     summary: 'Monthly electricity bill for $142.50.',
     keyFacts: ['Amount: $142.50', 'Due: Feb 15'],
     actionItems: ['Pay before due date'],
     questions: ['Is auto-pay enabled?'],
-    extendedFacts: [],
-};
+});
 
 describe('formatInsightMarkdown', () => {
     it('includes summary section with header from strings', () => {
@@ -53,35 +50,35 @@ describe('formatInsightMarkdown', () => {
     });
 
     it('includes medium confidence footer', () => {
-        const result: ExtractionResult = { ...fullResult, confidence: 'medium' };
+        const result = createMockExtraction({ ...fullResult, confidence: 'medium' });
         const md = formatInsightMarkdown(result, 'bill.pdf');
 
         expect(md).toContain(strings.documentAgent.confidenceFooterMedium);
     });
 
     it('includes low confidence footer', () => {
-        const result: ExtractionResult = { ...fullResult, confidence: 'low' };
+        const result = createMockExtraction({ ...fullResult, confidence: 'low' });
         const md = formatInsightMarkdown(result, 'bill.pdf');
 
         expect(md).toContain(strings.documentAgent.confidenceFooterLow);
     });
 
     it('omits keyFacts section when array is empty', () => {
-        const result: ExtractionResult = { ...fullResult, keyFacts: [] };
+        const result = createMockExtraction({ ...fullResult, keyFacts: [] });
         const md = formatInsightMarkdown(result, 'file.pdf');
 
         expect(md).not.toContain(strings.documentAgent.keyFactsSection);
     });
 
     it('omits actionItems section when array is empty', () => {
-        const result: ExtractionResult = { ...fullResult, actionItems: [] };
+        const result = createMockExtraction({ ...fullResult, actionItems: [] });
         const md = formatInsightMarkdown(result, 'file.pdf');
 
         expect(md).not.toContain(strings.documentAgent.actionItemsSection);
     });
 
     it('omits questions section when array is empty', () => {
-        const result: ExtractionResult = { ...fullResult, questions: [] };
+        const result = createMockExtraction({ ...fullResult, questions: [] });
         const md = formatInsightMarkdown(result, 'file.pdf');
 
         expect(md).not.toContain(strings.documentAgent.questionsSection);
@@ -94,10 +91,10 @@ describe('formatInsightMarkdown', () => {
     });
 
     it('includes extendedFacts section when present', () => {
-        const result: ExtractionResult = {
+        const result = createMockExtraction({
             ...fullResult,
             extendedFacts: ['Vendor: Power Corp', 'Account: 12345'],
-        };
+        });
         const md = formatInsightMarkdown(result, 'bill.pdf');
 
         expect(md).toContain(strings.documentAgent.extendedFactsSection);
@@ -105,7 +102,7 @@ describe('formatInsightMarkdown', () => {
     });
 
     it('omits extendedFacts section when empty', () => {
-        const result: ExtractionResult = { ...fullResult, extendedFacts: [] };
+        const result = createMockExtraction({ ...fullResult, extendedFacts: [] });
         const md = formatInsightMarkdown(result, 'bill.pdf');
 
         expect(md).not.toContain(strings.documentAgent.extendedFactsSection);

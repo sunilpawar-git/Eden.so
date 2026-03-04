@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { ExtractionResult } from '../types/documentAgent';
 import type { EntityIndexEntry } from '../types/entityIndex';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 import {
     buildEntityIndex,
     queryEntityIndex,
@@ -31,27 +32,24 @@ const makeNode = (id: string, extraction: ExtractionResult | undefined, filename
     updatedAt: new Date(),
 });
 
-const invoiceResult: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
+const invoiceResult = createMockExtraction({
     summary: 'Monthly electricity bill from Power Corp',
     keyFacts: ['Total: $142', 'Due: March 15', 'Power Corp'],
     actionItems: ['Pay before deadline'],
     questions: [],
     extendedFacts: ['Vendor: Power Corp', 'Account: 99887'],
-};
+});
 
-const payslipResult: ExtractionResult = {
+const payslipResult = createMockExtraction({
     classification: 'payslip',
-    confidence: 'high',
     summary: 'January payslip from TechCo',
     keyFacts: ['Gross: $5000', 'Net: $3800', 'TechCo'],
     actionItems: [],
     questions: [],
     extendedFacts: ['Employer: TechCo', 'Period: January'],
-};
+});
 
-const meetingResult: ExtractionResult = {
+const meetingResult = createMockExtraction({
     classification: 'meeting_notes',
     confidence: 'medium',
     summary: 'Q1 review meeting with Power Corp team',
@@ -59,7 +57,7 @@ const meetingResult: ExtractionResult = {
     actionItems: ['Schedule follow-up'],
     questions: [],
     extendedFacts: ['Decision: Renew contract'],
-};
+});
 
 describe('buildEntityIndex', () => {
     it('builds index from nodes with extractions', () => {

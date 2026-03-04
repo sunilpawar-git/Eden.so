@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { strings } from '@/shared/localization/strings';
-import type { ExtractionResult } from '../types/documentAgent';
+import { createMockExtraction } from './fixtures/extractionFixtures';
 
 vi.mock('../../canvas/services/freeFlowPlacementService', () => ({
     calculateBranchPlacement: vi.fn().mockReturnValue({ x: 400, y: 100 }),
@@ -18,15 +18,7 @@ import { buildInsightSpawn, calculateInsightPosition } from '../services/insight
 import type { CanvasNode } from '@/features/canvas/types/node';
 /* eslint-enable import-x/first */
 
-const mockResult: ExtractionResult = {
-    classification: 'invoice',
-    confidence: 'high',
-    summary: 'Monthly bill',
-    keyFacts: ['Amount: $100'],
-    actionItems: ['Pay now'],
-    questions: ['Auto-pay?'],
-    extendedFacts: [],
-};
+const mockResult = createMockExtraction();
 
 const mockPosition = { x: 400, y: 100 };
 

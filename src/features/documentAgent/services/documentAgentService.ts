@@ -13,11 +13,7 @@ import {
 } from '../types/documentAgent';
 import type { ExtractionResult } from '../types/documentAgent';
 import { buildExtractionPrompt, JSON_RETRY_INSTRUCTION } from './documentAgentPrompts';
-
-/** Strip markdown code fences from LLM output */
-function stripMarkdownFences(text: string): string {
-    return text.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
-}
+import { stripMarkdownFences } from '../utils/llmResponseUtils';
 
 /** Attempt to parse and validate JSON text into ExtractionResult */
 function parseExtractionJson(text: string): ExtractionResult {

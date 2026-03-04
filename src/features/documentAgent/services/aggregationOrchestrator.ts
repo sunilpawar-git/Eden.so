@@ -9,6 +9,7 @@ import { captureError } from '@/shared/services/sentryService';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import { trackAggregationGenerated } from '@/shared/services/analyticsService';
+import { getStorageItem, setStorageItem } from '@/shared/utils/storage';
 import { createIdeaNode } from '@/features/canvas/types/node';
 import { buildEntityIndex } from './entityIndexService';
 import {
@@ -19,14 +20,18 @@ import {
     parseAggregationResponse,
 } from './aggregationService';
 
-let analysisCount = 0;
-let lastAggregationAt = 0;
+const STORAGE_KEY_COUNT = 'docAgent-analysisCount';
+const STORAGE_KEY_LAST_AGG = 'docAgent-lastAggregationAt';
+
+let analysisCount = getStorageItem<number>(STORAGE_KEY_COUNT, 0);
+let lastAggregationAt = getStorageItem<number>(STORAGE_KEY_LAST_AGG, 0);
 
 const AGGREGATION_TAG = 'aggregation';
 
 /** Increment analysis counter and check if aggregation should run */
 export function incrementAndCheck(): boolean {
     analysisCount += 1;
+    setStorageItem(STORAGE_KEY_COUNT, analysisCount);
     return shouldTriggerAggregation(analysisCount, lastAggregationAt);
 }
 
@@ -61,10 +66,16 @@ export async function runAggregation(workspaceId: string): Promise<void> {
     const body = buildAggregationRequestBody(prompt);
 
     const geminiResult = await callGemini(body);
-    if (!geminiResult.ok || !geminiResult.data) return;
+    if (!geminiResult.ok || !geminiResult.data) {
+        captureError(new Error('aggregation: Gemini API failed'), { status: geminiResult.status });
+        return;
+    }
 
     const text = geminiResult.data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return;
+    if (!text) {
+        captureError(new Error('aggregation: empty Gemini response'));
+        return;
+    }
 
     const response = parseAggregationResponse(text);
     if (response.sections.length === 0) return;
@@ -93,6 +104,7 @@ export async function runAggregation(workspaceId: string): Promise<void> {
     }
 
     lastAggregationAt = Date.now();
+    setStorageItem(STORAGE_KEY_LAST_AGG, lastAggregationAt);
     toast.info(strings.documentAgent.aggregationHeading);
     trackAggregationGenerated(groups.size);
 }
