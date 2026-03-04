@@ -76,7 +76,7 @@ describe('useUtilsBarLayout', () => {
         act(() => { useSettingsStore.setState({ utilsBarLayout: allDeck1 }); });
 
         const { result } = renderHook(() => useUtilsBarLayout());
-        expect(result.current.deckOneActions).toHaveLength(13);
+        expect(result.current.deckOneActions).toHaveLength(14);
         expect(result.current.deckTwoActions).toHaveLength(0);
     });
 
@@ -86,7 +86,7 @@ describe('useUtilsBarLayout', () => {
 
         const { result } = renderHook(() => useUtilsBarLayout());
         expect(result.current.deckOneActions).toHaveLength(0);
-        expect(result.current.deckTwoActions).toHaveLength(13);
+        expect(result.current.deckTwoActions).toHaveLength(14);
     });
 
     it('updates after reorderUtilsBarAction within deck', () => {

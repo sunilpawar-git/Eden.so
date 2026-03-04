@@ -25,6 +25,12 @@ export function renderDeck2Action(id: UtilsBarActionId, ctx: RenderContext): Rea
                 <TooltipButton key={id} label={strings.nodeUtils.image} tooltipText={strings.nodeUtils.image}
                     icon="🖼️" onClick={p.onImageClick} disabled={disabled} tooltipPlacement={placement} />
             ) : null;
+        case 'attachment':
+            return p.onAttachmentClick ? (
+                <TooltipButton key={id} label={strings.nodeUtils.attachment}
+                    tooltipText={strings.nodeUtils.attachmentTooltip}
+                    icon="📎" onClick={p.onAttachmentClick} disabled={disabled} tooltipPlacement={placement} />
+            ) : null;
         case 'duplicate':
             return p.onDuplicateClick ? (
                 <TooltipButton key={id} label={strings.nodeUtils.duplicate} tooltipText={strings.nodeUtils.duplicate}

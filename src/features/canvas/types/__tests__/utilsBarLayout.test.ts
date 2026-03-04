@@ -14,8 +14,8 @@ import type { UtilsBarLayout } from '../utilsBarLayout';
 
 describe('utilsBarLayout', () => {
     describe('ALL_ACTION_IDS', () => {
-        it('contains exactly 13 action IDs', () => {
-            expect(ALL_ACTION_IDS).toHaveLength(13);
+        it('contains exactly 14 action IDs', () => {
+            expect(ALL_ACTION_IDS).toHaveLength(14);
         });
 
         it('has no duplicates', () => {
@@ -32,7 +32,7 @@ describe('utilsBarLayout', () => {
             expect(Array.isArray(DEFAULT_UTILS_BAR_LAYOUT.deck2)).toBe(true);
         });
 
-        it('covers all 13 action IDs across both decks', () => {
+        it('covers all 14 action IDs across both decks', () => {
             const combined = [...DEFAULT_UTILS_BAR_LAYOUT.deck1, ...DEFAULT_UTILS_BAR_LAYOUT.deck2].sort();
             expect(combined).toEqual([...ALL_ACTION_IDS].sort());
         });
@@ -50,6 +50,7 @@ describe('utilsBarLayout', () => {
             const { deck2 } = DEFAULT_UTILS_BAR_LAYOUT;
             expect(deck2).toContain('tags');
             expect(deck2).toContain('image');
+            expect(deck2).toContain('attachment');
             expect(deck2).toContain('duplicate');
             expect(deck2).toContain('focus');
             expect(deck2).toContain('collapse');
@@ -104,7 +105,7 @@ describe('utilsBarLayout', () => {
         it('accepts layout where each deck has exactly MIN_ACTIONS_PER_DECK items', () => {
             const boundary: UtilsBarLayout = {
                 deck1: ['ai', 'connect'],
-                deck2: ['copy', 'pin', 'delete', 'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
+                deck2: ['copy', 'pin', 'delete', 'tags', 'image', 'attachment', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
             };
             expect(isValidUtilsBarLayout(boundary)).toBe(true);
         });
@@ -112,7 +113,7 @@ describe('utilsBarLayout', () => {
         it('rejects layout where deck1 has one fewer than MIN_ACTIONS_PER_DECK', () => {
             const tooFew: UtilsBarLayout = {
                 deck1: ['ai'],
-                deck2: ['connect', 'copy', 'pin', 'delete', 'tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
+                deck2: ['connect', 'copy', 'pin', 'delete', 'tags', 'image', 'attachment', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
             };
             expect(isValidUtilsBarLayout(tooFew)).toBe(false);
         });
@@ -200,14 +201,14 @@ describe('utilsBarLayout', () => {
         it('rejects constructor as action ID (prototype pollution)', () => {
             expect(isValidUtilsBarLayout({
                 deck1: ['ai', 'connect', 'copy', 'pin', 'constructor'],
-                deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
+                deck2: ['tags', 'image', 'attachment', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
             })).toBe(false);
         });
 
         it('rejects prototype as action ID (prototype pollution)', () => {
             expect(isValidUtilsBarLayout({
                 deck1: ['ai', 'connect', 'copy', 'pin', 'prototype'],
-                deck2: ['tags', 'image', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
+                deck2: ['tags', 'image', 'attachment', 'duplicate', 'focus', 'collapse', 'color', 'share', 'pool'],
             })).toBe(false);
         });
     });
@@ -216,13 +217,13 @@ describe('utilsBarLayout', () => {
         it('counts default layout correctly', () => {
             const counts = countActionsPerDeck(DEFAULT_UTILS_BAR_LAYOUT);
             expect(counts.deck1).toBe(5);
-            expect(counts.deck2).toBe(8);
+            expect(counts.deck2).toBe(9);
         });
 
         it('counts all-deck-1 layout correctly', () => {
             const allDeck1: UtilsBarLayout = { deck1: [...ALL_ACTION_IDS], deck2: [] };
             const counts = countActionsPerDeck(allDeck1);
-            expect(counts.deck1).toBe(13);
+            expect(counts.deck1).toBe(14);
             expect(counts.deck2).toBe(0);
         });
 
@@ -230,7 +231,7 @@ describe('utilsBarLayout', () => {
             const allDeck2: UtilsBarLayout = { deck1: [], deck2: [...ALL_ACTION_IDS] };
             const counts = countActionsPerDeck(allDeck2);
             expect(counts.deck1).toBe(0);
-            expect(counts.deck2).toBe(13);
+            expect(counts.deck2).toBe(14);
         });
 
         it('reflects array lengths', () => {

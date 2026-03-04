@@ -57,6 +57,11 @@ function nodeToMarkdown(node: Node, depth = 0): string {
     const el = node as Element;
     const tag = el.tagName.toLowerCase();
 
+    // Attachment divs must be serialized as raw HTML before the generic div handler runs
+    if (tag === 'div' && el.hasAttribute('data-attachment')) {
+        return attachmentElementToMarkdown(el);
+    }
+
     // Container elements (div, body) join block children with newlines
     if (tag === 'div' || tag === 'body') {
         return joinBlockChildren(el, depth);
@@ -84,6 +89,17 @@ function joinBlockChildren(el: Element, depth = 0): string {
         parts.push(md);
     }
     return parts.join('');
+}
+
+/**
+ * Serialize an attachment <div data-attachment='...'> element back to raw HTML.
+ * This preserves the payload losslessly through the markdown round-trip.
+ */
+export function attachmentElementToMarkdown(el: Element): string {
+    const payload = el.getAttribute('data-attachment') ?? '{}';
+    const escaped = payload.replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    return `<div data-attachment='${escaped.replace(/'/g, '&#39;')}'></div>`;
 }
 
 /** Convert a single element to markdown based on its tag */

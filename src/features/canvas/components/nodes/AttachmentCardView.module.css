@@ -1,0 +1,132 @@
+/**
+ * AttachmentCardView Styles
+ * Document attachment block rendered inside TipTap editor nodes
+ */
+
+.wrapper {
+    margin: var(--space-xs) 0;
+}
+
+.card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    padding: var(--space-sm);
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover {
+    border-color: var(--color-primary-light);
+    box-shadow: 0 2px 8px hsla(220, 13%, 13%, 0.06);
+}
+
+.cardUploading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Thumbnail / file-type icon area */
+.thumb {
+    flex-shrink: 0;
+    width: 44px;
+    height: 56px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--color-surface-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.thumbImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.thumbIcon {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-muted);
+    letter-spacing: 0.02em;
+}
+
+/* Metadata column */
+.meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+}
+
+.filename {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Status badges */
+.statusUploading {
+    font-size: var(--font-size-xxs);
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.statusReady {
+    font-size: var(--font-size-xxs);
+    color: var(--color-success);
+    font-weight: var(--font-weight-medium);
+}
+
+.statusError {
+    font-size: var(--font-size-xxs);
+    color: var(--color-error);
+}
+
+/* Action buttons row */
+.actions {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-xxs);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.card:hover .actions {
+    opacity: 1;
+}
+
+.actionBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.actionBtn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.removeBtn:hover {
+    color: var(--color-error);
+}

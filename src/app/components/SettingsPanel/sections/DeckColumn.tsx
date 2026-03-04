@@ -18,6 +18,7 @@ const ACTION_LABELS: Record<UtilsBarActionId, string> = {
     delete: strings.nodeUtils.delete,
     tags: strings.nodeUtils.tags,
     image: strings.nodeUtils.image,
+    attachment: strings.nodeUtils.attachment,
     duplicate: strings.nodeUtils.duplicate,
     focus: strings.nodeUtils.focus,
     collapse: strings.nodeUtils.collapse,
@@ -28,7 +29,8 @@ const ACTION_LABELS: Record<UtilsBarActionId, string> = {
 
 const ACTION_ICONS: Record<UtilsBarActionId, string> = {
     ai: '✨', connect: '🔗', copy: '📋', pin: '📌', delete: '🗑️',
-    tags: '🏷️', image: '🖼️', duplicate: '📑', focus: '🔍', collapse: '▾', color: '🎨', share: '📤', pool: '🧠',
+    tags: '🏷️', image: '🖼️', attachment: '📎', duplicate: '📑', focus: '🔍',
+    collapse: '▾', color: '🎨', share: '📤', pool: '🧠',
 };
 
 interface DeckColumnProps {

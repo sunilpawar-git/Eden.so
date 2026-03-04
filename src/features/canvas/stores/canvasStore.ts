@@ -4,7 +4,7 @@
  */
 import { create } from 'zustand';
 import type { Viewport } from '@xyflow/react';
-import type { CanvasNode, LinkPreviewMetadata, NodeColorKey } from '../types/node';
+import type { CanvasNode, IdeaNodeData, LinkPreviewMetadata, NodeColorKey } from '../types/node';
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
@@ -66,6 +66,7 @@ interface CanvasActions {
     updateNodePrompt: (nodeId: string, prompt: string) => void;
     updateNodeOutput: (nodeId: string, output: string) => void;
     updateNodeTags: (nodeId: string, tags: string[]) => void;
+    updateNodeAttachments: (nodeId: string, attachments: IdeaNodeData['attachments']) => void;
     updateNodeColor: (nodeId: string, colorKey: NodeColorKey) => void;
     appendToNodeOutput: (nodeId: string, chunk: string) => void;
     setNodeGenerating: (nodeId: string, isGenerating: boolean) => void;
@@ -157,6 +158,9 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
 
     updateNodeTags: (nodeId, tags) =>
         set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'tags', tags) })),
+
+    updateNodeAttachments: (nodeId, attachments) =>
+        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'attachments', attachments) })),
 
     updateNodeColor: (nodeId, colorKey) =>
         set((s) => ({ nodes: setNodeColorInArray(s.nodes, nodeId, colorKey) })),

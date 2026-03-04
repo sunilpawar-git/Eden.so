@@ -58,6 +58,22 @@ describe('extractUrls', () => {
         const md = `![photo](${url})\n\nDirect link: ${url}`;
         expect(extractUrls(md)).toEqual([]);
     });
+
+    it('excludes URLs inside data-attachment HTML blocks', () => {
+        const md = [
+            'Some text',
+            `<div data-attachment='{"url":"https://firebasestorage.googleapis.com/v0/b/proj/o/doc.pdf?alt=media&token=abc","filename":"20 Qs.pdf","thumbnailUrl":"https://firebasestorage.googleapis.com/v0/b/proj/o/doc.pdf.thumb.png?alt=media&token=def","mimeType":"application/pdf"}'></div>`,
+        ].join('\n\n');
+        expect(extractUrls(md)).toEqual([]);
+    });
+
+    it('excludes attachment URLs but keeps regular links alongside them', () => {
+        const md = [
+            'Visit https://example.com',
+            `<div data-attachment='{"url":"https://firebasestorage.googleapis.com/v0/b/proj/o/doc.pdf?alt=media","filename":"file.pdf","thumbnailUrl":null,"mimeType":"application/pdf"}'></div>`,
+        ].join('\n\n');
+        expect(extractUrls(md)).toEqual(['https://example.com']);
+    });
 });
 
 describe('useNodeInput URL detection', () => {

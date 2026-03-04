@@ -4,6 +4,7 @@ import type { NodeColorKey } from '../../types/node';
 export interface NodeUtilsBarProps {
     onTagClick: () => void;
     onImageClick?: () => void;
+    onAttachmentClick?: () => void;
     onAIClick?: () => void;
     onConnectClick: () => void;
     onCopyClick?: () => void;

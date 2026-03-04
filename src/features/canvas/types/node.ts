@@ -2,6 +2,7 @@
  * Node Model - Type definitions for canvas nodes
  */
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
+import type { AttachmentMeta } from './document';
 
 /**
  * Node dimension constraints (in pixels)
@@ -98,6 +99,8 @@ export interface IdeaNodeData {
     colorKey?: NodeColorKey;
     /** Opts this node into the AI Canvas Memory pool */
     includeInAIPool?: boolean;
+    /** Attached documents (PDFs, CSVs, etc.) — lightweight metadata only */
+    attachments?: AttachmentMeta[];
     [key: string]: unknown;
 }
 

@@ -25,6 +25,14 @@ export const slashCommands: SlashCommand[] = [
         keywords: ['image', 'photo', 'picture', 'img', 'upload'],
         prefix: 'image',
     },
+    {
+        id: 'insert-document',
+        labelKey: 'slashCommands.insertDocument.label',
+        descriptionKey: 'slashCommands.insertDocument.description',
+        icon: '📎',
+        keywords: ['document', 'doc', 'pdf', 'file', 'attach', 'csv', 'txt'],
+        prefix: 'doc',
+    },
 ];
 
 /**
