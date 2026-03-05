@@ -126,11 +126,7 @@ vi.mock('../NodeDivider', () => ({
 }));
 
 vi.mock('../IdeaCardContent', () => ({
-    EditingContent: vi.fn(() => <div>Editing</div>),
     GeneratingContent: vi.fn(() => <div>Generating</div>),
-    AICardContent: vi.fn(() => <div>AI Content</div>),
-    SimpleCardContent: vi.fn(() => <div>Simple Content</div>),
-    PlaceholderContent: vi.fn(() => <div>Placeholder</div>),
 }));
 
 vi.mock('@/features/tags', () => ({

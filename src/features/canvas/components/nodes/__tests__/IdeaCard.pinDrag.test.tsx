@@ -92,9 +92,7 @@ vi.mock('../NodeResizeButtons', () => ({ NodeResizeButtons: vi.fn(() => null) })
 vi.mock('../NodeHeading', () => ({ NodeHeading: vi.fn(() => <div>Heading</div>) }));
 vi.mock('../NodeDivider', () => ({ NodeDivider: vi.fn(() => null) }));
 vi.mock('../IdeaCardContent', () => ({
-    EditingContent: vi.fn(() => null), GeneratingContent: vi.fn(() => null),
-    AICardContent: vi.fn(() => null), SimpleCardContent: vi.fn(() => null),
-    PlaceholderContent: vi.fn(() => null),
+    GeneratingContent: vi.fn(() => null),
 }));
 vi.mock('@/features/tags', () => ({ TagInput: vi.fn(() => null) }));
 vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
