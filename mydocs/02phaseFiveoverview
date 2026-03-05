@@ -1,0 +1,281 @@
+Phase 1: Canvas Synthesis (The Killer Feature)
+
+  Problem Statement
+
+  Users build rich context chains on the canvas — connecting nodes, generating AI content, attaching documents — but
+  there's no way to harvest that spatial thinking into a coherent output. The canvas is a thinking tool with no
+  "finish line." Users think visually but can't produce linearly. This is the #1 gap preventing Eden from being a
+  true BASB app.
+
+  Intended Solution
+
+  Let users select any group of connected nodes and trigger AI synthesis that respects the canvas topology —
+  producing a coherent summary, argument, or document that understands why those nodes are connected and in what
+  order. Output lands as a new "synthesis node" on the canvas, creating a visible artifact of distilled thinking.
+
+  Sub-tasks
+
+  1.1 — Multi-node selection context builder
+  - Build buildSynthesisContext(selectedNodeIds: string[]) in a new src/features/canvas/services/synthesisService.ts
+  - Walks the subgraph of selected nodes, respects edge direction (parent → child = reasoning flow)
+  - Topologically sorts nodes so AI receives them in logical order
+  - Includes heading + output + attachment summaries per node
+  - Injects KB context (reuse existing getKBContext() budget system)
+  - Returns a structured prompt with node relationships made explicit
+
+  1.2 — Synthesis prompt templates
+  - Create src/features/ai/prompts/synthesisPrompts.ts
+  - Three synthesis modes:
+    - Summarize — "Distill these connected ideas into a concise summary"
+    - Outline — "Create a structured outline from these ideas, preserving their relationships"
+    - Narrative — "Write a coherent document that synthesizes these ideas into a flowing argument"
+  - Each template receives the topologically-sorted context and node count
+  - String resources in localization (no hardcoded prompts in components)
+
+  1.3 — Synthesis action in canvas UI
+  - Add "Synthesize" to the selection toolbar (the bar that appears when multiple nodes are selected)
+  - Clicking opens a small popover with the three mode choices (Summarize / Outline / Narrative)
+  - Triggers useSynthesis hook → calls Gemini with the built context
+  - Creates a new IdeaCard positioned to the right of the selection bounding box
+  - New node is auto-connected to all selected nodes with relationship: 'derived'
+  - Node heading auto-set to e.g. "Synthesis of 5 ideas" (from string resources)
+
+  1.4 — Synthesis node visual differentiation
+  - Add a new colorKey: synthesis (a distinct visual treatment — e.g. gradient border or subtle badge)
+  - Synthesis nodes show a small "synthesized from N nodes" footer
+  - Clicking the footer highlights the source nodes on canvas (visual trace-back)
+
+  1.5 — TDD test suite
+  - synthesisService.test.ts: topological sort, cycle handling, context budget limits
+  - useSynthesis.test.ts: hook triggers Gemini, creates node, creates edges
+  - SynthesisPopover.test.ts: renders modes, calls hook on selection
+  - Structural test: synthesis prompt templates use string resources
+
+  ---
+  Phase 2: Branch Export (Canvas → Document)
+
+  Problem Statement
+
+  Canvas thinking is powerful for ideation but useless if you can't turn it into a deliverable. Currently the only
+  export is a raw JSON dump. Users need to go from "I figured this out on my canvas" to "here's a document I can
+  share/use" without leaving the app. This is BASB's "Express" move — the most underdeveloped part of the app.
+
+  Intended Solution
+
+  Let users select a node and export its entire downstream branch (or any selected subgraph) as a structured markdown
+   document. The export follows the canvas topology to determine document structure — parent nodes become sections,
+  child nodes become subsections. AI optionally polishes the output into a cohesive document.
+
+  Sub-tasks
+
+  2.1 — Branch traversal service
+  - Create src/features/canvas/services/branchExportService.ts
+  - collectBranch(rootNodeId: string) — BFS/DFS from root node, follows outgoing edges
+  - Returns ordered tree structure: { node, children: BranchNode[] }
+  - Handles cycles (mark visited, skip re-visits)
+  - Handles disconnected selections (multiple roots → multiple top-level sections)
+
+  2.2 — Tree-to-markdown converter
+  - branchToMarkdown(tree: BranchNode[]) — converts branch tree to structured markdown
+  - Root node heading → # Title, children → ## Subsections, grandchildren → ### Sub-subsections
+  - Node output content preserved as body text under each heading
+  - Attachments listed as links/references at section end
+  - Images embedded as markdown image references
+  - Tags converted to document metadata/frontmatter
+
+  2.3 — AI polish option
+  - Optional "Polish with AI" toggle on the export dialog
+  - Sends the raw markdown to Gemini with a prompt: "Improve the flow and transitions between sections while
+  preserving all content and structure"
+  - Returns polished markdown that the user can preview before exporting
+
+  2.4 — Export dialog UI
+  - Trigger: Right-click node → "Export branch" OR selection toolbar → "Export"
+  - Dialog shows:
+    - Preview of the markdown (rendered)
+    - Toggle: "Include AI polish"
+    - Format selector: Markdown (.md) / Plain text (.txt)
+    - "Copy to clipboard" button + "Download" button
+  - Component: src/features/canvas/components/ExportDialog.tsx
+
+  2.5 — Single-node export shortcut
+  - NodeUtilsBar "Copy" action gets a submenu: "Copy content" (existing) / "Export branch"
+  - For leaf nodes with no children, "Export branch" just exports that single node as clean markdown
+
+  2.6 — TDD test suite
+  - branchExportService.test.ts: tree traversal, cycle detection, multi-root handling
+  - branchToMarkdown.test.ts: heading levels, content formatting, attachment references
+  - ExportDialog.test.ts: render preview, toggle polish, download triggers
+  - Structural test: no hardcoded strings in export templates
+
+  ---
+  Phase 3: Simplify the Node UX
+
+  Problem Statement
+
+  The IdeaCard has accumulated 11 actions across 2 customizable decks, plus tags, colors, collapse, pin, pool, focus,
+   proximity hover, resize handles, and calendar badges. For new users, this is overwhelming. For power users, most
+  actions are rarely used. The dual-deck drag-to-customize system is over-engineered for the actual user need.
+  Complexity is diluting the canvas-first experience.
+
+  Intended Solution
+
+  Reduce the primary NodeUtilsBar to 5-6 essential actions. Move everything else into a right-click context menu.
+  Kill the dual-deck customization. Make the node feel lightweight and fast — a card you think with, not a control
+  panel you configure.
+
+  Sub-tasks
+
+  3.1 — Define the essential action set
+  - Primary bar (always visible on hover):
+    - Generate/Transform (sparkle icon) — the core AI action
+    - Connect (link icon) — canvas thinking's key gesture
+    - Synthesize (new — from Phase 1, only shows when node has children)
+    - Copy content (clipboard icon)
+    - Delete (trash icon)
+    - More... (opens context menu)
+  - Total: 6 actions, single row, no decks
+
+  3.2 — Build context menu for secondary actions
+  - "More..." opens a right-click-style context menu with:
+    - Tags, Color, Pin, Collapse, Focus, Duplicate, Share, Pool, Image, Attachment
+  - Group by category: Edit (tags, color) / View (collapse, focus) / Organize (pin, pool, share, duplicate) / Insert
+  (image, attachment)
+  - Context menu component: src/features/canvas/components/NodeContextMenu.tsx
+  - Same menu triggered by right-click on the node card
+
+  3.3 — Remove dual-deck toolbar system
+  - Remove deck1 / deck2 from UtilsBarLayout
+  - Remove reorderUtilsBarAction, DeckColumn, useToolbarDrag
+  - Remove Toolbar section from Settings panel (or replace with a simple "Reset bar" option)
+  - Simplify NodeUtilsBar.tsx to render a flat list of primary actions
+  - This removes significant code and test surface area
+
+  3.4 — Clearer heading/prompt UX
+  - Add subtle placeholder text in the heading: "Type a prompt or title..." (from string resources)
+  - When user presses Enter in heading, show a brief tooltip: "AI generating..." rather than relying on users to
+  discover the heading = prompt concept
+  - Add a small "AI" badge next to the heading when the node is in ai mode vs note mode
+
+  3.5 — TDD test suite
+  - NodeContextMenu.test.ts: renders all secondary actions, keyboard navigation
+  - NodeUtilsBar.test.ts: update for simplified 6-action bar
+  - Remove all dual-deck related tests (clean deletion)
+  - Structural test: verify NodeUtilsBar has ≤6 primary actions
+
+  ---
+  Phase 4: Smart Clustering & Canvas Overview
+
+  Problem Statement
+
+  As canvases grow beyond 20-30 nodes, users lose the "peripheral vision" advantage. Everything looks like a flat
+  scatter of cards. There's no way to see themes or gaps at a glance. The minimap shows positions but not meaning.
+  Spatial proximity is accidental (wherever the user dropped the node) rather than semantic (related ideas near each
+  other).
+
+  Intended Solution
+
+  Add AI-powered clustering that suggests groupings based on content similarity, and visual group boundaries that
+  make themes visible at any zoom level. Add semantic zoom so that zooming out shows an overview of topics rather
+  than tiny unreadable cards.
+
+  Sub-tasks
+
+  4.1 — Content similarity scoring
+  - Create src/features/ai/services/clusteringService.ts
+  - computeSimilarityMatrix(nodes: IdeaNodeData[]) — TF-IDF or embedding-based similarity between all node pairs
+  - Reuse existing TF-IDF infrastructure from AI Memory Pool ranking
+  - Returns clusters: { clusterId, nodeIds, suggestedLabel }[]
+  - Configurable threshold for cluster granularity
+
+  4.2 — AI cluster labeling
+  - For each detected cluster, send the node headings/summaries to Gemini
+  - AI returns a short label (2-4 words) describing the theme
+  - Labels displayed on canvas as floating group headers
+
+  4.3 — Visual cluster boundaries
+  - Render translucent colored rectangles behind clustered nodes (convex hull of node positions + padding)
+  - Colors auto-assigned from a harmonious palette (CSS variables)
+  - Cluster label positioned at top-left of the boundary
+  - Boundaries update reactively as nodes are dragged
+
+  4.4 — "Suggest clusters" action
+  - Button in workspace controls: "Cluster" (or magic wand icon)
+  - Runs clustering → shows preview overlay with suggested boundaries
+  - User can accept (nodes auto-arrange into tight clusters) or dismiss
+  - Accepted clusters become persistent group metadata on the workspace
+
+  4.5 — Semantic zoom
+  - At zoom < 50%: node cards collapse to show only heading text (larger font, no body)
+  - At zoom < 25%: nodes collapse to colored dots, cluster labels become prominent
+  - Smooth transition between zoom levels
+  - Implementation: conditional rendering in IdeaCard based on viewport zoom from ReactFlow
+
+  4.6 — TDD test suite
+  - clusteringService.test.ts: similarity scoring, cluster detection, edge cases (1 node, all identical, all
+  different)
+  - ClusterBoundary.test.ts: renders hull, updates on drag, respects theme colors
+  - IdeaCard.semanticZoom.test.ts: renders heading-only at low zoom, dot at very low zoom
+
+  ---
+  Phase 5: Image Intelligence (Simplified)
+
+  Problem Statement
+
+  Users upload images to nodes but the AI can't "see" them — only text documents get analyzed. This limits the canvas
+   to text-based thinking when visual artifacts (screenshots, diagrams, photos of whiteboards) are a huge part of
+  knowledge work.
+
+  Intended Solution
+
+  Extend the existing document analysis pipeline to handle images. Keep it simple — no SparkleIcon, no toolbar toggle
+   duplication, no "attachments" rename. Just: upload image → AI analyzes it → insight node appears (same as
+  documents).
+
+  Sub-tasks
+
+  5.1 — Fix imageDescriptionService MIME bug
+  - Replace hardcoded 'image/jpeg' with blob.type || 'image/jpeg' in imageDescriptionService.ts
+  - One-line fix, high impact
+
+  5.2 — Route images through the document analysis pipeline
+  - In useDocumentAgent.ts, extend analyzeAndSpawn to accept image blobs
+  - For images: call describeImageWithAI() to get parsedText, then run standard analysis
+  - No need to split into analyzeOnly / spawnInsightNode — the current coupled flow works fine for this use case
+  - Respects existing autoAnalyzeDocuments toggle and premium gate
+
+  5.3 — Wire image upload to analysis trigger
+  - In useIdeaCardImageHandlers.ts, after successful image insert, trigger analysis if autoAnalyzeDocuments is on
+  - Store image AttachmentMeta on node data for extraction caching (minimal extension to document.ts)
+
+  5.4 — TDD test suite
+  - imageAnalysis.test.ts: MIME fix, image → analysis → insight node
+  - useIdeaCardImageHandlers.test.ts: image upload triggers analysis when toggle is on
+  - Structural test: image MIME types accepted in AttachmentMeta
+
+  5.5 — Skip from original plan
+  - No SparkleIcon component (insight node auto-creates, same as documents)
+  - No toolbar toggle duplication (settings toggle is sufficient)
+  - No "documents" → "attachments" rename (low value, high churn)
+  - No hasExtraction / insightSpawned transient attributes (unnecessary without SparkleIcon)
+  - Net result: ~5 files changed instead of 18
+
+  ---
+  Priority & Sequencing
+
+  ┌─────────────────────────────┬─────────────────────┬───────────────────────────────────────────────────┐
+  │            Phase            │       Sprint        │                  Why This Order                   │
+  ├─────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+  │ Phase 1: Canvas Synthesis   │ Sprint 1-2          │ This is your differentiation. Ship it first.      │
+  ├─────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+  │ Phase 2: Branch Export      │ Sprint 3-4          │ Completes the BASB loop. Capture→Express.         │
+  ├─────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+  │ Phase 3: Simplify Node UX   │ Sprint 5            │ Reduces surface area before adding more features. │
+  ├─────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+  │ Phase 4: Smart Clustering   │ Sprint 6-8          │ Makes large canvases useful. Advanced feature.    │
+  ├─────────────────────────────┼─────────────────────┼───────────────────────────────────────────────────┤
+  │ Phase 5: Image Intelligence │ Sprint 5 (parallel) │ Small scope, can run alongside Phase 3.           │
+  └─────────────────────────────┴─────────────────────┴───────────────────────────────────────────────────┘
+
+  Phases 3 and 5 can run in parallel since they touch different parts of the codebase. Phase 4 is the most ambitious
+  and benefits from Phases 1-3 being stable first.
