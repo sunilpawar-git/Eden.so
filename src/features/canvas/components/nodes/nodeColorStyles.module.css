@@ -22,3 +22,12 @@
     background: color-mix(in srgb, var(--node-status-success-bg) 60%, var(--color-surface-elevated));
     border-color: var(--node-status-success-border);
 }
+
+.colorContainer[data-color="synthesis"] {
+    background: color-mix(in srgb, var(--node-status-synthesis-bg) 60%, var(--color-surface-elevated));
+    border-color: var(--node-status-synthesis-border);
+}
+
+.colorContainer[data-color="synthesis"]:hover {
+    border-color: var(--node-status-synthesis);
+}

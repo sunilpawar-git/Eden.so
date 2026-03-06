@@ -10,6 +10,7 @@ import { IdeaCardTagsSection } from './IdeaCardTagsSection';
 import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT, normalizeNodeColorKey, type IdeaNodeData } from '../../types/node';
 import { MemoryChipIcon } from '@/shared/components/icons';
 import { strings } from '@/shared/localization/strings';
+import { SynthesisFooterWrapper } from '@/features/synthesis/components/SynthesisFooterWrapper';
 import styles from './IdeaCard.module.css';
 import colorStyles from './nodeColorStyles.module.css';
 import handleStyles from './IdeaCardHandles.module.css';
@@ -27,6 +28,7 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
         hasContent, isEditing, isPinnedOpen, calendar, focusBody, registerProximityLostFn,
     } = api;
     const nodeColorKey = normalizeNodeColorKey(resolvedData.colorKey);
+    const isSynthesisNode = nodeColorKey === 'synthesis';
 
     return (
         <div ref={cardWrapperRef}
@@ -60,6 +62,9 @@ export const IdeaCard = React.memo(({ id, data: rfData, selected }: NodeProps) =
                 )}
                 <IdeaCardTagsSection tagIds={tagIds} onChange={onTagsChange}
                     visible={!isCollapsed && (showTagInput || tagIds.length > 0)} />
+                {isSynthesisNode && !isCollapsed && (
+                    <SynthesisFooterWrapper nodeId={id} />
+                )}
             </div>
             <NodeUtilsBar ref={barContainerRef}
                 registerProximityLostFn={registerProximityLostFn}

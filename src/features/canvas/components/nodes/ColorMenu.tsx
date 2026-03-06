@@ -64,7 +64,7 @@ export const ColorMenu = React.memo(function ColorMenu({
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
             >
-                <span className={`${styles.dot} ${COLOR_OPTIONS.find((o) => o.key === selectedColorKey)?.dotClass ?? styles.dotDefault}`} />
+                <span className={`${styles.dot} ${selectedColorKey === 'synthesis' ? (styles.dotSynthesis ?? '') : (COLOR_OPTIONS.find((o) => o.key === selectedColorKey)?.dotClass ?? styles.dotDefault)}`} />
             </button>
             <PortalTooltip
                 text={triggerLabel}

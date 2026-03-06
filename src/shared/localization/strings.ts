@@ -7,6 +7,7 @@ import { nodePoolStrings } from './nodePoolStrings';
 import { securityStrings } from './securityStrings';
 import { settingsStrings } from './settingsStrings';
 import { documentAgentStrings } from '@/features/documentAgent/strings/documentAgentStrings';
+import { synthesisStrings } from '@/features/synthesis/strings/synthesisStrings';
 
 export const strings = {
     app: {
@@ -284,6 +285,7 @@ export const strings = {
     calendar: calendarStrings,
     security: securityStrings,
     documentAgent: documentAgentStrings,
+    synthesis: synthesisStrings,
 } as const;
 
 export type StringKeys = typeof strings;

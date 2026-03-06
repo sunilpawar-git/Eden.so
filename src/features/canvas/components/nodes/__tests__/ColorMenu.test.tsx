@@ -9,7 +9,7 @@ function Controlled({
     disabled?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [colorKey, setColorKey] = useState<'default' | 'danger' | 'success' | 'warning'>('default');
+    const [colorKey, setColorKey] = useState<'default' | 'danger' | 'success' | 'warning' | 'synthesis'>('default');
     return (
         <ColorMenu
             isOpen={isOpen}

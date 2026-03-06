@@ -12,7 +12,7 @@ export interface NodePoolEntry {
 }
 
 /** AI generation types that determine node pool token budget */
-export type NodePoolGenerationType = 'single' | 'chain' | 'transform';
+export type NodePoolGenerationType = 'single' | 'chain' | 'transform' | 'synthesis';
 
 /**
  * Token budgets per generation type — matches KB budgets because
@@ -22,6 +22,7 @@ export const NODE_POOL_TOKEN_BUDGETS: Record<NodePoolGenerationType, number> = {
     single: 12_000,
     chain: 6_000,
     transform: 3_000,
+    synthesis: 3_000,  // Synthesis prompt itself is the primary context
 } as const;
 
 /** Approx chars per token (matches KB_CHARS_PER_TOKEN for consistency) */

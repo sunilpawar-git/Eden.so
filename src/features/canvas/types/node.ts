@@ -39,7 +39,7 @@ export function clampNodeDimensions(
  */
 export type NodeType = 'idea' | 'media';
 
-export const NODE_COLOR_KEYS = ['default', 'danger', 'warning', 'success'] as const;
+export const NODE_COLOR_KEYS = ['default', 'danger', 'warning', 'success', 'synthesis'] as const;
 export type NodeColorKey = (typeof NODE_COLOR_KEYS)[number];
 
 /** Maps legacy Firestore keys to current keys (backward compatibility) */
@@ -101,6 +101,10 @@ export interface IdeaNodeData {
     includeInAIPool?: boolean;
     /** Attached documents (PDFs, CSVs, etc.) — lightweight metadata only */
     attachments?: AttachmentMeta[];
+    /** IDs of source nodes used to produce this synthesis (enables re-synthesis) */
+    synthesisSourceIds?: string[];
+    /** Synthesis mode used to create this node */
+    synthesisMode?: string;
     [key: string]: unknown;
 }
 

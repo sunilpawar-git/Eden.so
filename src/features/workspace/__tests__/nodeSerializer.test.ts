@@ -91,5 +91,20 @@ describe('nodeSerializer', () => {
             const rt = deserializeNodes(serializeNodes([orig]))[0]!;
             expect(rt.data.colorKey).toBe('danger');
         });
+
+        it('round-trips synthesis node with synthesisSourceIds and synthesisMode', () => {
+            const orig = makeNode({
+                data: {
+                    prompt: 'synthesis result',
+                    colorKey: 'synthesis',
+                    synthesisSourceIds: ['a', 'b'],
+                    synthesisMode: 'summarize',
+                },
+            });
+            const rt = deserializeNodes(serializeNodes([orig]))[0]!;
+            expect(rt.data.colorKey).toBe('synthesis');
+            expect(rt.data.synthesisSourceIds).toEqual(['a', 'b']);
+            expect(rt.data.synthesisMode).toBe('summarize');
+        });
     });
 });

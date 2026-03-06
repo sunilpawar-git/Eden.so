@@ -14,6 +14,7 @@ import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { ZoomControls } from './ZoomControls';
 import { FocusOverlay } from './FocusOverlay';
 import { ViewportSync } from './ViewportSync';
+import { SelectionToolbar } from '@/features/synthesis/components/SelectionToolbar';
 import { buildRfNodes, cleanupDataShells, type PrevRfNodes } from './buildRfNodes';
 import { mapCanvasEdgesToRfEdges, applyPositionAndRemoveChanges } from './canvasChangeHelpers';
 import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID } from './canvasViewConstants';
@@ -119,6 +120,7 @@ function CanvasViewInner() {
                 {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1} />}
                 <ZoomControls />
             </ReactFlow>
+            <SelectionToolbar />
             <FocusOverlay />
         </div>
     );

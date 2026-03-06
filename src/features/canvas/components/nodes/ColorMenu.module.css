@@ -59,3 +59,7 @@
 .dotSuccess {
     background: var(--node-status-success);
 }
+
+.dotSynthesis {
+    background: var(--node-status-synthesis);
+}
