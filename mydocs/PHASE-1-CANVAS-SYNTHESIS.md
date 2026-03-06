@@ -13,8 +13,8 @@ Let users select any group of connected nodes and trigger AI synthesis that **re
 - **New feature module**: `src/features/synthesis/` (MVVM, feature-first)
 - **Isolated from canvas store**: Synthesis dispatches a single atomic `setState` — no intermediate state mutations
 - **No new Zustand store**: Uses `useCanvasStore` for node/edge reads (via selectors); synthesis UI state in local `useReducer`
-- **Context budget**: Reuses existing token budget system from `nodePoolBuilder.ts`; adds `'synthesis'` KB generation type with reduced allocation (~3,000 tokens) since the synthesis prompt itself is the primary context
-- **ID generation**: Follows codebase convention: `idea-${Date.now()}` for nodes, `edge-${Date.now()}-${index}` for edges
+- **Context budget**: Reuses existing token budget system from `nodePoolBuilder.ts`. Adds `'synthesis'` to **both** `NodePoolGenerationType` (in `src/features/ai/types/nodePool.ts` — current values: `'single' | 'chain' | 'transform'`) and `KBGenerationType` (in `src/features/knowledgeBank/types/knowledgeBank.ts`), each with reduced allocation (~3,000 tokens) since the synthesis prompt itself is the primary context
+- **ID generation**: Uses `idea-${crypto.randomUUID()}` for nodes, `edge-${crypto.randomUUID()}` for edges. **Note**: The codebase has two ID patterns — `Date.now()` in `useAddNode.ts` and `crypto.randomUUID()` in `useNodeGeneration.ts`. We standardize on `crypto.randomUUID()` for synthesis to avoid collisions when creating multiple nodes in rapid succession (synthesis node + edges in <1ms).
 - **Security**: All user content sanitized before prompt injection into Gemini calls; no raw HTML in prompts
 
 ---
@@ -66,7 +66,7 @@ export function buildSynthesisGraph(
 1. Filter edges to only those where BOTH source and target are in `selectedIds`
 2. Build adjacency map: `parentId → childIds[]`
 3. Find roots: nodes with no incoming edges within the selection
-4. If no roots found (cycle), pick node with most outgoing edges as root
+4. If no roots found (cycle), pick node with most outgoing edges as root. **Tiebreaker**: if multiple nodes have equal outgoing edges, pick the one with the lexicographically smallest `id` for deterministic results.
 5. BFS from roots, assigning depth. Track visited to handle cycles (skip revisits)
 6. For each node, extract: `heading` (from `ideaData.heading || ideaData.prompt || ''`), `content` (from `ideaData.output || ''`), `attachmentSummary` (first attachment's `extraction?.summary || ''`)
 7. Estimate tokens: `(heading.length + content.length + attachmentSummary.length) / 4` per node
@@ -250,7 +250,7 @@ interface CreateSynthesisNodeParams {
 }
 
 export function createSynthesisNode(params: CreateSynthesisNodeParams): CanvasNode {
-  const id = `idea-${Date.now()}`;
+  const id = `idea-${crypto.randomUUID()}`;
   const baseNode = createIdeaNode(id, params.workspaceId, params.position);
 
   return {
@@ -271,10 +271,9 @@ export function createSynthesisEdges(
   rootNodeIds: readonly string[],
   synthesisNodeId: string
 ): CanvasEdge[] {
-  const timestamp = Date.now();
-  return rootNodeIds.map((sourceId, index) =>
+  return rootNodeIds.map((sourceId) =>
     createEdge(
-      `edge-${timestamp}-${index}`,
+      `edge-${crypto.randomUUID()}`,
       workspaceId,
       sourceId,
       synthesisNodeId,
@@ -289,7 +288,7 @@ export function createSynthesisEdges(
 - **`synthesisSourceIds`**: Stored on node data so re-synthesis can reconstruct the selection. This is a `string[]` of ALL selected node IDs (not just roots).
 - **`synthesisMode`**: Stored so re-synthesis defaults to the same mode.
 - **Edges from roots only**: `createSynthesisEdges` receives `rootNodeIds` (from `SynthesisGraph.rootIds`), NOT all selected IDs. This avoids spider-web visual noise for large selections — the topology already captures the rest.
-- **ID generation**: Follows codebase convention `idea-${Date.now()}` for nodes, `edge-${Date.now()}-${index}` for edges (index suffix prevents collisions within a batch).
+- **ID generation**: Uses `crypto.randomUUID()` for both nodes and edges — avoids `Date.now()` collisions when creating synthesis node + multiple edges in rapid succession (<1ms). See Architecture Decision for rationale.
 
 ### TDD Tests
 
@@ -298,12 +297,12 @@ export function createSynthesisEdges(
 2. Creates node with correct heading and output
 3. Creates node with synthesisSourceIds matching input
 4. Creates node with synthesisMode matching input
-5. Node id follows 'idea-${timestamp}' pattern
+5. Node id follows 'idea-${uuid}' pattern (crypto.randomUUID)
 6. Node position matches input
 7. Node workspaceId matches input
 8. createSynthesisEdges creates N edges for N root IDs
 9. All edges have relationshipType='derived'
-10. All edge IDs follow 'edge-${timestamp}-N' pattern
+10. All edge IDs follow 'edge-${uuid}' pattern (crypto.randomUUID)
 11. All edges point from source roots to synthesis node
 ```
 
@@ -601,6 +600,8 @@ export const SelectionToolbar = React.memo(function SelectionToolbar() {
 - Position: absolute relative to toolbar parent (not fixed viewport)
 
 **CanvasView.tsx edit**: Add `<SelectionToolbar />` as sibling of `<ZoomControls />` inside the canvas wrapper. No props needed — it reads selection from store selector.
+
+**Phase 2 extensibility note**: The toolbar layout should accommodate 2 additional buttons that Phase 2 will add ("Copy as markdown" and "Export selection"). Use a flex row with gap — Phase 2 inserts buttons as siblings of the Synthesize button. Design the CSS with this growth in mind (e.g., `display: flex; gap: var(--space-2)`).
 
 **Zustand safety**:
 - `useCanvasStore((s) => s.selectedNodeIds)` — single selector, stable reference via `EMPTY_SELECTED_IDS`
@@ -976,7 +977,7 @@ grep -n 'data-color="synthesis"' src/features/canvas/components/nodes/nodeColorS
 | Zustand anti-patterns | All reads via selectors, all actions via `getState()`, structural test enforces |
 | Closure variables in selectors | SynthesisFooterWrapper uses stable selectors only, structural test enforces |
 | Multiple canvas setState calls | Single atomic update in `useSynthesis`, structural test counts calls |
-| Wrong function signatures | Factory functions wrap `createIdeaNode`/`createEdge` with correct signatures; ID generation follows `idea-${Date.now()}` / `edge-${Date.now()}-N` convention |
+| Wrong function signatures | Factory functions wrap `createIdeaNode`/`createEdge` with correct signatures; ID generation uses `crypto.randomUUID()` to avoid collision risk in rapid multi-node creation |
 | Large files | All files estimated under limits, build gate enforces |
 | Missing CSS variables | All CSS uses `--color-*`, `--space-*`, `--radius-*` families |
 | Wrong CSS selector pattern | Uses `[data-color="synthesis"]` attribute selector matching existing codebase pattern |
@@ -1002,7 +1003,7 @@ grep -n 'data-color="synthesis"' src/features/canvas/components/nodes/nodeColorS
 | # | Issue | Original | Updated |
 |---|-------|----------|---------|
 | 1 | `createIdeaNode` wrong signature | `createIdeaNode(workspaceId, position, {heading, output})` | New `createSynthesisNode` factory wrapping `createIdeaNode(id, workspaceId, position)` with correct 4-param signature |
-| 2 | `createEdge` missing `id` param | `createCanvasEdge(workspaceId, src, tgt, 'derived')` | `createEdge('edge-${Date.now()}-${index}', workspaceId, src, tgt, 'derived')` |
+| 2 | `createEdge` missing `id` param | `createCanvasEdge(workspaceId, src, tgt, 'derived')` | `createEdge('edge-${crypto.randomUUID()}', workspaceId, src, tgt, 'derived')` |
 | 3 | `generateContentWithContext` wrong 2nd arg type | `(prompt, '', '', kbContext)` — string | `(prompt, [], '', kbContext)` — `string[]` array |
 | 4 | `getKBContext` called wrong | `await getKBContext('single')` — async, standalone | `getKBContext(prompt, 'synthesis')` — synchronous, from `useKnowledgeBankContext()` hook |
 | 5 | CSS selector pattern wrong | `.colorSynthesis { ... }` | `.colorContainer[data-color="synthesis"] { ... }` |

@@ -292,10 +292,25 @@ export const NodeContextMenu = React.memo(function NodeContextMenu({
   // Close on Escape
   useEscapeLayer(ESCAPE_PRIORITY.CONTEXT_MENU, true, onClose);
 
-  // Close on outside click
+  // Close on outside click — but NOT on canvas pan/zoom interactions.
+  // The pointerdown listener must check that the click target is not inside the
+  // ReactFlow canvas pane (which would indicate a pan gesture, not an intentional dismiss).
+  // Without this guard, starting a canvas pan closes the menu immediately.
   useEffect(() => {
     const handler = (e: PointerEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) onClose();
+      if (menuRef.current?.contains(e.target as Node)) return; // click inside menu
+      // Allow canvas pan without closing: check if target is the ReactFlow pane
+      const target = e.target as HTMLElement;
+      if (target.closest('.react-flow__pane')) {
+        // Canvas background click = intentional dismiss (user clicked empty space)
+        // Canvas node drag = NOT a dismiss (started dragging a node near the menu)
+        // Heuristic: if target is exactly the pane (not a child node), close.
+        if (target.classList.contains('react-flow__pane')) {
+          onClose();
+        }
+        return; // Don't close for node drags or other canvas interactions
+      }
+      onClose();
     };
     document.addEventListener('pointerdown', handler, true);
     return () => document.removeEventListener('pointerdown', handler, true);
@@ -365,8 +380,9 @@ export const NodeContextMenu = React.memo(function NodeContextMenu({
 - **No backdrop div** — uses `pointerdown` listener instead. A backdrop would intercept all canvas interactions (pan/zoom).
 - **`nodeId` prop, not 10+ callback props** — reads store directly, reducing prop drilling.
 - **Expandable sub-panels** for Color/Share — preserves existing picker/list UX inside the menu.
-- **`useEscapeLayer`** — reuses existing escape priority system instead of ad-hoc `keydown` listener.
+- **`useEscapeLayer`** — reuses existing escape priority system instead of ad-hoc `keydown` listener. **Note**: `ESCAPE_PRIORITY.CONTEXT_MENU` does not exist yet in `escapePriorities.ts` (current values: 10-80). Add `CONTEXT_MENU: 45` — higher than `BAR_OVERFLOW` (40) so context menu dismisses before the bar, but lower than `FOCUS_MODE` (50).
 - **Viewport clamping** — prevents menu from rendering off-screen (right-click near edge).
+- **Canvas pan guard** — `pointerdown` outside-click handler distinguishes between "click empty canvas to dismiss" and "start panning". Only closes on direct `.react-flow__pane` clicks, not on node drags or pan gestures starting from nodes.
 
 **InlineColorPicker / InlineSharePanel** (~30 lines each): Thin wrappers that extract the option list rendering from existing `ColorMenu`/`ShareMenu` without the trigger button or portal. These can be extracted as simple render functions or tiny components.
 
@@ -402,6 +418,8 @@ const handleMoreClick = useCallback(() => {
 12. Right-click on IdeaCard opens context menu at click coordinates
 13. "More" button opens context menu adjacent to bar
 14. Menu clamps to viewport edges
+15. Canvas pan (pointerdown on node, not pane) does NOT close menu
+16. Click on empty canvas background (react-flow__pane) DOES close menu
 ```
 
 ### Tech Debt Checkpoint
@@ -543,7 +561,8 @@ find src -name "*.ts*" | xargs wc -l | awk '$1 > 300'  # audit
 | Submenu complexity in context menu | Color/Share use expandable panels, not flattened buttons |
 | Hardcoded strings | Structural test scans all modified/new component files |
 | Zustand anti-patterns | No new store subscriptions; context menu reads via `useNodeData(nodeId)` selector |
-| Canvas interaction blocked | No backdrop overlay; `pointerdown` listener only fires on menu's own portal |
+| Canvas interaction blocked | No backdrop overlay; `pointerdown` listener checks target — canvas pane clicks dismiss, but node drags and pan gestures do NOT close the menu |
+| Missing CONTEXT_MENU escape priority | `ESCAPE_PRIORITY.CONTEXT_MENU = 45` added to `escapePriorities.ts` — between BAR_OVERFLOW (40) and FOCUS_MODE (50) |
 
 ### Net Impact
 

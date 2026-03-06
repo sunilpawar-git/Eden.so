@@ -17,7 +17,7 @@ Let users select a root node and export its entire downstream branch as a struct
 - **Export dialog is a modal** — uses existing `var(--z-modal)` z-index layer, `createPortal` to `document.body`
 - **No new Zustand store** — dialog open/close via local component state
 - **No Deck2Actions integration** — Phase 3 deletes the dual-deck system entirely. Export triggers from SelectionToolbar (multi-node) only. Single-node branch export will be wired in Phase 3's context menu.
-- **Analytics**: Branch export tracks `trackSettingsChanged('branch_export', ...)` following existing `useDataExport` convention
+- **Analytics**: Branch export tracks via `trackSettingsChanged()`. **Important**: The current `SettingKey` type is a union of specific string literals (`'theme' | 'canvasGrid' | ... | 'data_export'`). `'branch_export'` must be added to the `SettingKey` union in `analyticsService.ts` before use, or reuse the existing `'data_export'` key with a distinguishing value (e.g., `trackSettingsChanged('data_export', 'branch_quick_copy')`).
 - **Security**: Filenames sanitized (timestamp only), no script injection in markdown output, blob URLs revoked with delay
 
 ---
@@ -157,7 +157,7 @@ export function collectMultiRootBranch(
    - `tags`: `node.data.tags || []`
    - `isSynthesis`: `node.data.colorKey === 'synthesis'`
    - `synthesisSourceCount`: `(node.data.synthesisSourceIds as string[])?.length ?? 0`
-6. Children = all nodes reachable via outgoing edges from this node (filtered by visited check)
+6. Children = all nodes reachable via outgoing edges from this node (filtered by visited check). **Diamond DAG handling**: When a node is skipped because it was already visited (e.g., D reached via B first, then via C), insert a `BranchNode` placeholder with `heading` set to `node.heading` and `content` set to a cross-reference string (e.g., `exportStrings.sections.seeAbove`). This prevents content loss in exported documents where the reader follows the C branch and finds no mention of D.
 7. Assign depth (root = 0, increments per level)
 
 **`collectMultiRootBranch`**: For multi-select export:
@@ -175,7 +175,7 @@ export function collectMultiRootBranch(
 2. Linear chain A→B→C → tree with A.children=[B], B.children=[C]
 3. Branching A→B, A→C → A.children=[B,C]
 4. Cycle A→B→A → B does not re-include A (visited guard)
-5. Diamond A→B→D, A→C→D → D appears under B only (first visit wins)
+5. Diamond A→B→D, A→C→D → D appears under B only (first visit wins); C's branch includes a cross-reference note: `(see §B above)` — prevents content loss in document exports where the reader expects all paths covered
 6. Root not found → returns null
 7. Node with no heading → heading defaults to ''
 8. Node with no output → content defaults to ''
@@ -240,6 +240,7 @@ export const exportStrings = {
     synthesizedFrom: 'Synthesized from',
     ideas: 'ideas',
     generatedBy: 'Generated from canvas by ActionStation',
+    seeAbove: '(see above)',
   },
   prompts: {
     polishInstruction: 'Improve the flow and transitions between sections of this document. Fix any grammatical issues. Do NOT add, remove, or change the meaning of any content. Preserve all headings, facts, and structure. Return the improved document in markdown format.',
@@ -632,6 +633,8 @@ const handleQuickCopy = useCallback(() => {
     .then(() => toast.success(exportStrings.labels.copied))
     .catch(() => toast.error(exportStrings.labels.exportError));
 
+  // NOTE: 'branch_export' must be added to SettingKey union in analyticsService.ts,
+  // OR reuse 'data_export' with distinguishing value: trackSettingsChanged('data_export', 'branch_quick_copy')
   trackSettingsChanged('branch_export', 'quick_copy');
 }, []);
 ```
@@ -798,7 +801,8 @@ grep -n "addToast" src/features/export/  # empty (should use toast.success/error
 | Missing keyboard a11y | Escape closes dialog, backdrop click closes, focus management in modal |
 | Security: filename injection | Filename uses `Date.now()` — no user input in download filename |
 | Security: clipboard | `writeText()` only — no HTML clipboard, no `write()` with arbitrary blobs |
-| Missing analytics | `trackSettingsChanged('branch_export', ...)` for both quick copy and download |
+| Missing analytics | `trackSettingsChanged('branch_export', ...)` for both quick copy and download. **Prerequisite**: Add `'branch_export'` to `SettingKey` union in `analyticsService.ts`, or reuse `'data_export'` with value prefix. |
+| Diamond DAG content loss | `collectBranch` inserts cross-reference placeholder when a node is already visited via another path — prevents silent content omission in exported documents |
 | Wasted Deck2Actions work | Skipped entirely — Phase 3 deletes dual-deck system; single-node export wired in Phase 3 context menu |
 | Phase 1 synthesis nodes ignored | `BranchNode.isSynthesis` + distinct `[Synthesis]` markdown formatting |
 | Missing blob revoke delay | Shared utility uses `setTimeout(revokeObjectURL, 200)` matching existing `useDataExport` pattern |
@@ -826,3 +830,5 @@ grep -n "addToast" src/features/export/  # empty (should use toast.success/error
 | 11 | ExportDialog at 95 lines (tight) | Single component | **Extracted** `ExportPreview.tsx` sub-component (~25 lines). Dialog drops to ~70 lines. |
 | 12 | useExportDialog at 60 lines (tight) | 60 line estimate | Revised to ~70 lines (realistic for polish toggle + clipboard + download + analytics + error handling) |
 | 13 | 6 files modified | Deck2Actions, utilsBarLayout, NodeUtilsBar.types, useIdeaCardActions, SelectionToolbar, strings.ts | **4 files modified** — removed the 4 Deck2Actions-related edits |
+| 14 | `trackSettingsChanged('branch_export')` TypeScript error | `'branch_export'` not in `SettingKey` union | **Must add** `'branch_export'` to `SettingKey` in `analyticsService.ts`, or reuse `'data_export'` key |
+| 15 | Diamond DAG silently drops content | D appears under B only, lost from C branch | Cross-reference placeholder: `(see above)` inserted under C branch with D's heading |

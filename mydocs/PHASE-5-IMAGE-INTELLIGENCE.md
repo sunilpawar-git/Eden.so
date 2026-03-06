@@ -222,7 +222,13 @@ const handleAfterImageInsert: AfterImageInsertFn = useCallback((file, _permanent
     const md = getMarkdown();
     if (md) useCanvasStore.getState().updateNodeOutput(id, md);
 
-    // 2. Trigger image analysis (async, non-blocking)
+    // 2. Early-exit: skip analysis if auto-analyze is disabled or user is not premium.
+    //    This check BEFORE describeImageWithAI avoids wasting a Gemini Vision API call
+    //    (and user quota) when the feature is turned off.
+    const autoAnalyze = useSettingsStore.getState().autoAnalyzeDocuments;
+    if (!autoAnalyze) return;
+
+    // 3. Trigger image analysis (async, non-blocking)
     const workspaceId = useWorkspaceStore.getState().currentWorkspaceId;
     if (!workspaceId) return;
 
@@ -231,7 +237,7 @@ const handleAfterImageInsert: AfterImageInsertFn = useCallback((file, _permanent
     void (async () => {
         // describeImageWithAI never throws -- returns fallback on failure
         const imageDescription = await describeImageWithAI(file, safeFilename);
-        // analyzeAndSpawn checks autoAnalyze toggle + premium gate internally
+        // analyzeAndSpawn checks premium gate internally
         await analyzeAndSpawn(id, imageDescription, safeFilename, workspaceId);
     })().catch((e: unknown) =>
         captureError(e instanceof Error ? e : new Error(String(e))),
@@ -246,9 +252,11 @@ const handleAfterImageInsert: AfterImageInsertFn = useCallback((file, _permanent
   - `AttachmentMeta.thumbnailUrl` / `parsedTextUrl` are document-specific fields
   - Document re-analysis (`/analyze-document` slash command) checks `attachments` array, would incorrectly pick up images
 - **Image inserted FIRST** (instant visual feedback, handled by `insertImageIntoEditor`)
+- **Early-exit before API call**: `autoAnalyzeDocuments` setting checked BEFORE calling `describeImageWithAI`. This avoids wasting a Gemini Vision API call (and user quota) when auto-analyze is disabled. The previous design called `describeImageWithAI` unconditionally, then `analyzeAndSpawn` would return early — but the Vision API call was already made.
 - **Analysis triggered SECOND** (async, non-blocking, fires and forgets)
 - **`describeImageWithAI` never throws** -- even on Gemini failure, it returns a fallback string. That fallback still feeds into `analyzeAndSpawn`, which may produce a less useful insight node. This is acceptable: the alternative (silently doing nothing) gives zero value.
 - **`sanitizeFilename`** strips path separators and special characters from user-provided `file.name`
+- **`analyzeAndSpawn` stability**: This function is returned from `useDocumentAgent()` hook. Verify it is memoized internally (wrapped in `useCallback`). If not, the `handleAfterImageInsert` callback will be recreated on each render due to `analyzeAndSpawn` in its dependency array. **Mitigation**: If `analyzeAndSpawn` is not stable, capture it in a `useRef` to avoid re-render cascades: `const analyzeAndSpawnRef = useRef(analyzeAndSpawn); analyzeAndSpawnRef.current = analyzeAndSpawn;` and call `analyzeAndSpawnRef.current(...)` inside the callback.
 
 ### TDD Tests
 
@@ -257,8 +265,8 @@ const handleAfterImageInsert: AfterImageInsertFn = useCallback((file, _permanent
 2. Image upload -> describeImageWithAI called with file blob and sanitized filename
 3. Image upload -> analyzeAndSpawn called with image description as parsedText
 4. Image upload -> sanitizeFilename applied to file.name
-5. autoAnalyzeDocuments=false -> analyzeAndSpawn returns early (internal check, no insight node)
-6. Non-premium user -> analyzeAndSpawn returns early (internal check)
+5. autoAnalyzeDocuments=false -> describeImageWithAI NOT called (early-exit before API call, saves quota)
+6. Non-premium user -> analyzeAndSpawn returns early (internal check, but describeImageWithAI still called since premium check is inside analyzeAndSpawn)
 7. describeImageWithAI returns fallback -> analyzeAndSpawn still called (fallback is valid input)
 8. analyzeAndSpawn throws -> error captured by Sentry, no unhandled rejection
 9. No workspaceId -> analysis skipped, no error
@@ -315,21 +323,24 @@ describe('Image Analysis Pipeline -- end to end', () => {
     // 6. node.data.attachments is UNCHANGED (no AttachmentMeta for images)
   });
 
-  test('image upload with auto-analyze OFF -> no analysis', async () => {
+  test('image upload with auto-analyze OFF -> no analysis, no API call', async () => {
     // Setup: autoAnalyzeDocuments = false
     // Act: simulate image upload
     // Assert:
-    // 1. describeImageWithAI NOT called (analyzeAndSpawn returns early before AI)
-    //    NOTE: Actually, describeImageWithAI IS called, then analyzeAndSpawn returns early.
-    //    The description call is cheap compared to the analysis. Acceptable.
-    // 2. No insight node created
-    // 3. updateNodeOutput still called (markdown saved regardless)
+    // 1. describeImageWithAI NOT called (early-exit BEFORE API call — saves Gemini quota)
+    // 2. analyzeAndSpawn NOT called
+    // 3. No insight node created
+    // 4. updateNodeOutput still called (markdown saved regardless)
   });
 
-  test('image upload with non-premium user -> no analysis', async () => {
-    // Setup: premium = false
+  test('image upload with non-premium user -> description called but no insight node', async () => {
+    // Setup: premium = false, autoAnalyzeDocuments = true
     // Act: simulate image upload
-    // Assert: same as auto-analyze OFF
+    // Assert:
+    // 1. describeImageWithAI IS called (auto-analyze is ON, so we pass the early check)
+    // 2. analyzeAndSpawn IS called but returns early internally (premium gate)
+    // 3. No insight node created
+    // 4. updateNodeOutput still called
   });
 
   test('Gemini Vision unavailable -> fallback description -> still analyzes', async () => {
@@ -374,6 +385,12 @@ describe('Image Analysis structural safety', () => {
     // Grep useIdeaCardImageHandlers.ts for 'AttachmentMeta' -- should NOT match
     // Grep useIdeaCardImageHandlers.ts for 'updateNodeAttachments' -- should only appear
     // in the existing document handler context, not in handleAfterImageInsert
+  });
+
+  test('autoAnalyzeDocuments checked BEFORE describeImageWithAI call', () => {
+    // Read useIdeaCardImageHandlers.ts source
+    // Verify autoAnalyzeDocuments check appears before describeImageWithAI call
+    // This ensures no wasted Gemini Vision API call when feature is disabled
   });
 
   test('All modified files under 300 lines', () => {
@@ -465,6 +482,8 @@ grep -rn "ALLOWED_IMAGE_MIMES\|IMAGE_ANALYSIS_MIME_TYPES" src/  # only in imageD
 | Zustand anti-patterns | All store reads inside callbacks use `getState()` |
 | SRP violation in documentParsingService | No image logic added to PDF/text parser; `describeImageWithAI` called directly |
 | Regression on document analysis | Existing document tests run unchanged; pipeline extended, not modified |
+| Wasted API call when auto-analyze OFF | Early-exit check: `autoAnalyzeDocuments` read from `useSettingsStore.getState()` BEFORE calling `describeImageWithAI`. Saves Gemini Vision quota when feature is disabled. |
+| `analyzeAndSpawn` callback instability | If `useDocumentAgent()` doesn't memoize `analyzeAndSpawn`, capture in `useRef` to prevent re-render cascade. Structural test should verify stable reference or ref pattern. |
 
 ---
 

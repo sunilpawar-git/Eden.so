@@ -16,7 +16,7 @@ Two complementary features:
 
 - **New feature module**: `src/features/clustering/` (services + components + types + hooks)
 - **TF-IDF reuse**: The existing `tfidfScorer.ts` (pure math) and `relevanceScorer.ts` (tokenization) in `src/features/knowledgeBank/services/` are directly importable. The clustering service builds TF-IDF vectors per node, then computes cosine similarity between them. No code duplication — import the functions.
-- **Cluster state as a separate store slice**: `canvasStore.ts` is at **282/300 lines**. Adding cluster state + actions inline would exceed the limit. Cluster state lives in a dedicated `clusterSlice.ts` that is composed into `canvasStore` via Zustand slice pattern (same pattern as `utilsBarLayoutSlice.ts`).
+- **Cluster state as a separate store slice**: `canvasStore.ts` is a **120-line thin orchestrator** that composes 6 factory functions from `canvasStoreActions.ts` (235 lines). While there is line-count headroom, cluster state belongs in a dedicated `clusterSlice.ts` for **separation of concerns** (SRP) — clustering is an independent domain from core canvas CRUD. The slice is composed into `canvasStore` via the same factory pattern used by `createNodeMutationActions`, `createSelectionActions`, etc.
 - **Persisted as workspace metadata field** (not a subcollection): Cluster data is small (8 clusters x 10 nodeIds = ~2KB). Storing it as a field on the workspace document avoids a new subcollection, new Firestore rules, and a new load/save cycle. It saves/loads atomically with the workspace.
 - **Semantic zoom via CSS, not conditional rendering**: Swapping components (TipTap editor vs dot) at zoom thresholds causes ALL 500+ nodes to re-render simultaneously — a performance cliff. Instead, use CSS classes driven by a single `data-zoom-level` attribute on the canvas container, and hide/show content sections with `display: none`. Zero React re-renders on zoom change.
 - **No auto-arrangement**: Accepting clusters draws boundaries around nodes at their current positions. It does NOT move nodes. Auto-arranging 50+ nodes is a separate force-directed layout feature with its own UX concerns (undo, animation, overlap resolution). Cut from scope.
@@ -94,11 +94,11 @@ export const createClusterSlice: StateCreator<ClusterSlice> = (set) => ({
 **canvasStore.ts** — compose:
 
 ```typescript
-// Add to canvasStore creation (3 lines):
+// Add to canvasStore creation (1 line — follows existing factory spread pattern):
 ...createClusterSlice(set, get, store),
 ```
 
-This keeps canvasStore at ~285 lines (under 300).
+This keeps canvasStore at ~123 lines (well under 300). The store is already a thin orchestrator — this adds one spread line alongside the existing 6 factory spreads.
 
 ### TDD Tests
 
@@ -614,6 +614,8 @@ export function useSemanticZoom(containerRef: React.RefObject<HTMLElement>): voi
 
 **Key insight**: `useEffect` only fires when `level` changes (3 discrete values), not on every zoom tick. And it sets a DOM attribute, not React state — so zero component re-renders.
 
+**Remount guard**: On workspace switch, the canvas container unmounts and remounts. The `data-zoom-level` attribute would flash `undefined` before the `useEffect` fires. **Fix**: Set the default attribute in JSX: `<div data-zoom-level="full" ref={containerRef}>`. The `useEffect` will overwrite it on the next tick with the actual level, but there's no visible flash since the default matches the most common state.
+
 **`IdeaCard.module.css`** — CSS descendant selectors:
 
 ```css
@@ -653,8 +655,8 @@ export function useSemanticZoom(containerRef: React.RefObject<HTMLElement>): voi
 const containerRef = useRef<HTMLDivElement>(null);
 useSemanticZoom(containerRef);
 
-// On the wrapper div:
-<div ref={containerRef} className={getContainerClassName(isSwitching)} data-canvas-container>
+// On the wrapper div — data-zoom-level="full" prevents flash on remount:
+<div ref={containerRef} className={getContainerClassName(isSwitching)} data-canvas-container data-zoom-level="full">
 ```
 
 **Performance**: CSS `display: none` removes elements from layout without unmounting React components. TipTap editors stay alive but invisible. Transitioning between zoom levels is a single DOM attribute change — the browser handles CSS recalculation, not React.
@@ -809,7 +811,7 @@ find src/features/clustering -name "*.ts*" | xargs wc -l | awk '$1 > 300'  # emp
 | Change | Reason |
 |--------|--------|
 | Bounding boxes computed at render, not stored | Eliminates `updateClusterBounds` action, `onNodeDragStop` hook, and stale-bounds bugs. 8 bounding boxes are trivial to compute per frame. |
-| Cluster store as separate slice, not inline in canvasStore | `canvasStore.ts` is at 282/300 lines. Adding inline would overflow the 300-line limit. |
+| Cluster store as separate slice, not inline in canvasStore | `canvasStore.ts` is a 120-line thin orchestrator (not 282 as originally estimated — already refactored into factory pattern). Separate slice is still correct for SRP, not line-count overflow. |
 | Cluster colors in separate CSS file | `variables.css` is at 292/300 lines. Adding 12 variables would overflow. |
 | `colorIndex: number` instead of `color: string` | Separates data model from CSS implementation. Pure number is easier to test, serialize, and doesn't break if CSS variable names change. |
 | Single batched Gemini call for labeling | Original: 1 call per cluster (8 clusters = 8 API calls). Batched: 1 call total. Cheaper, faster, no rate limiting. |
@@ -826,7 +828,7 @@ find src/features/clustering -name "*.ts*" | xargs wc -l | awk '$1 > 300'  # emp
 | Potential Debt | How We Prevent It |
 |---------------|-------------------|
 | Duplicate TF-IDF logic | Direct imports from existing `tfidfScorer.ts` + `relevanceScorer.ts` |
-| canvasStore overflow | Cluster state in dedicated `clusterSlice.ts` composed via Zustand slice pattern |
+| canvasStore SRP violation | Cluster state in dedicated `clusterSlice.ts` composed via Zustand factory pattern (canvasStore is 120 lines, not at overflow risk — separation is for SRP, not line count) |
 | variables.css overflow | Cluster colors in separate `cluster-colors.css` imported by variables.css |
 | Stale bounding boxes | No stored bounds — computed at render from live node positions |
 | Performance cliff on zoom | CSS-only zoom (DOM attribute + descendant selectors, zero React re-renders) |
@@ -842,5 +844,5 @@ find src/features/clustering -name "*.ts*" | xargs wc -l | awk '$1 > 300'  # emp
 **Net new files**: 16 (9 source + 2 CSS + 5 test)
 **Files modified**: 6 (canvasStore, CanvasView, WorkspaceControls, workspaceService, useWorkspaceLoader, workspace type)
 **Estimated total new lines**: ~1,200 (source + tests)
-**canvasStore.ts**: stays at ~285 lines (under 300)
+**canvasStore.ts**: stays at ~123 lines (thin orchestrator with factory spreads)
 **variables.css**: stays at 293 lines (under 300)
