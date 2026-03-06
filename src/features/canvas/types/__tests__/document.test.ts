@@ -20,11 +20,12 @@ function makeFileWithBytes(name: string, bytes: number[], type: string): File {
 }
 
 describe('DOCUMENT_ACCEPTED_MIME_TYPES', () => {
-    it('includes PDF, text/plain, and text/csv only (MVP)', () => {
+    it('includes PDF, text/plain, text/csv, and text/markdown (MVP)', () => {
         expect(DOCUMENT_ACCEPTED_MIME_TYPES).toEqual([
             'application/pdf',
             'text/plain',
             'text/csv',
+            'text/markdown',
         ]);
     });
 
@@ -46,6 +47,7 @@ describe('isAcceptedDocumentType', () => {
         expect(isAcceptedDocumentType('application/pdf')).toBe(true);
         expect(isAcceptedDocumentType('text/plain')).toBe(true);
         expect(isAcceptedDocumentType('text/csv')).toBe(true);
+        expect(isAcceptedDocumentType('text/markdown')).toBe(true);
     });
 
     it('returns false for disallowed MIME types', () => {

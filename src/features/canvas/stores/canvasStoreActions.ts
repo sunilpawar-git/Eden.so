@@ -178,12 +178,18 @@ export function createSelectionActions(set: SetFn, get: GetFn) {
 // Editing state actions
 // ---------------------------------------------------------------------------
 
-export function createEditingActions(set: SetFn) {
+export function createEditingActions(set: SetFn, get: GetFn) {
     return {
-        startEditing: (nodeId: string) =>
-            set({ editingNodeId: nodeId, draftContent: null, inputMode: 'note' }),
+        startEditing: (nodeId: string) => {
+            if (get().editingNodeId === nodeId) return;
+            set({ editingNodeId: nodeId, draftContent: null, inputMode: 'note' });
+        },
 
-        stopEditing: () => set({ editingNodeId: null, draftContent: null, inputMode: 'note' }),
+        stopEditing: () => {
+            const s = get();
+            if (s.editingNodeId === null && s.draftContent === null && s.inputMode === 'note') return;
+            set({ editingNodeId: null, draftContent: null, inputMode: 'note' });
+        },
 
         updateDraft: (content: string) => set({ draftContent: content }),
 

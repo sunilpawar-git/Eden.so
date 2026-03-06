@@ -2,6 +2,9 @@
  * useFocusOverlayActions — ViewModel logic for FocusOverlay
  * Extracts editing lifecycle, content save, ESC handling, and heading/tag handlers
  * so FocusOverlay stays under component line limits.
+ *
+ * Note: startEditing is handled by enterFocusWithEditing (single call site).
+ * No useEffect needed here — avoids race condition with IdeaCard blur handlers.
  */
 import { useCallback, useEffect } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
@@ -16,12 +19,6 @@ interface UseFocusOverlayActionsOptions {
 }
 
 export function useFocusOverlayActions({ nodeId, output, isEditing, onExit }: UseFocusOverlayActionsOptions) {
-    useEffect(() => {
-        if (nodeId && useCanvasStore.getState().editingNodeId !== nodeId) {
-            useCanvasStore.getState().startEditing(nodeId);
-        }
-    }, [nodeId]);
-
     const handleDoubleClick = useCallback(() => {
         if (!nodeId) return;
         useCanvasStore.getState().startEditing(nodeId);

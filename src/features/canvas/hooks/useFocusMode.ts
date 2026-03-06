@@ -1,7 +1,8 @@
 /**
  * useFocusMode — Bridge hook for focus mode orchestration
  * Reads focus state, resolves focused node data, handles ESC-to-close.
- * ESC is suppressed when a node is in editing mode (TipTap owns ESC there).
+ * ESC handler reads editingNodeId via getState() (not a selector) to avoid
+ * subscribing FocusOverlay to editingNodeId changes that cascade re-renders.
  */
 import { useCallback } from 'react';
 import { useFocusStore, enterFocusWithEditing } from '../stores/focusStore';
@@ -33,9 +34,12 @@ export function useFocusMode(): FocusModeResult {
         enterFocusWithEditing(nodeId);
     }, []);
 
-    const editingNodeId = useCanvasStore((s) => s.editingNodeId);
-    const escapeActive = isFocused && editingNodeId === null;
-    useEscapeLayer(ESCAPE_PRIORITY.FOCUS_MODE, escapeActive, exitFocus);
+    const handleEscape = useCallback(() => {
+        if (useCanvasStore.getState().editingNodeId !== null) return;
+        exitFocus();
+    }, [exitFocus]);
+
+    useEscapeLayer(ESCAPE_PRIORITY.FOCUS_MODE, isFocused, handleEscape);
 
     return { focusedNodeId, focusedNode, isFocused, enterFocus, exitFocus };
 }

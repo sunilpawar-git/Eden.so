@@ -44,7 +44,6 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
         generateFromPrompt, // eslint-disable-line @typescript-eslint/no-misused-promises -- async, consumed by useIdeaCardState
     });
     const calendar = useIdeaCardCalendar({ nodeId: id, calendarEvent });
-    // Stable selectors - derive comparison outside to avoid closure anti-pattern
     const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
     const editingNodeId = useCanvasStore((s) => s.editingNodeId);
     const isFocusTarget = focusedNodeId === id;
@@ -54,9 +53,14 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
     // Ref populated synchronously after useIdeaCardHandlers runs — always set before user interaction.
     const documentInsertFnRef = useRef<DocumentInsertFn | null>(null);
 
+    const onExitEditing = useCallback((): void => {
+        if (useFocusStore.getState().focusedNodeId) return;
+        useCanvasStore.getState().stopEditing();
+    }, []);
+
     const { editor, getMarkdown, setContent, submitHandlerRef } = useIdeaCardEditor({
         isEditing, output, getEditableContent, placeholder, saveContent,
-        onExitEditing: useCallback((): void => { useCanvasStore.getState().stopEditing(); }, []),
+        onExitEditing,
         imageUploadFn,
         documentInsertFnRef,
     });

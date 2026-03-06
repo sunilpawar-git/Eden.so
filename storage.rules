@@ -15,7 +15,7 @@ service firebase.storage {
       allow write: if request.auth != null
                       && request.auth.uid == userId
                       && request.resource.size < 15 * 1024 * 1024
-                      && request.resource.contentType.matches('application/pdf|text/plain|text/csv|image/png');
+                      && request.resource.contentType.matches('application/pdf|text/plain|text/csv|text/markdown|image/png');
     }
 
     // Catch-all for other user paths (KB, profile, etc.) — 5 MB

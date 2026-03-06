@@ -149,14 +149,17 @@ describe('FocusOverlay', () => {
     });
 
     describe('Editing', () => {
-        it('calls startEditing when overlay mounts with a focused node', () => {
+        it('isEditing is true when enterFocusWithEditing sets both stores', () => {
             useFocusStore.setState({ focusedNodeId: 'node-1' });
+            useCanvasStore.setState({ editingNodeId: 'node-1' });
             render(<FocusOverlay />);
             expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
+            expect(screen.queryByTestId('focus-content-area')).toBeInTheDocument();
         });
 
         it('double-clicking content area calls startEditing', () => {
             useFocusStore.setState({ focusedNodeId: 'node-1' });
+            useCanvasStore.setState({ editingNodeId: 'node-1' });
             render(<FocusOverlay />);
             act(() => { useCanvasStore.setState({ editingNodeId: null }); });
             fireEvent.doubleClick(screen.getByTestId('focus-content-area'));
@@ -165,21 +168,16 @@ describe('FocusOverlay', () => {
 
         it('double-clicking heading calls startEditing', () => {
             useFocusStore.setState({ focusedNodeId: 'node-1' });
+            useCanvasStore.setState({ editingNodeId: 'node-1' });
             render(<FocusOverlay />);
             act(() => { useCanvasStore.setState({ editingNodeId: null }); });
             fireEvent.doubleClick(screen.getByTestId('focus-heading'));
             expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
         });
 
-        it('isEditing is true when editingNodeId matches focusedNodeId', () => {
-            useFocusStore.setState({ focusedNodeId: 'node-1' });
-            render(<FocusOverlay />);
-            expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
-            expect(screen.queryByTestId('focus-content-area')).toBeInTheDocument();
-        });
-
         it('isEditing becomes false when editingNodeId clears and double-click starts editing again', () => {
             useFocusStore.setState({ focusedNodeId: 'node-1' });
+            useCanvasStore.setState({ editingNodeId: 'node-1' });
             render(<FocusOverlay />);
             act(() => { useCanvasStore.setState({ editingNodeId: null }); });
             const contentArea = screen.getByTestId('focus-content-area');
@@ -198,6 +196,7 @@ describe('FocusOverlay', () => {
 
         it('isEditing reacts to editingNodeId store changes', () => {
             useFocusStore.setState({ focusedNodeId: 'node-1' });
+            useCanvasStore.setState({ editingNodeId: 'node-1' });
             const { rerender } = render(<FocusOverlay />);
             expect(useCanvasStore.getState().editingNodeId).toBe('node-1');
 

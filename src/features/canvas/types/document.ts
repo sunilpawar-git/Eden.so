@@ -2,7 +2,7 @@
  * Document Types — Constants and types for node document attachments
  * SSOT for document-related constraints across canvas feature
  *
- * MVP scope: PDF, plain text, CSV only.
+ * MVP scope: PDF, plain text, CSV, Markdown.
  * DOCX/XLSX deferred to a follow-up feature.
  */
 import { strings } from '@/shared/localization/strings';
@@ -13,6 +13,7 @@ export const DOCUMENT_ACCEPTED_MIME_TYPES = [
     'application/pdf',
     'text/plain',
     'text/csv',
+    'text/markdown',
 ] as const;
 
 export type DocumentMimeType = (typeof DOCUMENT_ACCEPTED_MIME_TYPES)[number];
@@ -39,6 +40,7 @@ export const DOCUMENT_TYPE_LABELS: Readonly<Record<DocumentMimeType, string>> = 
     'application/pdf': 'PDF',
     'text/plain': 'Text',
     'text/csv': 'CSV',
+    'text/markdown': 'Markdown',
 };
 
 /** File extensions keyed by MIME type (used for display & sanitization) */
@@ -46,6 +48,7 @@ export const DOCUMENT_EXTENSIONS: Readonly<Record<DocumentMimeType, string>> = {
     'application/pdf': '.pdf',
     'text/plain': '.txt',
     'text/csv': '.csv',
+    'text/markdown': '.md',
 };
 
 /** Check whether a MIME type is in the allowed document list */

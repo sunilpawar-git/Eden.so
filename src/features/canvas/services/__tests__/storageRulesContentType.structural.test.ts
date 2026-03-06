@@ -34,6 +34,7 @@ const UPLOADED_MIME_TYPES = [
     'application/pdf',
     'text/plain',
     'text/csv',
+    'text/markdown',
     'image/png', // thumbnail sidecar
 ];
 

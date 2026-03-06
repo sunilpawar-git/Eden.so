@@ -31,6 +31,7 @@ export async function parseDocument(file: File): Promise<DocumentParseResult> {
             return parsePdf(file);
         case 'text/plain':
         case 'text/csv':
+        case 'text/markdown':
             return parseTextFile(file);
         default:
             throw new Error(strings.canvas.docUnsupportedType);

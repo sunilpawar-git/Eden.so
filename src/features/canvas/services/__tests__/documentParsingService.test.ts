@@ -49,6 +49,15 @@ describe('parseDocument — text/plain', () => {
         expect(result.thumbnailDataUrl).toBeUndefined();
     });
 
+    it('extracts text from a markdown file', async () => {
+        const md = '# Title\n\n| Col1 | Col2 |\n|------|------|\n| A    | B    |';
+        const file = new File([md], 'notes.md', { type: 'text/markdown' });
+        const result = await parseDocument(file);
+
+        expect(result.text).toBe(md);
+        expect(result.thumbnailDataUrl).toBeUndefined();
+    });
+
     it('handles empty text files', async () => {
         const file = new File([''], 'empty.txt', { type: 'text/plain' });
         const result = await parseDocument(file);

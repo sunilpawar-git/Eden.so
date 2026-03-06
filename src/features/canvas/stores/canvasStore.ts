@@ -115,6 +115,6 @@ export const useCanvasStore = create<CanvasStore>()((set, get) => ({
     ...createNodeDataActions(set),
     ...createEdgeAndLayoutActions(set, get),
     ...createSelectionActions(set, get),
-    ...createEditingActions(set),
+    ...createEditingActions(set, get),
     ...createLinkPreviewActions(set),
 }));

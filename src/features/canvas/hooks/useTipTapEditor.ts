@@ -64,6 +64,14 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
         ],
         content: initialContent ? markdownToHtml(initialContent) : '',
         editable,
+        // Convert plain-text pastes through the markdown pipeline so that
+        // pasted markdown (tables, headings, lists, etc.) renders as rich nodes
+        // rather than raw pipe/hash characters.
+        editorProps: {
+            transformPastedText(text: string): string {
+                return markdownToHtml(text);
+            },
+        },
         onBlur: ({ editor: e }) => { onBlur?.(htmlToMarkdown(e.getHTML())); },
         onUpdate: ({ editor: e }) => {
             if (skipNextUpdateRef.current) { skipNextUpdateRef.current = false; return; }
