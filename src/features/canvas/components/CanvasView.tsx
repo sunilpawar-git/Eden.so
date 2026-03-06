@@ -61,7 +61,7 @@ function CanvasViewInner() {
     overridesRef.current = dragState.overrides;
     const commitDragOverrides = useCallback(
         () => commitOverridesToStore(overridesRef.current, dragDispatch),
-        [], // eslint-disable-line react-hooks/exhaustive-deps -- reads from ref
+        [], // stable: reads only from overridesRef (a ref, not a reactive value)
     );
 
     const handleMoveEnd = useCallback((_event: unknown, newViewport: Viewport) => {

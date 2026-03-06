@@ -1,6 +1,7 @@
 /**
  * nodeUtilsControllerReducer — Pure state machine for NodeUtilsBar interactions.
  * Handles submenu, deck-two, and pin state transitions.
+ * Complex case handlers extracted as pure functions to keep complexity low.
  */
 
 export const NODE_UTILS_PORTAL_ATTR = 'data-node-utils-zone';
@@ -32,20 +33,52 @@ export const initialNodeUtilsControllerState: NodeUtilsControllerState = {
     activeSubmenu: 'none',
 };
 
+// ---------------------------------------------------------------------------
+// Case handler helpers (extracted to reduce reducer cyclomatic complexity)
+// ---------------------------------------------------------------------------
+
+function handleHoverLeave(s: NodeUtilsControllerState): NodeUtilsControllerState {
+    if (s.mode !== 'auto') return s;
+    if (!s.isDeckTwoOpen && s.activeSubmenu === 'none') return s;
+    return { ...s, isDeckTwoOpen: false, activeSubmenu: 'none' };
+}
+
+function handleEscape(s: NodeUtilsControllerState): NodeUtilsControllerState {
+    if (s.activeSubmenu !== 'none') return { ...s, activeSubmenu: 'none' };
+    if (s.isDeckTwoOpen) return { ...s, isDeckTwoOpen: false };
+    if (s.mode === 'auto') return s;
+    return { ...s, isDeckTwoOpen: false, activeSubmenu: 'none', mode: 'auto' };
+}
+
+function handleProximityLost(s: NodeUtilsControllerState): NodeUtilsControllerState {
+    // Don't close an active submenu portal — user may be moving to interact with it.
+    // OUTSIDE_POINTER (click elsewhere) handles that dismissal path.
+    if (s.activeSubmenu !== 'none') return s;
+    if (!s.isDeckTwoOpen && s.mode === 'auto') return s;
+    return { ...s, isDeckTwoOpen: false, mode: 'auto' };
+}
+
+function handleOutsidePointer(s: NodeUtilsControllerState): NodeUtilsControllerState {
+    if (!s.isDeckTwoOpen && s.activeSubmenu === 'none' && s.mode === 'auto') return s;
+    return { ...s, isDeckTwoOpen: false, activeSubmenu: 'none', mode: 'auto' };
+}
+
+// ---------------------------------------------------------------------------
+// Reducer
+// ---------------------------------------------------------------------------
+
 export function nodeUtilsControllerReducer(
     state: NodeUtilsControllerState,
     event: NodeUtilsControllerEvent
 ): NodeUtilsControllerState {
     switch (event.type) {
         case 'HOVER_LEAVE':
-            if (state.mode !== 'auto') return state;
-            if (!state.isDeckTwoOpen && state.activeSubmenu === 'none') return state;
-            return { ...state, isDeckTwoOpen: false, activeSubmenu: 'none' };
+            return handleHoverLeave(state);
         case 'TOGGLE_DECK_TWO':
             return {
                 ...state,
                 isDeckTwoOpen: !state.isDeckTwoOpen,
-                mode: !state.isDeckTwoOpen ? 'manual' : 'auto'
+                mode: !state.isDeckTwoOpen ? 'manual' : 'auto',
             };
         case 'OPEN_SUBMENU':
             return { ...state, mode: 'manual', activeSubmenu: event.submenu };
@@ -53,23 +86,11 @@ export function nodeUtilsControllerReducer(
             if (state.activeSubmenu === 'none') return state;
             return { ...state, activeSubmenu: 'none' };
         case 'ESCAPE':
-            if (state.activeSubmenu !== 'none') {
-                return { ...state, activeSubmenu: 'none' };
-            }
-            if (state.isDeckTwoOpen) {
-                return { ...state, isDeckTwoOpen: false };
-            }
-            if (state.mode === 'auto') return state;
-            return { ...state, isDeckTwoOpen: false, activeSubmenu: 'none', mode: 'auto' };
+            return handleEscape(state);
         case 'PROXIMITY_LOST':
-            // Don't close an active submenu portal — user may be moving to interact with it.
-            // OUTSIDE_POINTER (click elsewhere) handles that dismissal path.
-            if (state.activeSubmenu !== 'none') return state;
-            if (!state.isDeckTwoOpen && state.mode === 'auto') return state;
-            return { ...state, isDeckTwoOpen: false, mode: 'auto' };
+            return handleProximityLost(state);
         case 'OUTSIDE_POINTER':
-            if (!state.isDeckTwoOpen && state.activeSubmenu === 'none' && state.mode === 'auto') return state;
-            return { ...state, isDeckTwoOpen: false, activeSubmenu: 'none', mode: 'auto' };
+            return handleOutsidePointer(state);
         default:
             return state;
     }

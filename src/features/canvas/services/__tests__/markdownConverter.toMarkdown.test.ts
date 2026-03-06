@@ -1,67 +1,6 @@
-/** markdownConverter Tests - Validates markdown <-> HTML conversion */
+/** markdownConverter — htmlToMarkdown conversion tests */
 import { describe, it, expect } from 'vitest';
-import { markdownToHtml, htmlToMarkdown } from '../markdownConverter';
-
-describe('markdownToHtml', () => {
-    it('converts plain text to paragraph', () => {
-        expect(markdownToHtml('Hello world')).toBe('<p>Hello world</p>');
-    });
-
-    it('converts bold text', () => {
-        expect(markdownToHtml('**bold**')).toBe('<p><strong>bold</strong></p>');
-    });
-
-    it('converts italic text', () => {
-        expect(markdownToHtml('*italic*')).toBe('<p><em>italic</em></p>');
-    });
-
-    it('converts headings', () => {
-        expect(markdownToHtml('# Heading 1')).toBe('<h1>Heading 1</h1>');
-        expect(markdownToHtml('## Heading 2')).toBe('<h2>Heading 2</h2>');
-        expect(markdownToHtml('### Heading 3')).toBe('<h3>Heading 3</h3>');
-    });
-
-    it('converts unordered lists', () => {
-        const md = '- Item 1\n- Item 2';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<ul>');
-        expect(html).toContain('<li><p>Item 1</p></li>');
-        expect(html).toContain('<li><p>Item 2</p></li>');
-    });
-
-    it('converts ordered lists', () => {
-        const md = '1. First\n2. Second';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<ol>');
-        expect(html).toContain('<li><p>First</p></li>');
-        expect(html).toContain('<li><p>Second</p></li>');
-    });
-
-    it('converts inline code', () => {
-        expect(markdownToHtml('Use `code` here')).toBe('<p>Use <code>code</code> here</p>');
-    });
-
-    it('converts code blocks', () => {
-        const md = '```\nconst x = 1;\n```';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<pre><code>const x = 1;\n</code></pre>');
-    });
-
-    it('converts blockquotes', () => {
-        expect(markdownToHtml('> Quote text')).toBe('<blockquote><p>Quote text</p></blockquote>');
-    });
-
-    it('handles empty string', () => {
-        expect(markdownToHtml('')).toBe('');
-    });
-
-    it('converts multiple paragraphs', () => {
-        const md = 'First paragraph\n\nSecond paragraph';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<p>First paragraph</p>');
-        expect(html).toContain('<p>Second paragraph</p>');
-    });
-});
+import { htmlToMarkdown } from '../markdownConverter';
 
 describe('htmlToMarkdown', () => {
     it('converts paragraph to plain text', () => {
@@ -155,55 +94,6 @@ describe('htmlToMarkdown start attribute', () => {
     });
 });
 
-describe('markdownToHtml tables (GFM)', () => {
-    it('converts basic 2-column table to table HTML', () => {
-        const md = '| A | B |\n|---|---|\n| 1 | 2 |';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<table>');
-        expect(html).toContain('<thead>');
-        expect(html).toContain('<tbody>');
-    });
-
-    it('renders th cells in thead', () => {
-        const md = '| Name | Age |\n|---|---|\n| Alice | 30 |';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<th>');
-        expect(html).toContain('Name');
-        expect(html).toContain('Age');
-    });
-
-    it('renders td cells in tbody', () => {
-        const md = '| Name | Age |\n|---|---|\n| Alice | 30 |';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<td>');
-        expect(html).toContain('Alice');
-        expect(html).toContain('30');
-    });
-
-    it('handles empty cell values', () => {
-        const md = '| A | B |\n|---|---|\n|   | 2 |';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<table>');
-        expect(html).toContain('<td>');
-    });
-
-    it('renders table mixed with heading above and paragraph below', () => {
-        const md = '## Comparison\n\n| X | Y |\n|---|---|\n| a | b |\n\nSome text';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<h2>Comparison</h2>');
-        expect(html).toContain('<table>');
-        expect(html).toContain('<p>Some text</p>');
-    });
-
-    it('handles single-column table', () => {
-        const md = '| Item |\n|---|\n| Alpha |\n| Beta |';
-        const html = markdownToHtml(md);
-        expect(html).toContain('<table>');
-        expect(html).toContain('Alpha');
-        expect(html).toContain('Beta');
-    });
-});
-
 describe('htmlToMarkdown tables', () => {
     it('converts table with thead/tbody to GFM markdown', () => {
         const html = '<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>';
@@ -241,7 +131,7 @@ describe('htmlToMarkdown nested lists — indentation', () => {
         const md = htmlToMarkdown(html);
         expect(md).toContain('- Parent');
         expect(md).toContain('  - Child');
-        expect(md).not.toMatch(/^- Child/m); // must NOT appear at column 0
+        expect(md).not.toMatch(/^- Child/m);
     });
 
     it('indents multiple sub-bullets under a parent bullet — the Para 3 Assets case', () => {
@@ -287,9 +177,6 @@ describe('htmlToMarkdown nested lists — indentation', () => {
     });
 
     it('separates parent <p> text from nested <ul> with a newline — no run-on', () => {
-        // The Chapter 2 "Four Ds" case: user edited so only 2 of 4 items remain nested.
-        // The bug: without a \n between <p> and <ul>, the sub-list prefix runs onto
-        // the parent text line, causing the round-trip to produce wrong structure.
         const html =
             '<ul><li><p>The Four Ds: Deter an adversary, Detect an attack,</p>' +
             '<ul>' +
@@ -297,14 +184,11 @@ describe('htmlToMarkdown nested lists — indentation', () => {
             '<li><p>Deny an adversary access to the target.</p></li>' +
             '</ul></li></ul>';
         const md = htmlToMarkdown(html);
-        // Parent text line must be its own line ending with the comma
         expect(md).toContain('- The Four Ds: Deter an adversary, Detect an attack,');
-        // Sub-bullets must be on their own indented lines
         expect(md).toContain('  - Delay an attack, and');
         expect(md).toContain('  - Deny an adversary access to the target.');
-        // Critically: sub-bullet must NOT be appended to the parent text on the same line
         expect(md).not.toMatch(/Detect an attack,[^\n]*- Delay/);
-        expect(md).not.toMatch(/Detect an attack, {2}/); // no direct space-runon into indent
+        expect(md).not.toMatch(/Detect an attack, {2}/);
     });
 
     it('parent <p> text and nested <ol> are separated by newline', () => {

@@ -201,7 +201,7 @@ describe('Markdown round-trip fidelity (real TipTap)', () => {
             }),
         );
         const editor = hookResult.current;
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
         if (editor) {
             result = htmlToMarkdown(editor.getHTML());
         }

@@ -23,7 +23,7 @@ export function useToolbarDrag(): ToolbarDragHandlers {
     const handleDragStart = useCallback(
         (id: UtilsBarActionId) => (e: React.DragEvent) => {
             // dataTransfer is typed as non-null by React but jsdom returns null in tests.
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
             if (e.dataTransfer) {
                 // Required for Firefox to initiate drag; value is not read back
                 e.dataTransfer.setData('text/plain', id);
@@ -37,7 +37,7 @@ export function useToolbarDrag(): ToolbarDragHandlers {
     const handleDragOver = useCallback(
         (id: UtilsBarActionId, _deck: UtilsBarDeck, _index: number) => (e: React.DragEvent) => {
             e.preventDefault();
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
             if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
             setDropTargetId(id);
         },

@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { DOCUMENT_TYPE_LABELS, DOCUMENT_ACCEPTED_MIME_TYPES } from '../../../types/document';
 import { strings } from '@/shared/localization/strings';
-import { getIconLabel, isSafeUrl } from '../AttachmentCardView';
+import { getIconLabel, isSafeUrl } from '../AttachmentCardView.utils';
 
 describe('DOCUMENT_TYPE_LABELS SSOT coverage', () => {
     it('has a label for every accepted MIME type', () => {

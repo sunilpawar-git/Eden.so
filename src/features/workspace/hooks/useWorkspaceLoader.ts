@@ -63,6 +63,76 @@ async function loadFromFirestore(
     workspaceCache.set(workspaceId, { nodes, edges, viewport: DEFAULT_VIEWPORT, loadedAt: Date.now() });
 }
 
+/** Apply canvas state update only if still mounted */
+function applyIfMounted(
+    nodes: CanvasNode[],
+    edges: CanvasEdge[],
+    viewport: Viewport | undefined,
+    getMounted: () => boolean
+): void {
+    if (!getMounted()) return;
+    const current = useCanvasStore.getState();
+    const newViewport = viewport ?? DEFAULT_VIEWPORT;
+
+    // Skip update only if nodes, edges, AND viewport are identical
+    if (
+        current.nodes === nodes &&
+        current.edges === edges &&
+        current.viewport.x === newViewport.x &&
+        current.viewport.y === newViewport.y &&
+        current.viewport.zoom === newViewport.zoom
+    ) {
+        return;
+    }
+
+    useCanvasStore.setState({
+        nodes,
+        edges,
+        selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
+        viewport: newViewport,
+    });
+}
+
+/** Merge fresh server data into local state only if still mounted */
+function mergeIfMounted(
+    freshNodes: CanvasNode[],
+    freshEdges: CanvasEdge[],
+    getMounted: () => boolean,
+    workspaceId: string
+): void {
+    if (!getMounted()) return;
+
+    const state = useCanvasStore.getState();
+    const mergedNodes = mergeNodes(state.nodes, freshNodes, state.editingNodeId);
+    const mergedEdges = mergeEdges(state.edges, freshEdges);
+
+    useCanvasStore.setState({ nodes: mergedNodes, edges: mergedEdges });
+    workspaceCache.set(workspaceId, {
+        nodes: mergedNodes,
+        edges: mergedEdges,
+        viewport: state.viewport,
+        loadedAt: Date.now(),
+    });
+}
+
+/** Load Knowledge Bank entries into store (non-blocking, mount-guarded) */
+async function loadKBIfMounted(
+    userId: string,
+    workspaceId: string,
+    getMounted: () => boolean
+): Promise<void> {
+    try {
+        const { loadKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');
+        const { useKnowledgeBankStore } = await import('@/features/knowledgeBank/stores/knowledgeBankStore');
+        const kbEntries = await loadKBEntries(userId, workspaceId);
+        if (getMounted()) {
+            useKnowledgeBankStore.getState().setEntries(kbEntries);
+        }
+    } catch (err: unknown) {
+        console.error('[useWorkspaceLoader] KB load failed:', err);
+    }
+}
+
 export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResult {
     const user = useAuthStore((s) => s.user);
     const [isLoading, setIsLoading] = useState(true);
@@ -77,63 +147,27 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
 
         const userId = user.id;
         let mounted = true;
+        const getMounted = () => mounted;
 
-        const applyIfMounted: UpdateCallback = (nodes, edges, viewport) => {
-            if (!mounted) return;
-            const current = useCanvasStore.getState();
-            const newViewport = viewport ?? DEFAULT_VIEWPORT;
-
-            // Skip update only if nodes, edges, AND viewport are identical
-            if (
-                current.nodes === nodes &&
-                current.edges === edges &&
-                current.viewport.x === newViewport.x &&
-                current.viewport.y === newViewport.y &&
-                current.viewport.zoom === newViewport.zoom
-            ) {
-                return;
-            }
-
-            useCanvasStore.setState({
-                nodes,
-                edges,
-                selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
-                viewport: newViewport,
-            });
-        };
-
-        const mergeIfMounted: MergeCallback = (freshNodes, freshEdges) => {
-            if (!mounted) return;
-
-            const state = useCanvasStore.getState();
-            const mergedNodes = mergeNodes(state.nodes, freshNodes, state.editingNodeId);
-            const mergedEdges = mergeEdges(state.edges, freshEdges);
-
-            useCanvasStore.setState({ nodes: mergedNodes, edges: mergedEdges });
-            workspaceCache.set(workspaceId, {
-                nodes: mergedNodes,
-                edges: mergedEdges,
-                viewport: state.viewport,
-                loadedAt: Date.now(),
-            });
-        };
+        const applyCallback: UpdateCallback = (n, e, vp) =>
+            applyIfMounted(n, e, vp, getMounted);
+        const mergeCallback: MergeCallback = (fn, fe) =>
+            mergeIfMounted(fn, fe, getMounted, workspaceId);
 
         async function load() {
             setIsLoading(true);
             setError(null);
 
-            // 1. Try cache first (in-memory -> IndexedDB)
             const cached = workspaceCache.get(workspaceId);
             if (mounted) setHasOfflineData(cached != null);
 
             if (cached) {
-                applyIfMounted(cached.nodes, cached.edges, cached.viewport);
+                applyCallback(cached.nodes, cached.edges, cached.viewport);
                 if (mounted) setIsLoading(false);
-                await backgroundRefresh(userId, workspaceId, mergeIfMounted);
+                await backgroundRefresh(userId, workspaceId, mergeCallback);
                 return;
             }
 
-            // 2. Cache miss — check if online before Firestore call
             const isOnline = useNetworkStatusStore.getState().isOnline;
             if (!isOnline) {
                 if (mounted) {
@@ -143,9 +177,8 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                 return;
             }
 
-            // 3. Load from Firestore (online)
             try {
-                await loadFromFirestore(userId, workspaceId, applyIfMounted);
+                await loadFromFirestore(userId, workspaceId, applyCallback);
             } catch (err) {
                 if (mounted) {
                     const message = err instanceof Error
@@ -160,21 +193,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
         }
 
         void load();
-
-        // Load Knowledge Bank entries (non-blocking)
-        void (async () => {
-            try {
-                const { loadKBEntries } = await import('@/features/knowledgeBank/services/knowledgeBankService');
-                const { useKnowledgeBankStore } = await import('@/features/knowledgeBank/stores/knowledgeBankStore');
-                const kbEntries = await loadKBEntries(userId, workspaceId);
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                if (mounted) {
-                    useKnowledgeBankStore.getState().setEntries(kbEntries);
-                }
-            } catch (err: unknown) {
-                console.error('[useWorkspaceLoader] KB load failed:', err);
-            }
-        })();
+        void loadKBIfMounted(userId, workspaceId, getMounted);
 
         return () => { mounted = false; };
     }, [user, workspaceId]);

@@ -25,7 +25,7 @@ export const ViewportSync = React.memo(function ViewportSync({ viewport }: Viewp
             viewport.y !== prev.y ||
             viewport.zoom !== prev.zoom
         ) {
-            setViewport(viewport, { duration: 0 });
+            void setViewport(viewport, { duration: 0 }).catch(() => { /* non-critical sync */ });
             prevViewportRef.current = viewport;
             isFirstRenderRef.current = false;
         }

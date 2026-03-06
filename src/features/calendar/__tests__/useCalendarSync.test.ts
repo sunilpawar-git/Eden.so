@@ -12,12 +12,28 @@ vi.mock('../services/calendarService', () => ({
     updateEvent: vi.fn(),
 }));
 
+vi.mock('@/features/auth/services/calendarAuthService', () => ({
+    disconnectGoogleCalendar: vi.fn(),
+}));
+
+vi.mock('@/shared/stores/toastStore', () => ({
+    toast: { error: vi.fn(), success: vi.fn() },
+}));
+
 // eslint-disable-next-line import-x/first
 import { createEvent, deleteEvent, updateEvent } from '../services/calendarService';
+// eslint-disable-next-line import-x/first
+import { disconnectGoogleCalendar } from '@/features/auth/services/calendarAuthService';
+// eslint-disable-next-line import-x/first
+import { toast } from '@/shared/stores/toastStore';
 // eslint-disable-next-line import-x/first
 import { useCalendarSync } from '../hooks/useCalendarSync';
 // eslint-disable-next-line import-x/first
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+// eslint-disable-next-line import-x/first
+import { REAUTH_REQUIRED } from '../services/serverCalendarClient';
+// eslint-disable-next-line import-x/first
+import { calendarStrings as cs } from '../localization/calendarStrings';
 
 const mockMetadata = {
     id: 'gcal-1',
@@ -202,5 +218,67 @@ describe('useCalendarSync', () => {
             await result.current.syncCreate('event', 'Test', '2026-02-20T10:00:00Z');
         });
         expect(result.current.error).toBeNull();
+    });
+});
+
+describe('useCalendarSync — REAUTH_REQUIRED paths', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        useCanvasStore.setState({
+            nodes: [{
+                id: 'node-1', workspaceId: 'ws-1', type: 'idea',
+                data: { heading: 'Test' }, position: { x: 0, y: 0 },
+                createdAt: new Date(), updatedAt: new Date(),
+            }],
+            edges: [],
+            selectedNodeIds: new Set(),
+        });
+    });
+
+    it('syncCreate with REAUTH_REQUIRED disconnects, toasts, and sets sessionExpired error', async () => {
+        (createEvent as Mock).mockRejectedValue(new Error(REAUTH_REQUIRED));
+
+        const { result } = renderHook(() => useCalendarSync('node-1'));
+        await act(async () => {
+            await result.current.syncCreate('event', 'Test', '2026-02-20T10:00:00Z');
+        });
+
+        expect(disconnectGoogleCalendar).toHaveBeenCalledOnce();
+        expect((toast as { error: ReturnType<typeof vi.fn> }).error)
+            .toHaveBeenCalledWith(cs.errors.sessionExpired);
+        expect(result.current.error).toBe(cs.errors.sessionExpired);
+        const node = useCanvasStore.getState().nodes.find((n) => n.id === 'node-1')!;
+        expect(node.data.calendarEvent?.status).toBe('failed');
+        expect(node.data.calendarEvent?.error).toBe(cs.errors.sessionExpired);
+    });
+
+    it('syncUpdate with REAUTH_REQUIRED disconnects, toasts, and sets sessionExpired error', async () => {
+        (updateEvent as Mock).mockRejectedValue(new Error(REAUTH_REQUIRED));
+        useCanvasStore.getState().setNodeCalendarEvent('node-1', mockMetadata);
+
+        const { result } = renderHook(() => useCalendarSync('node-1'));
+        await act(async () => {
+            await result.current.syncUpdate('gcal-1', 'event', 'Test', '2026-02-20T10:00:00Z');
+        });
+
+        expect(disconnectGoogleCalendar).toHaveBeenCalledOnce();
+        expect((toast as { error: ReturnType<typeof vi.fn> }).error)
+            .toHaveBeenCalledWith(cs.errors.sessionExpired);
+        expect(result.current.error).toBe(cs.errors.sessionExpired);
+    });
+
+    it('syncDelete with REAUTH_REQUIRED disconnects, toasts, and sets sessionExpired error', async () => {
+        (deleteEvent as Mock).mockRejectedValue(new Error(REAUTH_REQUIRED));
+        useCanvasStore.getState().setNodeCalendarEvent('node-1', mockMetadata);
+
+        const { result } = renderHook(() => useCalendarSync('node-1'));
+        await act(async () => {
+            await result.current.syncDelete();
+        });
+
+        expect(disconnectGoogleCalendar).toHaveBeenCalledOnce();
+        expect((toast as { error: ReturnType<typeof vi.fn> }).error)
+            .toHaveBeenCalledWith(cs.errors.sessionExpired);
+        expect(result.current.error).toBe(cs.errors.sessionExpired);
     });
 });

@@ -1,6 +1,7 @@
 /**
  * Canvas Store - ViewModel for canvas state (nodes, edges, selection)
- * Performance: Selection state decoupled from nodes array
+ * Performance: Selection state decoupled from nodes array.
+ * Action factories live in canvasStoreActions.ts to stay under 300-line limit.
  */
 import { create } from 'zustand';
 import type { Viewport } from '@xyflow/react';
@@ -9,37 +10,18 @@ import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEv
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
 import {
-    updateNodeDimensionsInArray,
-    updateNodeDataField,
-    appendToNodeOutputInArray,
-    togglePromptCollapsedInArray,
-    deleteNodeFromArrays,
-    getConnectedNodeIds,
-    getUpstreamNodesFromArrays,
-    arrangeNodesInGrid,
-    arrangeNodesAfterResize,
-    toggleNodePinnedInArray,
-    toggleNodeCollapsedInArray,
-    toggleNodePoolInArray,
-    clearAllNodePoolInArray,
-    setNodeColorInArray,
-} from './canvasStoreHelpers';
-import { duplicateNode as cloneNode } from '../services/nodeDuplicationService';
+    createNodeMutationActions,
+    createNodeDataActions,
+    createEdgeAndLayoutActions,
+    createSelectionActions,
+    createEditingActions,
+    createLinkPreviewActions,
+} from './canvasStoreActions';
 
-/** Stable reference for empty selection — prevents spurious re-renders via Object.is */
-export const EMPTY_SELECTED_IDS: ReadonlySet<string> = Object.freeze(new Set<string>());
+import { EMPTY_SELECTED_IDS, getNodeMap } from './canvasStoreUtils';
 
-let _cachedNodes: CanvasNode[] = [];
-let _cachedNodeMap: ReadonlyMap<string, CanvasNode> = new Map();
-
-/** Memoized O(1) lookup map — only rebuilds when nodes array reference changes */
-export function getNodeMap(nodes: CanvasNode[]): ReadonlyMap<string, CanvasNode> {
-    if (nodes !== _cachedNodes) {
-        _cachedNodes = nodes;
-        _cachedNodeMap = new Map(nodes.map((n) => [n.id, n]));
-    }
-    return _cachedNodeMap;
-}
+// Re-export for backward compatibility (importers reference canvasStore.ts as entry point)
+export { EMPTY_SELECTED_IDS, getNodeMap };
 
 interface CanvasState {
     nodes: CanvasNode[];
@@ -115,7 +97,7 @@ interface CanvasActions {
     setNodeCalendarEvent: (nodeId: string, event: CalendarEventMetadata | undefined) => void;
 }
 
-type CanvasStore = CanvasState & CanvasActions;
+export type CanvasStore = CanvasState & CanvasActions;
 
 const initialState: CanvasState = {
     nodes: [],
@@ -129,154 +111,10 @@ const initialState: CanvasState = {
 
 export const useCanvasStore = create<CanvasStore>()((set, get) => ({
     ...initialState,
-
-    addNode: (node) => set((s) => ({ nodes: [...s.nodes, node] })),
-
-    duplicateNode: (nodeId) => {
-        const nodes = get().nodes;
-        const node = getNodeMap(nodes).get(nodeId);
-        if (!node) return undefined;
-        const newNode = cloneNode(node, nodes);
-        set((s) => ({ nodes: [...s.nodes, newNode] }));
-        return newNode.id;
-    },
-
-    updateNodeDimensions: (nodeId, width, height) =>
-        set((s) => ({ nodes: updateNodeDimensionsInArray(s.nodes, nodeId, width, height) })),
-
-    updateNodeContent: (nodeId, content) =>
-        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'content', content) })),
-
-    updateNodeHeading: (nodeId, heading) =>
-        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'heading', heading) })),
-
-    updateNodePrompt: (nodeId, prompt) =>
-        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'prompt', prompt) })),
-
-    updateNodeOutput: (nodeId, output) =>
-        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'output', output) })),
-
-    updateNodeTags: (nodeId, tags) =>
-        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'tags', tags) })),
-
-    updateNodeAttachments: (nodeId, attachments) =>
-        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'attachments', attachments) })),
-
-    updateNodeColor: (nodeId, colorKey) =>
-        set((s) => ({ nodes: setNodeColorInArray(s.nodes, nodeId, colorKey) })),
-
-    appendToNodeOutput: (nodeId, chunk) =>
-        set((s) => ({ nodes: appendToNodeOutputInArray(s.nodes, nodeId, chunk) })),
-
-    setNodeGenerating: (nodeId, isGenerating) =>
-        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'isGenerating', isGenerating) })),
-
-    togglePromptCollapsed: (nodeId) =>
-        set((s) => ({ nodes: togglePromptCollapsedInArray(s.nodes, nodeId) })),
-
-    toggleNodePinned: (nodeId) =>
-        set((s) => ({ nodes: toggleNodePinnedInArray(s.nodes, nodeId) })),
-
-    toggleNodeCollapsed: (nodeId) =>
-        set((s) => ({ nodes: toggleNodeCollapsedInArray(s.nodes, nodeId) })),
-
-    toggleNodePoolMembership: (nodeId) =>
-        set((s) => ({ nodes: toggleNodePoolInArray(s.nodes, nodeId) })),
-
-    clearAllNodePool: () =>
-        set((s) => ({ nodes: clearAllNodePoolInArray(s.nodes) })),
-
-    deleteNode: (nodeId) =>
-        set((s) => ({
-            ...deleteNodeFromArrays(s.nodes, s.edges, s.selectedNodeIds, nodeId),
-            ...(s.editingNodeId === nodeId
-                ? { editingNodeId: null, draftContent: null, inputMode: 'note' as const }
-                : {}),
-        })),
-
-    addEdge: (edge) => set((s) => ({ edges: [...s.edges, edge] })),
-
-    deleteEdge: (edgeId) =>
-        set((s) => ({ edges: s.edges.filter((e) => e.id !== edgeId) })),
-
-    arrangeNodes: () => set((s) => ({ nodes: arrangeNodesInGrid(s.nodes) })),
-
-    arrangeAfterResize: (nodeId) =>
-        set((s) => ({ nodes: arrangeNodesAfterResize(s.nodes, nodeId) })),
-
-    selectNode: (nodeId) =>
-        set((s) => ({ selectedNodeIds: new Set([...s.selectedNodeIds, nodeId]) })),
-
-    deselectNode: (nodeId) =>
-        set((s) => {
-            const newSet = new Set(s.selectedNodeIds);
-            newSet.delete(nodeId);
-            return { selectedNodeIds: newSet };
-        }),
-
-    clearSelection: () => {
-        if (get().selectedNodeIds.size === 0) return;
-        set({ selectedNodeIds: EMPTY_SELECTED_IDS as Set<string> });
-    },
-
-    getConnectedNodes: (nodeId) => getConnectedNodeIds(get().edges, nodeId),
-
-    getUpstreamNodes: (nodeId) => {
-        const { nodes, edges } = get();
-        return getUpstreamNodesFromArrays(nodes, edges, nodeId);
-    },
-
-    setNodes: (nodes) => set({ nodes }),
-
-    setEdges: (edges) => set({ edges }),
-
-    clearCanvas: () => set({
-        nodes: [], edges: [], selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
-        viewport: { x: 32, y: 32, zoom: 1 },
-        editingNodeId: null, draftContent: null, inputMode: 'note',
-    }),
-
-    setViewport: (viewport) => set({ viewport }),
-
-    // Editing state actions
-    startEditing: (nodeId) => set({ editingNodeId: nodeId, draftContent: null, inputMode: 'note' }),
-
-    stopEditing: () => set({ editingNodeId: null, draftContent: null, inputMode: 'note' }),
-
-    updateDraft: (content) => set({ draftContent: content }),
-
-    setInputMode: (mode) => set({ inputMode: mode }),
-
-    // Link preview actions
-    addLinkPreview: (nodeId, url, metadata) =>
-        set((s) => ({
-            nodes: s.nodes.map((node) =>
-                node.id === nodeId
-                    ? {
-                        ...node,
-                        data: {
-                            ...node.data,
-                            linkPreviews: { ...node.data.linkPreviews, [url]: metadata },
-                        },
-                        updatedAt: new Date(),
-                    }
-                    : node
-            ),
-        })),
-
-    removeLinkPreview: (nodeId, url) =>
-        set((s) => ({
-            nodes: s.nodes.map((node) => {
-                if (node.id !== nodeId) return node;
-                const { [url]: _, ...rest } = node.data.linkPreviews ?? {};
-                return {
-                    ...node,
-                    data: { ...node.data, linkPreviews: rest },
-                    updatedAt: new Date(),
-                };
-            }),
-        })),
-
-    setNodeCalendarEvent: (nodeId, event) =>
-        set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'calendarEvent', event) })),
+    ...createNodeMutationActions(set, get),
+    ...createNodeDataActions(set),
+    ...createEdgeAndLayoutActions(set, get),
+    ...createSelectionActions(set, get),
+    ...createEditingActions(set),
+    ...createLinkPreviewActions(set),
 }));

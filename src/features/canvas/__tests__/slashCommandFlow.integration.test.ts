@@ -51,7 +51,7 @@ function simulateKeyInEditor(
     editor: ReturnType<typeof useEditor>,
     key: string,
 ) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
     if (!editor) throw new Error('Editor is null');
     // ProseMirror editors process key events through their keymap plugins.
     // We simulate this by calling the editor's keyboard shortcut handler
