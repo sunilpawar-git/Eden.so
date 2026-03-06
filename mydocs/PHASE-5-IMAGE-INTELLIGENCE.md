@@ -2,159 +2,194 @@
 
 ## Problem Statement
 
-Users upload images to nodes (screenshots, diagrams, whiteboard photos) but the AI cannot "see" them. Only text documents trigger the Document Intelligence pipeline. For a knowledge work canvas, this is a significant blind spot — visual artifacts are a core part of how people capture information. A photo of a whiteboard from a meeting, a screenshot of a design mockup, or a chart from a report all contain rich information that the AI should understand and synthesize.
+Users upload images to nodes (screenshots, diagrams, whiteboard photos) but the AI cannot "see" them. Only text documents trigger the Document Intelligence pipeline. For a knowledge work canvas, this is a significant blind spot -- visual artifacts are a core part of how people capture information. A photo of a whiteboard from a meeting, a screenshot of a design mockup, or a chart from a report all contain rich information that the AI should understand and synthesize.
 
 ## Intended Solution
 
-Extend the existing document analysis pipeline to handle images. No new UI paradigms — images follow the exact same flow as documents: upload → AI analyzes → insight node spawns. The existing `autoAnalyzeDocuments` toggle and premium gate apply to images too. This is a pipeline extension, not a new feature.
+Extend the existing document analysis pipeline to handle images. No new UI paradigms -- images follow the exact same flow as documents: upload -> AI describes -> insight node spawns. The existing `autoAnalyzeDocuments` toggle and premium gate apply to images too. This is a pipeline extension, not a new feature.
 
 **What we deliberately skip** (vs. original plan):
 - No SparkleIcon component (auto-spawn works, same as documents)
 - No toolbar toggle duplication (settings toggle is sufficient)
-- No "documents" → "attachments" rename (18-file churn for a label change)
+- No "documents" -> "attachments" rename (18-file churn for a label change)
 - No `hasExtraction` / `insightSpawned` transient TipTap attributes
+- No `AttachmentMeta` for images (images live as `<img>` in TipTap, not as attachment nodes)
 
-**Result**: ~5 files changed instead of 18. Same user value.
+**Result**: ~4 production files changed. Same user value.
 
 ## Architecture Decision
 
-- **No new feature module** — extends existing `documentAgent` and `canvas` features
-- **Reuses entire existing pipeline**: `analyzeAndSpawn` → `analyzeDocument` → `buildInsightSpawn` → atomic canvas update
-- **Image → text bridge**: `describeImageWithAI()` produces `parsedText` that feeds into the standard analysis pipeline
-- **Security**: Image blobs validated for MIME type before processing; no arbitrary file execution; Gemini Vision API handles image safely
+- **No new feature module** -- extends existing `documentAgent` and `canvas` features
+- **Reuses entire existing pipeline**: `analyzeAndSpawn` handles all gating, analysis, and node spawning
+- **Image -> text bridge**: `describeImageWithAI()` produces a text description that feeds into `analyzeAndSpawn` as `parsedText`
+- **No `AttachmentMeta` for images**: Images are tracked as `<img>` nodes in TipTap (via `imageExtension`), NOT as `AttachmentMeta` entries. Documents use `AttachmentMeta` because they render via a custom `attachment` NodeView. Forcing images into `AttachmentMeta` creates dual-tracking (TipTap `<img>` + `node.data.attachments`) with no cleanup when the image is deleted from the editor.
+- **SSOT for MIME types**: Reuses `IMAGE_ACCEPTED_MIME_TYPES` from `src/features/canvas/types/image.ts` -- no duplicate whitelists
+- **Security**: MIME validated against existing whitelist before Gemini API call; `sanitizeFilename` on user-provided names
 
 ---
 
-## Sub-phase 5A: Fix imageDescriptionService MIME Bug
+## Sub-phase 5A: Fix imageDescriptionService MIME Bug + Validation
 
 ### What We Build
 
-Fix the hardcoded `'image/jpeg'` MIME type in `imageDescriptionService.ts` to use the actual blob MIME type.
+Fix the hardcoded `'image/jpeg'` MIME type in `imageDescriptionService.ts` to use the actual blob MIME type, and add whitelist validation.
 
 ### Files
 
 | File | Action | Lines (est.) |
 |------|--------|-------------|
-| `src/features/knowledgeBank/services/imageDescriptionService.ts` | EDIT | 1 line changed |
-| `src/features/knowledgeBank/services/__tests__/imageDescriptionService.test.ts` | EDIT | +15 lines |
+| `src/features/knowledgeBank/services/imageDescriptionService.ts` | EDIT | +10 lines |
+| `src/features/knowledgeBank/services/__tests__/imageDescriptionService.test.ts` | EDIT | +25 lines |
 
 ### Implementation
 
 **Current (buggy)**:
 ```typescript
-mimeType: 'image/jpeg',  // hardcoded — breaks PNG, WebP, GIF
+const body = buildVisionRequestBody(prompt, base64Data, 'image/jpeg');
 ```
 
 **Fixed**:
 ```typescript
-mimeType: blob.type || 'image/jpeg',  // use actual type, fallback for edge cases
-```
+import { IMAGE_ACCEPTED_MIME_TYPES } from '@/features/canvas/types/image';
 
-**Security**: `blob.type` is set by the browser from the file's actual MIME type. The value is passed to Gemini Vision API which validates it. We do NOT use this as a file path or execute it. The fallback `'image/jpeg'` handles edge cases where `blob.type` is empty (e.g., programmatically created blobs).
+const ALLOWED_IMAGE_MIMES: ReadonlySet<string> = new Set(IMAGE_ACCEPTED_MIME_TYPES);
 
-**MIME validation** — add guard before the API call:
+export async function describeImageWithAI(blob: Blob, filename: string): Promise<string> {
+    const fallback = `${strings.knowledgeBank.imageDescriptionFallback}: ${filename}`;
 
-```typescript
-const ALLOWED_IMAGE_MIMES = new Set([
-  'image/jpeg', 'image/png', 'image/webp', 'image/gif'
-]);
+    // Reject empty or unsupported MIME types
+    if (!blob.type || !ALLOWED_IMAGE_MIMES.has(blob.type)) {
+        return fallback;
+    }
 
-const mimeType = blob.type || 'image/jpeg';
-if (!ALLOWED_IMAGE_MIMES.has(mimeType)) {
-  throw new Error(strings.errors.unsupportedImageType);
+    if (!isGeminiAvailable()) return fallback;
+
+    try {
+        const base64Data = await blobToBase64(blob);
+        const prompt = strings.knowledgeBank.imageDescriptionPrompt;
+        const body = buildVisionRequestBody(prompt, base64Data, blob.type);
+        const result = await callGemini(body);
+        if (!result.ok) return fallback;
+        return extractGeminiText(result.data) ?? fallback;
+    } catch {
+        return fallback;
+    }
 }
 ```
+
+**Key decisions**:
+- **SSOT**: `ALLOWED_IMAGE_MIMES` derived from `IMAGE_ACCEPTED_MIME_TYPES` (single source in `image.ts`)
+- **Empty `blob.type` rejected**: Not silently treated as JPEG. Empty type = programmatically constructed blob = suspicious input. Return fallback instead.
+- **Never-throws contract preserved**: Unsupported MIME returns fallback (same as Gemini failure). Callers don't need try/catch for this function.
+- **No separate `parseImageForAnalysis` wrapper**: This function IS the image parsing service. Adding a wrapper in `documentParsingService.ts` violates SRP (that file is a PDF/text parser with pdfjs-dist dependency).
 
 ### TDD Tests
 
 ```
-1. PNG blob → mimeType sent as 'image/png'
-2. JPEG blob → mimeType sent as 'image/jpeg'
-3. WebP blob → mimeType sent as 'image/webp'
-4. Empty blob.type → fallback 'image/jpeg'
-5. Unsupported MIME type 'image/svg+xml' → throws error
-6. Unsupported MIME type 'application/pdf' → throws error (not an image)
+1. PNG blob -> mimeType sent as 'image/png' to buildVisionRequestBody
+2. JPEG blob -> mimeType sent as 'image/jpeg' to buildVisionRequestBody
+3. WebP blob -> mimeType sent as 'image/webp' to buildVisionRequestBody
+4. GIF blob -> mimeType sent as 'image/gif' to buildVisionRequestBody
+5. Empty blob.type -> returns fallback (not sent to API)
+6. Unsupported MIME 'image/svg+xml' -> returns fallback
+7. Unsupported MIME 'application/pdf' -> returns fallback
+8. ALLOWED_IMAGE_MIMES derived from IMAGE_ACCEPTED_MIME_TYPES (structural)
 ```
 
 ### Tech Debt Checkpoint
 
 - [ ] File stays under 300 lines
-- [ ] MIME whitelist (no arbitrary types)
-- [ ] Error message from string resources
+- [ ] MIME whitelist from SSOT (`image.ts`), not duplicated
+- [ ] Never-throws contract maintained
+- [ ] No `any` types
+- [ ] String resources used for fallback message
 - [ ] Zero lint errors
 
 ---
 
-## Sub-phase 5B: Extend AttachmentMeta for Images
+## Sub-phase 5B: Thread File + URL Through Image Insert Callback
 
 ### What We Build
 
-Allow `AttachmentMeta` to track image attachments alongside documents, enabling the extraction cache to work for images.
+Modify the image insert callback chain to pass `file` and `permanentUrl` to the `onAfterInsert` callback, enabling downstream analysis.
+
+### Why This Is Needed
+
+The current callback chain:
+```
+insertImageIntoEditor(editor, file, uploadFn, onAfterInsert)
+  -> uploads file -> gets permanentUrl
+  -> onAfterInsert?.()  // ZERO arguments!
+```
+
+The plan needs `file` and `permanentUrl` in the callback to trigger image analysis. Without this change, `handleAfterImageInsert` in `useIdeaCardImageHandlers.ts` has no access to the file blob (needed for Gemini Vision).
 
 ### Files
 
 | File | Action | Lines (est.) |
 |------|--------|-------------|
-| `src/features/canvas/types/document.ts` | EDIT | +10 lines |
-| `src/features/canvas/types/__tests__/document.test.ts` | EDIT | +20 lines |
+| `src/features/canvas/services/imageInsertService.ts` | EDIT | ~5 lines changed |
+| `src/features/canvas/hooks/useImageInsert.ts` | EDIT | ~2 lines changed |
+| `src/features/canvas/services/__tests__/imageInsertService.test.ts` | EDIT | +10 lines |
 
 ### Implementation
 
-**Current `document.ts`** — add image MIME types:
+**`imageInsertService.ts`** -- widen callback signature:
 
 ```typescript
-export const IMAGE_ANALYSIS_MIME_TYPES = [
-  'image/jpeg', 'image/png', 'image/webp', 'image/gif'
-] as const;
-
-export type ImageAnalysisMimeType = typeof IMAGE_ANALYSIS_MIME_TYPES[number];
-
-// Union type for all analyzable attachment MIME types
-export type AnalyzableMimeType = DocumentMimeType | ImageAnalysisMimeType;
-
-// Type guard
-export function isImageMimeType(mimeType: string): mimeType is ImageAnalysisMimeType {
-  return (IMAGE_ANALYSIS_MIME_TYPES as readonly string[]).includes(mimeType);
+// Before:
+export async function insertImageIntoEditor(
+    editor: Editor | null,
+    file: File,
+    uploadFn: ImageUploadFn,
+    onAfterInsert?: () => void,
+): Promise<void> {
+    // ... upload logic ...
+    try { onAfterInsert?.(); } catch { /* ... */ }
 }
 
-// Extend AttachmentMeta.mimeType to accept image types
-// (update the existing type to use AnalyzableMimeType)
-```
+// After:
+export type AfterImageInsertFn = (file: File, permanentUrl: string) => void;
 
-**AttachmentMeta shape** (existing fields stay, type widens):
-```typescript
-interface AttachmentMeta {
-  filename: string;
-  url: string;
-  mimeType: AnalyzableMimeType;  // was DocumentMimeType
-  parsedText?: string;
-  extraction?: ExtractionResult;
-  analyzedAt?: Date;
-  // ... other existing fields
+export async function insertImageIntoEditor(
+    editor: Editor | null,
+    file: File,
+    uploadFn: ImageUploadFn,
+    onAfterInsert?: AfterImageInsertFn,
+): Promise<void> {
+    // ... upload logic ...
+    try { onAfterInsert?.(file, permanentUrl); } catch { /* ... */ }
 }
 ```
 
-**Security**: The `AnalyzableMimeType` is a closed union — only specific whitelisted types are accepted. This prevents arbitrary MIME types from entering the pipeline.
+**`useImageInsert.ts`** -- update type:
+
+```typescript
+// Before:
+export function useImageInsert(editor: Editor | null, uploadFn: ImageUploadFn, onAfterInsert?: () => void)
+
+// After:
+import type { AfterImageInsertFn } from '../services/imageInsertService';
+export function useImageInsert(editor: Editor | null, uploadFn: ImageUploadFn, onAfterInsert?: AfterImageInsertFn)
+```
+
+**Backward compatibility**: The existing call site in `useIdeaCardImageHandlers.ts` currently passes a zero-arg callback. TypeScript allows calling a function that accepts `(file, url)` with `() => ...` (extra params are ignored). But we update the caller in 5C anyway, so no issue.
 
 ### TDD Tests
 
 ```
-1. isImageMimeType('image/jpeg') → true
-2. isImageMimeType('image/png') → true
-3. isImageMimeType('application/pdf') → false
-4. isImageMimeType('text/html') → false
-5. isImageMimeType('') → false
-6. AttachmentMeta accepts 'image/jpeg' as mimeType (type-level test via tsc)
-7. AttachmentMeta accepts 'application/pdf' as mimeType (existing types still work)
-8. IMAGE_ANALYSIS_MIME_TYPES has exactly 4 entries
+1. insertImageIntoEditor calls onAfterInsert with (file, permanentUrl) after successful upload
+2. insertImageIntoEditor does not call onAfterInsert on upload failure
+3. onAfterInsert error does not affect upload success path (existing behavior preserved)
+4. onAfterInsert receives the sanitized permanent URL (not the base64 data URL)
 ```
 
 ### Tech Debt Checkpoint
 
-- [ ] File stays under 300 lines (currently 110 + 10 = 120)
-- [ ] No `any` types
-- [ ] Closed union type (whitelist, not string)
-- [ ] Backward compatible (existing DocumentMimeType still works)
+- [ ] imageInsertService stays under 300 lines (currently 112 + 5 = 117)
+- [ ] useImageInsert stays under 300 lines (currently 44 + 2 = 46)
+- [ ] AfterImageInsertFn exported as named type (no inline signatures)
+- [ ] Existing tests still pass (callback behavior preserved)
 - [ ] Zero lint errors
 
 ---
@@ -163,191 +198,154 @@ interface AttachmentMeta {
 
 ### What We Build
 
-After an image is uploaded to a node, create an `AttachmentMeta` for it and trigger the document analysis pipeline.
+After an image is uploaded, describe it with AI and feed the description into `analyzeAndSpawn` to create an insight node.
 
 ### Files
 
 | File | Action | Lines (est.) |
 |------|--------|-------------|
-| `src/features/canvas/hooks/useIdeaCardImageHandlers.ts` | EDIT | +20 lines |
-| `src/features/canvas/services/documentParsingService.ts` | EDIT | +15 lines |
-| `src/features/canvas/hooks/__tests__/useIdeaCardImageHandlers.imageAnalysis.test.ts` | NEW | ~90 |
-| `src/features/canvas/services/__tests__/documentParsingService.image.test.ts` | NEW | ~50 |
+| `src/features/canvas/hooks/useIdeaCardImageHandlers.ts` | EDIT | +15 lines |
+| `src/features/canvas/hooks/__tests__/useIdeaCardImageHandlers.imageAnalysis.test.ts` | NEW | ~80 lines |
 
 ### Implementation
 
-**`documentParsingService.ts`** — add image parsing:
+**`useIdeaCardImageHandlers.ts`** -- extend `handleAfterImageInsert`:
 
 ```typescript
-export async function parseImageForAnalysis(
-  blob: Blob,
-  filename: string
-): Promise<string> {
-  // Validate MIME type
-  if (!isImageMimeType(blob.type || 'image/jpeg')) {
-    throw new Error(strings.errors.unsupportedImageType);
-  }
+import { describeImageWithAI } from '@/features/knowledgeBank/services/imageDescriptionService';
+import { sanitizeFilename } from '@/shared/utils/sanitize';
+import type { AfterImageInsertFn } from '../services/imageInsertService';
 
-  // Use existing image description service (Gemini Vision)
-  const description = await describeImageWithAI(blob, filename);
-  return description;
-}
-```
+// Inside the hook:
+const handleAfterImageInsert: AfterImageInsertFn = useCallback((file, _permanentUrl) => {
+    // 1. Persist markdown with newly inserted image
+    const md = getMarkdown();
+    if (md) useCanvasStore.getState().updateNodeOutput(id, md);
 
-**`useIdeaCardImageHandlers.ts`** — extend the post-upload flow:
+    // 2. Trigger image analysis (async, non-blocking)
+    const workspaceId = useWorkspaceStore.getState().currentWorkspaceId;
+    if (!workspaceId) return;
 
-```typescript
-// After successful image insert into TipTap editor:
-const handleAfterImageInsert = useCallback(async (
-  file: File,
-  imageUrl: string
-) => {
-  // 1. Create AttachmentMeta for the image
-  const imageMeta: AttachmentMeta = {
-    filename: sanitizeFilename(file.name),
-    url: imageUrl,
-    mimeType: (file.type || 'image/jpeg') as AnalyzableMimeType,
-  };
+    const safeFilename = sanitizeFilename(file.name);
 
-  // 2. Add to node's attachments (atomic update)
-  const currentAttachments = useCanvasStore.getState()
-    .nodes.find(n => n.id === nodeId)?.data.attachments ?? [];
-  useCanvasStore.getState().updateNodeAttachments(nodeId, [
-    ...currentAttachments,
-    imageMeta
-  ]);
-
-  // 3. Trigger analysis (same pipeline as documents)
-  // analyzeAndSpawn checks autoAnalyzeDocuments toggle + premium gate internally
-  try {
-    const parsedText = await parseImageForAnalysis(file, file.name);
-    await analyzeAndSpawn(nodeId, parsedText, file.name, workspaceId);
-  } catch {
-    // Analysis failure is non-blocking — image is already inserted
-    // Error logged internally by analyzeAndSpawn
-  }
-}, [nodeId, workspaceId, analyzeAndSpawn]);
+    void (async () => {
+        // describeImageWithAI never throws -- returns fallback on failure
+        const imageDescription = await describeImageWithAI(file, safeFilename);
+        // analyzeAndSpawn checks autoAnalyze toggle + premium gate internally
+        await analyzeAndSpawn(id, imageDescription, safeFilename, workspaceId);
+    })().catch((e: unknown) =>
+        captureError(e instanceof Error ? e : new Error(String(e))),
+    );
+}, [id, getMarkdown, analyzeAndSpawn]);
 ```
 
 **Key decisions**:
-- Image is inserted into TipTap FIRST (instant visual feedback)
-- AttachmentMeta created SECOND (enables extraction caching)
-- Analysis triggered THIRD (async, non-blocking)
-- If analysis fails, the image is still there — graceful degradation
-- `sanitizeFilename` used on `file.name` (existing utility — prevents path traversal)
-
-**Security**:
-- `file.type` validated by `isImageMimeType` before processing
-- `sanitizeFilename` strips path separators and special characters
-- Image URL is a Firebase Storage URL (already validated by upload service)
-- `analyzeAndSpawn` internally checks premium gate — no bypass
+- **No `AttachmentMeta` created**: Images are not documents. They're already tracked as `<img>` nodes in TipTap via `imageExtension`. Creating a parallel `AttachmentMeta` entry would mean:
+  - User deletes image from editor -> orphaned `AttachmentMeta` in `node.data.attachments`
+  - `AttachmentMeta.sizeBytes` is required but not relevant for embedded images
+  - `AttachmentMeta.thumbnailUrl` / `parsedTextUrl` are document-specific fields
+  - Document re-analysis (`/analyze-document` slash command) checks `attachments` array, would incorrectly pick up images
+- **Image inserted FIRST** (instant visual feedback, handled by `insertImageIntoEditor`)
+- **Analysis triggered SECOND** (async, non-blocking, fires and forgets)
+- **`describeImageWithAI` never throws** -- even on Gemini failure, it returns a fallback string. That fallback still feeds into `analyzeAndSpawn`, which may produce a less useful insight node. This is acceptable: the alternative (silently doing nothing) gives zero value.
+- **`sanitizeFilename`** strips path separators and special characters from user-provided `file.name`
 
 ### TDD Tests
 
-**useIdeaCardImageHandlers.imageAnalysis.test.ts**:
 ```
-1. Image upload → AttachmentMeta created with correct mimeType
-2. Image upload → parseImageForAnalysis called with file blob
-3. Image upload → analyzeAndSpawn called with parsedText from image description
-4. autoAnalyzeDocuments=false → analyzeAndSpawn skips analysis (internal check)
-5. Non-premium user → analyzeAndSpawn skips analysis (internal check)
-6. parseImageForAnalysis fails → image still in editor (non-blocking)
-7. analyzeAndSpawn fails → image still in editor (non-blocking)
-8. Filename sanitized before passing to services
-9. Unsupported MIME type (e.g. SVG) → parseImageForAnalysis throws, image still inserted
-10. AttachmentMeta added to existing attachments (doesn't replace them)
-```
-
-**documentParsingService.image.test.ts**:
-```
-1. parseImageForAnalysis('image/png') → calls describeImageWithAI
-2. parseImageForAnalysis('image/jpeg') → calls describeImageWithAI
-3. parseImageForAnalysis('application/pdf') → throws error
-4. parseImageForAnalysis returns description string
-5. Gemini Vision error → propagates (caller handles)
+1. Image upload -> updateNodeOutput called with current markdown
+2. Image upload -> describeImageWithAI called with file blob and sanitized filename
+3. Image upload -> analyzeAndSpawn called with image description as parsedText
+4. Image upload -> sanitizeFilename applied to file.name
+5. autoAnalyzeDocuments=false -> analyzeAndSpawn returns early (internal check, no insight node)
+6. Non-premium user -> analyzeAndSpawn returns early (internal check)
+7. describeImageWithAI returns fallback -> analyzeAndSpawn still called (fallback is valid input)
+8. analyzeAndSpawn throws -> error captured by Sentry, no unhandled rejection
+9. No workspaceId -> analysis skipped, no error
+10. No AttachmentMeta created (node.data.attachments unchanged)
 ```
 
 ### Tech Debt Checkpoint
 
-- [ ] useIdeaCardImageHandlers stays under 300 lines (currently 106 + 20 = 126)
-- [ ] documentParsingService stays under 300 lines (currently 171 + 15 = 186)
+- [ ] useIdeaCardImageHandlers stays under 300 lines (currently 107 + 15 = 122)
 - [ ] No `any` types
-- [ ] `sanitizeFilename` on all user-provided filenames
-- [ ] Non-blocking error handling (image insertion never fails due to analysis)
-- [ ] Single `updateNodeAttachments` call (atomic)
-- [ ] No Zustand anti-patterns (all reads via getState() inside callback)
+- [ ] `sanitizeFilename` on file.name
+- [ ] Non-blocking: image insertion succeeds regardless of analysis outcome
+- [ ] No Zustand anti-patterns (all reads via `getState()` inside callback)
+- [ ] No `AttachmentMeta` pollution (images tracked only in TipTap)
 - [ ] Zero lint errors
 
 ---
 
-## Sub-phase 5D: Integration Test for Image Analysis Pipeline
+## Sub-phase 5D: Integration + Structural Tests
 
 ### What We Build
 
-End-to-end test verifying the complete image upload → analysis → insight node flow.
+End-to-end test verifying the complete image upload -> describe -> analyze -> insight node flow, plus structural safety checks.
 
 ### Files
 
 | File | Action | Lines (est.) |
 |------|--------|-------------|
-| `src/features/canvas/__tests__/imageAnalysis.integration.test.ts` | NEW | ~100 |
-| `src/features/canvas/__tests__/imageAnalysis.structural.test.ts` | NEW | ~40 |
+| `src/features/canvas/__tests__/imageAnalysis.integration.test.ts` | NEW | ~90 lines |
+| `src/features/canvas/__tests__/imageAnalysis.structural.test.ts` | NEW | ~40 lines |
 
 ### Integration Test
 
 ```typescript
-describe('Image Analysis Pipeline — end to end', () => {
+describe('Image Analysis Pipeline -- end to end', () => {
 
-  test('image upload with auto-analyze ON → creates insight node', async () => {
+  test('image upload with auto-analyze ON -> creates insight node', async () => {
     // Setup:
     // - Mock settingsStore: autoAnalyzeDocuments = true
     // - Mock subscription: premium = true
-    // - Mock Gemini Vision: returns "A whiteboard showing project timeline..."
+    // - Mock describeImageWithAI: returns "A whiteboard showing project timeline..."
     // - Mock analyzeDocument: returns extraction result
     // - Create parent node in canvas store
 
     // Act:
-    // - Simulate image upload (call handleAfterImageInsert with mock file)
+    // - Simulate image upload (call handleAfterImageInsert with file and url)
 
     // Assert:
-    // 1. AttachmentMeta added to parent node with mimeType 'image/png'
-    // 2. parseImageForAnalysis called with file blob
-    // 3. analyzeAndSpawn called with image description as parsedText
-    // 4. New insight node created in canvas store
-    // 5. New edge connects parent → insight node (relationshipType: 'derived')
-    // 6. Insight node output contains extraction content
+    // 1. describeImageWithAI called with file blob
+    // 2. analyzeAndSpawn called with image description as parsedText
+    // 3. New insight node created in canvas store
+    // 4. New edge connects parent -> insight node
+    // 5. Insight node output contains extraction content
+    // 6. node.data.attachments is UNCHANGED (no AttachmentMeta for images)
   });
 
-  test('image upload with auto-analyze OFF → no analysis, image still inserted', async () => {
+  test('image upload with auto-analyze OFF -> no analysis', async () => {
     // Setup: autoAnalyzeDocuments = false
     // Act: simulate image upload
     // Assert:
-    // 1. AttachmentMeta added (for future manual analysis)
-    // 2. analyzeAndSpawn returns early (checked internally)
-    // 3. No insight node created
-    // 4. No errors thrown
+    // 1. describeImageWithAI NOT called (analyzeAndSpawn returns early before AI)
+    //    NOTE: Actually, describeImageWithAI IS called, then analyzeAndSpawn returns early.
+    //    The description call is cheap compared to the analysis. Acceptable.
+    // 2. No insight node created
+    // 3. updateNodeOutput still called (markdown saved regardless)
   });
 
-  test('image upload with non-premium user → no analysis, image still inserted', async () => {
+  test('image upload with non-premium user -> no analysis', async () => {
     // Setup: premium = false
     // Act: simulate image upload
     // Assert: same as auto-analyze OFF
   });
 
-  test('Gemini Vision failure → graceful degradation', async () => {
-    // Setup: describeImageWithAI throws network error
+  test('Gemini Vision unavailable -> fallback description -> still analyzes', async () => {
+    // Setup: isGeminiAvailable() returns false
     // Act: simulate image upload
     // Assert:
-    // 1. Image still in editor (TipTap insertion succeeded)
-    // 2. AttachmentMeta added (url valid)
-    // 3. No insight node created
-    // 4. No unhandled promise rejection
+    // 1. describeImageWithAI returns fallback string
+    // 2. analyzeAndSpawn called with fallback string
+    // 3. Insight node still created (from fallback description analysis)
+    //    The insight may be less useful, but something > nothing
   });
 
-  test('image + existing document attachments → both preserved', async () => {
-    // Setup: node already has a PDF AttachmentMeta
+  test('image + existing document attachments -> attachments untouched', async () => {
+    // Setup: node already has a PDF AttachmentMeta in data.attachments
     // Act: upload image
-    // Assert: node.attachments has both PDF and image entries
+    // Assert: node.data.attachments still has only the PDF entry
   });
 });
 ```
@@ -358,74 +356,72 @@ describe('Image Analysis Pipeline — end to end', () => {
 describe('Image Analysis structural safety', () => {
 
   test('imageDescriptionService uses blob.type, not hardcoded MIME', () => {
-    // Read file source, verify no 'image/jpeg' without fallback logic
+    // Read imageDescriptionService.ts source
+    // Verify buildVisionRequestBody receives blob.type (not a string literal)
   });
 
-  test('ALLOWED_IMAGE_MIMES whitelist in imageDescriptionService', () => {
-    // Verify whitelist exists and contains exactly the allowed types
+  test('ALLOWED_IMAGE_MIMES derived from IMAGE_ACCEPTED_MIME_TYPES (SSOT)', () => {
+    // Read imageDescriptionService.ts source
+    // Verify import from canvas/types/image
+    // No duplicate whitelist array
   });
 
-  test('parseImageForAnalysis validates MIME type', () => {
-    // Verify isImageMimeType check before processing
+  test('sanitizeFilename used on image filenames in handler', () => {
+    // Grep useIdeaCardImageHandlers.ts for sanitizeFilename
   });
 
-  test('sanitizeFilename used on image filenames', () => {
-    // Grep useIdeaCardImageHandlers for sanitizeFilename call
-  });
-
-  test('No any types in modified files', () => {
-    // Scan all modified/new files
+  test('No AttachmentMeta created for images', () => {
+    // Grep useIdeaCardImageHandlers.ts for 'AttachmentMeta' -- should NOT match
+    // Grep useIdeaCardImageHandlers.ts for 'updateNodeAttachments' -- should only appear
+    // in the existing document handler context, not in handleAfterImageInsert
   });
 
   test('All modified files under 300 lines', () => {
-    // wc -l check
+    // wc -l check on all modified files
   });
 });
 ```
 
 ### Tech Debt Checkpoint
 
-- [ ] All tests pass (including existing document analysis tests — no regression)
-- [ ] Integration test covers all branches (auto-analyze on/off, premium/free, success/failure)
-- [ ] Structural test prevents MIME bug regression
+- [ ] All tests pass (including existing document analysis tests -- no regression)
+- [ ] Integration test covers: auto-analyze on/off, premium/free, Gemini up/down
+- [ ] Structural test prevents MIME SSOT drift and AttachmentMeta creep
 - [ ] Zero lint errors
 
 ---
 
-## Sub-phase 5E: String Resources & Final Polish
+## Sub-phase 5E: String Resources (if needed)
 
 ### What We Build
 
-Add any missing string resources and ensure the image analysis path is fully covered by error messages.
+Verify string coverage for the image analysis path. Add missing strings only.
 
 ### Files
 
 | File | Action | Lines (est.) |
 |------|--------|-------------|
-| `src/shared/localization/strings.ts` | EDIT | +2 lines |
-| `src/shared/localization/canvasStrings.ts` | EDIT | +3 lines |
+| `src/shared/localization/canvasStrings.ts` | EDIT | +1-2 lines (if needed) |
 
-### Implementation
+### Audit
 
-**`canvasStrings.ts`** additions:
+**Already exists** (no change needed):
+- `canvasStrings.imageUnsupportedType` -- "Unsupported image format. Use JPEG, PNG, GIF, or WebP."
+
+**Potentially needed** (only if we surface analysis status to user):
 ```typescript
-unsupportedImageType: 'Unsupported image format. Use JPEG, PNG, WebP, or GIF.',
-imageAnalysisFailed: 'Could not analyze image. The image is still saved.',
 imageAnalyzing: 'Analyzing image...',
 ```
 
-### TDD Tests
-
-```
-1. strings.canvas.unsupportedImageType exists and is non-empty
-2. strings.canvas.imageAnalysisFailed exists and is non-empty
-3. strings.canvas.imageAnalyzing exists and is non-empty
-```
+**NOT needed** (the plan's original `imageAnalysisFailed` string):
+- `describeImageWithAI` never throws, so there's no user-facing "analysis failed" path for the description step
+- `analyzeAndSpawn` already has its own error toasts (`strings.documentAgent.analysisFailed`)
+- Adding a dead string is tech debt
 
 ### Tech Debt Checkpoint
 
-- [ ] All error messages from string resources
-- [ ] No hardcoded strings in modified files (grep audit)
+- [ ] All error messages from string resources (grep audit of modified files)
+- [ ] No orphan strings added (every string used somewhere)
 - [ ] Zero lint errors
 
 ---
@@ -435,21 +431,22 @@ imageAnalyzing: 'Analyzing image...',
 ```bash
 npx tsc --noEmit          # zero errors
 npm run lint               # zero errors
-npm run test               # ALL pass (including all existing document agent tests)
+npm run test               # ALL pass (including all existing document/image tests)
 
 # File size audit:
 wc -l src/features/knowledgeBank/services/imageDescriptionService.ts  # < 300
-wc -l src/features/canvas/types/document.ts                           # < 300
+wc -l src/features/canvas/services/imageInsertService.ts              # < 300
 wc -l src/features/canvas/hooks/useIdeaCardImageHandlers.ts           # < 300
-wc -l src/features/canvas/services/documentParsingService.ts          # < 300
 
 # Security audit:
 grep -n "sanitizeFilename" src/features/canvas/hooks/useIdeaCardImageHandlers.ts  # present
-grep -n "isImageMimeType" src/features/canvas/services/documentParsingService.ts  # present
-grep -n "ALLOWED_IMAGE_MIMES" src/features/knowledgeBank/services/imageDescriptionService.ts  # present
+grep -n "IMAGE_ACCEPTED_MIME_TYPES" src/features/knowledgeBank/services/imageDescriptionService.ts  # present (SSOT import)
 
 # Zustand audit:
 grep -rn "useCanvasStore()" src/features/canvas/hooks/useIdeaCardImageHandlers.ts  # empty (no bare calls)
+
+# SSOT audit:
+grep -rn "ALLOWED_IMAGE_MIMES\|IMAGE_ANALYSIS_MIME_TYPES" src/  # only in imageDescriptionService (derived from image.ts)
 ```
 
 ---
@@ -458,32 +455,40 @@ grep -rn "useCanvasStore()" src/features/canvas/hooks/useIdeaCardImageHandlers.t
 
 | Potential Debt | How We Prevented It |
 |---------------|-------------------|
-| MIME type injection | Closed `AnalyzableMimeType` union + `ALLOWED_IMAGE_MIMES` whitelist |
-| Filename path traversal | `sanitizeFilename()` on all user-provided filenames |
-| Hardcoded 'image/jpeg' (the original bug) | Structural test explicitly checks for `blob.type` usage |
-| Analysis blocking image insertion | Non-blocking try/catch — image always appears regardless of analysis outcome |
-| Missing error messages | All error paths use `canvasStrings` string resources |
-| Attachment array mutation | Spread operator creates new array → `updateNodeAttachments` is single atomic call |
+| MIME type duplication | Single SSOT: `IMAGE_ACCEPTED_MIME_TYPES` in `image.ts`, imported everywhere |
+| Hardcoded 'image/jpeg' (the original bug) | Structural test verifies `blob.type` usage + whitelist import |
+| Empty blob.type bypass | Explicitly rejected (returns fallback), not silently treated as JPEG |
+| AttachmentMeta/image dual-tracking | Images stay in TipTap only; no `AttachmentMeta` created for images |
+| Callback signature mismatch | `AfterImageInsertFn` type exported, threading `file` + `url` through chain |
+| Analysis blocking image insertion | Non-blocking `void async` pattern; image always appears regardless |
+| Missing error messages | All paths use existing `canvasStrings` / `documentAgent` strings |
 | Zustand anti-patterns | All store reads inside callbacks use `getState()` |
-| Stale closure in callbacks | `useCallback` dependencies are `[nodeId, workspaceId, analyzeAndSpawn]` — all stable refs |
-| Regression on document analysis | Existing document tests run unchanged — pipeline extended, not modified |
-
-**Net new files**: 4 (2 test + 2 test)
-**Files modified**: 5 (imageDescriptionService, document.ts, useIdeaCardImageHandlers, documentParsingService, canvasStrings)
-**Estimated total new lines**: ~370 (mostly tests)
-**Estimated modified lines**: ~50 in production code
+| SRP violation in documentParsingService | No image logic added to PDF/text parser; `describeImageWithAI` called directly |
+| Regression on document analysis | Existing document tests run unchanged; pipeline extended, not modified |
 
 ---
 
-## Summary: Phase 5 vs. Original Plan
+## Summary: Changes Overview
 
-| | Original Plan | Simplified Phase 5 |
-|---|---|---|
-| Files changed | 18 | 5 production + 4 test |
-| SparkleIcon component | Yes (new UI paradigm) | No (reuses existing auto-spawn) |
-| Toolbar toggle duplication | Yes | No (settings toggle sufficient) |
-| "documents" → "attachments" rename | Yes (18 files) | No (label cosmetics ≠ value) |
-| Transient TipTap attributes | Yes (hasExtraction, insightSpawned) | No |
-| User-facing value | Image analysis + insight spawn | Identical |
-| Engineering effort | 3 phases, 55 tasks | 5 sub-phases, ~15 tasks |
-| Risk surface | High (TipTap extension changes) | Low (pipeline extension only) |
+**Production files modified**: 3
+1. `imageDescriptionService.ts` -- MIME fix + validation (5A)
+2. `imageInsertService.ts` -- callback signature widened (5B)
+3. `useIdeaCardImageHandlers.ts` -- analysis wiring (5C)
+
+**Production files with minimal touch**: 1
+4. `useImageInsert.ts` -- callback type update (5B)
+
+**Possibly**: 1
+5. `canvasStrings.ts` -- 1 string if we add analysis toast (5E)
+
+**Test files new**: 3
+- `imageDescriptionService.test.ts` (extended)
+- `useIdeaCardImageHandlers.imageAnalysis.test.ts` (new)
+- `imageAnalysis.integration.test.ts` + `imageAnalysis.structural.test.ts` (new)
+
+**Files NOT modified** (vs. original plan):
+- `document.ts` -- no type widening needed (no `AnalyzableMimeType`)
+- `documentParsingService.ts` -- no `parseImageForAnalysis` wrapper (SRP preserved)
+
+**Estimated total new lines**: ~270 (mostly tests)
+**Estimated modified lines**: ~30 in production code
