@@ -87,7 +87,7 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
             loadedAt: Date.now(),
         });
 
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
         const { result, unmount } = renderHook(() => useWorkspaceLoader('ws-cached'));
 
@@ -105,6 +105,7 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
 
         warnSpy.mockRestore();
         unmount();
+        await new Promise((r) => setTimeout(r, 250));
     });
 
     it('includes hasOfflineData in the return type', async () => {
@@ -123,5 +124,6 @@ describe('useWorkspaceLoader - hasOfflineData', () => {
         expect(result.current).toHaveProperty('hasOfflineData');
         expect(typeof result.current.hasOfflineData).toBe('boolean');
         unmount();
+        await new Promise((r) => setTimeout(r, 250));
     });
 });
