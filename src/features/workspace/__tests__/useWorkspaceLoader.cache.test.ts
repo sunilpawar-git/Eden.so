@@ -85,7 +85,7 @@ describe('useWorkspaceLoader cache-first loading', () => {
             loadedAt: Date.now(),
         });
 
-        const { result } = renderHook(() => useWorkspaceLoader('ws-cached'));
+        const { result, unmount } = renderHook(() => useWorkspaceLoader('ws-cached'));
 
         await waitFor(() => {
             expect(result.current.isLoading).toBe(false);
@@ -95,6 +95,9 @@ describe('useWorkspaceLoader cache-first loading', () => {
         expect(mockCanvasSetState).toHaveBeenCalledWith(
             expect.objectContaining({ nodes: cachedNodes, edges: cachedEdges })
         );
+
+        unmount();
+        await new Promise((r) => setTimeout(r, 10));
     });
 
     it('background-refreshes from Firestore after cache hit when online', async () => {
@@ -110,12 +113,15 @@ describe('useWorkspaceLoader cache-first loading', () => {
         mockLoadNodes.mockResolvedValue(freshNodes);
         mockLoadEdges.mockResolvedValue([]);
 
-        renderHook(() => useWorkspaceLoader('ws-bg'));
+        const { unmount } = renderHook(() => useWorkspaceLoader('ws-bg'));
 
         await waitFor(() => {
             expect(mockLoadNodes).toHaveBeenCalledWith('user-1', 'ws-bg');
         });
         await waitFor(() => expect(mockLoadKBEntries).toHaveBeenCalled());
+
+        unmount();
+        await new Promise((r) => setTimeout(r, 10));
     });
 
     it('background refresh handles nodes without updatedAt gracefully', async () => {
@@ -131,7 +137,7 @@ describe('useWorkspaceLoader cache-first loading', () => {
 
         const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
-        renderHook(() => useWorkspaceLoader('ws-bg-safe'));
+        const { unmount } = renderHook(() => useWorkspaceLoader('ws-bg-safe'));
 
         await waitFor(() => {
             expect(mockLoadNodes).toHaveBeenCalledWith('user-1', 'ws-bg-safe');
@@ -139,6 +145,8 @@ describe('useWorkspaceLoader cache-first loading', () => {
         });
         await waitFor(() => expect(mockLoadKBEntries).toHaveBeenCalled());
 
+        unmount();
+        await new Promise((r) => setTimeout(r, 10));
         consoleSpy.mockRestore();
     });
 
@@ -165,7 +173,7 @@ describe('useWorkspaceLoader cache-first loading', () => {
 
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
-        const { result } = renderHook(() => useWorkspaceLoader('ws-none'));
+        const { result, unmount } = renderHook(() => useWorkspaceLoader('ws-none'));
 
         await waitFor(() => {
             expect(result.current.isLoading).toBe(false);
@@ -173,6 +181,8 @@ describe('useWorkspaceLoader cache-first loading', () => {
         });
         await waitFor(() => expect(mockLoadKBEntries).toHaveBeenCalled());
 
+        unmount();
+        await new Promise((r) => setTimeout(r, 10));
         consoleSpy.mockRestore();
     });
 });
