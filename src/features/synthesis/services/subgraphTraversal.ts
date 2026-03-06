@@ -31,7 +31,8 @@ const EMPTY_GRAPH: SynthesisGraph = { roots: [], rootIds: [], allNodes: [], tota
 
 function getAttachmentSummary(attachments?: AttachmentMeta[]): string {
     if (!attachments?.length) return '';
-    return attachments[0]!.extraction?.summary ?? '';
+    const first = attachments[0];
+    return first?.extraction?.summary ?? '';
 }
 
 function estimateTokens(node: SynthesisNode): number {
@@ -63,7 +64,8 @@ function findRootIds(selectedIds: ReadonlySet<string>, adj: AdjacencyResult): st
         const outB = adj.childrenMap.get(b)?.length ?? 0;
         return outB !== outA ? outB - outA : a.localeCompare(b);
     });
-    return sorted.length > 0 ? [sorted[0]!] : [];
+    const first = sorted[0];
+    return first !== undefined ? [first] : [];
 }
 
 function bfsDepths(rootIds: string[], childrenMap: Map<string, string[]>): { depthMap: Map<string, number>; visited: Set<string> } {

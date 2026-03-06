@@ -86,7 +86,8 @@ export function buildSynthesisPrompt(
 function buildParentMap(graph: SynthesisGraph): Map<string, number> {
     const parentMap = new Map<string, number>();
     for (let i = 0; i < graph.allNodes.length; i++) {
-        const node = graph.allNodes[i]!;
+        const node = graph.allNodes[i];
+        if (node === undefined) continue;
         for (const childId of node.childIds) {
             if (!parentMap.has(childId)) {
                 parentMap.set(childId, i);

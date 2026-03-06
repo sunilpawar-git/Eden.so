@@ -32,7 +32,7 @@ describe('SynthesisFooter', () => {
 
     test('renders action-oriented source link with count', () => {
         render(<SynthesisFooter {...defaultProps} />);
-        const linkText = `${synthesisStrings.labels.viewSources(5)}`;
+        const linkText = synthesisStrings.labels.viewSources(5);
         expect(screen.getByText(linkText)).toBeDefined();
     });
 

@@ -34,10 +34,12 @@ export const SynthesisModePopover = React.memo(function SynthesisModePopover({
                     e.preventDefault();
                     setFocusIndex((i) => (i - 1 + MODES.length) % MODES.length);
                     break;
-                case 'Enter':
+                case 'Enter': {
                     e.preventDefault();
-                    onSelect(MODES[focusIndex]!);
+                    const selected = MODES[focusIndex];
+                    if (selected !== undefined) onSelect(selected);
                     break;
+                }
                 case 'Escape':
                     e.preventDefault();
                     onClose();
