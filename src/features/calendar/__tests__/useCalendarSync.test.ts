@@ -244,7 +244,7 @@ describe('useCalendarSync — REAUTH_REQUIRED paths', () => {
         });
 
         expect(disconnectGoogleCalendar).toHaveBeenCalledOnce();
-        expect((toast as { error: ReturnType<typeof vi.fn> }).error)
+        expect(toast.error)
             .toHaveBeenCalledWith(cs.errors.sessionExpired);
         expect(result.current.error).toBe(cs.errors.sessionExpired);
         const node = useCanvasStore.getState().nodes.find((n) => n.id === 'node-1')!;
@@ -262,7 +262,7 @@ describe('useCalendarSync — REAUTH_REQUIRED paths', () => {
         });
 
         expect(disconnectGoogleCalendar).toHaveBeenCalledOnce();
-        expect((toast as { error: ReturnType<typeof vi.fn> }).error)
+        expect(toast.error)
             .toHaveBeenCalledWith(cs.errors.sessionExpired);
         expect(result.current.error).toBe(cs.errors.sessionExpired);
     });
@@ -277,7 +277,7 @@ describe('useCalendarSync — REAUTH_REQUIRED paths', () => {
         });
 
         expect(disconnectGoogleCalendar).toHaveBeenCalledOnce();
-        expect((toast as { error: ReturnType<typeof vi.fn> }).error)
+        expect(toast.error)
             .toHaveBeenCalledWith(cs.errors.sessionExpired);
         expect(result.current.error).toBe(cs.errors.sessionExpired);
     });

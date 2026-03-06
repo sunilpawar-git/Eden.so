@@ -16,14 +16,14 @@ const DECK2_SRC = readFileSync(
 describe('Deck2Actions — renderer exhaustiveness', () => {
     it('every deck-2 action ID has an entry in DECK2_RENDERERS', () => {
         // Extract keys listed in the DECK2_RENDERERS object literal from source
-        const match = DECK2_SRC.match(
-            /const DECK2_RENDERERS[^=]+=\s*\{([^}]+)\}/s
-        );
+        const regex = /const DECK2_RENDERERS[^=]+=\s*\{([^}]+)\}/s;
+        const match = regex.exec(DECK2_SRC);
         expect(match, 'DECK2_RENDERERS literal not found in source').toBeTruthy();
 
-        const body = match![1];
+        const body = match?.[1];
+        expect(body, 'DECK2_RENDERERS body not found').toBeTruthy();
         // Collect all keys: lines like `    tags: renderTags,`
-        const rendererKeys = [...body.matchAll(/^\s+(\w+):/gm)].map((m) => m[1]);
+        const rendererKeys = [...body!.matchAll(/^\s+(\w+):/gm)].map((m) => m[1]);
 
         for (const actionId of DEFAULT_UTILS_BAR_LAYOUT.deck2) {
             expect(
@@ -35,12 +35,12 @@ describe('Deck2Actions — renderer exhaustiveness', () => {
     });
 
     it('DECK2_RENDERERS has no extra keys not in deck-2 layout', () => {
-        const match = DECK2_SRC.match(
-            /const DECK2_RENDERERS[^=]+=\s*\{([^}]+)\}/s
-        );
+        const regex = /const DECK2_RENDERERS[^=]+=\s*\{([^}]+)\}/s;
+        const match = regex.exec(DECK2_SRC);
         expect(match).toBeTruthy();
-        const body = match![1];
-        const rendererKeys = [...body.matchAll(/^\s+(\w+):/gm)].map((m) => m[1]);
+        const body = match?.[1];
+        expect(body, 'DECK2_RENDERERS body not found').toBeTruthy();
+        const rendererKeys = [...body!.matchAll(/^\s+(\w+):/gm)].map((m) => m[1]);
         const deck2Set = new Set(DEFAULT_UTILS_BAR_LAYOUT.deck2);
 
         for (const key of rendererKeys) {
