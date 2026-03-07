@@ -119,10 +119,11 @@ describe('insertImageIntoEditor — error handling', () => {
         expect(toast.error).toHaveBeenCalledWith(strings.canvas.imageUnsafeUrl);
     });
 
-    it('calls onAfterInsert on successful upload', async () => {
+    it('calls onAfterInsert with (file, permanentUrl) on successful upload', async () => {
         vi.clearAllMocks();
         const editor = makeMockEditor(true);
-        const uploadFn = vi.fn().mockResolvedValue('https://cdn.example.com/img.jpg');
+        const permanentUrl = 'https://cdn.example.com/img.jpg';
+        const uploadFn = vi.fn().mockResolvedValue(permanentUrl);
         const onAfterInsert = vi.fn();
         const file = new File(['x'], 'pic.png', { type: 'image/png' });
 
@@ -130,6 +131,7 @@ describe('insertImageIntoEditor — error handling', () => {
         await insertImageIntoEditor(editor as any, file, uploadFn, onAfterInsert);
 
         expect(onAfterInsert).toHaveBeenCalledOnce();
+        expect(onAfterInsert).toHaveBeenCalledWith(file, permanentUrl);
     });
 
     it('does not call onAfterInsert on upload failure', async () => {

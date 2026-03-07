@@ -5,6 +5,10 @@
  */
 import { strings } from '@/shared/localization/strings';
 import { callGemini, isGeminiAvailable, extractGeminiText } from './geminiClient';
+import { IMAGE_ACCEPTED_MIME_TYPES } from '@/features/canvas/types/image';
+
+/** SSOT-derived whitelist — no duplicate MIME arrays */
+export const ALLOWED_IMAGE_MIMES: ReadonlySet<string> = new Set(IMAGE_ACCEPTED_MIME_TYPES);
 
 /** Convert a Blob to a raw base64 string (no data: prefix) */
 export async function blobToBase64(blob: Blob): Promise<string> {
@@ -16,7 +20,7 @@ export async function blobToBase64(blob: Blob): Promise<string> {
             const base64 = dataUrl.split(',')[1] ?? '';
             resolve(base64);
         };
-        reader.onerror = () => reject(new Error('Failed to read blob'));
+        reader.onerror = () => reject(new Error(strings.canvas.imageReadFailed));
         reader.readAsDataURL(blob);
     });
 }
@@ -32,13 +36,14 @@ export async function describeImageWithAI(
 ): Promise<string> {
     const fallback = `${strings.knowledgeBank.imageDescriptionFallback}: ${filename}`;
 
+    if (!blob.type || !ALLOWED_IMAGE_MIMES.has(blob.type)) return fallback;
     if (!isGeminiAvailable()) return fallback;
 
     try {
         const base64Data = await blobToBase64(blob);
         const prompt = strings.knowledgeBank.imageDescriptionPrompt;
 
-        const body = buildVisionRequestBody(prompt, base64Data, 'image/jpeg');
+        const body = buildVisionRequestBody(prompt, base64Data, blob.type);
         const result = await callGemini(body);
         if (!result.ok) return fallback;
 

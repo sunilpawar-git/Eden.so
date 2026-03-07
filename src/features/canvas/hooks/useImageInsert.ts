@@ -9,6 +9,7 @@ import {
     ensureEditorFocus,
     insertImageIntoEditor,
     type ImageUploadFn,
+    type AfterImageInsertFn,
 } from '../services/imageInsertService';
 
 /** Accept attribute for file picker input (derived from SSOT constants) */
@@ -19,7 +20,7 @@ const FILE_ACCEPT = IMAGE_ACCEPTED_MIME_TYPES.join(',');
  * The returned `triggerFilePicker` opens the native file dialog,
  * then inserts the selected image via progressive upload.
  */
-export function useImageInsert(editor: Editor | null, uploadFn: ImageUploadFn, onAfterInsert?: () => void) {
+export function useImageInsert(editor: Editor | null, uploadFn: ImageUploadFn, onAfterInsert?: AfterImageInsertFn) {
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     const triggerFilePicker = useCallback(() => {

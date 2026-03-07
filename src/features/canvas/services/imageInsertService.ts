@@ -6,8 +6,11 @@ import type { Editor } from '@tiptap/core';
 import { strings } from '@/shared/localization/strings';
 import { toast } from '@/shared/stores/toastStore';
 import { isSafeImageSrc } from '../extensions/imageExtension';
+import { sanitizeFilename } from '@/shared/utils/sanitize';
 
 export type ImageUploadFn = (file: File) => Promise<string>;
+
+export type AfterImageInsertFn = (file: File, permanentUrl: string) => void;
 
 /**
  * Restore focus to the TipTap editor if it is blurred.
@@ -56,14 +59,14 @@ export async function insertImageIntoEditor(
     editor: Editor | null,
     file: File,
     uploadFn: ImageUploadFn,
-    onAfterInsert?: () => void,
+    onAfterInsert?: AfterImageInsertFn,
 ): Promise<void> {
     if (!editor || editor.isDestroyed) return;
 
     ensureEditorFocus(editor);
 
     const dataUrl = await readAsDataUrl(file);
-    editor.chain().focus().setImage({ src: dataUrl, alt: file.name }).run();
+    editor.chain().focus().setImage({ src: dataUrl, alt: sanitizeFilename(file.name) }).run();
 
     try {
         toast.info(strings.canvas.imageUploading);
@@ -74,7 +77,7 @@ export async function insertImageIntoEditor(
             return;
         }
         replaceImageSrc(editor, dataUrl, permanentUrl);
-        try { onAfterInsert?.(); } catch { /* callback error must not trigger upload-failure path */ }
+        try { onAfterInsert?.(file, permanentUrl); } catch { /* callback error must not trigger upload-failure path */ }
     } catch (error: unknown) {
         removeImageBySrc(editor, dataUrl);
         toast.error(getUploadErrorMessage(error));
