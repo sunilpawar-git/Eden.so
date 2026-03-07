@@ -10,10 +10,9 @@ export type ZoomLevel = 'full' | 'heading' | 'dot';
 export function useSemanticZoom(): void {
     const zoom = useStore((s) => s.transform[2]);
 
-    const level: ZoomLevel =
-        zoom >= HEADING_THRESHOLD ? 'full'
-            : zoom >= DOT_THRESHOLD ? 'heading'
-                : 'dot';
+    let level: ZoomLevel = 'dot';
+    if (zoom >= HEADING_THRESHOLD) level = 'full';
+    else if (zoom >= DOT_THRESHOLD) level = 'heading';
 
     useEffect(() => {
         const rfWrapper = document.querySelector('.react-flow');

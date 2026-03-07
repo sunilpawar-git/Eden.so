@@ -29,6 +29,15 @@ function getContainerClassName(isSwitching: boolean): string {
     return isSwitching ? `${styles.canvasContainer ?? ''} ${styles.switching ?? ''}` : (styles.canvasContainer ?? '');
 }
 
+function onMoveEndImpl(currentWorkspaceId: string | undefined, newViewport: Viewport): void {
+    useCanvasStore.getState().setViewport(newViewport);
+    if (!currentWorkspaceId) return;
+    const cached = workspaceCache.get(currentWorkspaceId);
+    if (cached) {
+        workspaceCache.set(currentWorkspaceId, { ...cached, viewport: newViewport });
+    }
+}
+
 function commitOverridesToStore(
     overrides: ReadonlyMap<string, { x: number; y: number }>,
     dispatch: React.Dispatch<{ type: 'RESET' }>,
@@ -56,27 +65,20 @@ function CanvasViewInner() {
     const isFocused = useFocusStore((s) => s.focusedNodeId !== null);
     const isInteractionDisabled = isCanvasLocked || isFocused;
     const isNavigateMode = canvasScrollMode === 'navigate';
-
     const prevRfNodesRef = useRef<PrevRfNodes>({ arr: [], map: new Map() });
     const [dragState, dragDispatch] = useReducer(dragPositionReducer, INITIAL_DRAG_STATE);
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked, dragDispatch);
     useSemanticZoom();
-
     const overridesRef = useRef(dragState.overrides);
     overridesRef.current = dragState.overrides;
     const commitDragOverrides = useCallback(
         () => commitOverridesToStore(overridesRef.current, dragDispatch),
         [], // stable: reads only from overridesRef (a ref, not a reactive value)
     );
-
-    const handleMoveEnd = useCallback((_event: unknown, newViewport: Viewport) => {
-        useCanvasStore.getState().setViewport(newViewport);
-        if (!currentWorkspaceId) return;
-        const cached = workspaceCache.get(currentWorkspaceId);
-        if (cached) {
-            workspaceCache.set(currentWorkspaceId, { ...cached, viewport: newViewport });
-        }
-    }, [currentWorkspaceId]);
+    const handleMoveEnd = useCallback(
+        (_event: unknown, newViewport: Viewport) => onMoveEndImpl(currentWorkspaceId, newViewport),
+        [currentWorkspaceId],
+    );
 
     const rfNodes: Node[] = useMemo(
         () => buildRfNodes(nodes, selectedNodeIds, prevRfNodesRef, dragState.overrides),

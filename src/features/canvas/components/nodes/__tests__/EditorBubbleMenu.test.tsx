@@ -23,7 +23,7 @@ function createMockEditor(overrides: Record<string, boolean> = {}) {
     return {
         chain: vi.fn(() => chain),
         isActive: vi.fn((format: string) => overrides[format] ?? false),
-        getAttributes: vi.fn(() => ({ href: '' })) as any,
+        getAttributes: vi.fn((_name: string): Record<string, unknown> | null => ({ href: '' })),
         _chain: chain,
         _run: runFn,
     };

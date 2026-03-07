@@ -35,6 +35,7 @@ function handleLinkAction(editor: Editor): void {
         return;
     }
     const existing = getLinkHref(editor);
+    // eslint-disable-next-line no-alert
     const url = window.prompt(strings.formatting.linkPrompt, existing);
     if (!url || !SAFE_LINK_URL_START.test(url)) return;
     editor.chain().focus().setLink({ href: url }).run();
