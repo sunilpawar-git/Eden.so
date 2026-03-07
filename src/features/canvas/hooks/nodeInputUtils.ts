@@ -1,4 +1,6 @@
-const URL_REGEX = /https?:\/\/[^\s)]+/g;
+// Stop at whitespace, ), ] — ] prevents greedily consuming markdown link syntax
+// [url](url) which would produce a malformed url](url double-match.
+const URL_REGEX = /https?:\/\/[^\s)\]]+/g;
 const MD_IMAGE_REGEX = /!\[[^\]]*\]\(([^)]+)\)/g;
 
 /** Matches `<div data-attachment='...'></div>` blocks whose JSON payload contains URLs that must NOT be detected as link previews */
