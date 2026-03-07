@@ -9,6 +9,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table';
 import Link from '@tiptap/extension-link';
 import type { Extension } from '@tiptap/core';
+import { DOMParser as PMDOMParser } from '@tiptap/pm/model';
 import { NodeImage } from '../extensions/imageExtension';
 import { markdownToHtml, htmlToMarkdown } from '../services/markdownConverter';
 import { sanitizePastedHtml } from '../services/sanitizePastedHtml';
@@ -75,11 +76,21 @@ export function useTipTapEditor(options: UseTipTapEditorOptions): UseTipTapEdito
         // pasted markdown (tables, headings, lists, etc.) renders as rich nodes
         // rather than raw pipe/hash characters.
         editorProps: {
-            transformPastedText(text: string): string {
-                return markdownToHtml(text);
-            },
+            // Sanitize unsafe attributes from rich HTML pastes (Google Docs, web pages, etc.)
             transformPastedHTML(html: string): string {
                 return sanitizePastedHtml(html);
+            },
+            // Convert plain-text pastes (including markdown) to a ProseMirror Slice.
+            // NOTE: transformPastedText was used here previously but it returns a plain string
+            // that ProseMirror inserts as literal text — causing <p><a href> tags to appear
+            // verbatim. clipboardTextParser returns a Slice directly, bypassing that path.
+            clipboardTextParser(text: string, $context, _plain, view) {
+                const html = markdownToHtml(text);
+                const el = document.createElement('div');
+                el.innerHTML = html;
+                return PMDOMParser.fromSchema(view.state.schema).parseSlice(el, {
+                    context: $context,
+                });
             },
         },
         onBlur: ({ editor: e }) => { onBlur?.(htmlToMarkdown(e.getHTML())); },
