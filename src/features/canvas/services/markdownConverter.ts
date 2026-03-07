@@ -10,6 +10,7 @@ import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import { rehypeWrapListItems, rehypeFixOlContinuity, rehypeCompact, rehypeUnwrapImages } from './rehypePlugins';
 import { isSafeImageSrc } from '../extensions/imageExtension';
+import { SAFE_LINK_PROTOCOLS } from './linkUtils';
 
 /** Unified processor — built once, reused for every conversion */
 const processor = unified()
@@ -181,9 +182,6 @@ function codeToMarkdown(el: Element, childMd: string): string {
     if (el.parentElement?.tagName.toLowerCase() === 'pre') return childMd;
     return `\`${childMd}\``;
 }
-
-/** Protocols considered safe for link serialization (no javascript:, data:, etc.) */
-const SAFE_LINK_PROTOCOLS = /^(https?:|mailto:)/i;
 
 /** Convert anchor element to markdown — only safe protocols are serialized as links */
 function linkToMarkdown(el: Element, childMd: string): string {

@@ -6,6 +6,7 @@ import React, { useCallback } from 'react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import type { Editor } from '@tiptap/react';
 import { strings } from '@/shared/localization/strings';
+import { SAFE_LINK_URL_START } from '../../services/linkUtils';
 import styles from './EditorBubbleMenu.module.css';
 
 interface EditorBubbleMenuProps {
@@ -13,9 +14,6 @@ interface EditorBubbleMenuProps {
 }
 
 type FormatAction = (editor: Editor) => void;
-
-/** Protocols allowed for user-entered link URLs */
-const SAFE_LINK_RE = /^https?:\/\//i;
 
 const FORMATS: ReadonlyArray<{
     key: string;
@@ -37,7 +35,7 @@ function handleLinkAction(editor: Editor): void {
     }
     const existing = (editor.getAttributes('link') as { href?: string }).href ?? '';
     const url = window.prompt(strings.formatting.linkPrompt, existing);
-    if (!url || !SAFE_LINK_RE.test(url)) return;
+    if (!url || !SAFE_LINK_URL_START.test(url)) return;
     editor.chain().focus().setLink({ href: url }).run();
 }
 

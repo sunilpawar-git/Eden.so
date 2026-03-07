@@ -280,7 +280,7 @@ export const strings = {
         italicDisplay: 'I',
         strikethroughDisplay: 'S',
         codeDisplay: '</>',
-        linkDisplay: '\uD83D\uDD17',
+        linkDisplay: '→',
         linkPrompt: 'Enter URL:',
     },
     knowledgeBank: knowledgeBankStrings,
