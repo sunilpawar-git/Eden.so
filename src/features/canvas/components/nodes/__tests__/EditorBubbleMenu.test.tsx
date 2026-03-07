@@ -23,7 +23,7 @@ function createMockEditor(overrides: Record<string, boolean> = {}) {
     return {
         chain: vi.fn(() => chain),
         isActive: vi.fn((format: string) => overrides[format] ?? false),
-        getAttributes: vi.fn(() => ({ href: '' })),
+        getAttributes: vi.fn(() => ({ href: '' })) as any,
         _chain: chain,
         _run: runFn,
     };
@@ -208,5 +208,57 @@ describe('EditorBubbleMenu link button', () => {
             strings.formatting.linkPrompt,
             'https://existing.com',
         );
+    });
+
+    it('handles missing href gracefully (empty string fallback)', () => {
+        const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
+        const editor = createMockEditor();
+        editor.getAttributes.mockReturnValue({}); // No href property
+        render(<EditorBubbleMenu editor={editor as never} />);
+
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.link));
+        expect(promptSpy).toHaveBeenCalledWith(strings.formatting.linkPrompt, '');
+    });
+
+    it('handles null href gracefully', () => {
+        const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
+        const editor = createMockEditor();
+        editor.getAttributes.mockReturnValue({ href: null });
+        render(<EditorBubbleMenu editor={editor as never} />);
+
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.link));
+        expect(promptSpy).toHaveBeenCalledWith(strings.formatting.linkPrompt, '');
+    });
+
+    it('handles non-object getAttributes return gracefully', () => {
+        const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
+        const editor = createMockEditor();
+        editor.getAttributes.mockReturnValue(null);
+        render(<EditorBubbleMenu editor={editor as never} />);
+
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.link));
+        expect(promptSpy).toHaveBeenCalledWith(strings.formatting.linkPrompt, '');
+    });
+
+    it('handles getAttributes exception gracefully', () => {
+        const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
+        const editor = createMockEditor();
+        editor.getAttributes.mockImplementation(() => {
+            throw new Error('getAttributes error');
+        });
+        render(<EditorBubbleMenu editor={editor as never} />);
+
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.link));
+        expect(promptSpy).toHaveBeenCalledWith(strings.formatting.linkPrompt, '');
+    });
+
+    it('handles non-string href value gracefully', () => {
+        const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
+        const editor = createMockEditor();
+        editor.getAttributes.mockReturnValue({ href: 12345 }); // Non-string
+        render(<EditorBubbleMenu editor={editor as never} />);
+
+        fireEvent.mouseDown(screen.getByLabelText(strings.formatting.link));
+        expect(promptSpy).toHaveBeenCalledWith(strings.formatting.linkPrompt, '');
     });
 });

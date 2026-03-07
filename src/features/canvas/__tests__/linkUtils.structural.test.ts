@@ -9,8 +9,8 @@ import { join } from 'path';
 import { describe, it, expect } from 'vitest';
 import { SAFE_LINK_PROTOCOLS, SAFE_LINK_URL_START } from '../services/linkUtils';
 
-const BUBBLE_MENU_SRC = readFileSync(
-    join(process.cwd(), 'src/features/canvas/components/nodes/EditorBubbleMenu.tsx'),
+const LINK_BUTTON_SRC = readFileSync(
+    join(process.cwd(), 'src/features/canvas/components/nodes/LinkButtonItem.tsx'),
     'utf-8',
 );
 
@@ -50,12 +50,12 @@ describe('linkUtils centralization', () => {
 });
 
 describe('linkUtils wiring', () => {
-    it('EditorBubbleMenu imports SAFE_LINK_URL_START from linkUtils', () => {
-        expect(BUBBLE_MENU_SRC).toContain("import { SAFE_LINK_URL_START } from '../../services/linkUtils'");
+    it('LinkButtonItem imports SAFE_LINK_URL_START from linkUtils', () => {
+        expect(LINK_BUTTON_SRC).toContain("import { SAFE_LINK_URL_START } from '../../services/linkUtils'");
     });
 
-    it('EditorBubbleMenu does NOT define local SAFE_LINK_RE', () => {
-        expect(BUBBLE_MENU_SRC).not.toContain('const SAFE_LINK_RE');
+    it('LinkButtonItem does NOT define local SAFE_LINK_RE', () => {
+        expect(LINK_BUTTON_SRC).not.toContain('const SAFE_LINK_RE');
     });
 
     it('markdownConverter imports SAFE_LINK_PROTOCOLS from linkUtils', () => {

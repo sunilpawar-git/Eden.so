@@ -6,7 +6,7 @@ import React, { useCallback } from 'react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import type { Editor } from '@tiptap/react';
 import { strings } from '@/shared/localization/strings';
-import { SAFE_LINK_URL_START } from '../../services/linkUtils';
+import { LinkButtonItem } from './LinkButtonItem';
 import styles from './EditorBubbleMenu.module.css';
 
 interface EditorBubbleMenuProps {
@@ -27,18 +27,6 @@ const FORMATS: ReadonlyArray<{
     { key: 'code', label: strings.formatting.code, display: strings.formatting.codeDisplay, action: (e) => e.chain().focus().toggleCode().run() },
 ];
 
-/** Handle link button: toggle (unset if active) or prompt for URL */
-function handleLinkAction(editor: Editor): void {
-    if (editor.isActive('link')) {
-        editor.chain().focus().unsetLink().run();
-        return;
-    }
-    const existing = (editor.getAttributes('link') as { href?: string }).href ?? '';
-    const url = window.prompt(strings.formatting.linkPrompt, existing);
-    if (!url || !SAFE_LINK_URL_START.test(url)) return;
-    editor.chain().focus().setLink({ href: url }).run();
-}
-
 export const EditorBubbleMenu = React.memo(function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
     const handleFormat = useCallback(
         (e: React.MouseEvent, action: FormatAction) => {
@@ -46,16 +34,6 @@ export const EditorBubbleMenu = React.memo(function EditorBubbleMenu({ editor }:
             e.stopPropagation();
             if (!editor) return;
             action(editor);
-        },
-        [editor],
-    );
-
-    const handleLink = useCallback(
-        (e: React.MouseEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!editor) return;
-            handleLinkAction(editor);
         },
         [editor],
     );
@@ -76,14 +54,7 @@ export const EditorBubbleMenu = React.memo(function EditorBubbleMenu({ editor }:
                         {display}
                     </button>
                 ))}
-                <button
-                    type="button"
-                    aria-label={strings.formatting.link}
-                    className={`${styles.formatButton}${editor.isActive('link') ? ` ${styles.active}` : ''}`}
-                    onMouseDown={handleLink}
-                >
-                    {strings.formatting.linkDisplay}
-                </button>
+                <LinkButtonItem editor={editor} />
             </div>
         </BubbleMenu>
     );
