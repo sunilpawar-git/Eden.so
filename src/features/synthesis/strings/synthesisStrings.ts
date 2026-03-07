@@ -15,12 +15,12 @@ export const synthesisStrings = {
         synthesisOf: 'Synthesis of',
         ideas: 'ideas',
         viewSources: (count: number) => `View ${count} sources`,
-        selectNodes: 'Select connected nodes to synthesize',
         synthesize: 'Synthesize',
         reSynthesize: 'Re-synthesize',
         highlightSources: 'Highlight source ideas',
         generating: 'Synthesizing...',
-        noSelection: 'Select 2 or more connected nodes',
+        synthesisError: 'Synthesis failed. Please try again.',
+        noWorkspace: 'Open a workspace before synthesizing.',
         tooManyNodes: 'Select fewer than 50 nodes for best results',
     },
     prompts: {
@@ -37,5 +37,8 @@ export const synthesisStrings = {
         nodeTemplate: 'Idea',
         depthLabel: 'depth',
         childrenNote: 'elaborates on',
+        contentLabel: 'Content:',
+        attachmentLabel: 'Attachment:',
+        childrenLabel: '→ Children:',
     },
 } as const;

@@ -8,11 +8,14 @@ import { synthesisStrings } from '../strings/synthesisStrings';
 import { captureError } from '@/shared/services/sentryService';
 import styles from './SelectionToolbar.module.css';
 
+const MAX_SYNTHESIS_NODES = 50;
+
 export const SelectionToolbar = React.memo(function SelectionToolbar() {
     const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
     const nodeCount = selectedNodeIds.size;
     const { synthesize, isSynthesizing, canSynthesize } = useSynthesis();
     const [isOpen, setIsOpen] = useState(false);
+    const tooMany = nodeCount > MAX_SYNTHESIS_NODES;
 
     const handleOpenPopover = useCallback(() => {
         setIsOpen((prev) => !prev);
@@ -30,7 +33,7 @@ export const SelectionToolbar = React.memo(function SelectionToolbar() {
         [synthesize]
     );
 
-    if (!canSynthesize) return null;
+    if (nodeCount < 2) return null;
 
     return (
         <div className={styles.toolbar} role="toolbar" aria-label={synthesisStrings.labels.synthesize}>
@@ -40,10 +43,11 @@ export const SelectionToolbar = React.memo(function SelectionToolbar() {
             <button
                 className={styles.synthesizeBtn}
                 onClick={handleOpenPopover}
-                disabled={isSynthesizing}
+                disabled={isSynthesizing || !canSynthesize}
                 aria-haspopup="true"
                 aria-expanded={isOpen}
                 type="button"
+                title={tooMany ? synthesisStrings.labels.tooManyNodes : undefined}
             >
                 {isSynthesizing ? synthesisStrings.labels.generating : synthesisStrings.labels.synthesize}
             </button>

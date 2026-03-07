@@ -8,7 +8,7 @@ import type { CanvasNode, NodePosition } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import type { SynthesisMode } from './synthesisPrompts';
 
-export interface CreateSynthesisNodeParams {
+interface CreateSynthesisNodeParams {
     readonly workspaceId: string;
     readonly position: NodePosition;
     readonly heading: string;

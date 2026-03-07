@@ -30,17 +30,18 @@ function formatNode(
     parentIndex?: number
 ): string {
     const indent = '  '.repeat(node.depth);
-    const { nodeTemplate, depthLabel, childrenNote } = synthesisStrings.prompts;
+    const { nodeTemplate, depthLabel, childrenNote, contentLabel, attachmentLabel, childrenLabel } =
+        synthesisStrings.prompts;
     const parentRef =
         parentIndex !== undefined ? `, ${childrenNote} ${nodeTemplate} ${parentIndex + 1}` : '';
     const header = `${indent}${nodeTemplate} ${index + 1} (${depthLabel} ${node.depth}${parentRef}): "${node.heading}"`;
 
     const lines = [header];
     if (node.content) {
-        lines.push(`${indent}  Content: ${node.content}`);
+        lines.push(`${indent}  ${contentLabel} ${node.content}`);
     }
     if (node.attachmentSummary) {
-        lines.push(`${indent}  Attachment: ${node.attachmentSummary}`);
+        lines.push(`${indent}  ${attachmentLabel} ${node.attachmentSummary}`);
     }
     if (node.childIds.length > 0) {
         const childRefs = node.childIds
@@ -51,7 +52,7 @@ function formatNode(
             .filter(Boolean)
             .join(', ');
         if (childRefs) {
-            lines.push(`${indent}  → Children: ${childRefs}`);
+            lines.push(`${indent}  ${childrenLabel} ${childRefs}`);
         }
     }
     return lines.join('\n');

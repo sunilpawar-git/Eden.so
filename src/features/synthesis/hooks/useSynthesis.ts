@@ -11,42 +11,28 @@ import { executeSynthesis } from '../services/executeSynthesis';
 import { executeReSynthesis } from '../services/reSynthesisHelper';
 import { synthesisStrings } from '../strings/synthesisStrings';
 import { captureError } from '@/shared/services/sentryService';
-
-interface SynthesisState {
-    readonly isSynthesizing: boolean;
-    readonly error: string | null;
-}
-
-type SynthesisAction =
-    | { type: 'START' }
-    | { type: 'COMPLETE' }
-    | { type: 'ERROR'; error: string };
-
-function synthesisReducer(_: SynthesisState, action: SynthesisAction): SynthesisState {
-    switch (action.type) {
-        case 'START': return { isSynthesizing: true, error: null };
-        case 'COMPLETE': return { isSynthesizing: false, error: null };
-        case 'ERROR': return { isSynthesizing: false, error: action.error };
-    }
-}
-
-const INITIAL_STATE: SynthesisState = { isSynthesizing: false, error: null };
+import { toast } from '@/shared/stores/toastStore';
+import { synthesisReducer, INITIAL_STATE, MAX_SYNTHESIS_NODES, extractErrorMsg } from './synthesisReducer';
 
 export function useSynthesis() {
     const [state, dispatch] = useReducer(synthesisReducer, INITIAL_STATE);
     const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
     const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const { getKBContext } = useKnowledgeBankContext();
-    const canSynthesize = selectedNodeIds.size >= 2;
+    const canSynthesize = selectedNodeIds.size >= 2 && selectedNodeIds.size <= MAX_SYNTHESIS_NODES;
 
     const synthesize = useCallback(async (mode: SynthesisMode) => {
+        if (!workspaceId) {
+            toast.error(synthesisStrings.labels.noWorkspace);
+            return;
+        }
         dispatch({ type: 'START' });
         try {
-            await executeSynthesis(mode, workspaceId ?? '', getKBContext);
+            await executeSynthesis(mode, workspaceId, getKBContext);
             dispatch({ type: 'COMPLETE' });
         } catch (err) {
             captureError(err, { context: 'synthesis' });
-            dispatch({ type: 'ERROR', error: err instanceof Error ? err.message : synthesisStrings.labels.generating });
+            dispatch({ type: 'ERROR', error: extractErrorMsg(err) });
         }
     }, [workspaceId, getKBContext]);
 
@@ -57,7 +43,7 @@ export function useSynthesis() {
             dispatch({ type: 'COMPLETE' });
         } catch (err) {
             captureError(err, { context: 'reSynthesis' });
-            dispatch({ type: 'ERROR', error: err instanceof Error ? err.message : synthesisStrings.labels.generating });
+            dispatch({ type: 'ERROR', error: extractErrorMsg(err) });
         }
     }, [getKBContext]);
 
