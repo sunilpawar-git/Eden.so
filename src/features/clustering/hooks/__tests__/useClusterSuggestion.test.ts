@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { computeClusters } from '../../services/similarityService';
+import { labelClusters } from '../../services/clusterLabelService';
+import { toast } from '@/shared/stores/toastStore';
 import { useClusterSuggestion } from '../useClusterSuggestion';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useClusterPreviewStore } from '../../stores/clusterPreviewStore';
@@ -14,10 +17,6 @@ vi.mock('../../services/clusterLabelService', () => ({
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
-
-import { computeClusters } from '../../services/similarityService';
-import { labelClusters } from '../../services/clusterLabelService';
-import { toast } from '@/shared/stores/toastStore';
 
 const mockCompute = vi.mocked(computeClusters);
 const mockLabel = vi.mocked(labelClusters);

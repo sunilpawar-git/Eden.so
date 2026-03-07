@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { callGemini, extractGeminiText } from '@/features/knowledgeBank/services/geminiClient';
 import { labelClusters } from '../clusterLabelService';
 import type { ClusterGroup } from '../../types/cluster';
 import type { CanvasNode } from '@/features/canvas/types/node';
@@ -7,8 +8,6 @@ vi.mock('@/features/knowledgeBank/services/geminiClient', () => ({
     callGemini: vi.fn(),
     extractGeminiText: vi.fn(),
 }));
-
-import { callGemini, extractGeminiText } from '@/features/knowledgeBank/services/geminiClient';
 
 const mockCallGemini = vi.mocked(callGemini);
 const mockExtractText = vi.mocked(extractGeminiText);

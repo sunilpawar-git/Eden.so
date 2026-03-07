@@ -20,7 +20,9 @@ interface SimilarityResult {
 }
 
 function extractNodeText(node: CanvasNode): string {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const heading = node.data?.heading ?? '';
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const output = node.data?.output ?? '';
     return stripHtmlTags(`${heading} ${output}`).trim();
 }
@@ -92,7 +94,7 @@ function agglomerativeClustering(
     threshold: number,
     minSize: number,
 ): { groups: string[][]; unclustered: string[] } {
-    let clusters: string[][] = nodeIds.map((id) => [id]);
+    const clusters: string[][] = nodeIds.map((id) => [id]);
     const indexMap = new Map(nodeIds.map((id, i) => [id, i]));
 
     while (clusters.length > 1) {
