@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { trackSettingsChanged } from '@/shared/services/analyticsService';
 import { downloadAsFile } from '@/shared/utils/fileDownload';
+import { exportStrings } from '@/features/export/strings/exportStrings';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 
@@ -28,7 +29,7 @@ export function useDataExport() {
         };
 
         const json = JSON.stringify(payload, null, 2);
-        downloadAsFile(json, `actionstation-export-${Date.now()}.json`, 'application/json');
+        downloadAsFile(json, `${exportStrings.labels.filenamePrefix}-${Date.now()}.json`, 'application/json');
         trackSettingsChanged('data_export', 'triggered');
     }, []);
 

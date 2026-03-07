@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { collectBranch, collectMultiRootBranch } from '../branchTraversal';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
+import { exportStrings } from '../../strings/exportStrings';
 
 function makeNode(id: string, overrides: Partial<CanvasNode['data']> = {}): CanvasNode {
     return {
@@ -59,7 +60,7 @@ describe('collectBranch', () => {
         expect(result.children).toHaveLength(1);
         expect(result.children[0]!.id).toBe('B');
         expect(result.children[0]!.children).toHaveLength(1);
-        expect(result.children[0]!.children[0]!.content).toBe('(see above)');
+        expect(result.children[0]!.children[0]!.content).toBe(exportStrings.sections.seeAbove);
     });
 
     test('diamond A→B→D, A→C→D inserts cross-reference for D under C', () => {
@@ -76,7 +77,7 @@ describe('collectBranch', () => {
 
         expect(cChild.children).toHaveLength(1);
         expect(cChild.children[0]!.id).toBe('D');
-        expect(cChild.children[0]!.content).toBe('(see above)');
+        expect(cChild.children[0]!.content).toBe(exportStrings.sections.seeAbove);
     });
 
     test('root not found returns null', () => {

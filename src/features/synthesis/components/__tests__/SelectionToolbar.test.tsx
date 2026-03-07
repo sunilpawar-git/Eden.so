@@ -2,8 +2,11 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SelectionToolbar } from '../SelectionToolbar';
 import { synthesisStrings } from '../../strings/synthesisStrings';
+import { exportStrings } from '@/features/export/strings/exportStrings';
 
 const mockSynthesize = vi.fn().mockResolvedValue(undefined);
+const mockHandleQuickCopy = vi.fn();
+const mockHandleOpenExport = vi.fn();
 let mockSelectedSize = 0;
 
 vi.mock('@/shared/services/sentryService', () => ({
@@ -38,6 +41,19 @@ vi.mock('@/features/workspace/stores/workspaceStore', () => ({
 
 vi.mock('@/features/knowledgeBank/hooks/useKnowledgeBankContext', () => ({
     useKnowledgeBankContext: () => ({ getKBContext: vi.fn().mockReturnValue('') }),
+}));
+
+vi.mock('@/features/export/hooks/useExportActions', () => ({
+    useExportActions: () => ({
+        handleQuickCopy: mockHandleQuickCopy,
+        handleOpenExport: mockHandleOpenExport,
+        exportRoots: null,
+        clearExportRoots: vi.fn(),
+    }),
+}));
+
+vi.mock('@/features/export/components/ExportDialog', () => ({
+    ExportDialog: () => null,
 }));
 
 describe('SelectionToolbar', () => {
@@ -83,5 +99,19 @@ describe('SelectionToolbar', () => {
         fireEvent.click(screen.getByText(synthesisStrings.labels.synthesize));
         fireEvent.click(screen.getByText(synthesisStrings.modes.narrative));
         expect(mockSynthesize).toHaveBeenCalledWith('narrative');
+    });
+
+    test('export buttons render when 2+ nodes selected', () => {
+        mockSelectedSize = 3;
+        render(<SelectionToolbar />);
+        expect(screen.getByText(exportStrings.labels.copyBranch)).toBeDefined();
+        expect(screen.getByText(exportStrings.labels.exportSelection)).toBeDefined();
+    });
+
+    test('click Copy as markdown calls handleQuickCopy', () => {
+        mockSelectedSize = 3;
+        render(<SelectionToolbar />);
+        fireEvent.click(screen.getByText(exportStrings.labels.copyBranch));
+        expect(mockHandleQuickCopy).toHaveBeenCalledOnce();
     });
 });

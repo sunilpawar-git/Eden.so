@@ -145,7 +145,6 @@ describe('#14 — node.data access must use optional chaining', () => {
         'features/ai/services/contextChainBuilder.ts', 'features/ai/services/nodePoolBuilder.ts',
         'features/ai/hooks/useNodeTransformation.ts', 'features/canvas/services/documentInsertService.ts',
         'features/workspace/services/mergeNodes.ts', 'app/components/SettingsPanel/sections/AIMemorySection.tsx',
-        'features/export/services/branchTraversal.ts',
     ];
 
     it('no unsafe node.data. access outside stores/types', () => {

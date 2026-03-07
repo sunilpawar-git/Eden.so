@@ -4,6 +4,7 @@
  */
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
+import { exportStrings } from '../strings/exportStrings';
 
 export interface AttachmentExport {
     readonly filename: string;
@@ -43,8 +44,8 @@ function buildNodeMap(nodes: readonly CanvasNode[]): Map<string, CanvasNode> {
     return map;
 }
 
-function extractAttachments(node: CanvasNode): readonly AttachmentExport[] {
-    const attachments = node.data.attachments;
+function extractAttachments(data: CanvasNode['data']): readonly AttachmentExport[] {
+    const attachments = data.attachments;
     if (!attachments || attachments.length === 0) return [];
     return attachments
         .map((a) => ({ filename: a.filename, summary: a.extraction?.summary ?? '' }))
@@ -62,10 +63,12 @@ function buildBranchNode(
     const node = nodeMap.get(nodeId);
     if (!node) return null;
 
+    const data = node.data;
+
     if (visited.has(nodeId)) {
         return {
             id: nodeId,
-            heading: node.data.heading ?? node.data.prompt ?? '', // eslint-disable-line @typescript-eslint/no-deprecated
+            heading: data.heading ?? data.prompt ?? '', // eslint-disable-line @typescript-eslint/no-deprecated
             content: crossRefLabel,
             attachments: [],
             tags: [],
@@ -85,16 +88,16 @@ function buildBranchNode(
         if (child) children.push(child);
     }
 
-    const sourceIds = node.data.synthesisSourceIds;
+    const sourceIds = data.synthesisSourceIds;
     return {
         id: nodeId,
-        heading: node.data.heading ?? node.data.prompt ?? '', // eslint-disable-line @typescript-eslint/no-deprecated
-        content: node.data.output ?? '',
-        attachments: extractAttachments(node),
-        tags: node.data.tags ?? [],
+        heading: data.heading ?? data.prompt ?? '', // eslint-disable-line @typescript-eslint/no-deprecated
+        content: data.output ?? '',
+        attachments: extractAttachments(data),
+        tags: data.tags ?? [],
         children,
         depth,
-        isSynthesis: node.data.colorKey === 'synthesis',
+        isSynthesis: data.colorKey === 'synthesis',
         synthesisSourceCount: Array.isArray(sourceIds) ? sourceIds.length : 0,
     };
 }
@@ -103,7 +106,7 @@ export function collectBranch(
     rootId: string,
     allNodes: readonly CanvasNode[],
     allEdges: readonly CanvasEdge[],
-    crossRefLabel = '(see above)'
+    crossRefLabel = exportStrings.sections.seeAbove
 ): BranchNode | null {
     const nodeMap = buildNodeMap(allNodes);
     if (!nodeMap.has(rootId)) return null;
@@ -117,7 +120,7 @@ export function collectMultiRootBranch(
     selectedIds: ReadonlySet<string>,
     allNodes: readonly CanvasNode[],
     allEdges: readonly CanvasEdge[],
-    crossRefLabel = '(see above)'
+    crossRefLabel = exportStrings.sections.seeAbove
 ): readonly BranchNode[] {
     const relevantEdges = allEdges.filter(
         (e) => selectedIds.has(e.sourceNodeId) && selectedIds.has(e.targetNodeId)

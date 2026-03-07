@@ -12,6 +12,7 @@ export const exportStrings = {
         downloadComplete: 'Download complete',
         noContent: 'No content to export',
         exportError: 'Export failed',
+        filenamePrefix: 'actionstation-export',
     },
     sections: {
         attachments: 'Attachments',
