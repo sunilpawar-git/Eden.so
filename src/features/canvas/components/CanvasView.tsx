@@ -29,7 +29,7 @@ function getContainerClassName(isSwitching: boolean): string {
     return isSwitching ? `${styles.canvasContainer ?? ''} ${styles.switching ?? ''}` : (styles.canvasContainer ?? '');
 }
 
-function onMoveEndImpl(currentWorkspaceId: string | undefined, newViewport: Viewport): void {
+function onMoveEndImpl(currentWorkspaceId: string | null | undefined, newViewport: Viewport): void {
     useCanvasStore.getState().setViewport(newViewport);
     if (!currentWorkspaceId) return;
     const cached = workspaceCache.get(currentWorkspaceId);
