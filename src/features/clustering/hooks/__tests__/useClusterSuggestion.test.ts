@@ -140,4 +140,23 @@ describe('useClusterSuggestion', () => {
             expect.arrayContaining([expect.objectContaining({ id: 'x1' })]),
         );
     });
+
+    it('clearClusters removes accepted clusters from canvas store', () => {
+        useCanvasStore.getState().setClusterGroups([...MOCK_CLUSTERS]);
+
+        const { result } = renderHook(() => useClusterSuggestion());
+        act(() => result.current.clearClusters());
+
+        expect(useCanvasStore.getState().clusterGroups).toHaveLength(0);
+    });
+
+    it('clearClusters does not affect preview phase', () => {
+        useCanvasStore.getState().setClusterGroups([...MOCK_CLUSTERS]);
+
+        const { result } = renderHook(() => useClusterSuggestion());
+        act(() => result.current.clearClusters());
+
+        expect(result.current.phase).toBe('idle');
+        expect(useCanvasStore.getState().clusterGroups).toEqual([]);
+    });
 });

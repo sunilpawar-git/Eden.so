@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { isNodePinned } from '@/features/canvas/types/node';
-import { PlusIcon, GridIcon, FreeFlowIcon, ClusterIcon } from '@/shared/components/icons';
+import { PlusIcon, GridIcon, FreeFlowIcon, ClusterIcon, EraserIcon } from '@/shared/components/icons';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import { clusterStrings } from '@/shared/localization/clusterStrings';
@@ -25,8 +25,9 @@ export function WorkspaceControls() {
 
     const arrangeNodes = useCallback(() => { useCanvasStore.getState().arrangeNodes(); }, []);
     const { animatedArrange } = useArrangeAnimation(null, arrangeNodes);
-    const { suggestClusters } = useClusterActions();
+    const { suggestClusters, clearClusters } = useClusterActions();
     const clusterPhase = useClusterPreviewStore((s) => s.phase);
+    const hasActiveClusters = useCanvasStore((s) => s.clusterGroups.length > 0);
 
     const handleArrangeNodes = useCallback(() => {
         if (nodeCount === 0) return;
@@ -80,6 +81,13 @@ export function WorkspaceControls() {
             >
                 <ClusterIcon size={20} />
             </button>
+            {hasActiveClusters && <>
+                <div className={styles.divider} />
+                <button className={styles.button} onClick={clearClusters}
+                    title={clusterStrings.labels.clearClusters} aria-label={clusterStrings.labels.clearClusters}>
+                    <EraserIcon size={20} />
+                </button>
+            </>}
             <div className={styles.divider} />
             <ClearCanvasButton nodeCount={nodeCount} />
             <div className={styles.divider} />

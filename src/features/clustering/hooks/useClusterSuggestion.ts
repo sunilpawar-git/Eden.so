@@ -46,7 +46,11 @@ export function useClusterActions() {
         useClusterPreviewStore.getState().reset();
     }, []);
 
-    return { suggestClusters, acceptClusters, dismissClusters };
+    const clearClusters = useCallback(() => {
+        useCanvasStore.getState().clearClusterGroups();
+    }, []);
+
+    return { suggestClusters, acceptClusters, dismissClusters, clearClusters };
 }
 
 /** Full hook with actions + subscriptions — use only when component needs reactive phase/preview */
@@ -57,3 +61,4 @@ export function useClusterSuggestion() {
 
     return { ...actions, phase, previewGroups };
 }
+
