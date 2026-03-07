@@ -5,10 +5,9 @@
 import { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { trackSettingsChanged } from '@/shared/services/analyticsService';
+import { downloadAsFile } from '@/shared/utils/fileDownload';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
-
-const REVOKE_DELAY_MS = 200;
 
 function sanitizeNode(node: CanvasNode) {
     return { id: node.id, type: node.type, position: node.position, data: node.data };
@@ -29,15 +28,7 @@ export function useDataExport() {
         };
 
         const json = JSON.stringify(payload, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = `actionstation-export-${Date.now()}.json`;
-        anchor.click();
-
-        setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS);
+        downloadAsFile(json, `actionstation-export-${Date.now()}.json`, 'application/json');
         trackSettingsChanged('data_export', 'triggered');
     }, []);
 

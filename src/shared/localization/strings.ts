@@ -8,6 +8,7 @@ import { securityStrings } from './securityStrings';
 import { settingsStrings } from './settingsStrings';
 import { documentAgentStrings } from '@/features/documentAgent/strings/documentAgentStrings';
 import { synthesisStrings } from '@/features/synthesis/strings/synthesisStrings';
+import { exportStrings } from '@/features/export/strings/exportStrings';
 
 export const strings = {
     app: {
@@ -286,6 +287,7 @@ export const strings = {
     security: securityStrings,
     documentAgent: documentAgentStrings,
     synthesis: synthesisStrings,
+    export: exportStrings,
 } as const;
 
 export type StringKeys = typeof strings;

@@ -91,7 +91,8 @@ export function trackKbEntryAdded(method: 'paste' | 'file'): void {
 type SettingKey =
     | 'theme' | 'canvasGrid' | 'autoSave' | 'autoSaveInterval'
     | 'compactMode' | 'canvasScrollMode' | 'connectorStyle'
-    | 'isCanvasLocked' | 'canvasFreeFlow' | 'autoAnalyzeDocuments' | 'data_export';
+    | 'isCanvasLocked' | 'canvasFreeFlow' | 'autoAnalyzeDocuments' | 'data_export'
+    | 'branch_export';
 
 export function trackSettingsChanged(setting: SettingKey, value: string | boolean | number): void {
     track('settings_changed', { setting, value });
