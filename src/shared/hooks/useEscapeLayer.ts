@@ -34,12 +34,27 @@ function handleGlobalEscape(e: KeyboardEvent): void {
     if (e.key !== 'Escape') return;
     const top = entries[0];
     if (!top) return;
+    e.preventDefault(); // prevent browser fullscreen-exit when Escape is handled by a layer
     e.stopPropagation();
     top.handler();
 }
 
 let listenerAttached = false;
 
+/**
+ * Attaches the Escape listener in the BUBBLE phase (not capture).
+ *
+ * Phase asymmetry with useKeyboardShortcuts (which uses capture):
+ *   useKeyboardShortcuts — CAPTURE phase, fires first.
+ *   useEscapeLayer       — BUBBLE phase,   fires second.
+ *
+ * This is intentional: capture-phase shortcuts that call
+ * e.stopImmediatePropagation() (e.g. ⌘+N) correctly prevent unrelated keys
+ * from reaching the bubble handler. If a future developer adds Escape logic
+ * to useKeyboardShortcuts's capture handler they MUST ensure it does not run
+ * before this priority-ordered system, or the entire dismiss-from-top
+ * contract breaks.
+ */
 function ensureListener(): void {
     if (listenerAttached) return;
     document.addEventListener('keydown', handleGlobalEscape);
@@ -88,6 +103,20 @@ export function useEscapeLayer(
             maybeRemoveListener();
         };
     }, [priority, active]);
+}
+
+/**
+ * Returns the numeric priority of the topmost active entry, or null when no
+ * layer is registered. Use this to suppress plain keyboard shortcuts whenever
+ * any overlay (modal, settings panel, context menu, etc.) is open — without
+ * coupling the shortcut hook to individual store states.
+ *
+ * Correct coupling direction: keyboard hook → escape-layer (not → stores).
+ * Every future overlay automatically participates by registering with
+ * useEscapeLayer — no manual updates to the shortcut hook needed.
+ */
+export function getHighestEscapePriority(): number | null {
+    return entries[0]?.priority ?? null;
 }
 
 /** Visible for testing — returns a snapshot of current active entry count. */

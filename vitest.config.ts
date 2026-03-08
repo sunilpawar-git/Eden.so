@@ -19,5 +19,13 @@ export default defineConfig({
             '**/dist/**',
             '**/functions/**', // Cloud Functions have separate test config
         ],
+        coverage: {
+            // Per-file branch+line thresholds for the keyboard shortcut subsystem.
+            // Enforced when running: vitest run --coverage
+            thresholds: {
+                'src/app/hooks/useKeyboardShortcuts.ts': { branches: 90, lines: 90 },
+                'src/shared/hooks/useEscapeLayer.ts':    { branches: 90, lines: 90 },
+            },
+        },
     },
 });

@@ -38,6 +38,10 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
 
     const handleInputKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
+            // NOTE: Escape here is intentionally local — it hides the tag input field
+            // and is NOT migrated to useEscapeLayer. Correct UX for a controlled text
+            // input; does not interact with canvas-level escape handling.
+            // See PHASE-ESC-N-KEY-BULLETPROOF.md §2.6.
             if (e.key === 'Escape') {
                 setIsInputVisible(false);
                 setInputValue('');

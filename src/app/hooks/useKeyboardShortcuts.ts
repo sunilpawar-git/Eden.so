@@ -13,7 +13,7 @@ import { useEffect, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useHistoryStore } from '@/features/canvas/stores/historyStore';
 import { isEditableTarget } from '@/shared/utils/domGuards';
-import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { useEscapeLayer, getHighestEscapePriority } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import { captureError } from '@/shared/services/sentryService';
 
@@ -23,6 +23,13 @@ interface KeyboardShortcutsOptions {
     onQuickCapture?: () => void;
     /** May be async (shows confirm dialog for bulk deletes). Promise rejections are caught internally. */
     onDeleteNodes?: (nodeIds: string[]) => void | Promise<void>;
+    /**
+     * Returns true during the ~50 ms window after ⌘+N while the newly created
+     * node is being positioned and focused. Prevents a stray plain-n press from
+     * adding a second node during that window (quick-capture race guard).
+     * Provided by KeyboardShortcutsProvider via useQuickCapture.isNodeCreationLocked.
+     */
+    isNodeCreationLocked?: () => boolean;
 }
 
 function hasModifier(e: KeyboardEvent): boolean {
@@ -30,14 +37,18 @@ function hasModifier(e: KeyboardEvent): boolean {
 }
 
 export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
-    const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+    // Subscribe to a BOOLEAN primitive so Zustand's Object.is check suppresses
+    // re-renders when selection changes size but the "has any selection" state
+    // does not change (e.g. 2→3 nodes selected). Subscribing to the full Set
+    // reference would re-render (and re-register the document listener) on
+    // every individual node select/deselect during drag-select operations.
+    const hasSelection = useCanvasStore((s) => s.selectedNodeIds.size > 0);
     const editingNodeId = useCanvasStore((s) => s.editingNodeId);
-    const { onOpenSettings, onAddNode, onQuickCapture, onDeleteNodes } = options;
+    const { onOpenSettings, onAddNode, onQuickCapture, onDeleteNodes, isNodeCreationLocked } = options;
 
-    // NOTE: `selectedNodeIds` is intentionally read via getState() inside
-    // handlePlainShortcuts rather than closed over, so the handler identity
-    // stays stable and we avoid re-registering the document listener on every
-    // selection change.
+    // NOTE: `selectedNodeIds` is read via getState() inside handlePlainShortcuts
+    // (not closed over here) so the handler identity stays stable and we avoid
+    // re-registering the document listener on every selection change.
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
             if (handleModifierShortcuts(e, onQuickCapture, onOpenSettings)) {
@@ -47,9 +58,9 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
             if (editingNodeId) return;
             if (isEditableTarget(e)) return;
 
-            handlePlainShortcuts(e, onAddNode, onDeleteNodes);
+            handlePlainShortcuts(e, onAddNode, onDeleteNodes, isNodeCreationLocked);
         },
-        [editingNodeId, onOpenSettings, onAddNode, onQuickCapture, onDeleteNodes]
+        [editingNodeId, onOpenSettings, onAddNode, onQuickCapture, onDeleteNodes, isNodeCreationLocked]
     );
 
     useEffect(() => {
@@ -59,7 +70,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
         };
     }, [handleKeyDown]);
 
-    const escapeActive = !editingNodeId && selectedNodeIds.size > 0;
+    const escapeActive = !editingNodeId && hasSelection;
     const handleClearSelection = useCallback(() => {
         useCanvasStore.getState().clearSelection();
     }, []);
@@ -122,13 +133,28 @@ function handleModifierShortcuts(
  * Plain (non-modifier) shortcuts for canvas operations.
  * selectedNodeIds is read from getState() at call time so the enclosing
  * handler does not depend on selection changes (avoids re-registration).
+ *
+ * ## Guards applied before dispatching
+ * 1. Overlay guard — suppresses ALL plain shortcuts when any escape-layer with
+ *    priority > CLEAR_SELECTION is active (settings, modal, context menu, etc.).
+ *    Uses getHighestEscapePriority() so every future overlay participates
+ *    automatically without changes here.
+ * 2. Node-creation lock — suppresses plain n during the ~50 ms window after
+ *    ⌘+N while the new node is being created (quick-capture race guard).
  */
 function handlePlainShortcuts(
     e: KeyboardEvent,
     onAddNode?: () => void,
     onDeleteNodes?: (nodeIds: string[]) => void | Promise<void>,
+    isNodeCreationLocked?: () => boolean,
 ): void {
+    // Guard 1: suppress all plain shortcuts while any overlay is open.
+    const topPriority = getHighestEscapePriority();
+    if (topPriority !== null && topPriority > ESCAPE_PRIORITY.CLEAR_SELECTION) return;
+
     if (e.key === 'n' || e.key === 'N') {
+        // Guard 2: suppress n during the quick-capture 50 ms race window.
+        if (isNodeCreationLocked?.()) return;
         e.preventDefault();
         onAddNode?.();
         return;

@@ -30,6 +30,10 @@ export function SearchBar({ onResultClick }: SearchBarProps) {
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
+            // NOTE: Escape here is intentionally local — it clears the search input
+            // and is NOT migrated to useEscapeLayer. The input is a controlled
+            // element, and closing it on Escape is the correct UX for a text field.
+            // See PHASE-ESC-N-KEY-BULLETPROOF.md §2.6.
             if (e.key === 'Escape') {
                 setInputValue('');
                 clear();

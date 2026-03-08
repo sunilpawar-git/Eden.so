@@ -4,7 +4,7 @@
  */
 import { useKeyboardShortcuts } from '@/app/hooks/useKeyboardShortcuts';
 import { useAddNode } from '../hooks/useAddNode';
-import { useQuickCapture } from '../hooks/useQuickCapture';
+import { useQuickCapture, isNodeCreationLocked } from '../hooks/useQuickCapture';
 import { useUndoableActions } from '../hooks/useUndoableActions';
 
 interface KeyboardShortcutsProviderProps {
@@ -23,6 +23,7 @@ export function KeyboardShortcutsProvider({
         onAddNode: handleAddNode,
         onQuickCapture: handleQuickCapture,
         onDeleteNodes: deleteNodeWithUndo,
+        isNodeCreationLocked,
     });
 
     // This component only provides keyboard shortcuts, no UI

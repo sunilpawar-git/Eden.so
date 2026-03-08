@@ -82,6 +82,14 @@ const CLOSURE_VARIABLE_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
         name: 'method call (s.fn(arg)) inside any store selector',
         pattern: /use\w+Store\(\s*\(\s*\w+\s*\)\s*=>\s*\w+\.(?:hasAccess|isPinned|isSelected|getById)\s*\(/,
     },
+    {
+        // Object and array literals in selectors return a NEW reference on every
+        // render — Zustand’s Object.is equality check fails, causing an infinite
+        // re-render loop in ReactFlow. Select raw scalars; derive composites
+        // with useMemo outside the selector.
+        name: 'object or array literal returned from store selector (new reference each render)',
+        pattern: /use\w+Store\(\s*(?:useShallow\s*\()?\s*\(\s*\w+\s*\)\s*=>\s*(?:\{[^}]*\}|\[[^\]]*\])/,
+    },
 ];
 
 /**

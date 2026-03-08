@@ -5,23 +5,33 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts } from '@/app/hooks/useKeyboardShortcuts';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
+import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
+import { isNodeCreationLocked, _resetNodeCreationLock, _setNodeCreationLocked } from '@/features/canvas/hooks/useQuickCapture';
 
 import { fireKeyDown } from './keyboardShortcutTestHelpers';
 
 const { mockClearSelection, mockCanvasStore } = vi.hoisted(() => {
     const mockDeleteNode = vi.fn();
     const mockClearSelection = vi.fn();
+    // Shared mutable state — tests can override selectedNodeIds / editingNodeId.
+    // Reset to defaults in beforeEach so each test gets a clean slate.
+    const _state = {
+        selectedNodeIds: new Set<string>(['node-1']),
+        editingNodeId: null as string | null,
+    };
     const mockCanvasStore = Object.assign(
         vi.fn((selector?: (state: unknown) => unknown) => {
-            const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
-            return selector ? selector(state) : state;
+            return selector ? selector(_state) : _state;
         }),
         {
             getState: () => ({
                 deleteNode: mockDeleteNode,
                 clearSelection: mockClearSelection,
-                selectedNodeIds: new Set(['node-1']),
+                selectedNodeIds: _state.selectedNodeIds,
             }),
+            _state,
         },
     );
     return { mockClearSelection, mockCanvasStore };
@@ -38,6 +48,10 @@ describe('Keyboard Shortcuts Integration', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        _resetEscapeLayer();
+        _resetNodeCreationLock();
+        mockCanvasStore._state.selectedNodeIds = new Set<string>(['node-1']);
+        mockCanvasStore._state.editingNodeId = null;
     });
 
     afterEach(() => { vi.restoreAllMocks(); });
@@ -123,6 +137,29 @@ describe('Keyboard Shortcuts Integration', () => {
         document.removeEventListener('keydown', rivalHandler, { capture: true });
     });
 
+    // ─── E2E: creation-lock window (exercises the real module variable) ────────
+    // This test wires useKeyboardShortcuts to the real isNodeCreationLocked
+    // function so the full path is covered:
+    //   _setNodeCreationLocked() → isNodeCreationLocked() returns true
+    //   → handlePlainShortcuts suppresses n
+    //   → _resetNodeCreationLock() simulates the 50 ms timer callback
+    //   → isNodeCreationLocked() returns false → n fires normally.
+    it('plain n is suppressed during the creation-lock window and allowed once released', () => {
+        const mockOnAddNodeLocal = vi.fn();
+        _setNodeCreationLocked(); // simulate ⌘+N having just fired
+        renderHook(() => useKeyboardShortcuts({
+            onAddNode: mockOnAddNodeLocal,
+            isNodeCreationLocked, // real function reading the module variable
+        }));
+
+        fireKeyDown('n');
+        expect(mockOnAddNodeLocal).not.toHaveBeenCalled(); // lock held
+
+        _resetNodeCreationLock(); // simulate the 50 ms timer callback
+        fireKeyDown('n');
+        expect(mockOnAddNodeLocal).toHaveBeenCalledTimes(1); // lock released
+    });
+
     it('N key from search input should not trigger addNode', () => {
         renderHook(() => useKeyboardShortcuts({ onAddNode: mockOnAddNode }));
 
@@ -142,15 +179,7 @@ describe('Keyboard Shortcuts Integration', () => {
     });
 
     it('shortcuts should be suppressed when editing a node', () => {
-        mockCanvasStore.mockImplementation(
-            (selector?: (state: unknown) => unknown) => {
-                const state = {
-                    selectedNodeIds: new Set(['node-1']),
-                    editingNodeId: 'node-1',
-                };
-                return selector ? selector(state) : state;
-            }
-        );
+        mockCanvasStore._state.editingNodeId = 'node-1';
 
         const mockOnDeleteNodes = vi.fn();
         renderHook(() => useKeyboardShortcuts({
@@ -173,5 +202,74 @@ describe('Keyboard Shortcuts Integration', () => {
         expect(mockOnOpenSettings).toHaveBeenCalledTimes(1);
         fireKeyDown('n', { metaKey: true });
         expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ─── Escape priority ordering ───────────────────────────────────────────────
+describe('Escape priority ordering', () => {
+    beforeEach(() => {
+        _resetEscapeLayer();
+        _resetNodeCreationLock();
+        // Reset canvas store state to prevent bleed from tests in the sibling
+        // describe that mutate _state (e.g. the 'editing node' test sets
+        // editingNodeId = 'node-1' which would suppress plain-n tests here).
+        mockCanvasStore._state.editingNodeId = null;
+        mockCanvasStore._state.selectedNodeIds = new Set<string>(['node-1']);
+    });
+
+    it('fires only the highest-priority handler when multiple overlays are active', () => {
+        const settingsHandler = vi.fn();
+        const modalHandler = vi.fn();
+        // Settings panel = priority 70, Modal (ExportDialog) = priority 80
+        renderHook(() => {
+            useEscapeLayer(ESCAPE_PRIORITY.SETTINGS_PANEL, true, settingsHandler);
+            useEscapeLayer(ESCAPE_PRIORITY.MODAL, true, modalHandler);
+        });
+        fireKeyDown('Escape');
+        expect(modalHandler).toHaveBeenCalledTimes(1);   // highest priority fires
+        expect(settingsHandler).not.toHaveBeenCalled();  // lower priority silent
+    });
+
+    it('falls back to Settings handler after MODAL layer deactivates', () => {
+        const settingsHandler = vi.fn();
+        const modalHandler = vi.fn();
+        const { rerender } = renderHook(
+            ({ modalActive }: { modalActive: boolean }) => {
+                useEscapeLayer(ESCAPE_PRIORITY.SETTINGS_PANEL, true, settingsHandler);
+                useEscapeLayer(ESCAPE_PRIORITY.MODAL, modalActive, modalHandler);
+            },
+            { initialProps: { modalActive: true } },
+        );
+        rerender({ modalActive: false });
+        fireKeyDown('Escape');
+        expect(settingsHandler).toHaveBeenCalledTimes(1);
+        expect(modalHandler).not.toHaveBeenCalled();
+    });
+
+    it('plain n is suppressed when Settings panel is registered and active', () => {
+        const mockOnAddNode = vi.fn();
+        renderHook(() => {
+            useEscapeLayer(ESCAPE_PRIORITY.SETTINGS_PANEL, true, vi.fn());
+            useKeyboardShortcuts({ onAddNode: mockOnAddNode });
+        });
+        fireKeyDown('n');
+        expect(mockOnAddNode).not.toHaveBeenCalled();
+    });
+
+    it('plain n fires normally once all overlays deactivate', () => {
+        const mockOnAddNode = vi.fn();
+        const { rerender } = renderHook(
+            ({ overlayActive }: { overlayActive: boolean }) => {
+                useEscapeLayer(ESCAPE_PRIORITY.SETTINGS_PANEL, overlayActive, vi.fn());
+                useKeyboardShortcuts({ onAddNode: mockOnAddNode });
+            },
+            { initialProps: { overlayActive: true } },
+        );
+        fireKeyDown('n');
+        expect(mockOnAddNode).not.toHaveBeenCalled(); // overlay active
+
+        rerender({ overlayActive: false });
+        fireKeyDown('n');
+        expect(mockOnAddNode).toHaveBeenCalledTimes(1); // overlay gone
     });
 });
