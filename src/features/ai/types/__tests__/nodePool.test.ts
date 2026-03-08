@@ -8,7 +8,7 @@ import type { NodePoolEntry, NodePoolGenerationType } from '../nodePool';
 
 describe('NODE_POOL_TOKEN_BUDGETS', () => {
     it('defines budgets for all generation types', () => {
-        const expectedKeys: NodePoolGenerationType[] = ['single', 'chain', 'transform'];
+        const expectedKeys: NodePoolGenerationType[] = ['single', 'chain', 'transform', 'synthesis'];
         expect(Object.keys(NODE_POOL_TOKEN_BUDGETS).sort()).toEqual(expectedKeys.sort());
     });
 

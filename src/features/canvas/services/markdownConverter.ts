@@ -10,6 +10,7 @@ import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import { rehypeWrapListItems, rehypeFixOlContinuity, rehypeCompact, rehypeUnwrapImages } from './rehypePlugins';
 import { isSafeImageSrc } from '../extensions/imageExtension';
+import { SAFE_LINK_PROTOCOLS } from './linkUtils';
 
 /** Unified processor — built once, reused for every conversion */
 const processor = unified()
@@ -111,6 +112,8 @@ function elementToMarkdown(el: Element, tag: string, childMd: string, depth = 0)
     if (TABLE_SUB_TAGS.has(tag)) return '';
     if (tag === 'strong' || tag === 'b') return `**${childMd}**`;
     if (tag === 'em' || tag === 'i') return `*${childMd}*`;
+    if (tag === 's' || tag === 'del') return `~~${childMd}~~`;
+    if (tag === 'a') return linkToMarkdown(el, childMd);
     if (tag === 'code') return codeToMarkdown(el, childMd);
     if (tag === 'img') return imageToMarkdown(el);
     if (tag in HEADING_PREFIXES) return `${HEADING_PREFIXES[tag]}${childMd}`;
@@ -178,6 +181,13 @@ function tableToMarkdown(table: Element): string {
 function codeToMarkdown(el: Element, childMd: string): string {
     if (el.parentElement?.tagName.toLowerCase() === 'pre') return childMd;
     return `\`${childMd}\``;
+}
+
+/** Convert anchor element to markdown — only safe protocols are serialized as links */
+function linkToMarkdown(el: Element, childMd: string): string {
+    const href = el.getAttribute('href') ?? '';
+    if (!href || !SAFE_LINK_PROTOCOLS.test(href)) return childMd;
+    return `[${childMd}](${href})`;
 }
 
 /** Regex to validate width is numeric-only (prevents injection) */

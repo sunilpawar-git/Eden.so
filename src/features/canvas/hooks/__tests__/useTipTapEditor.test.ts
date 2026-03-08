@@ -166,6 +166,82 @@ describe('useTipTapEditor', () => {
 });
 
 
+describe('useTipTapEditor — clipboardTextParser (paste fix)', () => {
+    it('does NOT provide transformPastedText (replaced by clipboardTextParser)', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: '', placeholder: '' })
+        );
+        const editor = result.current.editor!;
+        // transformPastedText returned HTML-as-string which ProseMirror inserted as
+        // literal text (showing raw <p><a href>...</a></p> tags). It must be absent.
+        expect(editor.view.props.transformPastedText).toBeUndefined();
+    });
+
+    it('provides clipboardTextParser via view.someProp', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: '', placeholder: '' })
+        );
+        const editor = result.current.editor!;
+        type ClipParser = (text: string, $context: unknown, plain: boolean, view: unknown) => import('prosemirror-model').Slice;
+        const parser = editor.view.someProp('clipboardTextParser' as never, (p: ClipParser) => p);
+        expect(parser).toBeDefined();
+    });
+
+    it('clipboardTextParser for a bare URL produces text without literal HTML tags', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: '', placeholder: '' })
+        );
+        const editor = result.current.editor!;
+        type ClipParser = (text: string, $context: unknown, plain: boolean, view: unknown) => import('prosemirror-model').Slice;
+        const parser = editor.view.someProp('clipboardTextParser' as never, (p: ClipParser) => p);
+        expect(parser).toBeDefined();
+
+        const $context = editor.state.doc.resolve(1);
+        const slice = parser!('https://example.com', $context, false, editor.view);
+
+        const text = slice.content.textBetween(0, slice.content.size);
+        expect(text).not.toContain('<a href');
+        expect(text).not.toContain('<p>');
+        expect(text).toContain('https://example.com');
+    });
+
+    it('clipboardTextParser for markdown bold produces text without HTML tags', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: '', placeholder: '' })
+        );
+        const editor = result.current.editor!;
+        type ClipParser = (text: string, $context: unknown, plain: boolean, view: unknown) => import('prosemirror-model').Slice;
+        const parser = editor.view.someProp('clipboardTextParser' as never, (p: ClipParser) => p);
+
+        const $context = editor.state.doc.resolve(1);
+        const slice = parser!('**bold text**', $context, false, editor.view);
+
+        const text = slice.content.textBetween(0, slice.content.size);
+        expect(text).not.toContain('<strong>');
+        expect(text).not.toContain('<p>');
+        expect(text).toContain('bold text');
+    });
+
+    it('clipboardTextParser for raw HTML-as-plaintext renders content not literal tags (bug scenario)', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: '', placeholder: '' })
+        );
+        const editor = result.current.editor!;
+        type ClipParser = (text: string, $context: unknown, plain: boolean, view: unknown) => import('prosemirror-model').Slice;
+        const parser = editor.view.someProp('clipboardTextParser' as never, (p: ClipParser) => p);
+
+        // Simulate pasting raw HTML string as plain text (the bug scenario from screenshots)
+        const $context = editor.state.doc.resolve(1);
+        const rawHtmlText = '<p><a href="https://example.com">https://example.com</a></p>';
+        const slice = parser!(rawHtmlText, $context, false, editor.view);
+
+        const text = slice.content.textBetween(0, slice.content.size);
+        expect(text).not.toContain('<p>');
+        expect(text).not.toContain('<a href');
+        expect(text).toContain('https://example.com');
+    });
+});
+
 describe('useTipTapEditor — table content', () => {
     const TABLE_MD = '| Name | Age |\n|---|---|\n| Alice | 30 |';
     // Raw GFM table HTML — TipTap must retain <table> structure, not collapse to plain text

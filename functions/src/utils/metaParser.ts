@@ -41,7 +41,8 @@ export function parseMetaTags(html: string, url: string): ParsedMetadata {
     const titleTag = root.querySelector('title');
     const title = og('title') ?? tw('title') ?? titleTag?.textContent ?? undefined;
     const description = og('description') ?? tw('description') ?? undefined;
-    const image = og('image') ?? tw('image') ?? undefined;
+    const rawImage = og('image') ?? og('image:secure_url') ?? tw('image') ?? undefined;
+    const image = resolveUrl(rawImage, url);
     const rawCardType = tw('card');
     const cardType = isValidCardType(rawCardType) ? rawCardType : undefined;
     const favicon = resolveFavicon(root, url);
@@ -59,6 +60,13 @@ type CardType = (typeof VALID_CARD_TYPES)[number];
 
 function isValidCardType(value: string | undefined): value is CardType {
     return !!value && (VALID_CARD_TYPES as readonly string[]).includes(value);
+}
+
+/** Resolve a potentially relative URL against a base page URL */
+function resolveUrl(href: string | undefined, pageUrl: string): string | undefined {
+    if (!href) return undefined;
+    try { return new URL(href, pageUrl).href; }
+    catch { return href; }
 }
 
 /** Read content attribute from the first matching meta element */

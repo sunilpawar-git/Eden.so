@@ -18,6 +18,8 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useCanvasStore } from '../stores/canvasStore';
 import { markdownToHtml, htmlToMarkdown } from '../services/markdownConverter';
+import { useTipTapEditor } from '../hooks/useTipTapEditor';
+import { extractUrls } from '../hooks/nodeInputUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -230,6 +232,65 @@ describe('Markdown round-trip fidelity (real TipTap)', () => {
 
     it('empty content round-trips to empty', () => {
         expect(roundTrip('').trim()).toBe('');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 4. clipboardTextParser → markdown serialisation → extractUrls pipeline
+//
+// This test closes the integration gap that caused a real regression:
+//   clipboardTextParser (useTipTapEditor) stores URLs as markdown links [url](url).
+//   extractUrls (nodeInputUtils) must return a clean URL from that format.
+//   Unit tests for each layer passed independently but the interface was untested.
+// ---------------------------------------------------------------------------
+
+describe('clipboardTextParser → markdown → extractUrls pipeline (regression guard)', () => {
+    type ClipParser = (
+        text: string,
+        $context: unknown,
+        plain: boolean,
+        view: unknown,
+    ) => import('prosemirror-model').Slice;
+
+    it('bare URL pasted via clipboardTextParser is detectable by extractUrls without malformed ](', () => {
+        const { result } = renderHook(() =>
+            useTipTapEditor({ initialContent: '', placeholder: '' })
+        );
+        const editor = result.current.editor!;
+        const parser = editor.view.someProp('clipboardTextParser' as never, (p: ClipParser) => p)!;
+
+        // Simulate paste of a bare URL (the path taken after the paste fix)
+        const $context = editor.state.doc.resolve(1);
+        const slice = parser('https://thedankoe.com/letters/some-article/', $context, false, editor.view);
+
+        act(() => {
+            editor.view.dispatch(editor.state.tr.replaceSelection(slice));
+        });
+
+        const markdown = htmlToMarkdown(editor.getHTML());
+        const urls = extractUrls(markdown);
+
+        // Must find exactly one clean URL — no ](  contamination
+        expect(urls).toHaveLength(1);
+        expect(urls[0]).toBe('https://thedankoe.com/letters/some-article/');
+        expect(urls[0]).not.toContain('](');
+    });
+
+    it('URL in markdown link [label](url) format is correctly extracted by extractUrls', () => {
+        // htmlToMarkdown converts <a href="url">label</a> → [label](url)
+        // extractUrls must find the url from the () part, not produce a merged mess
+        const markdown = '[How to Think Like a Genius](https://thedankoe.com/letters/some-article/)';
+        const urls = extractUrls(markdown);
+        expect(urls).toEqual(['https://thedankoe.com/letters/some-article/']);
+    });
+
+    it('URL in self-referential link [url](url) format deduplicates to one clean entry', () => {
+        // clipboardTextParser produces [url](url) when url is used as both label and href
+        const url = 'https://example.com/path/to/page/';
+        const markdown = `[${url}](${url})`;
+        const urls = extractUrls(markdown);
+        expect(urls).toHaveLength(1);
+        expect(urls[0]).toBe(url);
     });
 });
 

@@ -1,11 +1,12 @@
 /**
  * EditorBubbleMenu - Floating formatting toolbar on text selection
- * Renders Bold, Italic, Strikethrough, Code toggle buttons via TipTap BubbleMenu
+ * Renders Bold, Italic, Strikethrough, Code, Link buttons via TipTap BubbleMenu
  */
 import React, { useCallback } from 'react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import type { Editor } from '@tiptap/react';
 import { strings } from '@/shared/localization/strings';
+import { LinkButtonItem } from './LinkButtonItem';
 import styles from './EditorBubbleMenu.module.css';
 
 interface EditorBubbleMenuProps {
@@ -53,6 +54,7 @@ export const EditorBubbleMenu = React.memo(function EditorBubbleMenu({ editor }:
                         {display}
                     </button>
                 ))}
+                <LinkButtonItem editor={editor} />
             </div>
         </BubbleMenu>
     );

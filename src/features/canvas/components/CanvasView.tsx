@@ -14,15 +14,28 @@ import { workspaceCache } from '@/features/workspace/services/workspaceCache';
 import { ZoomControls } from './ZoomControls';
 import { FocusOverlay } from './FocusOverlay';
 import { ViewportSync } from './ViewportSync';
+import { SelectionToolbar } from '@/features/synthesis/components/SelectionToolbar';
+import { ClusterOverlay } from '@/features/clustering/components/ClusterOverlay';
 import { buildRfNodes, cleanupDataShells, type PrevRfNodes } from './buildRfNodes';
 import { mapCanvasEdgesToRfEdges, applyPositionAndRemoveChanges } from './canvasChangeHelpers';
 import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID } from './canvasViewConstants';
 import { useCanvasHandlers } from '../hooks/useCanvasHandlers';
+import { useSemanticZoom } from '../hooks/useSemanticZoom';
+import '@/styles/semanticZoom.css';
 import { dragPositionReducer, INITIAL_DRAG_STATE } from '../hooks/dragPositionReducer';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
     return isSwitching ? `${styles.canvasContainer ?? ''} ${styles.switching ?? ''}` : (styles.canvasContainer ?? '');
+}
+
+function onMoveEndImpl(currentWorkspaceId: string | null | undefined, newViewport: Viewport): void {
+    useCanvasStore.getState().setViewport(newViewport);
+    if (!currentWorkspaceId) return;
+    const cached = workspaceCache.get(currentWorkspaceId);
+    if (cached) {
+        workspaceCache.set(currentWorkspaceId, { ...cached, viewport: newViewport });
+    }
 }
 
 function commitOverridesToStore(
@@ -52,26 +65,20 @@ function CanvasViewInner() {
     const isFocused = useFocusStore((s) => s.focusedNodeId !== null);
     const isInteractionDisabled = isCanvasLocked || isFocused;
     const isNavigateMode = canvasScrollMode === 'navigate';
-
     const prevRfNodesRef = useRef<PrevRfNodes>({ arr: [], map: new Map() });
     const [dragState, dragDispatch] = useReducer(dragPositionReducer, INITIAL_DRAG_STATE);
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked, dragDispatch);
-
+    useSemanticZoom();
     const overridesRef = useRef(dragState.overrides);
     overridesRef.current = dragState.overrides;
     const commitDragOverrides = useCallback(
         () => commitOverridesToStore(overridesRef.current, dragDispatch),
         [], // stable: reads only from overridesRef (a ref, not a reactive value)
     );
-
-    const handleMoveEnd = useCallback((_event: unknown, newViewport: Viewport) => {
-        useCanvasStore.getState().setViewport(newViewport);
-        if (!currentWorkspaceId) return;
-        const cached = workspaceCache.get(currentWorkspaceId);
-        if (cached) {
-            workspaceCache.set(currentWorkspaceId, { ...cached, viewport: newViewport });
-        }
-    }, [currentWorkspaceId]);
+    const handleMoveEnd = useCallback(
+        (_event: unknown, newViewport: Viewport) => onMoveEndImpl(currentWorkspaceId, newViewport),
+        [currentWorkspaceId],
+    );
 
     const rfNodes: Node[] = useMemo(
         () => buildRfNodes(nodes, selectedNodeIds, prevRfNodesRef, dragState.overrides),
@@ -106,7 +113,7 @@ function CanvasViewInner() {
                 maxZoom={2}
                 zoomOnScroll={!isInteractionDisabled && !isNavigateMode}
                 panOnScroll={!isInteractionDisabled && isNavigateMode}
-                panOnDrag={!isInteractionDisabled}
+                panOnDrag={isInteractionDisabled ? false : [1, 2]}
                 nodesDraggable={!isInteractionDisabled}
                 noDragClassName="nodrag"
                 elementsSelectable={!isInteractionDisabled}
@@ -114,11 +121,15 @@ function CanvasViewInner() {
                 {...(isNavigateMode && { panOnScrollMode: PanOnScrollMode.Free })}
                 selectionOnDrag={!isInteractionDisabled}
                 selectionMode={SelectionMode.Partial}
+                panActivationKeyCode="Space"
+                multiSelectionKeyCode="Shift"
             >
                 <ViewportSync viewport={viewport} />
                 {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1} />}
                 <ZoomControls />
             </ReactFlow>
+            <ClusterOverlay />
+            <SelectionToolbar />
             <FocusOverlay />
         </div>
     );

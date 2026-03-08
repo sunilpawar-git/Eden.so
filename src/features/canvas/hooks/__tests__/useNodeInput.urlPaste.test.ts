@@ -28,6 +28,23 @@ describe('extractUrls', () => {
         expect(extractUrls('plain text')).toEqual([]);
     });
 
+    it('extracts clean URL from markdown link [url](url) syntax (post-paste-fix regression guard)', () => {
+        // After the clipboardTextParser fix, pasted URLs are stored as markdown links.
+        // The old URL_REGEX stopped only at ) but not ], causing it to greedily match
+        // https://example.com/path](https://example.com/path — a malformed URL that
+        // breaks server-side thumbnail generation.
+        const md = '[https://thedankoe.com/letters/some-post/](https://thedankoe.com/letters/some-post/)';
+        const result = extractUrls(md);
+        expect(result).toEqual(['https://thedankoe.com/letters/some-post/']);
+        expect(result[0]).not.toContain('](');
+    });
+
+    it('extracts URL from markdown link [label text](url) syntax', () => {
+        const md = '[How to Think Like a Genius](https://thedankoe.com/letters/some-post/)';
+        const result = extractUrls(md);
+        expect(result).toEqual(['https://thedankoe.com/letters/some-post/']);
+    });
+
     it('excludes URLs inside markdown image syntax ![alt](url)', () => {
         const md = '![photo](https://firebasestorage.googleapis.com/v0/b/proj/img.png?alt=media)';
         expect(extractUrls(md)).toEqual([]);

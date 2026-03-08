@@ -97,13 +97,14 @@ export interface KnowledgeBankActions {
 // ── Generation Type Budgets ─────────────────────────────
 
 /** AI generation types that determine KB token budget */
-export type KBGenerationType = 'single' | 'chain' | 'transform';
+export type KBGenerationType = 'single' | 'chain' | 'transform' | 'synthesis';
 
-/** Token budgets per generation type — single gets most room, transform least */
+/** Token budgets per generation type — single gets most room, synthesis/transform least */
 export const KB_TOKEN_BUDGETS: Record<KBGenerationType, number> = {
     single: 12_000,    // No parent chain → more room for KB
     chain: 4_000,      // Parent chain consumes context window
     transform: 3_000,  // Transforms need minimal KB reference
+    synthesis: 3_000,  // Synthesis prompt itself is the primary context
 } as const;
 
 // ── Summary Depth Tiers ────────────────────────────────

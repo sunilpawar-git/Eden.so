@@ -23,7 +23,7 @@ export function useCanvasEdgeHandlers(currentWorkspaceId: string | null, isCanva
             if (isCanvasLocked) return;
             if (connection.source && connection.target) {
                 useCanvasStore.getState().addEdge({
-                    id: `edge-${Date.now()}`,
+                    id: `edge-${crypto.randomUUID()}`,
                     workspaceId: currentWorkspaceId ?? DEFAULT_WORKSPACE_ID,
                     sourceNodeId: connection.source,
                     targetNodeId: connection.target,

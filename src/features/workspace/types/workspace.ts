@@ -1,6 +1,8 @@
 /**
  * Workspace Model - Strict type definition
  */
+import type { ClusterGroup } from '@/features/clustering/types/cluster';
+
 export type CanvasBackground = 'white' | 'light' | 'dark' | 'grid';
 
 export interface CanvasSettings {
@@ -21,6 +23,8 @@ export interface Workspace {
     nodeCount?: number;
     /** Include ALL nodes in this workspace in the AI Canvas Memory pool */
     includeAllNodesInPool?: boolean;
+    /** Persisted cluster groups (stored as workspace metadata, not subcollection) */
+    clusterGroups?: ClusterGroup[];
 }
 
 /**

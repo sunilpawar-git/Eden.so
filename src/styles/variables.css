@@ -1,3 +1,5 @@
+@import './cluster-colors.css';
+
 /**
  * Design Tokens - CSS Variables
  * NO hardcoded colors/dimensions in components
@@ -67,6 +69,9 @@
   --node-status-success: hsl(145, 65%, 42%);
   --node-status-success-bg: hsl(145, 60%, 96%);
   --node-status-success-border: hsl(145, 40%, 82%);
+  --node-status-synthesis: hsl(260, 55%, 58%);
+  --node-status-synthesis-bg: hsl(260, 60%, 96%);
+  --node-status-synthesis-border: hsl(260, 35%, 82%);
 
   /* Toast notification colors */
   --color-success-bg: hsl(145, 65%, 42%);

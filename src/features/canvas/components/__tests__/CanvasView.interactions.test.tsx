@@ -20,6 +20,8 @@ vi.mock('@xyflow/react', async (importOriginal) => {
         ZoomControls: () => <div data-testid="mock-zoom-controls" />,
         useNodesState: (initialNodes: unknown[]) => [initialNodes, vi.fn(), vi.fn()],
         useEdgesState: (initialEdges: unknown[]) => [initialEdges, vi.fn(), vi.fn()],
+        useStore: (selector: (s: Record<string, unknown>) => unknown) =>
+            selector({ transform: [0, 0, 1] }),
     };
 });
 
@@ -198,7 +200,7 @@ describe('CanvasView', () => {
             expect(props.nodesDraggable).toBe(true);
             expect(props.elementsSelectable).toBe(true);
             expect(props.nodesConnectable).toBe(true);
-            expect(props.panOnDrag).toBe(true);
+            expect(props.panOnDrag).toEqual([1, 2]);
         });
     });
 });

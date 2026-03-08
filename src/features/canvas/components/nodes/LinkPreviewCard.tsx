@@ -4,7 +4,7 @@
  * All images are proxied through Cloud Functions for privacy
  * View-only: zero business logic (MVVM)
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useAuthToken } from '../../hooks/useAuthToken';
 import { buildProxiedImageUrl } from '../../utils/imageProxyUrl';
@@ -27,6 +27,7 @@ export const LinkPreviewCard = React.memo(({ preview, onRemove }: LinkPreviewCar
     const handleImageError = useCallback(() => { setImageError(true); }, []);
 
     const proxiedImage = buildProxiedImageUrl(image, token);
+    useEffect(() => { setImageError(false); }, [proxiedImage]);
     const proxiedFavicon = buildProxiedImageUrl(favicon, token);
 
     if (error) {
