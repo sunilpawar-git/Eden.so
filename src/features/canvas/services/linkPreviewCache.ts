@@ -8,7 +8,7 @@ import type { LinkPreviewMetadata } from '../types/node';
 export const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** localStorage key for persisted cache */
-export const STORAGE_KEY = 'eden_link_previews';
+export const STORAGE_KEY = 'eden_link_previews_v2';
 
 /** In-memory cache map (URL → metadata) */
 let memoryCache = new Map<string, LinkPreviewMetadata>();
