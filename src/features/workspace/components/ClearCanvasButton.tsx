@@ -14,7 +14,7 @@ export function ClearCanvasButton({ nodeCount }: ClearCanvasButtonProps) {
     return (
         <button
             className={styles.button}
-            onClick={() => void clearCanvasWithUndo().catch((e) => captureError(e as Error))}
+            onClick={() => void clearCanvasWithUndo().catch((e: unknown) => captureError(e))}
             disabled={nodeCount === 0}
             title={strings.canvas.clearCanvas}
         >

@@ -126,7 +126,7 @@ function handleModifierShortcuts(
 function handlePlainShortcuts(
     e: KeyboardEvent,
     onAddNode?: () => void,
-    onDeleteNodes?: (nodeIds: string[]) => void,
+    onDeleteNodes?: (nodeIds: string[]) => void | Promise<void>,
 ): void {
     if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
@@ -143,7 +143,8 @@ function handlePlainShortcuts(
         // synchronously would clear the user's selection before they confirm,
         // and leave it cleared even if they cancel. deleteNodes() removes the
         // deleted nodes from selectedNodeIds atomically inside the same set() call.
-        void onDeleteNodes?.(ids)?.catch((e: unknown) => captureError(e));
+        const deleteResult = onDeleteNodes?.(ids);
+        if (deleteResult instanceof Promise) void deleteResult.catch((e: unknown) => captureError(e));
         return;
     }
 

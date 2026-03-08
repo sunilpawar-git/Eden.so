@@ -80,7 +80,7 @@ interface CanvasActions {
     setNodes: (nodes: CanvasNode[]) => void;
     insertNodeAtIndex: (node: CanvasNode, index: number) => void;
     /** Batch restore: inserts all entries in ONE set() call, avoiding N-cascade updates */
-    insertNodesAtIndices: (entries: { node: CanvasNode; index: number }[]) => void;
+    insertNodesAtIndices: (entries: Array<{ node: CanvasNode; index: number }>) => void;
     deleteNodes: (nodeIds: string[]) => void;
     setEdges: (edges: CanvasEdge[]) => void;
     clearCanvas: () => void;

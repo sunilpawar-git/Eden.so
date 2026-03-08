@@ -10,6 +10,8 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useHistoryStore } from '@/features/canvas/stores/historyStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
+// vi.mock is hoisted by Vitest above all imports, so this resolves to the mock
+import { toastWithAction as mockToastWithAction } from '@/shared/stores/toastStore';
 
 vi.mock('../../services/workspaceService', () => ({
     deleteWorkspace: vi.fn().mockResolvedValue(undefined),
@@ -29,9 +31,6 @@ vi.mock('@/shared/stores/toastStore', () => ({
     toast: { success: vi.fn(), error: vi.fn() },
     toastWithAction: vi.fn(),
 }));
-
-// Capture the toastWithAction mock so we can inspect it in assertions
-import { toastWithAction as mockToastWithAction } from '@/shared/stores/toastStore';
 
 const NODE_FIXTURE = {
     id: 'node-1',
