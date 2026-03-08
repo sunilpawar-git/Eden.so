@@ -79,7 +79,7 @@ export const strings = {
         clearSelection: 'Clear Selection',
         undo: 'Undo',
         redo: 'Redo',
-        search: 'Search',
+        search: 'Open Search',
     },
     search: searchStrings,
     tags: {

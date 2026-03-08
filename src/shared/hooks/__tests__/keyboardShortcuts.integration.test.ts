@@ -178,6 +178,15 @@ describe('Keyboard Shortcuts Integration', () => {
         input.remove();
     });
 
+    it('Cmd+K focuses search input when shortcut hook is mounted', () => {
+        const ref = { focus: vi.fn(), select: vi.fn() };
+        renderHook(() => useKeyboardShortcuts({ searchInputRef: { current: ref } }));
+        const ev = new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true, cancelable: true });
+        document.dispatchEvent(ev);
+        expect(ref.focus).toHaveBeenCalled();
+        expect(ref.select).toHaveBeenCalled();
+    });
+
     it('shortcuts should be suppressed when editing a node', () => {
         mockCanvasStore._state.editingNodeId = 'node-1';
 

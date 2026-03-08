@@ -13,6 +13,7 @@ interface ShortcutItem {
 /** Static shortcut list — built once at module load (platform never changes mid-session) */
 const SHORTCUTS: readonly ShortcutItem[] = [
     { action: strings.shortcuts.openSettings, keys: formatShortcut(',') },
+    { action: strings.shortcuts.search, keys: formatShortcut('K') },
     { action: strings.shortcuts.addNode, keys: 'N' },
     { action: strings.shortcuts.quickCapture, keys: formatShortcut('N') },
     { action: strings.shortcuts.deleteNode, keys: 'Delete / Backspace' },
