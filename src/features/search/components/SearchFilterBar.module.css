@@ -32,6 +32,9 @@
     background: var(--color-surface);
     color: var(--color-text-primary);
     font-size: var(--font-size-xs);
+    /* prevent calendar picker from forcing a wider control */
+    width: 6rem;
+    box-sizing: border-box;
 }
 
 .dateInput:focus {

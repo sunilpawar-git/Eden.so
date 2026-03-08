@@ -42,7 +42,8 @@
     left: var(--space-sm);
     top: 50%;
     transform: translateY(-50%);
-    font-size: var(--font-size-sm);
+    /* match input text size so icon appears normal */
+    font-size: var(--font-size-md);
     pointer-events: none;
     color: var(--color-text-muted);
 }
@@ -55,7 +56,8 @@
     border: none;
     background: transparent;
     color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
+    /* explicit medium size for better visibility and tap target */
+    font-size: var(--font-size-md);
     cursor: pointer;
     padding: var(--space-xxs);
     border-radius: var(--radius-sm);
