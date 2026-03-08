@@ -5,7 +5,7 @@
  * keyboard shortcuts are wired correctly, and no undo state
  * leaks into Firestore persistence.
  */
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { describe, it, expect } from 'vitest';
 
@@ -76,8 +76,7 @@ describe('Undo/Redo structural wiring', () => {
 
     // 9. No undoStack/redoStack strings in any *Service.ts file
     it('no service file persists undo/redo stacks', () => {
-        const { readdirSync } = require('fs');
-        const { join: joinPath } = require('path');
+        const joinPath = join;
 
         function findServiceFiles(dir: string, results: string[] = []): string[] {
             for (const entry of readdirSync(dir, { withFileTypes: true })) {
