@@ -12,6 +12,7 @@ import { calculateNextNodePosition } from '../stores/canvasStoreHelpers';
 import { calculateSmartPlacement } from '../services/freeFlowPlacementService';
 import { usePanToNode } from './usePanToNode';
 import { trackNodeCreated } from '@/shared/services/analyticsService';
+import { useUndoableActions } from './useUndoableActions';
 
 export function useAddNode() {
     const nodes = useCanvasStore((s) => s.nodes);
@@ -19,6 +20,7 @@ export function useAddNode() {
     const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
     const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
     const { panToPosition } = usePanToNode();
+    const { addNodeWithUndo } = useUndoableActions();
 
     const handleAddNode = useCallback(() => {
         if (!currentWorkspaceId) return;
@@ -33,10 +35,10 @@ export function useAddNode() {
             position
         );
 
-        useCanvasStore.getState().addNode(newNode);
+        addNodeWithUndo(newNode);
         trackNodeCreated('idea');
         panToPosition(position.x, position.y);
-    }, [nodes, currentWorkspaceId, canvasFreeFlow, focusedNodeId, panToPosition]);
+    }, [nodes, currentWorkspaceId, canvasFreeFlow, focusedNodeId, panToPosition, addNodeWithUndo]);
 
     return handleAddNode;
 }

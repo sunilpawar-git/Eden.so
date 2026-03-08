@@ -17,6 +17,8 @@ const SHORTCUTS: readonly ShortcutItem[] = [
     { action: strings.shortcuts.quickCapture, keys: formatShortcut('N') },
     { action: strings.shortcuts.deleteNode, keys: 'Delete / Backspace' },
     { action: strings.shortcuts.clearSelection, keys: 'Escape' },
+    { action: strings.shortcuts.undo, keys: formatShortcut('Z') },
+    { action: strings.shortcuts.redo, keys: formatShortcut('Shift + Z') },
 ];
 
 export function KeyboardSection() {

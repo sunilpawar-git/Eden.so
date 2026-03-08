@@ -4,10 +4,10 @@
  */
 import { useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { useCanvasStore } from '../stores/canvasStore';
 import { useWorkspaceContext } from '@/app/contexts/WorkspaceContext';
 import { DEFAULT_WORKSPACE_ID } from '@/features/workspace/stores/workspaceStore';
 import { createIdeaNode } from '../types/node';
+import { useUndoableActions } from './useUndoableActions';
 
 // Custom event for focusing a newly created node
 export const FOCUS_NODE_EVENT = 'actionstation:focusNode';
@@ -19,6 +19,7 @@ export interface FocusNodeEvent extends CustomEvent {
 export function useQuickCapture() {
     const { screenToFlowPosition } = useReactFlow();
     const { currentWorkspaceId } = useWorkspaceContext();
+    const { addNodeWithUndo } = useUndoableActions();
 
     const handleQuickCapture = useCallback(() => {
         const centerX = window.innerWidth / 2;
@@ -36,14 +37,14 @@ export function useQuickCapture() {
             position
         );
 
-        useCanvasStore.getState().addNode(newNode);
+        addNodeWithUndo(newNode);
 
         setTimeout(() => {
             window.dispatchEvent(
                 new CustomEvent(FOCUS_NODE_EVENT, { detail: { nodeId } })
             );
         }, 50);
-    }, [screenToFlowPosition, currentWorkspaceId]);
+    }, [screenToFlowPosition, currentWorkspaceId, addNodeWithUndo]);
 
     return handleQuickCapture;
 }

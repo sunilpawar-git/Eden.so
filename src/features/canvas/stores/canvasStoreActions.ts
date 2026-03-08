@@ -23,6 +23,8 @@ import {
     toggleNodePoolInArray,
     clearAllNodePoolInArray,
     setNodeColorInArray,
+    insertNodeAtIndexInArray,
+    deleteNodesFromArrays,
 } from './canvasStoreHelpers';
 import { duplicateNode as cloneNode } from '../services/nodeDuplicationService';
 import { EMPTY_SELECTED_IDS, getNodeMap } from './canvasStoreUtils';
@@ -68,6 +70,24 @@ export function createNodeMutationActions(set: SetFn, get: GetFn) {
         },
 
         setNodes: (nodes: CanvasNode[]) => set({ nodes }),
+
+        insertNodeAtIndex: (node: CanvasNode, index: number) =>
+            set((s) => ({ nodes: insertNodeAtIndexInArray(s.nodes, node, index) })),
+
+        /** Bulk delete — single set() call, O(1) Zustand notification vs O(N) */
+        deleteNodes: (nodeIds: string[]) => {
+            const idSet = new Set(nodeIds);
+            set((s) => ({
+                ...deleteNodesFromArrays(s.nodes, s.edges, s.selectedNodeIds, idSet),
+                ...(s.editingNodeId && idSet.has(s.editingNodeId)
+                    ? { editingNodeId: null, draftContent: null, inputMode: 'note' as const }
+                    : {}),
+            }));
+            const state = get();
+            if (state.clusterGroups.length > 0) {
+                state.pruneDeletedNodes(new Set(state.nodes.map((n) => n.id)));
+            }
+        },
 
         clearCanvas: () => set({
             nodes: [], edges: [], selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,

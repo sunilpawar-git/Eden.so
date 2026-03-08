@@ -256,3 +256,39 @@ export function setNodeColorInArray(
     );
 }
 
+/**
+ * Inserts a node at a specific array index (Z-index restoration for undo).
+ * Clamps index to valid range — no out-of-bounds risk.
+ */
+export function insertNodeAtIndexInArray(
+    nodes: CanvasNode[],
+    node: CanvasNode,
+    index: number
+): CanvasNode[] {
+    const clamped = Math.max(0, Math.min(index, nodes.length));
+    const result = [...nodes];
+    result.splice(clamped, 0, node);
+    return result;
+}
+
+/**
+ * Bulk delete multiple nodes and their connected edges in a single pass.
+ * Avoids N separate Zustand notifications — O(1) render vs O(N).
+ */
+export function deleteNodesFromArrays(
+    nodes: CanvasNode[],
+    edges: CanvasEdge[],
+    selectedNodeIds: Set<string>,
+    nodeIds: Set<string>
+): { nodes: CanvasNode[]; edges: CanvasEdge[]; selectedNodeIds: Set<string> } {
+    return {
+        nodes: nodes.filter((node) => !nodeIds.has(node.id)),
+        edges: edges.filter(
+            (edge) => !nodeIds.has(edge.sourceNodeId) && !nodeIds.has(edge.targetNodeId)
+        ),
+        selectedNodeIds: new Set(
+            [...selectedNodeIds].filter((id) => !nodeIds.has(id))
+        ),
+    };
+}
+

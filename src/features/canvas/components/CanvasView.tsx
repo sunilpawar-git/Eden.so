@@ -20,6 +20,7 @@ import { buildRfNodes, cleanupDataShells, type PrevRfNodes } from './buildRfNode
 import { mapCanvasEdgesToRfEdges, applyPositionAndRemoveChanges } from './canvasChangeHelpers';
 import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID } from './canvasViewConstants';
 import { useCanvasHandlers } from '../hooks/useCanvasHandlers';
+import { useDragBatch } from '../hooks/useDragBatch';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
 import '@/styles/semanticZoom.css';
 import { dragPositionReducer, INITIAL_DRAG_STATE } from '../hooks/dragPositionReducer';
@@ -68,12 +69,36 @@ function CanvasViewInner() {
     const prevRfNodesRef = useRef<PrevRfNodes>({ arr: [], map: new Map() });
     const [dragState, dragDispatch] = useReducer(dragPositionReducer, INITIAL_DRAG_STATE);
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked, dragDispatch);
+    const { onNodeDragStart: historyDragStart, onNodeDragStop: historyDragStop } = useDragBatch();
     useSemanticZoom();
     const overridesRef = useRef(dragState.overrides);
     overridesRef.current = dragState.overrides;
     const commitDragOverrides = useCallback(
         () => commitOverridesToStore(overridesRef.current, dragDispatch),
         [], // stable: reads only from overridesRef (a ref, not a reactive value)
+    );
+    const handleNodeDragStop = useCallback(
+        (...args: Parameters<typeof historyDragStop>) => {
+            commitDragOverrides();
+            historyDragStop(...args);
+        },
+        [commitDragOverrides, historyDragStop],
+    );
+    // Adapt NodeDragHandler (event, node, nodes) → SelectionDragHandler (event, nodes)
+    const handleSelectionDragStart = useCallback(
+        (event: React.MouseEvent, nodes: Node[]) => {
+            const dummy = nodes[0] ?? ({ id: '', position: { x: 0, y: 0 }, data: {} } as Node);
+            historyDragStart(event, dummy, nodes);
+        },
+        [historyDragStart],
+    );
+    const handleSelectionDragStopAdapted = useCallback(
+        (event: React.MouseEvent, nodes: Node[]) => {
+            const dummy = nodes[0] ?? ({ id: '', position: { x: 0, y: 0 }, data: {} } as Node);
+            commitDragOverrides();
+            historyDragStop(event, dummy, nodes);
+        },
+        [commitDragOverrides, historyDragStop],
     );
     const handleMoveEnd = useCallback(
         (_event: unknown, newViewport: Viewport) => onMoveEndImpl(currentWorkspaceId, newViewport),
@@ -100,8 +125,10 @@ function CanvasViewInner() {
                 onEdgesChange={handlers.onEdgesChange}
                 onConnect={handlers.onConnect}
                 onSelectionChange={handlers.onSelectionChange}
-                onNodeDragStop={commitDragOverrides}
-                onSelectionDragStop={commitDragOverrides}
+                onNodeDragStart={historyDragStart}
+                onNodeDragStop={handleNodeDragStop}
+                onSelectionDragStart={handleSelectionDragStart}
+                onSelectionDragStop={handleSelectionDragStopAdapted}
                 onMoveEnd={handleMoveEnd}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}

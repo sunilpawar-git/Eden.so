@@ -1,9 +1,17 @@
 /**
  * useKeyboardShortcuts Hook - Global keyboard shortcuts
  * Registered on document capture phase to intercept before browser defaults.
+ *
+ * ## Dual isEditableTarget guard
+ * Modifier shortcuts (Cmd+Z, Cmd+N, etc.) check `isEditableTarget` per-key
+ * so that e.g. Cmd+N still fires inside a <textarea> (Quick Capture) while
+ * Cmd+Z is suppressed so TipTap can own its own undo stack.
+ * Plain shortcuts (n, Delete) must NEVER fire inside editable elements, so a
+ * blanket `isEditableTarget` guard runs once before dispatching.
  */
 import { useEffect, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useHistoryStore } from '@/features/canvas/stores/historyStore';
 import { isEditableTarget } from '@/shared/utils/domGuards';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
@@ -12,6 +20,7 @@ interface KeyboardShortcutsOptions {
     onOpenSettings?: () => void;
     onAddNode?: () => void;
     onQuickCapture?: () => void;
+    onDeleteNodes?: (nodeIds: string[]) => void;
 }
 
 function hasModifier(e: KeyboardEvent): boolean {
@@ -21,8 +30,12 @@ function hasModifier(e: KeyboardEvent): boolean {
 export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
     const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
     const editingNodeId = useCanvasStore((s) => s.editingNodeId);
-    const { onOpenSettings, onAddNode, onQuickCapture } = options;
+    const { onOpenSettings, onAddNode, onQuickCapture, onDeleteNodes } = options;
 
+    // NOTE: `selectedNodeIds` is intentionally read via getState() inside
+    // handlePlainShortcuts rather than closed over, so the handler identity
+    // stays stable and we avoid re-registering the document listener on every
+    // selection change.
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
             if (handleModifierShortcuts(e, onQuickCapture, onOpenSettings)) {
@@ -32,9 +45,9 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
             if (editingNodeId) return;
             if (isEditableTarget(e)) return;
 
-            handlePlainShortcuts(e, onAddNode, selectedNodeIds);
+            handlePlainShortcuts(e, onAddNode, onDeleteNodes);
         },
-        [selectedNodeIds, editingNodeId, onOpenSettings, onAddNode, onQuickCapture]
+        [editingNodeId, onOpenSettings, onAddNode, onQuickCapture, onDeleteNodes]
     );
 
     useEffect(() => {
@@ -73,14 +86,45 @@ function handleModifierShortcuts(
         return true;
     }
 
+    // Undo: Ctrl+Z / Cmd+Z (skip if editing text — let TipTap handle its own undo)
+    if (e.key === 'z' && !e.shiftKey) {
+        if (isEditableTarget(e)) return false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        useHistoryStore.getState().dispatch({ type: 'UNDO' });
+        return true;
+    }
+
+    // Redo: Ctrl+Shift+Z / Cmd+Shift+Z
+    if (e.key === 'z' && e.shiftKey) {
+        if (isEditableTarget(e)) return false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        useHistoryStore.getState().dispatch({ type: 'REDO' });
+        return true;
+    }
+
+    // Redo: Ctrl+Y (Windows convention)
+    if (e.key === 'y') {
+        if (isEditableTarget(e)) return false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        useHistoryStore.getState().dispatch({ type: 'REDO' });
+        return true;
+    }
+
     return false;
 }
 
-/** Plain (non-modifier) shortcuts for canvas operations. */
+/**
+ * Plain (non-modifier) shortcuts for canvas operations.
+ * selectedNodeIds is read from getState() at call time so the enclosing
+ * handler does not depend on selection changes (avoids re-registration).
+ */
 function handlePlainShortcuts(
     e: KeyboardEvent,
     onAddNode?: () => void,
-    selectedNodeIds?: Set<string>,
+    onDeleteNodes?: (nodeIds: string[]) => void,
 ): void {
     if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
@@ -90,9 +134,10 @@ function handlePlainShortcuts(
 
     if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        const store = useCanvasStore.getState();
-        selectedNodeIds?.forEach((nodeId) => store.deleteNode(nodeId));
-        store.clearSelection();
+        const ids = [...useCanvasStore.getState().selectedNodeIds];
+        if (ids.length === 0) return;
+        onDeleteNodes?.(ids);
+        useCanvasStore.getState().clearSelection();
         return;
     }
 

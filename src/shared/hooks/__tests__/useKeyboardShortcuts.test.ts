@@ -9,17 +9,29 @@ import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
 
 import { fireKeyDown } from './keyboardShortcutTestHelpers';
 
-const { mockDeleteNode, mockClearSelection, mockCanvasStore } = vi.hoisted(() => {
+const { mockClearSelection, mockCanvasStore } = vi.hoisted(() => {
     const mockDeleteNode = vi.fn();
     const mockClearSelection = vi.fn();
+    // Shared mutable state — tests can override selectedNodeIds / editingNodeId
+    const _state = {
+        selectedNodeIds: new Set<string>(),
+        editingNodeId: null as string | null,
+    };
     const mockCanvasStore = Object.assign(
         vi.fn((selector?: (state: unknown) => unknown) => {
-            const state = { selectedNodeIds: new Set<string>(), editingNodeId: null };
-            return selector ? selector(state) : state;
+            return selector ? selector(_state) : _state;
         }),
-        { getState: () => ({ deleteNode: mockDeleteNode, clearSelection: mockClearSelection }) },
+        {
+            getState: () => ({
+                ..._state,
+                deleteNode: mockDeleteNode,
+                clearSelection: mockClearSelection,
+                selectedNodeIds: _state.selectedNodeIds,
+            }),
+            _state, // exposed for tests to mutate
+        },
     );
-    return { mockDeleteNode, mockClearSelection, mockCanvasStore };
+    return { mockClearSelection, mockCanvasStore };
 });
 
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
@@ -34,6 +46,8 @@ describe('useKeyboardShortcuts', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         _resetEscapeLayer();
+        mockCanvasStore._state.selectedNodeIds = new Set<string>();
+        mockCanvasStore._state.editingNodeId = null;
     });
 
     afterEach(() => {
@@ -60,52 +74,33 @@ describe('useKeyboardShortcuts', () => {
 
     describe('Delete Node (Delete/Backspace)', () => {
         it('should delete selected nodes when Delete is pressed', () => {
-            mockCanvasStore.mockImplementation(
-                (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds: new Set(['node-1', 'node-2']), editingNodeId: null };
-                    return selector ? selector(state) : state;
-                }
-            );
-            renderHook(() => useKeyboardShortcuts({}));
+            mockCanvasStore._state.selectedNodeIds = new Set(['node-1', 'node-2']);
+            const mockOnDeleteNodes = vi.fn();
+            renderHook(() => useKeyboardShortcuts({ onDeleteNodes: mockOnDeleteNodes }));
             fireKeyDown('Delete');
-            expect(mockDeleteNode).toHaveBeenCalledTimes(2);
-            expect(mockDeleteNode).toHaveBeenCalledWith('node-1');
-            expect(mockDeleteNode).toHaveBeenCalledWith('node-2');
+            expect(mockOnDeleteNodes).toHaveBeenCalledTimes(1);
+            expect(mockOnDeleteNodes).toHaveBeenCalledWith(expect.arrayContaining(['node-1', 'node-2']));
             expect(mockClearSelection).toHaveBeenCalledTimes(1);
         });
 
         it('should delete selected nodes when Backspace is pressed', () => {
-            mockCanvasStore.mockImplementation(
-                (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
-                    return selector ? selector(state) : state;
-                }
-            );
-            renderHook(() => useKeyboardShortcuts({}));
+            mockCanvasStore._state.selectedNodeIds = new Set(['node-1']);
+            const mockOnDeleteNodes = vi.fn();
+            renderHook(() => useKeyboardShortcuts({ onDeleteNodes: mockOnDeleteNodes }));
             fireKeyDown('Backspace');
-            expect(mockDeleteNode).toHaveBeenCalledWith('node-1');
+            expect(mockOnDeleteNodes).toHaveBeenCalledWith(['node-1']);
             expect(mockClearSelection).toHaveBeenCalled();
         });
 
         it('should preventDefault on Delete to block browser default behavior', () => {
-            mockCanvasStore.mockImplementation(
-                (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
-                    return selector ? selector(state) : state;
-                }
-            );
+            mockCanvasStore._state.selectedNodeIds = new Set(['node-1']);
             renderHook(() => useKeyboardShortcuts({}));
             const event = fireKeyDown('Delete');
             expect(event.defaultPrevented).toBe(true);
         });
 
         it('should preventDefault on Backspace to block browser-back navigation', () => {
-            mockCanvasStore.mockImplementation(
-                (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
-                    return selector ? selector(state) : state;
-                }
-            );
+            mockCanvasStore._state.selectedNodeIds = new Set(['node-1']);
             renderHook(() => useKeyboardShortcuts({}));
             const event = fireKeyDown('Backspace');
             expect(event.defaultPrevented).toBe(true);
@@ -114,12 +109,7 @@ describe('useKeyboardShortcuts', () => {
 
     describe('Clear Selection (Escape)', () => {
         it('should clear selection when Escape is pressed', () => {
-            mockCanvasStore.mockImplementation(
-                (selector?: (state: unknown) => unknown) => {
-                    const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
-                    return selector ? selector(state) : state;
-                }
-            );
+            mockCanvasStore._state.selectedNodeIds = new Set(['node-1']);
             renderHook(() => useKeyboardShortcuts({}));
             fireKeyDown('Escape');
             expect(mockClearSelection).toHaveBeenCalledTimes(1);

@@ -4,6 +4,7 @@
  */
 import { useCallback, useState } from 'react';
 import { useCanvasStore, getNodeMap } from '@/features/canvas/stores/canvasStore';
+import { useHistoryStore } from '@/features/canvas/stores/historyStore';
 import { transformContent, type TransformationType } from '../services/geminiService';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
 import { useNodePoolContext } from './useNodePoolContext';
@@ -31,6 +32,9 @@ export function useNodeTransformation() {
             const content = node.data.output;
             if (!content) return;
 
+            // Capture pre-transform state for undo
+            const preTransformOutput = content;
+
             setIsTransforming(true);
 
             try {
@@ -41,6 +45,22 @@ export function useNodeTransformation() {
                 ]);
                 const transformedContent = await transformContent(content, type, poolContext, kbContext);
                 useCanvasStore.getState().updateNodeOutput(nodeId, transformedContent);
+
+                // Push undo command after successful transform
+                useHistoryStore.getState().dispatch({
+                    type: 'PUSH',
+                    command: {
+                        type: 'transformContent',
+                        timestamp: Date.now(),
+                        entityId: nodeId,
+                        undo: () => {
+                            useCanvasStore.getState().updateNodeOutput(nodeId, preTransformOutput);
+                        },
+                        redo: () => {
+                            useCanvasStore.getState().updateNodeOutput(nodeId, transformedContent);
+                        },
+                    },
+                });
             } catch (error) {
                 const message = error instanceof Error ? error.message : strings.errors.aiError;
                 toast.error(message);

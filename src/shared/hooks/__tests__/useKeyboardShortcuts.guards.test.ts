@@ -20,17 +20,18 @@ describe('useKeyboardShortcuts guards', () => {
     const mockOnQuickCapture = vi.fn();
 
     const mockEditingState = (editingNodeId: string | null = null) => {
-        (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-            (selector?: (state: unknown) => unknown) => {
-                const state = {
-                    selectedNodeIds: new Set<string>(),
-                    deleteNode: mockDeleteNode,
-                    clearSelection: mockClearSelection,
-                    editingNodeId,
-                };
-                return selector ? selector(state) : state;
-            }
+        const state = {
+            selectedNodeIds: new Set<string>(),
+            deleteNode: mockDeleteNode,
+            clearSelection: mockClearSelection,
+            editingNodeId,
+        };
+        const mockFn = (useCanvasStore as unknown as ReturnType<typeof vi.fn>);
+        mockFn.mockImplementation(
+            (selector?: (s: unknown) => unknown) => selector ? selector(state) : state,
         );
+        // Also expose getState() so handlePlainShortcuts can read selectedNodeIds
+        (mockFn as unknown as Record<string, unknown>).getState = () => state;
     };
 
     beforeEach(() => {
@@ -50,15 +51,15 @@ describe('useKeyboardShortcuts guards', () => {
 
         it('should not intercept Delete/Backspace when editingNodeId is set', () => {
             const selectedNodeIds = new Set(['node-1']);
-            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-                (selector?: (state: unknown) => unknown) => {
-                    const state = {
-                        selectedNodeIds, deleteNode: mockDeleteNode,
-                        clearSelection: mockClearSelection, editingNodeId: 'node-1',
-                    };
-                    return selector ? selector(state) : state;
-                }
+            const state = {
+                selectedNodeIds, deleteNode: mockDeleteNode,
+                clearSelection: mockClearSelection, editingNodeId: 'node-1',
+            };
+            const mockFn = (useCanvasStore as unknown as ReturnType<typeof vi.fn>);
+            mockFn.mockImplementation(
+                (selector?: (s: unknown) => unknown) => selector ? selector(state) : state,
             );
+            (mockFn as unknown as Record<string, unknown>).getState = () => state;
             renderHook(() => useKeyboardShortcuts({}));
             fireKeyDown('Delete');
             expect(mockDeleteNode).not.toHaveBeenCalled();
@@ -185,14 +186,15 @@ describe('useKeyboardShortcuts guards', () => {
 
         it('should handle N shortcut with multiple nodes selected', () => {
             const selectedNodeIds = new Set(['node-1', 'node-2', 'node-3']);
-            (useCanvasStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-                (selector?: (state: unknown) => unknown) => {
-                    const state = {
-                        selectedNodeIds, deleteNode: mockDeleteNode, clearSelection: mockClearSelection,
-                    };
-                    return selector ? selector(state) : state;
-                }
+            const state = {
+                selectedNodeIds, deleteNode: mockDeleteNode, clearSelection: mockClearSelection,
+                editingNodeId: null,
+            };
+            const mockFn = (useCanvasStore as unknown as ReturnType<typeof vi.fn>);
+            mockFn.mockImplementation(
+                (selector?: (s: unknown) => unknown) => selector ? selector(state) : state,
             );
+            (mockFn as unknown as Record<string, unknown>).getState = () => state;
             renderHook(() => useKeyboardShortcuts({ onAddNode: mockOnAddNode }));
             fireKeyDown('n');
             expect(mockOnAddNode).toHaveBeenCalledTimes(1);

@@ -17,6 +17,7 @@ import { useWorkspaceStore } from '../stores/workspaceStore';
 import { workspaceCache } from '../services/workspaceCache';
 import { mergeNodes, mergeEdges } from '../services/mergeNodes';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
+import { useHistoryStore } from '@/features/canvas/stores/historyStore';
 import { strings } from '@/shared/localization/strings';
 
 interface UseWorkspaceLoaderResult {
@@ -152,6 +153,9 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
     const [hasOfflineData, setHasOfflineData] = useState(false);
 
     useEffect(() => {
+        // History is session-scoped — clear on workspace switch
+        useHistoryStore.getState().dispatch({ type: 'CLEAR' });
+
         if (!user || !workspaceId) {
             setIsLoading(false);
             return;

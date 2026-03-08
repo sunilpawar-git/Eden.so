@@ -8,7 +8,7 @@ import { useKeyboardShortcuts } from '@/app/hooks/useKeyboardShortcuts';
 
 import { fireKeyDown } from './keyboardShortcutTestHelpers';
 
-const { mockDeleteNode, mockClearSelection, mockCanvasStore } = vi.hoisted(() => {
+const { mockClearSelection, mockCanvasStore } = vi.hoisted(() => {
     const mockDeleteNode = vi.fn();
     const mockClearSelection = vi.fn();
     const mockCanvasStore = Object.assign(
@@ -16,9 +16,15 @@ const { mockDeleteNode, mockClearSelection, mockCanvasStore } = vi.hoisted(() =>
             const state = { selectedNodeIds: new Set(['node-1']), editingNodeId: null };
             return selector ? selector(state) : state;
         }),
-        { getState: () => ({ deleteNode: mockDeleteNode, clearSelection: mockClearSelection }) },
+        {
+            getState: () => ({
+                deleteNode: mockDeleteNode,
+                clearSelection: mockClearSelection,
+                selectedNodeIds: new Set(['node-1']),
+            }),
+        },
     );
-    return { mockDeleteNode, mockClearSelection, mockCanvasStore };
+    return { mockClearSelection, mockCanvasStore };
 });
 
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
@@ -73,16 +79,18 @@ describe('Keyboard Shortcuts Integration', () => {
     });
 
     it('Delete should delete selected nodes', () => {
-        renderHook(() => useKeyboardShortcuts({}));
+        const mockOnDeleteNodes = vi.fn();
+        renderHook(() => useKeyboardShortcuts({ onDeleteNodes: mockOnDeleteNodes }));
         fireKeyDown('Delete');
-        expect(mockDeleteNode).toHaveBeenCalledWith('node-1');
+        expect(mockOnDeleteNodes).toHaveBeenCalledWith(['node-1']);
         expect(mockClearSelection).toHaveBeenCalled();
     });
 
     it('Backspace should delete selected nodes', () => {
-        renderHook(() => useKeyboardShortcuts({}));
+        const mockOnDeleteNodes = vi.fn();
+        renderHook(() => useKeyboardShortcuts({ onDeleteNodes: mockOnDeleteNodes }));
         fireKeyDown('Backspace');
-        expect(mockDeleteNode).toHaveBeenCalledWith('node-1');
+        expect(mockOnDeleteNodes).toHaveBeenCalledWith(['node-1']);
         expect(mockClearSelection).toHaveBeenCalled();
     });
 
@@ -141,17 +149,19 @@ describe('Keyboard Shortcuts Integration', () => {
             }
         );
 
+        const mockOnDeleteNodes = vi.fn();
         renderHook(() => useKeyboardShortcuts({
             onAddNode: mockOnAddNode,
             onOpenSettings: mockOnOpenSettings,
             onQuickCapture: mockOnQuickCapture,
+            onDeleteNodes: mockOnDeleteNodes,
         }));
 
         // Non-modifier shortcuts should be suppressed
         fireKeyDown('n');
         expect(mockOnAddNode).not.toHaveBeenCalled();
         fireKeyDown('Delete');
-        expect(mockDeleteNode).not.toHaveBeenCalled();
+        expect(mockOnDeleteNodes).not.toHaveBeenCalled();
         fireKeyDown('Escape');
         expect(mockClearSelection).not.toHaveBeenCalled();
 

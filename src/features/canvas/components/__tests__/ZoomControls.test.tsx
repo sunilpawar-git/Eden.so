@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ZoomControls } from '../ZoomControls';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { useHistoryStore } from '../../stores/historyStore';
 import { strings } from '@/shared/localization/strings';
 import { ReactFlowProvider } from '@xyflow/react';
 
@@ -25,6 +26,8 @@ describe('ZoomControls', () => {
         vi.clearAllMocks();
         // Reset settings store
         useSettingsStore.setState({ isCanvasLocked: false });
+        // Reset history store
+        useHistoryStore.getState().dispatch({ type: 'CLEAR' });
     });
 
     const renderWithProvider = (component: React.ReactNode) => {
@@ -79,5 +82,67 @@ describe('ZoomControls', () => {
 
         const lockButton = screen.getByTestId('lock-button');
         expect(lockButton).toHaveAttribute('aria-label', zc.unlockCanvas);
+    });
+
+    // ── Undo/Redo button tests ─────────────────────────────────────────────
+
+    const hc = strings.canvas.history;
+
+    it('should render undo button with correct aria-label', () => {
+        renderWithProvider(<ZoomControls />);
+        expect(screen.getByTestId('undo-button')).toHaveAttribute('aria-label', hc.undoButton);
+    });
+
+    it('should render redo button with correct aria-label', () => {
+        renderWithProvider(<ZoomControls />);
+        expect(screen.getByTestId('redo-button')).toHaveAttribute('aria-label', hc.redoButton);
+    });
+
+    it('undo button is disabled when undoStack is empty', () => {
+        renderWithProvider(<ZoomControls />);
+        expect(screen.getByTestId('undo-button')).toBeDisabled();
+    });
+
+    it('redo button is disabled when redoStack is empty', () => {
+        renderWithProvider(<ZoomControls />);
+        expect(screen.getByTestId('redo-button')).toBeDisabled();
+    });
+
+    it('undo button is enabled when undoStack has entries', () => {
+        useHistoryStore.getState().dispatch({
+            type: 'PUSH',
+            command: { type: 'deleteNode', timestamp: Date.now(), undo: vi.fn(), redo: vi.fn() },
+        });
+        renderWithProvider(<ZoomControls />);
+        expect(screen.getByTestId('undo-button')).not.toBeDisabled();
+    });
+
+    it('clicking undo button dispatches UNDO to historyStore', () => {
+        const undoFn = vi.fn();
+        useHistoryStore.getState().dispatch({
+            type: 'PUSH',
+            command: { type: 'deleteNode', timestamp: Date.now(), undo: undoFn, redo: vi.fn() },
+        });
+        renderWithProvider(<ZoomControls />);
+        fireEvent.click(screen.getByTestId('undo-button'));
+        expect(undoFn).toHaveBeenCalledOnce();
+    });
+
+    it('clicking redo button dispatches REDO to historyStore', () => {
+        const redoFn = vi.fn();
+        useHistoryStore.getState().dispatch({
+            type: 'PUSH',
+            command: { type: 'deleteNode', timestamp: Date.now(), undo: vi.fn(), redo: redoFn },
+        });
+        useHistoryStore.getState().dispatch({ type: 'UNDO' });
+        renderWithProvider(<ZoomControls />);
+        fireEvent.click(screen.getByTestId('redo-button'));
+        expect(redoFn).toHaveBeenCalledOnce();
+    });
+
+    it('divider renders between undo/redo and zoom buttons', () => {
+        const { container } = renderWithProvider(<ZoomControls />);
+        const dividers = container.querySelectorAll('[class*="divider"]');
+        expect(dividers.length).toBeGreaterThanOrEqual(1);
     });
 });

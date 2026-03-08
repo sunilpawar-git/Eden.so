@@ -88,11 +88,19 @@ export function trackKbEntryAdded(method: 'paste' | 'file'): void {
     track('kb_entry_added', { method });
 }
 
+export function trackCanvasUndo(commandType: string): void {
+    track('canvas_undo', { command_type: commandType });
+}
+
+export function trackCanvasRedo(commandType: string): void {
+    track('canvas_redo', { command_type: commandType });
+}
+
 type SettingKey =
     | 'theme' | 'canvasGrid' | 'autoSave' | 'autoSaveInterval'
     | 'compactMode' | 'canvasScrollMode' | 'connectorStyle'
     | 'isCanvasLocked' | 'canvasFreeFlow' | 'autoAnalyzeDocuments' | 'data_export'
-    | 'branch_export';
+    | 'branch_export' | 'canvas_undo' | 'canvas_redo';
 
 export function trackSettingsChanged(setting: SettingKey, value: string | boolean | number): void {
     track('settings_changed', { setting, value });
