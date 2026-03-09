@@ -31,6 +31,7 @@ import { usePinnedWorkspaceStore } from '@/features/workspace/stores/pinnedWorks
 import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { strings } from '@/shared/localization/strings';
+import { OnboardingWalkthrough } from '@/features/onboarding';
 import '@/styles/global.css';
 
 // Lazy load non-critical components for better initial load performance
@@ -102,6 +103,7 @@ function AuthenticatedApp() {
                         onClose={() => setIsSettingsOpen(false)}
                     />
                 </Suspense>
+                <OnboardingWalkthrough />
             </ReactFlowProvider>
         </WorkspaceContext.Provider>
     );

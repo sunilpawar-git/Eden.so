@@ -130,6 +130,28 @@ export function trackAggregationGenerated(classificationCount: number): void {
     track('aggregation_generated', { classification_count: classificationCount });
 }
 
+// ── Onboarding events ─────────────────────────────────────────────────────────
+
+export function trackOnboardingWelcomeShown(): void {
+    track('onboarding_welcome_shown');
+}
+
+export function trackOnboardingWelcomeDismissed(): void {
+    track('onboarding_welcome_dismissed');
+}
+
+export function trackOnboardingStepViewed(step: string, index: number): void {
+    track('onboarding_step_viewed', { step, index });
+}
+
+export function trackOnboardingCompleted(stepsViewed: number): void {
+    track('onboarding_completed', { steps_viewed: stepsViewed });
+}
+
+export function trackOnboardingSkipped(atStep: number): void {
+    track('onboarding_skipped', { at_step: atStep });
+}
+
 // ── Internal helper ───────────────────────────────────────────────────────────
 
 function track(event: string, properties?: Record<string, unknown>): void {

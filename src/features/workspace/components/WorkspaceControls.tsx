@@ -49,6 +49,7 @@ export function WorkspaceControls() {
                 className={styles.button}
                 onClick={handleAddNode}
                 title={strings.workspace.addNodeTooltip}
+                data-testid="add-node-button"
             >
                 <PlusIcon size={20} />
             </button>

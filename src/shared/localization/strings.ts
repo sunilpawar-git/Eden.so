@@ -11,6 +11,7 @@ import { synthesisStrings } from '@/features/synthesis/strings/synthesisStrings'
 import { exportStrings } from '@/features/export/strings/exportStrings';
 import { contextMenuStrings } from './contextMenuStrings';
 import { searchStrings } from '@/features/search/strings/searchStrings';
+import { onboardingStrings } from '@/features/onboarding/strings/onboardingStrings';
 
 export const strings = {
     app: {
@@ -285,6 +286,7 @@ export const strings = {
     synthesis: synthesisStrings,
     export: exportStrings,
     contextMenu: contextMenuStrings,
+    onboarding: onboardingStrings,
 } as const;
 
 export type StringKeys = typeof strings;
