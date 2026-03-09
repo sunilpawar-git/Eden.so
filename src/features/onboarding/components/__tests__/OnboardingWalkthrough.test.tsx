@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import { OnboardingWalkthrough } from '../OnboardingWalkthrough';
 import { WELCOME_STORAGE_KEY, STORAGE_KEY } from '../../types/onboarding';
+import { seedDemoNodes } from '../../utils/seedDemoNodes';
+import {
+    trackOnboardingWelcomeShown,
+    trackOnboardingWelcomeDismissed,
+    trackOnboardingStepViewed,
+    trackOnboardingCompleted,
+    trackOnboardingSkipped,
+} from '@/shared/services/analyticsService';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 
@@ -45,15 +53,6 @@ vi.mock('@/shared/services/analyticsService', () => ({
 }));
 
 vi.mock('@/shared/hooks/useEscapeLayer', () => ({ useEscapeLayer: vi.fn() }));
-
-import { seedDemoNodes } from '../../utils/seedDemoNodes';
-import {
-    trackOnboardingWelcomeShown,
-    trackOnboardingWelcomeDismissed,
-    trackOnboardingStepViewed,
-    trackOnboardingCompleted,
-    trackOnboardingSkipped,
-} from '@/shared/services/analyticsService';
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 

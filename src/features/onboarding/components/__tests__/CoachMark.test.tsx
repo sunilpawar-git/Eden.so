@@ -99,7 +99,7 @@ describe('CoachMark', () => {
     it('backdrop clip-path string contains target coordinates', () => {
         renderWithTarget();
         const backdrop = document.body.querySelector('[data-testid="coach-mark-backdrop"]') as HTMLElement;
-        expect(backdrop?.style.clipPath).toContain('100'); // rect coordinates appear
+        expect(backdrop.style.clipPath).toContain('100'); // rect coordinates appear
     });
 
     it('Escape key → onSkip via useEscapeLayer', () => {
