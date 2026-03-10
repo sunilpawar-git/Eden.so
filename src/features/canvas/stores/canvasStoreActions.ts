@@ -27,7 +27,7 @@ import {
     deleteNodesFromArrays,
 } from './canvasStoreHelpers';
 import { duplicateNode as cloneNode } from '../services/nodeDuplicationService';
-import { EMPTY_SELECTED_IDS, getNodeMap } from './canvasStoreUtils';
+import { EMPTY_SELECTED_IDS, getNodeMap, DEFAULT_VIEWPORT, DEFAULT_INPUT_MODE } from './canvasStoreUtils';
 import type { CanvasStore } from './canvasStore';
 import type { ClusterGroup } from '@/features/clustering/types/cluster';
 
@@ -54,6 +54,9 @@ export function createNodeMutationActions(set: SetFn, get: GetFn) {
     return {
         addNode: (node: CanvasNode) => set((s) => ({ nodes: [...s.nodes, node] })),
 
+        addNodeAndEdge: (node: CanvasNode, edge: CanvasEdge) =>
+            set((s) => ({ nodes: [...s.nodes, node], edges: [...s.edges, edge] })),
+
         duplicateNode: (nodeId: string): string | undefined => {
             const nodes = get().nodes;
             const node = getNodeMap(nodes).get(nodeId);
@@ -73,9 +76,8 @@ export function createNodeMutationActions(set: SetFn, get: GetFn) {
             set((s) => {
                 const deletion = deleteNodeFromArrays(s.nodes, s.edges, s.selectedNodeIds, nodeId);
                 const editingClear = s.editingNodeId === nodeId
-                    ? { editingNodeId: null, draftContent: null, inputMode: 'note' as const }
+                    ? { editingNodeId: null, draftContent: null, inputMode: DEFAULT_INPUT_MODE }
                     : {};
-                // Batch cluster pruning in same set() — prevents nested set() cascade
                 const clusterPrune = s.clusterGroups.length > 0
                     ? pruneClusterGroups(s.clusterGroups, new Set(deletion.nodes.map((n) => n.id)))
                     : {};
@@ -88,7 +90,6 @@ export function createNodeMutationActions(set: SetFn, get: GetFn) {
         insertNodeAtIndex: (node: CanvasNode, index: number) =>
             set((s) => ({ nodes: insertNodeAtIndexInArray(s.nodes, node, index) })),
 
-        /** Batch restore — inserts all entries in ONE set() call to avoid N-cascade updates */
         insertNodesAtIndices: (entries: Array<{ node: CanvasNode; index: number }>) =>
             set((s) => {
                 let nodes = s.nodes;
@@ -98,15 +99,13 @@ export function createNodeMutationActions(set: SetFn, get: GetFn) {
                 return { nodes };
             }),
 
-        /** Bulk delete — single set() call, O(1) Zustand notification vs O(N) */
         deleteNodes: (nodeIds: string[]) => {
             const idSet = new Set(nodeIds);
             set((s) => {
                 const deletion = deleteNodesFromArrays(s.nodes, s.edges, s.selectedNodeIds, idSet);
                 const editingClear = s.editingNodeId && idSet.has(s.editingNodeId)
-                    ? { editingNodeId: null, draftContent: null, inputMode: 'note' as const }
+                    ? { editingNodeId: null, draftContent: null, inputMode: DEFAULT_INPUT_MODE }
                     : {};
-                // Batch cluster pruning in same set() — prevents nested set() cascade
                 const clusterPrune = s.clusterGroups.length > 0
                     ? pruneClusterGroups(s.clusterGroups, new Set(deletion.nodes.map((n) => n.id)))
                     : {};
@@ -116,8 +115,8 @@ export function createNodeMutationActions(set: SetFn, get: GetFn) {
 
         clearCanvas: () => set({
             nodes: [], edges: [], selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
-            viewport: { x: 32, y: 32, zoom: 1 },
-            editingNodeId: null, draftContent: null, inputMode: 'note',
+            viewport: DEFAULT_VIEWPORT,
+            editingNodeId: null, draftContent: null, inputMode: DEFAULT_INPUT_MODE,
             clusterGroups: [],
         }),
     };
@@ -233,13 +232,13 @@ export function createEditingActions(set: SetFn, get: GetFn) {
     return {
         startEditing: (nodeId: string) => {
             if (get().editingNodeId === nodeId) return;
-            set({ editingNodeId: nodeId, draftContent: null, inputMode: 'note' });
+            set({ editingNodeId: nodeId, draftContent: null, inputMode: DEFAULT_INPUT_MODE });
         },
 
         stopEditing: () => {
             const s = get();
-            if (s.editingNodeId === null && s.draftContent === null && s.inputMode === 'note') return;
-            set({ editingNodeId: null, draftContent: null, inputMode: 'note' });
+            if (s.editingNodeId === null && s.draftContent === null && s.inputMode === DEFAULT_INPUT_MODE) return;
+            set({ editingNodeId: null, draftContent: null, inputMode: DEFAULT_INPUT_MODE });
         },
 
         updateDraft: (content: string) => set({ draftContent: content }),

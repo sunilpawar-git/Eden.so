@@ -1,22 +1,10 @@
 /**
- * Pure helpers for processing ReactFlow node/edge changes and mapping.
+ * Pure helpers for processing ReactFlow node changes.
  * Extracted from CanvasView to keep the component under the line limit.
+ * Edge mapping with structural sharing lives in buildRfEdges.ts.
  */
-import type { NodeChange, Edge } from '@xyflow/react';
+import type { NodeChange } from '@xyflow/react';
 import type { CanvasNode } from '../types/node';
-import type { CanvasEdge } from '../types/edge';
-
-export function mapCanvasEdgesToRfEdges(edges: CanvasEdge[]): Edge[] {
-    return edges.map((edge) => ({
-        id: edge.id,
-        source: edge.sourceNodeId,
-        target: edge.targetNodeId,
-        sourceHandle: `${edge.sourceNodeId}-source`,
-        targetHandle: `${edge.targetNodeId}-target`,
-        type: 'deletable',
-        animated: edge.relationshipType === 'derived',
-    }));
-}
 
 /**
  * Applies position and remove changes to a node array with structural sharing.

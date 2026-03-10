@@ -19,7 +19,7 @@ import {
 } from './canvasStoreActions';
 import { createClusterSlice, type ClusterSlice } from '@/features/clustering/stores/clusterSlice';
 
-import { EMPTY_SELECTED_IDS, getNodeMap } from './canvasStoreUtils';
+import { EMPTY_SELECTED_IDS, getNodeMap, DEFAULT_VIEWPORT, DEFAULT_INPUT_MODE } from './canvasStoreUtils';
 
 // Re-export for backward compatibility (importers reference canvasStore.ts as entry point)
 export { EMPTY_SELECTED_IDS, getNodeMap };
@@ -39,6 +39,7 @@ interface CanvasState {
 interface CanvasActions {
     // Node actions
     addNode: (node: CanvasNode) => void;
+    addNodeAndEdge: (node: CanvasNode, edge: CanvasEdge) => void;
     duplicateNode: (nodeId: string) => string | undefined;
     updateNodeDimensions: (nodeId: string, width: number, height: number) => void;
     updateNodeContent: (nodeId: string, content: string) => void;
@@ -108,10 +109,10 @@ const initialState: CanvasState = {
     nodes: [],
     edges: [],
     selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
-    viewport: { x: 32, y: 32, zoom: 1 },
+    viewport: DEFAULT_VIEWPORT,
     editingNodeId: null,
     draftContent: null,
-    inputMode: 'note',
+    inputMode: DEFAULT_INPUT_MODE,
 };
 
 export const useCanvasStore = create<CanvasStore>()((set, get) => ({

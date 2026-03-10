@@ -9,6 +9,7 @@ import { useAIStore } from '../stores/aiStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { generateContentWithContext } from '../services/geminiService';
 import { createIdeaNode } from '@/features/canvas/types/node';
+import { createEdge } from '@/features/canvas/types/edge';
 import { calculateMasonryPosition } from '@/features/canvas/services/gridLayoutService';
 import { calculateBranchPlacement } from '@/features/canvas/services/freeFlowPlacementService';
 import { usePanToNode } from '@/features/canvas/hooks/usePanToNode';
@@ -57,10 +58,8 @@ export function useNodeGeneration() {
                 const generationType = contextChain.length > 0 ? 'chain' as const : 'single' as const;
 
                 const excludeIds = new Set([nodeId, ...upstreamNodes.map((n) => n.id)]);
-                const [poolContext, kbContext] = await Promise.all([
-                    getPoolContext(promptText, generationType, excludeIds),
-                    Promise.resolve(getKBContext(promptText, generationType)),
-                ]);
+                const kbContext = getKBContext(promptText, generationType);
+                const poolContext = await getPoolContext(promptText, generationType, excludeIds);
                 const content = await generateContentWithContext(promptText, contextChain, poolContext, kbContext);
 
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);
@@ -96,17 +95,14 @@ export function useNodeGeneration() {
                 ''
             );
 
-            useCanvasStore.getState().addNode(newNode);
-            panToPosition(position.x, position.y);
-
-            // Connect source to new node
-            useCanvasStore.getState().addEdge({
-                id: `edge-${crypto.randomUUID()}`,
-                workspaceId: sourceNode.workspaceId,
+            const edge = createEdge(
+                `edge-${crypto.randomUUID()}`,
+                sourceNode.workspaceId,
                 sourceNodeId,
-                targetNodeId: newNode.id,
-                relationshipType: 'related',
-            });
+                newNode.id,
+            );
+            useCanvasStore.getState().addNodeAndEdge(newNode, edge);
+            panToPosition(position.x, position.y);
 
             return newNode.id;
         },

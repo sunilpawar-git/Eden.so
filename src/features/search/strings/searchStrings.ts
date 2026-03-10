@@ -24,8 +24,5 @@ export const searchStrings = {
     contentTypeHasConnections: 'Has connections',
     contentTypeNoOutput: 'Empty nodes',
     activeFilters: 'active filters',
-    findSimilar: 'Find similar',
-    similarResults: 'Similar nodes',
-    noSimilarResults: 'No similar nodes found',
     keyboardHint: '↑↓ navigate · ↵ select · Esc close',
 } as const;

@@ -65,23 +65,8 @@ describe('Structural tests', () => {
         expect(src).toContain('TOGGLE_FILTER_BAR');
     });
 
-    it('findSimilar imports from tfidfScorer (reuse check — DRY)', () => {
-        const src = readSearch('services/findSimilar.ts');
-        expect(src).toContain('tfidfScorer');
-    });
-
-    it('findSimilar imports tokenizeRaw from relevanceScorer (SSOT tokenization)', () => {
-        const src = readSearch('services/findSimilar.ts');
-        expect(src).toContain('tokenizeRaw');
-        expect(src).toContain('relevanceScorer');
-    });
-
-    it('findSimilar SIMILARITY_THRESHOLD >= 0.15', () => {
-        const src = readSearch('services/findSimilar.ts');
-        const match = /SIMILARITY_THRESHOLD\s*=\s*([\d.]+)/.exec(src);
-        expect(match).not.toBeNull();
-        expect(parseFloat(match![1]!)).toBeGreaterThanOrEqual(0.15);
-    });
+    // findSimilar service tests removed — feature deleted for performance.
+    // See findSimilarRemoved.structural.test.ts for file-existence guard.
 });
 
 describe('Security tests', () => {

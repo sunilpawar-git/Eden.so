@@ -17,8 +17,9 @@ import { ViewportSync } from './ViewportSync';
 import { SelectionToolbar } from '@/features/synthesis/components/SelectionToolbar';
 import { ClusterOverlay } from '@/features/clustering/components/ClusterOverlay';
 import { buildRfNodes, cleanupDataShells, type PrevRfNodes } from './buildRfNodes';
-import { mapCanvasEdgesToRfEdges, applyPositionAndRemoveChanges } from './canvasChangeHelpers';
-import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID } from './canvasViewConstants';
+import { buildRfEdges, type PrevRfEdges } from './buildRfEdges';
+import { applyPositionAndRemoveChanges } from './canvasChangeHelpers';
+import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID, NO_DRAG_CLASS, PAN_ACTIVATION_KEY, MULTI_SELECT_KEY, BACKGROUND_GAP, BACKGROUND_DOT_SIZE } from './canvasViewConstants';
 import { useCanvasHandlers } from '../hooks/useCanvasHandlers';
 import { useDragBatch } from '../hooks/useDragBatch';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
@@ -67,6 +68,7 @@ function CanvasViewInner() {
     const isInteractionDisabled = isCanvasLocked || isFocused;
     const isNavigateMode = canvasScrollMode === 'navigate';
     const prevRfNodesRef = useRef<PrevRfNodes>({ arr: [], map: new Map() });
+    const prevRfEdgesRef = useRef<PrevRfEdges>({ arr: [], map: new Map() });
     const [dragState, dragDispatch] = useReducer(dragPositionReducer, INITIAL_DRAG_STATE);
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked, dragDispatch);
     const { onNodeDragStart: historyDragStart, onNodeDragStop: historyDragStop } = useDragBatch();
@@ -110,7 +112,7 @@ function CanvasViewInner() {
         [nodes, selectedNodeIds, dragState.overrides],
     );
 
-    const rfEdges = useMemo(() => mapCanvasEdgesToRfEdges(edges), [edges]);
+    const rfEdges = useMemo(() => buildRfEdges(edges, prevRfEdgesRef), [edges]);
 
     useEffect(() => {
         cleanupDataShells(new Set(nodes.map((n) => n.id)));
@@ -142,17 +144,17 @@ function CanvasViewInner() {
                 panOnScroll={!isInteractionDisabled && isNavigateMode}
                 panOnDrag={isInteractionDisabled ? false : [1, 2]}
                 nodesDraggable={!isInteractionDisabled}
-                noDragClassName="nodrag"
+                noDragClassName={NO_DRAG_CLASS}
                 elementsSelectable={!isInteractionDisabled}
                 nodesConnectable={!isInteractionDisabled}
                 {...(isNavigateMode && { panOnScrollMode: PanOnScrollMode.Free })}
                 selectionOnDrag={!isInteractionDisabled}
                 selectionMode={SelectionMode.Partial}
-                panActivationKeyCode="Space"
-                multiSelectionKeyCode="Shift"
+                panActivationKeyCode={PAN_ACTIVATION_KEY}
+                multiSelectionKeyCode={MULTI_SELECT_KEY}
             >
                 <ViewportSync viewport={viewport} />
-                {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1} />}
+                {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={BACKGROUND_GAP} size={BACKGROUND_DOT_SIZE} />}
                 <ZoomControls />
             </ReactFlow>
             <ClusterOverlay />

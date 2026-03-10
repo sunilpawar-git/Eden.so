@@ -1,13 +1,9 @@
 /**
- * Tests for canvasChangeHelpers — applyPositionAndRemoveChanges, mapCanvasEdgesToRfEdges
+ * Tests for canvasChangeHelpers — applyPositionAndRemoveChanges.
  */
 import { describe, it, expect } from 'vitest';
-import {
-    applyPositionAndRemoveChanges,
-    mapCanvasEdgesToRfEdges,
-} from '../canvasChangeHelpers';
+import { applyPositionAndRemoveChanges } from '../canvasChangeHelpers';
 import type { CanvasNode } from '../../types/node';
-import type { CanvasEdge } from '../../types/edge';
 import type { NodeChange } from '@xyflow/react';
 
 const createMockNode = (id: string, position = { x: 0, y: 0 }): CanvasNode => ({
@@ -18,66 +14,6 @@ const createMockNode = (id: string, position = { x: 0, y: 0 }): CanvasNode => ({
     data: {},
     createdAt: new Date(),
     updatedAt: new Date(),
-});
-
-const createMockEdge = (
-    id: string,
-    source: string,
-    target: string,
-    relationshipType: 'related' | 'derived' = 'related'
-): CanvasEdge => ({
-    id,
-    workspaceId: 'ws-1',
-    sourceNodeId: source,
-    targetNodeId: target,
-    relationshipType,
-});
-
-describe('mapCanvasEdgesToRfEdges', () => {
-    it('maps canvas edges to ReactFlow edge format', () => {
-        const edges: CanvasEdge[] = [
-            createMockEdge('e1', 'n1', 'n2'),
-            createMockEdge('e2', 'n2', 'n3', 'derived'),
-        ];
-        const result = mapCanvasEdgesToRfEdges(edges);
-
-        expect(result).toHaveLength(2);
-        expect(result[0]).toEqual({
-            id: 'e1',
-            source: 'n1',
-            target: 'n2',
-            sourceHandle: 'n1-source',
-            targetHandle: 'n2-target',
-            type: 'deletable',
-            animated: false,
-        });
-        expect(result[1]).toEqual({
-            id: 'e2',
-            source: 'n2',
-            target: 'n3',
-            sourceHandle: 'n2-source',
-            targetHandle: 'n3-target',
-            type: 'deletable',
-            animated: true,
-        });
-    });
-
-    it('returns empty array for empty input', () => {
-        const result = mapCanvasEdgesToRfEdges([]);
-        expect(result).toEqual([]);
-    });
-
-    it('sets animated true for derived relationship type', () => {
-        const edges = [createMockEdge('e1', 'a', 'b', 'derived')];
-        const result = mapCanvasEdgesToRfEdges(edges);
-        expect(result[0]!.animated).toBe(true);
-    });
-
-    it('sets animated false for related relationship type', () => {
-        const edges = [createMockEdge('e1', 'a', 'b', 'related')];
-        const result = mapCanvasEdgesToRfEdges(edges);
-        expect(result[0]!.animated).toBe(false);
-    });
 });
 
 describe('applyPositionAndRemoveChanges', () => {
@@ -220,5 +156,34 @@ describe('applyPositionAndRemoveChanges', () => {
         const result = applyPositionAndRemoveChanges([], changes);
 
         expect(result).toEqual([]);
+    });
+
+    it('handles multiple removes in one pass (splice index correctness)', () => {
+        const nodes = [
+            createMockNode('n1'),
+            createMockNode('n2'),
+            createMockNode('n3'),
+            createMockNode('n4'),
+        ];
+        const changes: NodeChange[] = [
+            { type: 'remove', id: 'n2' },
+            { type: 'remove', id: 'n4' },
+        ];
+        const result = applyPositionAndRemoveChanges(nodes, changes);
+
+        expect(result).toHaveLength(2);
+        expect(result[0]!.id).toBe('n1');
+        expect(result[1]!.id).toBe('n3');
+    });
+
+    it('ignores select and dimensions change types (returns original)', () => {
+        const nodes = [createMockNode('n1')];
+        const changes: NodeChange[] = [
+            { type: 'select', id: 'n1', selected: true },
+            { type: 'dimensions', id: 'n1', dimensions: { width: 200, height: 100 } },
+        ];
+        const result = applyPositionAndRemoveChanges(nodes, changes);
+
+        expect(result).toBe(nodes);
     });
 });
