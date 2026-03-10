@@ -22,6 +22,25 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
     const slashJustSelectedRef = useRef(false);
     const submitHandlerRef = useRef<SubmitKeymapHandler | null>(null);
     const blurRef = useRef<(md: string) => void>(() => undefined);
+
+    // Track last committed heading to avoid redundant store writes on blur.
+    const lastCommittedRef = useRef(heading);
+
+    // Commit heading to store only when value changed — called on blur and
+    // before AI submit, NOT on every keystroke. Per-keystroke updateNodeHeading
+    // caused O(N) re-renders across all canvas nodes (new nodes[] array each time).
+    const commitHeading = useCallback((h: string) => {
+        if (h !== lastCommittedRef.current) {
+            lastCommittedRef.current = h;
+            onHeadingChange(h);
+        }
+    }, [onHeadingChange]);
+
+    // Keep lastCommittedRef in sync with external heading changes (undo/redo,
+    // AI generation) so commitHeading doesn't produce a spurious write.
+    useEffect(() => {
+        if (!isEditing) lastCommittedRef.current = heading;
+    }, [heading, isEditing]);
     const extensions = useMemo(() => [
         SubmitKeymap.configure({ handlerRef: submitHandlerRef }),
         SlashCommandSuggestion.configure({
@@ -41,18 +60,18 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
     const { editor, getMarkdown } = useTipTapEditor({
         initialContent: heading, placeholder, editable: isEditing,
         onBlur: useCallback((md: string) => blurRef.current(md), []),
-        onUpdate: onHeadingChange, extraExtensions: extensions,
+        // Heading is committed on blur/submit, NOT per keystroke — see commitHeading.
+        extraExtensions: extensions,
     });
 
     useEffect(() => {
         submitHandlerRef.current = {
             onEnter: () => {
-                // Safety net: consume the event when suggestion is active.
-                // Normally the Suggestion plugin (priority 1100) handles Enter
-                // first, but if it fails this prevents StarterKit fallthrough.
                 if (suggestionActiveRef.current) return true;
+                const currentHeading = getMarkdown().trim();
+                commitHeading(currentHeading);
                 const mode = useCanvasStore.getState().inputMode;
-                if (mode === 'ai') onSubmitAI?.(getMarkdown().trim());
+                if (mode === 'ai') onSubmitAI?.(currentHeading);
                 else onEnterKey?.();
                 return true;
             },
@@ -65,7 +84,7 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
             },
         };
         return () => { submitHandlerRef.current = null; };
-    }, [getMarkdown, onEnterKey, onSubmitAI]);
+    }, [getMarkdown, onEnterKey, onSubmitAI, commitHeading]);
 
     const handleBlur = useCallback((md: string) => {
         if (suggestionActiveRef.current) return;
@@ -73,8 +92,9 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
             slashJustSelectedRef.current = false;
             queueMicrotask(() => { editor?.commands.focus(); }); return;
         }
+        commitHeading(md);
         onBlur?.(md);
-    }, [onBlur, editor]);
+    }, [onBlur, editor, commitHeading]);
     useEffect(() => { blurRef.current = handleBlur; }, [handleBlur]);
 
     // Trigger placeholder re-render when text changes (e.g. switching to AI mode)
