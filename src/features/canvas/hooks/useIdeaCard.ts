@@ -41,9 +41,13 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
         generateFromPrompt, // eslint-disable-line @typescript-eslint/no-misused-promises -- async, consumed by useIdeaCardState
     });
     const calendar = useIdeaCardCalendar({ nodeId: id, calendarEvent });
-    const focusedNodeId = useFocusStore((s) => s.focusedNodeId);
-    const editingNodeId = useCanvasStore((s) => s.editingNodeId);
-    const isEditing = editingNodeId === id && focusedNodeId !== id;
+    // Scoped boolean selectors: only re-render THIS card when editing/focus targets it.
+    // Unscoped `(s) => s.editingNodeId` returned the raw string — when editing starts,
+    // ALL N cards re-rendered because null→"idea-xxx" is a value change for every subscriber.
+    // Scoped `=== id` returns boolean — only the 2 affected cards re-render (old + new editor).
+    const isEditingThisNode = useCanvasStore((s) => s.editingNodeId === id);
+    const isFocusedOnThisNode = useFocusStore((s) => s.focusedNodeId === id);
+    const isEditing = isEditingThisNode && !isFocusedOnThisNode;
     const imageUploadFn = useNodeImageUpload(id);
     const documentInsertFnRef = useRef<DocumentInsertFn | null>(null);
     const onAfterImageInsertRef = useRef<AfterImageInsertFn | null>(null);

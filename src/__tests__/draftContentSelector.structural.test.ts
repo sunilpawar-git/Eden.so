@@ -69,7 +69,7 @@ describe('draftContent selector scope enforcement (prevents O(N) keystroke re-re
         // If onUpdate is passed, every keystroke in the heading fires a callback.
         // Any callback that mutates nodes[] (e.g. updateNodeHeading) causes O(N) re-renders.
         // Heading must be committed on blur/submit only (via commitHeading).
-        const tiptapCallBlock = headingContent.match(/useTipTapEditor\(\{[\s\S]*?\}\)/);
+        const tiptapCallBlock = /useTipTapEditor\(\{[\s\S]*?\}\)/.exec(headingContent);
         const hasOnUpdate = tiptapCallBlock?.[0].includes('onUpdate');
         expect(
             hasOnUpdate,
@@ -87,5 +87,39 @@ describe('draftContent selector scope enforcement (prevents O(N) keystroke re-re
             '  Heading saves must be deferred to blur/submit — never per keystroke.\n' +
             '  updateNodeHeading per keystroke mutates nodes[] → O(N) re-renders.',
         ).toBe(true);
+    });
+
+    // == PER-NODE SELECTOR SCOPING: editingNodeId / focusedNodeId ==
+    // useIdeaCard subscribes to editingNodeId and focusedNodeId. These are global
+    // fields that change whenever editing starts/stops or focus changes.
+    // Unscoped selectors (returning the raw string) cause ALL N IdeaCards to re-render
+    // on every edit/focus transition. Scoped selectors (returning boolean `=== id`)
+    // reduce this to O(1) — only the affected cards re-render.
+
+    it('useIdeaCard must NOT use unscoped editingNodeId selector', () => {
+        const ideaCardHook = readFileSync(
+            join(SRC_DIR, 'features/canvas/hooks/useIdeaCard.ts'), 'utf-8',
+        );
+        // Unscoped: returns the raw string → ALL N cards re-render on edit start/stop
+        const unscopedPattern = /useCanvasStore\(\s*\(\s*\w+\s*\)\s*=>\s*\w+\.editingNodeId\s*\)/;
+        expect(
+            unscopedPattern.test(ideaCardHook),
+            'useIdeaCard.ts uses unscoped (s) => s.editingNodeId — O(N) re-renders on edit start/stop.\n\n' +
+            '  Fix: scope to boolean:\n' +
+            '    const isEditingThisNode = useCanvasStore((s) => s.editingNodeId === id);',
+        ).toBe(false);
+    });
+
+    it('useIdeaCard must NOT use unscoped focusedNodeId selector', () => {
+        const ideaCardHook = readFileSync(
+            join(SRC_DIR, 'features/canvas/hooks/useIdeaCard.ts'), 'utf-8',
+        );
+        const unscopedPattern = /useFocusStore\(\s*\(\s*\w+\s*\)\s*=>\s*\w+\.focusedNodeId\s*\)/;
+        expect(
+            unscopedPattern.test(ideaCardHook),
+            'useIdeaCard.ts uses unscoped (s) => s.focusedNodeId — O(N) re-renders on focus change.\n\n' +
+            '  Fix: scope to boolean:\n' +
+            '    const isFocusedOnThisNode = useFocusStore((s) => s.focusedNodeId === id);',
+        ).toBe(false);
     });
 });
