@@ -118,7 +118,7 @@ describe('useDoubleClickToCreate', () => {
         });
 
         expect(listener).toHaveBeenCalledTimes(1);
-        const detail = (listener.mock.calls[0]?.[0] as CustomEvent)?.detail;
+        const detail = (listener.mock.calls[0]![0] as CustomEvent).detail;
         expect(detail).toHaveProperty('nodeId');
         expect(typeof detail.nodeId).toBe('string');
 

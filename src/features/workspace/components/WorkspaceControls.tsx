@@ -44,7 +44,7 @@ export function WorkspaceControls() {
         <div className={styles.container}>
             <button
                 className={styles.button}
-                onClick={handleAddNode}
+                onClick={() => handleAddNode()}
                 title={strings.workspace.addNodeTooltip}
                 data-testid="add-node-button"
             >

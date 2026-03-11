@@ -7,9 +7,9 @@ import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, isNodePinned } from '../types/
 import type { ColumnStack, NodePlacement } from '../types/masonryLayout';
 import { checkVerticalOverlap, getDefaultColumnX } from '../types/masonryLayout';
 
+import { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from './gridConstants';
 // Re-export from SSOT so existing importers keep working
 export { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from './gridConstants';
-import { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from './gridConstants';
 
 /**
  * Finds the index of the shortest column.
