@@ -58,12 +58,23 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     ], []);
 
-    const { editor, getMarkdown } = useTipTapEditor({
+    const { editor, getMarkdown, setContent } = useTipTapEditor({
         initialContent: heading, placeholder, editable: isEditing,
         onBlur: useCallback((md: string) => blurRef.current(md), []),
         // Heading is committed on blur/submit, NOT per keystroke — see commitHeading.
         extraExtensions: extensions,
     });
+
+    // Sync editor content when heading prop changes externally (e.g. focus mode
+    // committed a heading update to the store) while this editor is NOT editing.
+    // Mirrors useIdeaCardEditor's prevOutputRef content-sync pattern.
+    const prevHeadingRef = useRef(heading);
+    useEffect(() => {
+        if (heading !== prevHeadingRef.current && !isEditing) {
+            setContent(heading);
+            prevHeadingRef.current = heading;
+        }
+    }, [heading, isEditing, setContent]);
 
     useEffect(() => {
         submitHandlerRef.current = {

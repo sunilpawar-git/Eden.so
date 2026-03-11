@@ -61,4 +61,15 @@ describe('useHeadingEditor — deferred heading save (no per-keystroke store wri
         // doesn't produce a spurious write on the next blur.
         expect(src).toMatch(/lastCommittedRef\.current\s*=\s*heading/);
     });
+
+    it('must sync editor content when heading prop changes externally while not editing', () => {
+        // When focus mode updates the heading in the store and the IdeaCard is
+        // not editing (isFocusedOnThisNode suppresses isEditing), the heading
+        // TipTap editor still shows old initialContent. A content-sync effect
+        // must call setContent(heading) when the heading prop changes while
+        // not editing — mirroring useIdeaCardEditor's prevOutputRef pattern.
+        expect(src).toMatch(/setContent/);
+        // The effect must guard: only sync when NOT editing and heading changed
+        expect(src).toMatch(/!isEditing/);
+    });
 });
