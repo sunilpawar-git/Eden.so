@@ -3,7 +3,8 @@
  * Extracted from canvasStore.ts to reduce store callback size
  */
 import type { CanvasNode, NodePosition, NodeColorKey } from '../types/node';
-import { clampNodeDimensions } from '../types/node';
+import { clampNodeDimensions, MINDMAP_MIN_WIDTH, MINDMAP_MIN_HEIGHT } from '../types/node';
+import type { ContentMode } from '../types/contentMode';
 import type { CanvasEdge } from '../types/edge';
 import {
     arrangeMasonry,
@@ -44,6 +45,25 @@ export function updateNodeDataField<K extends keyof CanvasNode['data']>(
     );
 }
 
+/** Sets contentMode and auto-enlarges small nodes to mindmap-friendly size (never shrinks). */
+export function updateContentModeInArray(
+    nodes: CanvasNode[], nodeId: string, contentMode: ContentMode,
+): CanvasNode[] {
+    return nodes.map((node) => {
+        if (node.id !== nodeId) return node;
+        const updated: CanvasNode = { ...node, data: { ...node.data, contentMode }, updatedAt: new Date() };
+        if (contentMode === 'mindmap') {
+            const w = node.width ?? 0, h = node.height ?? 0;
+            if (w < MINDMAP_MIN_WIDTH || h < MINDMAP_MIN_HEIGHT) {
+                const c = clampNodeDimensions(Math.max(w, MINDMAP_MIN_WIDTH), Math.max(h, MINDMAP_MIN_HEIGHT));
+                updated.width = c.width;
+                updated.height = c.height;
+            }
+        }
+        return updated;
+    });
+}
+
 /**
  * Appends text to a node's output field
  */
@@ -81,14 +101,9 @@ export function togglePromptCollapsedInArray(
     );
 }
 
-/**
- * Deletes a node and its connected edges
- */
+/** Deletes a node and its connected edges */
 export function deleteNodeFromArrays(
-    nodes: CanvasNode[],
-    edges: CanvasEdge[],
-    selectedNodeIds: Set<string>,
-    nodeId: string
+    nodes: CanvasNode[], edges: CanvasEdge[], selectedNodeIds: Set<string>, nodeId: string,
 ): { nodes: CanvasNode[]; edges: CanvasEdge[]; selectedNodeIds: Set<string> } {
     return {
         nodes: nodes.filter((node) => node.id !== nodeId),
@@ -101,9 +116,7 @@ export function deleteNodeFromArrays(
     };
 }
 
-/**
- * Finds all connected node IDs for a given node
- */
+/** Finds all connected node IDs for a given node */
 export function getConnectedNodeIds(edges: CanvasEdge[], nodeId: string): string[] {
     const connected: string[] = [];
     edges.forEach((edge) => {
@@ -117,13 +130,9 @@ export function getConnectedNodeIds(edges: CanvasEdge[], nodeId: string): string
     return connected;
 }
 
-/**
- * Finds all upstream nodes using BFS traversal
- */
+/** Finds all upstream nodes using BFS traversal */
 export function getUpstreamNodesFromArrays(
-    nodes: CanvasNode[],
-    edges: CanvasEdge[],
-    nodeId: string
+    nodes: CanvasNode[], edges: CanvasEdge[], nodeId: string,
 ): CanvasNode[] {
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     const visited = new Set<string>();
@@ -182,13 +191,8 @@ export function arrangeNodesAfterResize(
     return rearrangeAfterResize(nodes, resizedNodeId);
 }
 
-/**
- * Toggles isPinned on a single node. No-op if nodeId not found.
- */
-export function toggleNodePinnedInArray(
-    nodes: CanvasNode[],
-    nodeId: string
-): CanvasNode[] {
+/** Toggles isPinned on a single node. No-op if nodeId not found. */
+export function toggleNodePinnedInArray(nodes: CanvasNode[], nodeId: string): CanvasNode[] {
     if (!nodes.some((n) => n.id === nodeId)) return nodes;
     return nodes.map((node) =>
         node.id === nodeId
@@ -197,13 +201,8 @@ export function toggleNodePinnedInArray(
     );
 }
 
-/**
- * Toggles isCollapsed on a single node. No-op if nodeId not found.
- */
-export function toggleNodeCollapsedInArray(
-    nodes: CanvasNode[],
-    nodeId: string
-): CanvasNode[] {
+/** Toggles isCollapsed on a single node. No-op if nodeId not found. */
+export function toggleNodeCollapsedInArray(nodes: CanvasNode[], nodeId: string): CanvasNode[] {
     if (!nodes.some((n) => n.id === nodeId)) return nodes;
     return nodes.map((node) =>
         node.id === nodeId
@@ -212,13 +211,8 @@ export function toggleNodeCollapsedInArray(
     );
 }
 
-/**
- * Toggles includeInAIPool on a single node. No-op if nodeId not found.
- */
-export function toggleNodePoolInArray(
-    nodes: CanvasNode[],
-    nodeId: string
-): CanvasNode[] {
+/** Toggles includeInAIPool on a single node. No-op if nodeId not found. */
+export function toggleNodePoolInArray(nodes: CanvasNode[], nodeId: string): CanvasNode[] {
     if (!nodes.some((n) => n.id === nodeId)) return nodes;
     return nodes.map((node) =>
         node.id === nodeId

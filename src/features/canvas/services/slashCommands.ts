@@ -41,6 +41,14 @@ export const slashCommands: SlashCommand[] = [
         keywords: ['analyze', 'analyse', 'extract', 'insight', 'intelligence'],
         prefix: 'analyze',
     },
+    {
+        id: 'toggle-mindmap',
+        labelKey: 'slashCommands.toggleMindmap.label',
+        descriptionKey: 'slashCommands.toggleMindmap.description',
+        icon: '🧠',
+        keywords: ['mindmap', 'mind', 'map', 'visualize', 'tree'],
+        prefix: 'mindmap',
+    },
 ];
 
 /**

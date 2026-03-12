@@ -5,12 +5,14 @@
  */
 import type { Viewport } from '@xyflow/react';
 import type { CanvasNode, IdeaNodeData, LinkPreviewMetadata, NodeColorKey } from '../types/node';
+import type { ContentMode } from '../types/contentMode';
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
 import {
     updateNodeDimensionsInArray,
     updateNodeDataField,
+    updateContentModeInArray,
     appendToNodeOutputInArray,
     togglePromptCollapsedInArray,
     deleteNodeFromArrays,
@@ -171,6 +173,8 @@ export function createNodeDataActions(set: SetFn) {
             set((s) => ({ nodes: clearAllNodePoolInArray(s.nodes), poolCount: 0 })),
         setNodeCalendarEvent: (nodeId: string, event: CalendarEventMetadata | undefined) =>
             set((s) => ({ nodes: updateNodeDataField(s.nodes, nodeId, 'calendarEvent', event) })),
+        updateNodeContentMode: (nodeId: string, contentMode: ContentMode) =>
+            set((s) => ({ nodes: updateContentModeInArray(s.nodes, nodeId, contentMode) })),
     };
 }
 

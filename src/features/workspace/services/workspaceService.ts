@@ -6,8 +6,8 @@ import { createWorkspace, createDivider } from '../types/workspace';
 import { strings } from '@/shared/localization/strings';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import { normalizeNodeColorKey } from '@/features/canvas/types/node';
-import type { CanvasEdge } from '@/features/canvas/types/edge';
-import { removeUndefined } from '@/shared/utils/firebaseUtils';
+import { normalizeContentMode } from '@/features/canvas/types/contentMode';
+import type { CanvasEdge } from '@/features/canvas/types/edge';import { removeUndefined } from '@/shared/utils/firebaseUtils';
 
 /** Get Firestore path for workspace subcollection */
 const getSubcollectionRef = (userId: string, workspaceId: string, subcollection: string) =>
@@ -241,6 +241,7 @@ export async function loadNodes(userId: string, workspaceId: string): Promise<Ca
             data: {
                 ...(data.data as CanvasNode['data']),
                 colorKey: normalizeNodeColorKey((data.data as CanvasNode['data']).colorKey),
+                contentMode: normalizeContentMode((data.data as CanvasNode['data']).contentMode),
             },
             position: data.position,
             width: data.width, height: data.height,
@@ -289,11 +290,8 @@ export async function deleteWorkspace(userId: string, workspaceId: string): Prom
     // 3. Queue all edges for deletion
     edgesSnapshot.docs.forEach((d) => batch.delete(d.ref));
 
-    // 4. Queue the workspace document itself
-    const workspaceRef = doc(db, 'users', userId, 'workspaces', workspaceId);
-    batch.delete(workspaceRef);
-
-    // 5. Commit batch
+    // Queue workspace doc for deletion and commit
+    batch.delete(doc(db, 'users', userId, 'workspaces', workspaceId));
     await batch.commit();
 }
 export { updateWorkspaceOrder } from './workspaceOrderService';

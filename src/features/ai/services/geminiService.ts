@@ -7,6 +7,7 @@ import {
     callGemini, isGeminiAvailable, extractGeminiText,
 } from '@/features/knowledgeBank/services/geminiClient';
 import type { GeminiRequestBody } from '@/features/knowledgeBank/services/geminiClient';
+import type { ContentMode } from '@/features/canvas/types/contentMode';
 
 // ── System Instruction Helpers ───────────────────────────
 
@@ -66,6 +67,14 @@ The user has connected previous ideas in a chain.
 Generate content that naturally builds upon and extends these connected ideas.
 Show clear progression and synthesis from the context provided.
 Keep it concise and actionable.`,
+
+    mindmapGeneration: `You are a structured mindmap content generator.
+Generate content as hierarchical markdown using ONLY headings and bullet lists.
+The top-level # heading should be the main topic.
+Use ## for major branches, ### for sub-branches, and #### for details.
+Keep each node label concise (3-8 words).
+Do NOT use paragraphs, long sentences, or code blocks.
+Output ONLY the hierarchical markdown.`,
 };
 
 // ── Transformation Prompts ──────────────────────────────
@@ -132,17 +141,22 @@ async function callAndExtract(body: GeminiRequestBody): Promise<string> {
 export async function generateContent(
     prompt: string,
     nodePoolContext?: string,
-    knowledgeBankContext?: string
+    knowledgeBankContext?: string,
+    contentMode?: ContentMode,
 ): Promise<string> {
     if (!isGeminiAvailable()) {
         throw new Error(strings.errors.aiError);
     }
 
+    const basePrompt = contentMode === 'mindmap'
+        ? SYSTEM_PROMPTS.mindmapGeneration
+        : SYSTEM_PROMPTS.singleNode;
+
     const body: GeminiRequestBody = {
         contents: [{ parts: [{ text: `User request: ${prompt}` }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
         systemInstruction: buildSystemInstruction(
-            SYSTEM_PROMPTS.singleNode,
+            basePrompt,
             nodePoolContext,
             strings.nodePool.ai.usageGuidance,
             knowledgeBankContext,
@@ -158,10 +172,11 @@ export async function generateContentWithContext(
     prompt: string,
     contextChain: string[],
     nodePoolContext?: string,
-    knowledgeBankContext?: string
+    knowledgeBankContext?: string,
+    contentMode?: ContentMode,
 ): Promise<string> {
     if (contextChain.length === 0) {
-        return generateContent(prompt, nodePoolContext, knowledgeBankContext);
+        return generateContent(prompt, nodePoolContext, knowledgeBankContext, contentMode);
     }
 
     if (!isGeminiAvailable()) {
@@ -179,11 +194,15 @@ User's prompt: ${prompt}
 
 Generate content that synthesizes and builds upon the connected ideas above.`;
 
+    const basePrompt = contentMode === 'mindmap'
+        ? SYSTEM_PROMPTS.mindmapGeneration
+        : SYSTEM_PROMPTS.chainGeneration;
+
     const body: GeminiRequestBody = {
         contents: [{ parts: [{ text: userPrompt }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
         systemInstruction: buildSystemInstruction(
-            SYSTEM_PROMPTS.chainGeneration,
+            basePrompt,
             nodePoolContext,
             strings.nodePool.ai.usageGuidance,
             knowledgeBankContext,

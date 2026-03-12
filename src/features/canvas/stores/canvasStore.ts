@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import type { Viewport } from '@xyflow/react';
 import type { CanvasNode, IdeaNodeData, LinkPreviewMetadata, NodeColorKey } from '../types/node';
+import type { ContentMode } from '../types/contentMode';
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
@@ -108,6 +109,9 @@ interface CanvasActions {
 
     // Calendar event actions
     setNodeCalendarEvent: (nodeId: string, event: CalendarEventMetadata | undefined) => void;
+
+    // Content mode actions
+    updateNodeContentMode: (nodeId: string, contentMode: ContentMode) => void;
 }
 
 export type CanvasStore = CanvasState & CanvasActions & ClusterSlice;

@@ -34,6 +34,8 @@ export interface NodeContextMenuProps {
     readonly isPinned: boolean;
     readonly isCollapsed: boolean;
     readonly isInPool: boolean;
+    readonly onContentModeToggle?: () => void;
+    readonly isMindmapMode?: boolean;
 }
 
 export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeContextMenuProps) {
@@ -65,6 +67,11 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
             <MenuSeparator />
             <GroupLabel>{strings.contextMenu.appearance}</GroupLabel>
             <MenuItem icon="🏷️" label={strings.nodeUtils.tags} onClick={action(props.onTagClick)} />
+            {props.onContentModeToggle && (
+                <MenuItem icon="🧠"
+                    label={props.isMindmapMode ? strings.nodeUtils.textView : strings.nodeUtils.mindmapView}
+                    onClick={action(props.onContentModeToggle)} />
+            )}
             {props.onColorChange && (
                 <>
                     <ExpandToggle icon="🎨" label={strings.nodeUtils.color}

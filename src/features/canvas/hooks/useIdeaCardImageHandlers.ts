@@ -3,6 +3,7 @@ import type { Editor } from '@tiptap/react';
 import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { isContentModeMindmap } from '../types/contentMode';
 import { ensureEditorFocus } from '../services/imageInsertService';
 import type { AfterImageInsertFn } from '../services/imageInsertService';
 import { useImageInsert } from './useImageInsert';
@@ -118,7 +119,13 @@ export function useIdeaCardImageHandlers({ id, editor, getMarkdown, imageUploadF
         if (c === 'insert-image') triggerImagePicker();
         if (c === 'insert-document') triggerDocumentPicker();
         if (c === 'analyze-document') handleAnalyzeCommand();
-    }, [triggerImagePicker, triggerDocumentPicker, handleAnalyzeCommand]);
+        if (c === 'toggle-mindmap') {
+            const store = useCanvasStore.getState();
+            const node = getNodeMap(store.nodes).get(id);
+            const next = isContentModeMindmap(node?.data.contentMode) ? 'text' : 'mindmap';
+            store.updateNodeContentMode(id, next);
+        }
+    }, [id, triggerImagePicker, triggerDocumentPicker, handleAnalyzeCommand]);
 
     const handleImageClick = useCallback(() => {
         const store = useCanvasStore.getState();

@@ -10,6 +10,8 @@ import { IdeaCardHeadingSection } from './IdeaCardHeadingSection';
 import { IdeaCardContentSection } from './IdeaCardContentSection';
 import { IdeaCardTagsSection } from './IdeaCardTagsSection';
 import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT, normalizeNodeColorKey, type IdeaNodeData } from '../../types/node';
+import { isContentModeMindmap } from '../../types/contentMode';
+import { useCanvasStore } from '../../stores/canvasStore';
 import { MemoryChipIcon } from '@/shared/components/icons';
 import { strings } from '@/shared/localization/strings';
 import { SynthesisFooterWrapper } from '@/features/synthesis/components/SynthesisFooterWrapper';
@@ -40,6 +42,11 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
         if (barContainerRef.current) openAtElement(barContainerRef.current);
     }, [barContainerRef, openAtElement]);
 
+    const handleContentModeToggle = React.useCallback(() => {
+        const next = isContentModeMindmap(resolvedData.contentMode) ? 'text' : 'mindmap';
+        useCanvasStore.getState().updateNodeContentMode(id, next);
+    }, [id, resolvedData.contentMode]);
+
     return (
         <div ref={cardWrapperRef}
             className={`${styles.cardWrapper} ${handleStyles.resizerWrapper} ${isCollapsed ? styles.cardWrapperCollapsed : ''} ${isPinned ? RF_NO_DRAG : ''}`}
@@ -69,7 +76,9 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                         isGenerating={isGenerating ?? false} hasContent={hasContent}
                         isAICard={isAICard} heading={heading} prompt={prompt}
                         editor={editor} handleDoubleClick={handleDoubleClick}
-                        linkPreviews={linkPreviews} />
+                        linkPreviews={linkPreviews}
+                        contentMode={resolvedData.contentMode}
+                        output={resolvedData.output} />
                 )}
                 <IdeaCardTagsSection tagIds={tagIds} onChange={onTagsChange}
                     visible={!isCollapsed && (showTagInput || tagIds.length > 0)} />
@@ -87,7 +96,9 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                     isSharing={isSharing} onPinToggle={handlePinToggle} onCollapseToggle={handleCollapseToggle}
                     onPoolToggle={handlePoolToggle} onColorChange={handleColorChange} nodeColorKey={nodeColorKey}
                     isPinned={isPinned ?? false} isCollapsed={isCollapsed ?? false}
-                    isInPool={resolvedData.includeInAIPool ?? false} />
+                    isInPool={resolvedData.includeInAIPool ?? false}
+                    onContentModeToggle={handleContentModeToggle}
+                    isMindmapMode={isContentModeMindmap(resolvedData.contentMode)} />
             )}
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />

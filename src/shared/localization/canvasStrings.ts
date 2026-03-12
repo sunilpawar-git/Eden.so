@@ -71,4 +71,9 @@ export const canvasStrings = {
         deleteNodesConfirm: (count: number) => `Delete ${count} nodes? This can be undone.`,
         deleteNodesConfirmButton: 'Delete',
     },
+    mindmap: {
+        ariaLabel: 'Mindmap visualization',
+        emptyFallback: 'Empty',
+        errorFallback: 'Unable to render mindmap',
+    },
 };

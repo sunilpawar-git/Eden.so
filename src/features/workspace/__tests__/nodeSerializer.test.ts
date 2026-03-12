@@ -106,5 +106,17 @@ describe('nodeSerializer', () => {
             expect(rt.data.synthesisSourceIds).toEqual(['a', 'b']);
             expect(rt.data.synthesisMode).toBe('summarize');
         });
+
+        it('round-trips contentMode through serialize/deserialize', () => {
+            const orig = makeNode({ data: { prompt: 'mm', contentMode: 'mindmap' } });
+            const rt = deserializeNodes(serializeNodes([orig]))[0]!;
+            expect(rt.data.contentMode).toBe('mindmap');
+        });
+
+        it('preserves undefined contentMode (backward compat)', () => {
+            const orig = makeNode();
+            const rt = deserializeNodes(serializeNodes([orig]))[0]!;
+            expect(rt.data.contentMode).toBeUndefined();
+        });
     });
 });

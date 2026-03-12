@@ -6,14 +6,21 @@
  * transitions. Unmounting clears ReactNodeViewRenderer portals (attachment
  * cards, etc.) and the re-creation race silently drops them.
  */
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import type { Editor } from '@tiptap/react';
 import { strings } from '@/shared/localization/strings';
+import { isContentModeMindmap, type ContentMode } from '../../types/contentMode';
 import { GeneratingContent } from './IdeaCardContent';
 import { TipTapEditor } from './TipTapEditor';
 import { LinkPreviewList } from './LinkPreviewCard';
+import { MindmapErrorBoundary } from './MindmapErrorBoundary';
 import type { IdeaNodeData } from '../../types/node';
 import styles from './IdeaCard.module.css';
+
+// Lazy-load MindmapRenderer — keeps markmap-lib + markmap-view out of initial bundle
+const LazyMindmapRenderer = lazy(() =>
+    import('./MindmapRenderer').then(m => ({ default: m.MindmapRenderer }))
+);
 
 const EDITOR_HIDDEN_STYLE: React.CSSProperties = { display: 'none' };
 
@@ -30,12 +37,17 @@ export interface IdeaCardContentSectionProps {
     editor: Editor | null;
     handleDoubleClick: () => void;
     linkPreviews: IdeaNodeData['linkPreviews'];
+    /** Rendering mode — 'text' (default) or 'mindmap'. SSOT: contentMode.ts */
+    contentMode?: ContentMode;
+    /** Raw markdown content for MindmapRenderer */
+    output?: string;
 }
 
 interface ContentViewState {
     showAIPrompt: boolean;
     showLinkPreviews: boolean;
     showPlaceholder: boolean;
+    showMindmap: boolean;
     editorHidden: boolean;
     editorClassName: string;
 }
@@ -43,12 +55,15 @@ interface ContentViewState {
 function deriveViewState(
     isEditing: boolean, isGenerating: boolean, hasContent: boolean,
     isAICard: boolean, heading: string | undefined,
+    contentMode: ContentMode | undefined,
 ): ContentViewState {
+    const showMindmap = isContentModeMindmap(contentMode) && !isEditing && !isGenerating;
     return {
         showAIPrompt: !isEditing && !isGenerating && hasContent && isAICard && !heading?.trim(),
         showLinkPreviews: !isEditing && !isGenerating && hasContent,
         showPlaceholder: !hasContent && !isEditing && !isGenerating,
-        editorHidden: isGenerating,
+        showMindmap,
+        editorHidden: isGenerating || showMindmap,
         editorClassName: (isEditing ? styles.inputWrapper : styles.outputContent) ?? '',
     };
 }
@@ -75,7 +90,10 @@ export const IdeaCardContentSection = React.memo((props: IdeaCardContentSectionP
         hasContent, prompt, editor, handleDoubleClick, linkPreviews,
     } = props;
 
-    const vs = deriveViewState(isEditing, isGenerating, hasContent, props.isAICard, props.heading);
+    const vs = deriveViewState(
+        isEditing, isGenerating, hasContent, props.isAICard, props.heading,
+        props.contentMode,
+    );
 
     return (
         <div className={`${styles.contentArea} ${isEditing ? styles.editingMode : ''} nowheel`}
@@ -86,6 +104,14 @@ export const IdeaCardContentSection = React.memo((props: IdeaCardContentSectionP
 
             {vs.showAIPrompt && (
                 <AIPromptHeader prompt={prompt} onDoubleClick={handleDoubleClick} />
+            )}
+
+            {vs.showMindmap && (
+                <MindmapErrorBoundary>
+                    <Suspense fallback={null}>
+                        <LazyMindmapRenderer markdown={props.output ?? ''} />
+                    </Suspense>
+                </MindmapErrorBoundary>
             )}
 
             {/* Stable tree position — never unmounts during editing transitions */}

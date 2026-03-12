@@ -109,7 +109,8 @@ describe('useNodeGeneration', () => {
                 'Updated prompt',
                 [],
                 '',
-                ''
+                '',
+                undefined
             );
         });
 
@@ -131,7 +132,8 @@ describe('useNodeGeneration', () => {
                 'Heading prompt',
                 [],
                 '',
-                ''
+                '',
+                undefined
             );
         });
 
@@ -152,7 +154,8 @@ describe('useNodeGeneration', () => {
                 'Legacy prompt',
                 [],
                 '',
-                ''
+                '',
+                undefined
             );
         });
 

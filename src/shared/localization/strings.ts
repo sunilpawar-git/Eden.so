@@ -10,6 +10,7 @@ import { documentAgentStrings } from '@/features/documentAgent/strings/documentA
 import { synthesisStrings } from '@/features/synthesis/strings/synthesisStrings';
 import { exportStrings } from '@/features/export/strings/exportStrings';
 import { contextMenuStrings } from './contextMenuStrings';
+import { slashCommandStrings } from './slashCommandStrings';
 import { searchStrings } from '@/features/search/strings/searchStrings';
 import { onboardingStrings } from '@/features/onboarding/strings/onboardingStrings';
 
@@ -130,6 +131,8 @@ export const strings = {
         tags: 'Tags',
         tagsShortcut: 'T',
         unpin: 'Unpin',
+        mindmapView: 'Mindmap View',
+        textView: 'Text View',
     },
     tooltip: {
         shortcutSeparator: ' ',
@@ -166,28 +169,7 @@ export const strings = {
         loadingFromCache: 'Loading from local cache...',
         noOfflineData: 'No offline data available for this workspace.',
     },
-    slashCommands: {
-        aiGenerate: {
-            label: 'AI Generate',
-            description: 'Generate content with AI',
-        },
-        insertImage: {
-            label: 'Insert Image',
-            description: 'Upload an image from your device',
-        },
-        insertDocument: {
-            label: 'Attach Document',
-            description: 'Attach a PDF, TXT, or CSV file',
-        },
-        analyzeDocument: {
-            label: 'Analyze Document',
-            description: 'Extract insights from attached documents',
-        },
-        noResults: 'No commands found',
-        menuLabel: 'Slash commands',
-        prefixSeparator: ':',
-        prefixLabel: 'Command mode active',
-    },
+    slashCommands: slashCommandStrings,
     editing: {
         enterEditMode: 'Enter edit mode',
         exitEditMode: 'Exit edit mode',

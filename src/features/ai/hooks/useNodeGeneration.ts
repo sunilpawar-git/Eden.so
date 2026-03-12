@@ -60,7 +60,7 @@ export function useNodeGeneration() {
                 const excludeIds = new Set([nodeId, ...upstreamNodes.map((n) => n.id)]);
                 const kbContext = getKBContext(promptText, generationType);
                 const poolContext = await getPoolContext(promptText, generationType, excludeIds);
-                const content = await generateContentWithContext(promptText, contextChain, poolContext, kbContext);
+                const content = await generateContentWithContext(promptText, contextChain, poolContext, kbContext, ideaData.contentMode);
 
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);
                 useAIStore.getState().completeGeneration();

@@ -59,7 +59,8 @@ describe('useNodeGeneration - Knowledge Bank context', () => {
             'Test prompt',
             [],
             '',
-            kbBlock
+            kbBlock,
+            undefined
         );
     });
 
@@ -78,7 +79,8 @@ describe('useNodeGeneration - Knowledge Bank context', () => {
             'Test prompt',
             [],
             '',
-            ''
+            '',
+            undefined
         );
     });
 });

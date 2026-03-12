@@ -3,6 +3,7 @@
  */
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { AttachmentMeta } from './document';
+import type { ContentMode } from './contentMode';
 
 /**
  * Node dimension constraints (in pixels)
@@ -16,6 +17,11 @@ export const MAX_NODE_HEIGHT = 800;
 
 export const DEFAULT_NODE_WIDTH = 280;
 export const DEFAULT_NODE_HEIGHT = 220;
+
+/** Minimum width for legible mindmap rendering (≈ 2× default) */
+export const MINDMAP_MIN_WIDTH = 500;
+/** Minimum height for legible mindmap rendering (≈ 2× default) */
+export const MINDMAP_MIN_HEIGHT = 400;
 
 /** Resize increment per arrow click (96px = 1 CSS inch = 6 grid snaps) */
 export const RESIZE_INCREMENT_PX = 96;
@@ -105,6 +111,8 @@ export interface IdeaNodeData {
     synthesisSourceIds?: string[];
     /** Synthesis mode used to create this node */
     synthesisMode?: string;
+    /** Rendering mode: 'text' (default) or 'mindmap'. Undefined treated as 'text'. */
+    contentMode?: ContentMode;
     [key: string]: unknown;
 }
 

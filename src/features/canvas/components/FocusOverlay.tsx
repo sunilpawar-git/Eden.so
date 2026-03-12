@@ -4,19 +4,25 @@
  * Reuses NodeHeading and TagInput for consistent editing UX.
  * ViewModel logic extracted to useFocusOverlayActions.
  */
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '@/shared/localization/strings';
 import { useFocusMode } from '../hooks/useFocusMode';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useFocusOverlayActions } from '../hooks/useFocusOverlayActions';
 import { normalizeNodeColorKey } from '../types/node';
+import { isContentModeMindmap } from '../types/contentMode';
 import { NodeHeading, type NodeHeadingHandle } from './nodes/NodeHeading';
 import { TagInput } from '@/features/tags';
 import { TipTapEditor } from './nodes/TipTapEditor';
 import { LinkPreviewList } from './nodes/LinkPreviewCard';
+import { MindmapErrorBoundary } from './nodes/MindmapErrorBoundary';
 import styles from './FocusOverlay.module.css';
 import colorStyles from './nodes/nodeColorStyles.module.css';
+
+const LazyMindmapRenderer = React.lazy(() =>
+    import('./nodes/MindmapRenderer').then((m) => ({ default: m.MindmapRenderer })),
+);
 
 export const FocusOverlay = React.memo(function FocusOverlay() {
     const { focusedNode, isFocused, exitFocus } = useFocusMode();
@@ -27,11 +33,13 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
     const tagIds = focusedNode?.data.tags ?? [];
     const linkPreviews = focusedNode?.data.linkPreviews;
     const colorKey = normalizeNodeColorKey(focusedNode?.data.colorKey);
+    const contentMode = focusedNode?.data.contentMode;
     const editingNodeId = useCanvasStore((s) => s.editingNodeId);
     const isEditing = useMemo(
         () => editingNodeId === nodeId && nodeId !== '',
         [editingNodeId, nodeId],
     );
+    const showMindmap = isContentModeMindmap(contentMode) && !isEditing;
 
     const headingRef = useRef<NodeHeadingHandle>(null);
     const getHeading = useCallback(
@@ -84,7 +92,16 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
                 <div className={styles.divider} />
                 <div className={styles.contentArea} data-testid="focus-content-area"
                     onDoubleClick={!isEditing ? handleDoubleClick : undefined}>
-                    <TipTapEditor editor={editor} isEditable={isEditing} data-testid="focus-editor" />
+                    {showMindmap ? (
+                        <MindmapErrorBoundary>
+                            <Suspense fallback={null}>
+                                <LazyMindmapRenderer markdown={output ?? ''} />
+                            </Suspense>
+                        </MindmapErrorBoundary>
+                    ) : null}
+                    <div style={showMindmap ? { display: 'none' } : undefined}>
+                        <TipTapEditor editor={editor} isEditable={isEditing} data-testid="focus-editor" />
+                    </div>
                     <LinkPreviewList previews={linkPreviews ?? {}} />
                 </div>
                 {tagIds.length > 0 && (
