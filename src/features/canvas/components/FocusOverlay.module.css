@@ -89,6 +89,13 @@
     margin: var(--space-md) auto;
 }
 
+.mindmapWrapper {
+    flex: 1;
+    min-height: 400px;
+    width: 100%;
+    overflow: hidden;
+}
+
 @keyframes backdropFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

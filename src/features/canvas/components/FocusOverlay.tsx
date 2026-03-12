@@ -93,11 +93,13 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
                 <div className={styles.contentArea} data-testid="focus-content-area"
                     onDoubleClick={!isEditing ? handleDoubleClick : undefined}>
                     {showMindmap ? (
-                        <MindmapErrorBoundary>
-                            <Suspense fallback={null}>
-                                <LazyMindmapRenderer markdown={output ?? ''} />
-                            </Suspense>
-                        </MindmapErrorBoundary>
+                        <div className={styles.mindmapWrapper}>
+                            <MindmapErrorBoundary>
+                                <Suspense fallback={null}>
+                                    <LazyMindmapRenderer markdown={output ?? ''} />
+                                </Suspense>
+                            </MindmapErrorBoundary>
+                        </div>
                     ) : null}
                     <div style={showMindmap ? { display: 'none' } : undefined}>
                         <TipTapEditor editor={editor} isEditable={isEditing} data-testid="focus-editor" />
