@@ -91,8 +91,8 @@ describe('Auto-resize on contentMode toggle', () => {
         expect(bigAfter).toBe(bigBefore); // Same reference — untouched
     });
 
-    it('MINDMAP_MIN constants exceed default dimensions', () => {
-        expect(MINDMAP_MIN_WIDTH).toBeGreaterThan(DEFAULT_NODE_WIDTH);
-        expect(MINDMAP_MIN_HEIGHT).toBeGreaterThan(DEFAULT_NODE_HEIGHT);
+    it('MINDMAP_MIN constants equal default dimensions (grid-aligned tile sizing)', () => {
+        expect(MINDMAP_MIN_WIDTH).toBe(DEFAULT_NODE_WIDTH);
+        expect(MINDMAP_MIN_HEIGHT).toBe(DEFAULT_NODE_HEIGHT);
     });
 });

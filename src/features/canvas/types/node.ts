@@ -18,12 +18,12 @@ export const MAX_NODE_HEIGHT = 800;
 export const DEFAULT_NODE_WIDTH = 280;
 export const DEFAULT_NODE_HEIGHT = 220;
 
-/** Minimum width for legible mindmap rendering — matches default node width so
- *  small/simple mindmaps don't dominate the canvas. markmap's autoFit scales
- *  the SVG tree to fill any container, so 320×260 remains readable. */
-export const MINDMAP_MIN_WIDTH = 320;
-/** Minimum height for legible mindmap rendering — matches default node height. */
-export const MINDMAP_MIN_HEIGHT = 260;
+/** Minimum width for mindmap rendering — equals DEFAULT_NODE_WIDTH so toggling
+ *  to mindmap mode keeps the node the same size as its neighbours, giving an
+ *  even tile grid. markmap's autoFit scales the SVG to fill any container. */
+export const MINDMAP_MIN_WIDTH = DEFAULT_NODE_WIDTH;
+/** Minimum height for mindmap rendering — equals DEFAULT_NODE_HEIGHT. */
+export const MINDMAP_MIN_HEIGHT = DEFAULT_NODE_HEIGHT;
 
 /** Resize increment per arrow click (96px = 1 CSS inch = 6 grid snaps) */
 export const RESIZE_INCREMENT_PX = 96;
