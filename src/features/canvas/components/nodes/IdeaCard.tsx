@@ -11,8 +11,9 @@ import { IdeaCardContentSection } from './IdeaCardContentSection';
 import { IdeaCardTagsSection } from './IdeaCardTagsSection';
 import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT, normalizeNodeColorKey, type IdeaNodeData } from '../../types/node';
 import { isContentModeMindmap } from '../../types/contentMode';
-import { useCanvasStore } from '../../stores/canvasStore';
+import { toggleContentModeWithUndo, convertToMindmapWithAI } from '../../services/contentModeToggleService';
 import { MemoryChipIcon } from '@/shared/components/icons';
+import { captureError } from '@/shared/services/sentryService';
 import { strings } from '@/shared/localization/strings';
 import { SynthesisFooterWrapper } from '@/features/synthesis/components/SynthesisFooterWrapper';
 import styles from './IdeaCard.module.css';
@@ -43,9 +44,12 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
     }, [barContainerRef, openAtElement]);
 
     const handleContentModeToggle = React.useCallback(() => {
-        const next = isContentModeMindmap(resolvedData.contentMode) ? 'text' : 'mindmap';
-        useCanvasStore.getState().updateNodeContentMode(id, next);
-    }, [id, resolvedData.contentMode]);
+        toggleContentModeWithUndo(id);
+    }, [id]);
+
+    const handleConvertToMindmap = React.useCallback(() => {
+        void convertToMindmapWithAI(id).catch((e: unknown) => captureError(e as Error));
+    }, [id]);
 
     return (
         <div ref={cardWrapperRef}
@@ -78,7 +82,8 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                         editor={editor} handleDoubleClick={handleDoubleClick}
                         linkPreviews={linkPreviews}
                         contentMode={resolvedData.contentMode}
-                        output={resolvedData.output} />
+                        output={resolvedData.output}
+                        onContentModeToggle={handleContentModeToggle} />
                 )}
                 <IdeaCardTagsSection tagIds={tagIds} onChange={onTagsChange}
                     visible={!isCollapsed && (showTagInput || tagIds.length > 0)} />
@@ -88,7 +93,7 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                 onConnectClick={handleConnectClick} onCopyClick={handleCopy}
                 onDelete={handleDelete} onTransform={handleTransform} onRegenerate={handleRegenerate}
                 hasContent={hasContent} isTransforming={isTransforming} disabled={isGenerating ?? false}
-                onMoreClick={handleMoreClick} onAIClick={api.handleDoubleClick} />
+                onMoreClick={handleMoreClick} onAIClick={handleDoubleClick} />
             {contextMenu.isOpen && contextMenu.position && (
                 <IdeaCardContextMenuSection nodeId={id} position={contextMenu.position} onClose={contextMenu.close}
                     onTagClick={handleTagOpen} onImageClick={handleImageClick} onAttachmentClick={handleAttachmentClick}
@@ -98,6 +103,8 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                     isPinned={isPinned ?? false} isCollapsed={isCollapsed ?? false}
                     isInPool={resolvedData.includeInAIPool ?? false}
                     onContentModeToggle={handleContentModeToggle}
+                    onConvertToMindmap={handleConvertToMindmap}
+                    hasContent={hasContent}
                     isMindmapMode={isContentModeMindmap(resolvedData.contentMode)} />
             )}
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}

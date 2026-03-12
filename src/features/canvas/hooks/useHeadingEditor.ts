@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { useEditor } from '@tiptap/react';
+import type { Extension } from '@tiptap/core';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useTipTapEditor } from './useTipTapEditor';
 import { SlashCommandSuggestion, createSlashSuggestionRender } from '../extensions/slashCommandSuggestion';
@@ -23,6 +24,7 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
     const slashJustSelectedRef = useRef(false);
     const submitHandlerRef = useRef<SubmitKeymapHandler | null>(null);
     const blurRef = useRef<(md: string) => void>(() => undefined);
+    const slashCommandRef = useRef(onSlashCommand);
 
     // Track last committed heading to avoid redundant store writes on blur.
     const lastCommittedRef = useRef(heading);
@@ -42,21 +44,28 @@ export function useHeadingEditor(opts: UseHeadingEditorOptions): {
     useEffect(() => {
         if (!isEditing) lastCommittedRef.current = heading;
     }, [heading, isEditing]);
-    const extensions = useMemo(() => [
-        SubmitKeymap.configure({ handlerRef: submitHandlerRef }),
-        SlashCommandSuggestion.configure({
-            suggestion: {
-                render: createSlashSuggestionRender({
-                    onSelect: (id) => { onSlashCommand?.(id); },
-                    onActiveChange: (active) => {
-                        suggestionActiveRef.current = active;
-                        if (!active) slashJustSelectedRef.current = true;
-                    },
-                })
-            }
-        }),
+
+    useEffect(() => { slashCommandRef.current = onSlashCommand; }, [onSlashCommand]);
+
+    const hasSlashHandler = Boolean(onSlashCommand);
+    const extensions = useMemo(() => {
+        const base: Extension[] = [SubmitKeymap.configure({ handlerRef: submitHandlerRef })];
+        if (hasSlashHandler) {
+            base.push(SlashCommandSuggestion.configure({
+                suggestion: {
+                    render: createSlashSuggestionRender({
+                        onSelect: (id) => { slashCommandRef.current?.(id); },
+                        onActiveChange: (active) => {
+                            suggestionActiveRef.current = active;
+                            if (!active) slashJustSelectedRef.current = true;
+                        },
+                    })
+                }
+            }));
+        }
+        return base;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    ], []);
+    }, [hasSlashHandler]);
 
     const { editor, getMarkdown, setContent } = useTipTapEditor({
         initialContent: heading, placeholder, editable: isEditing,

@@ -5,6 +5,7 @@
 import type { CanvasNode, NodePosition, NodeColorKey } from '../types/node';
 import { clampNodeDimensions, MINDMAP_MIN_WIDTH, MINDMAP_MIN_HEIGHT } from '../types/node';
 import type { ContentMode } from '../types/contentMode';
+import { isContentModeMindmap } from '../types/contentMode';
 import type { CanvasEdge } from '../types/edge';
 import {
     arrangeMasonry,
@@ -21,12 +22,16 @@ export function updateNodeDimensionsInArray(
     width: number,
     height: number
 ): CanvasNode[] {
-    const clamped = clampNodeDimensions(width, height);
-    return nodes.map((node) =>
-        node.id === nodeId
-            ? { ...node, width: clamped.width, height: clamped.height, updatedAt: new Date() }
-            : node
-    );
+    return nodes.map((node) => {
+        if (node.id !== nodeId) return node;
+        let w = width, h = height;
+        if (isContentModeMindmap(node.data.contentMode)) {
+            w = Math.max(w, MINDMAP_MIN_WIDTH);
+            h = Math.max(h, MINDMAP_MIN_HEIGHT);
+        }
+        const clamped = clampNodeDimensions(w, h);
+        return { ...node, width: clamped.width, height: clamped.height, updatedAt: new Date() };
+    });
 }
 
 /**

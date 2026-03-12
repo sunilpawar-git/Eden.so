@@ -20,7 +20,7 @@ describe('Slash command toggle-mindmap integration', () => {
     it('toggle-mindmap command is accessible via getCommandById', () => {
         const cmd = getCommandById('toggle-mindmap');
         expect(cmd).toBeDefined();
-        expect(cmd?.icon).toBe('🧠');
+        expect(cmd?.icon).toBe('🗺️');
     });
 
     it('toggle-mindmap filterCommands matches "visual" keyword', () => {

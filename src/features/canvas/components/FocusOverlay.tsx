@@ -12,6 +12,7 @@ import { useCanvasStore } from '../stores/canvasStore';
 import { useFocusOverlayActions } from '../hooks/useFocusOverlayActions';
 import { normalizeNodeColorKey } from '../types/node';
 import { isContentModeMindmap } from '../types/contentMode';
+import { toggleContentModeWithUndo } from '../services/contentModeToggleService';
 import { NodeHeading, type NodeHeadingHandle } from './nodes/NodeHeading';
 import { TagInput } from '@/features/tags';
 import { TipTapEditor } from './nodes/TipTapEditor';
@@ -51,8 +52,13 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
         [],
     );
 
-    const { editor, handleDoubleClick, handleHeadingChange, handleTagsChange, saveBeforeExit } =
+    const { editor, handleDoubleClick: rawDoubleClick, handleHeadingChange, handleTagsChange, saveBeforeExit } =
         useFocusOverlayActions({ nodeId, output, isEditing, onExit: exitFocus, getHeading });
+
+    const handleDoubleClick = useCallback(() => {
+        if (isContentModeMindmap(contentMode)) return;
+        rawDoubleClick();
+    }, [contentMode, rawDoubleClick]);
 
     const handleExit = useCallback(() => {
         saveBeforeExit();
@@ -60,6 +66,9 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
     }, [saveBeforeExit, exitFocus]);
 
     const handlePanelClick = useCallback((e: React.MouseEvent) => { e.stopPropagation(); }, []);
+    const handleSwitchToText = useCallback(() => {
+        if (nodeId) toggleContentModeWithUndo(nodeId);
+    }, [nodeId]);
 
     if (!isFocused || !focusedNode) return null;
 
@@ -97,8 +106,8 @@ export const FocusOverlay = React.memo(function FocusOverlay() {
                     onDoubleClick={!isEditing ? handleDoubleClick : undefined}>
                     {showMindmap ? (
                         <div className={styles.mindmapWrapper}>
-                            <MindmapErrorBoundary>
-                                <Suspense fallback={null}>
+                            <MindmapErrorBoundary onSwitchToText={handleSwitchToText}>
+                                <Suspense fallback={<div className={styles.mindmapLoading}>{strings.canvas.mindmap.loading}</div>}>
                                     <LazyMindmapRenderer markdown={output ?? ''} />
                                 </Suspense>
                             </MindmapErrorBoundary>

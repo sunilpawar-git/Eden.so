@@ -10,7 +10,7 @@
  *
  * @see contentMode.ts — SSOT for when this renderer is active
  */
-import { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Transformer } from 'markmap-lib';
 import { Markmap } from 'markmap-view';
 import { strings } from '@/shared/localization/strings';
@@ -36,7 +36,7 @@ function catchRenderError(error: unknown): void {
 
 // ── Component ────────────────────────────────────────────────────────
 
-export function MindmapRenderer({ markdown }: MindmapRendererProps) {
+export const MindmapRenderer = React.memo(function MindmapRenderer({ markdown }: MindmapRendererProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const svgRef = useRef<SVGSVGElement>(null);
     const markmapRef = useRef<Markmap | null>(null);
@@ -85,11 +85,13 @@ export function MindmapRenderer({ markdown }: MindmapRendererProps) {
             ref={containerRef}
             className={styles.container}
             data-testid="mindmap-renderer"
+            role="figure"
             aria-label={strings.canvas.mindmap.ariaLabel}
             onPointerDown={stopPropagation}
             onWheel={stopPropagation}
         >
-            <svg ref={svgRef} className={styles.svg} />
+            <svg ref={svgRef} className={styles.svg} role="img"
+                aria-label={strings.canvas.mindmap.ariaLabel} />
         </div>
     );
-}
+});

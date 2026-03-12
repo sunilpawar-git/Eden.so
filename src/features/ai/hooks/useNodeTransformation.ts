@@ -43,7 +43,7 @@ export function useNodeTransformation() {
                     getPoolContext(content, 'transform', excludeIds),
                     Promise.resolve(getKBContext(content, 'transform')),
                 ]);
-                const transformedContent = await transformContent(content, type, poolContext, kbContext);
+                const transformedContent = await transformContent(content, type, poolContext, kbContext, node.data.contentMode);
                 useCanvasStore.getState().updateNodeOutput(nodeId, transformedContent);
 
                 // Push undo command after successful transform

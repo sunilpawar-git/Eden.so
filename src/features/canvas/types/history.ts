@@ -14,6 +14,7 @@ export type CanvasCommandType =
     | 'deleteEdge'
     | 'changeColor'
     | 'transformContent'
+    | 'toggleContentMode'
     | 'clearCanvas';
 
 export interface CanvasCommand {

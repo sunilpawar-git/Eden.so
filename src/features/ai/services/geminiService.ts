@@ -8,14 +8,23 @@ import {
 } from '@/features/knowledgeBank/services/geminiClient';
 import type { GeminiRequestBody } from '@/features/knowledgeBank/services/geminiClient';
 import type { ContentMode } from '@/features/canvas/types/contentMode';
+import {
+    SYSTEM_PROMPTS, TRANSFORMATION_PROMPTS, TEXT_TO_MINDMAP_PROMPT, MINDMAP_TRANSFORM_SUFFIX,
+} from './geminiPrompts';
+export type { TransformationType } from '../types/transformation';
+import type { TransformationType } from '../types/transformation';
+
+// ── Generation Config Constants ──────────────────────────
+
+const DEFAULT_MAX_TOKENS = 1024;
+const MINDMAP_MAX_TOKENS = 2048;
+const GENERATION_TEMPERATURE = 0.7;
+const TRANSFORM_TEMPERATURE = 0.5;
 
 // ── System Instruction Helpers ───────────────────────────
 
-/** Max chars for the combined system instruction (~25k tokens) */
 const MAX_SYSTEM_CHARS = 100_000;
 
-/** Build system instruction text: base prompt + optional NodePool + optional KB.
- *  If total exceeds MAX_SYSTEM_CHARS, KB context is truncated (lower priority). */
 function buildSystemText(
     basePrompt: string,
     nodePoolContext: string | undefined,
@@ -39,7 +48,6 @@ function buildSystemText(
     return text;
 }
 
-/** Build the systemInstruction field for Gemini API */
 function buildSystemInstruction(
     basePrompt: string,
     nodePoolContext: string | undefined,
@@ -51,75 +59,21 @@ function buildSystemInstruction(
     return { parts: [{ text }] };
 }
 
-/** Transformation types for AI-based text transformations (SSOT) */
-export type TransformationType = 'refine' | 'shorten' | 'lengthen' | 'proofread';
-
-// ── System Prompts ──────────────────────────────────────
-
-const SYSTEM_PROMPTS = {
-    singleNode: `You are a concise content generator.
-Generate high-quality output based on the user prompt.
-Avoid emojis unless explicitly requested.
-Keep responses focused and actionable.`,
-
-    chainGeneration: `You are an idea evolution engine.
-The user has connected previous ideas in a chain.
-Generate content that naturally builds upon and extends these connected ideas.
-Show clear progression and synthesis from the context provided.
-Keep it concise and actionable.`,
-
-    mindmapGeneration: `You are a structured mindmap content generator.
-Generate content as hierarchical markdown using ONLY headings and bullet lists.
-The top-level # heading should be the main topic.
-Use ## for major branches, ### for sub-branches, and #### for details.
-Keep each node label concise (3-8 words).
-Do NOT use paragraphs, long sentences, or code blocks.
-Output ONLY the hierarchical markdown.`,
-};
-
-// ── Transformation Prompts ──────────────────────────────
-
-const TRANSFORMATION_PROMPTS: Record<TransformationType, string> = {
-    refine: `Refine and improve the following text while preserving its original meaning and intent.
-Make it clearer, more polished, and better structured.
-Keep the same length unless improvements require slight changes.`,
-
-    shorten: `Make the following text more concise and brief while preserving its original meaning.
-Remove unnecessary words and redundancy.
-Keep all key information intact.`,
-
-    lengthen: `Expand and elaborate on the following text while preserving its original meaning and intent.
-Add more detail, examples, or explanation where appropriate.
-Make it more comprehensive.`,
-
-    proofread: `Proofread and correct the following text for grammar, spelling, and punctuation errors.
-Preserve the original meaning and intent exactly.
-Only fix errors, do not change the style or content.`,
-};
-
 // ── Response Handler ────────────────────────────────────
 
 const RETRY_DELAY_MS = 1000;
 
-/** Parse a Gemini result, throwing on errors */
 function parseResult(result: { ok: boolean; status: number; data: { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>; error?: { message: string; code: number } } | null }): string {
     if (!result.ok) {
-        if (result.status === 429) {
-            throw new Error(strings.errors.quotaExceeded);
-        }
+        if (result.status === 429) throw new Error(strings.errors.quotaExceeded);
         throw new Error(strings.errors.aiError);
     }
-
-    if (result.data?.error) {
-        throw new Error(result.data.error.message || strings.errors.aiError);
-    }
-
+    if (result.data?.error) throw new Error(result.data.error.message || strings.errors.aiError);
     const text = extractGeminiText(result.data);
     if (!text) throw new Error(strings.errors.aiError);
     return text;
 }
 
-/** Call Gemini and extract text, retrying once on transient (non-429) failures */
 async function callAndExtract(body: GeminiRequestBody): Promise<string> {
     const result = await callGemini(body);
     try {
@@ -144,9 +98,7 @@ export async function generateContent(
     knowledgeBankContext?: string,
     contentMode?: ContentMode,
 ): Promise<string> {
-    if (!isGeminiAvailable()) {
-        throw new Error(strings.errors.aiError);
-    }
+    if (!isGeminiAvailable()) throw new Error(strings.errors.aiError);
 
     const basePrompt = contentMode === 'mindmap'
         ? SYSTEM_PROMPTS.mindmapGeneration
@@ -154,16 +106,12 @@ export async function generateContent(
 
     const body: GeminiRequestBody = {
         contents: [{ parts: [{ text: `User request: ${prompt}` }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        generationConfig: { temperature: GENERATION_TEMPERATURE, maxOutputTokens: contentMode === 'mindmap' ? MINDMAP_MAX_TOKENS : DEFAULT_MAX_TOKENS },
         systemInstruction: buildSystemInstruction(
-            basePrompt,
-            nodePoolContext,
-            strings.nodePool.ai.usageGuidance,
-            knowledgeBankContext,
-            strings.knowledgeBank.ai.kbUsageGuidance
+            basePrompt, nodePoolContext, strings.nodePool.ai.usageGuidance,
+            knowledgeBankContext, strings.knowledgeBank.ai.kbUsageGuidance
         ),
     };
-
     return callAndExtract(body);
 }
 
@@ -178,10 +126,7 @@ export async function generateContentWithContext(
     if (contextChain.length === 0) {
         return generateContent(prompt, nodePoolContext, knowledgeBankContext, contentMode);
     }
-
-    if (!isGeminiAvailable()) {
-        throw new Error(strings.errors.aiError);
-    }
+    if (!isGeminiAvailable()) throw new Error(strings.errors.aiError);
 
     const contextSection = contextChain
         .map((content, i) => `[Connected Idea ${i + 1}]: ${content}`)
@@ -200,16 +145,12 @@ Generate content that synthesizes and builds upon the connected ideas above.`;
 
     const body: GeminiRequestBody = {
         contents: [{ parts: [{ text: userPrompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        generationConfig: { temperature: GENERATION_TEMPERATURE, maxOutputTokens: contentMode === 'mindmap' ? MINDMAP_MAX_TOKENS : DEFAULT_MAX_TOKENS },
         systemInstruction: buildSystemInstruction(
-            basePrompt,
-            nodePoolContext,
-            strings.nodePool.ai.usageGuidance,
-            knowledgeBankContext,
-            strings.knowledgeBank.ai.kbUsageGuidance
+            basePrompt, nodePoolContext, strings.nodePool.ai.usageGuidance,
+            knowledgeBankContext, strings.knowledgeBank.ai.kbUsageGuidance
         ),
     };
-
     return callAndExtract(body);
 }
 
@@ -218,28 +159,42 @@ export async function transformContent(
     content: string,
     type: TransformationType,
     nodePoolContext?: string,
-    knowledgeBankContext?: string
+    knowledgeBankContext?: string,
+    contentMode?: ContentMode,
 ): Promise<string> {
-    if (!isGeminiAvailable()) {
-        throw new Error(strings.errors.aiError);
-    }
+    if (!isGeminiAvailable()) throw new Error(strings.errors.aiError);
 
-    const userPrompt = `Text to transform:
-${content}
-
-Transformed text:`;
+    const userPrompt = `Text to transform:\n${content}\n\nTransformed text:`;
+    const basePrompt = contentMode === 'mindmap'
+        ? TRANSFORMATION_PROMPTS[type] + MINDMAP_TRANSFORM_SUFFIX
+        : TRANSFORMATION_PROMPTS[type];
 
     const body: GeminiRequestBody = {
         contents: [{ parts: [{ text: userPrompt }] }],
-        generationConfig: { temperature: 0.5, maxOutputTokens: 1024 },
+        generationConfig: { temperature: TRANSFORM_TEMPERATURE, maxOutputTokens: contentMode === 'mindmap' ? MINDMAP_MAX_TOKENS : DEFAULT_MAX_TOKENS },
         systemInstruction: buildSystemInstruction(
-            TRANSFORMATION_PROMPTS[type],
-            nodePoolContext,
-            strings.nodePool.ai.transformGuidance,
-            knowledgeBankContext,
-            strings.knowledgeBank.ai.kbTransformGuidance
+            basePrompt, nodePoolContext, strings.nodePool.ai.transformGuidance,
+            knowledgeBankContext, strings.knowledgeBank.ai.kbTransformGuidance
         ),
     };
+    return callAndExtract(body);
+}
 
+/** Convert existing prose content into hierarchical mindmap markdown via AI. */
+export async function convertTextToMindmap(
+    content: string,
+    nodePoolContext?: string,
+    knowledgeBankContext?: string,
+): Promise<string> {
+    if (!isGeminiAvailable()) throw new Error(strings.errors.aiError);
+
+    const body: GeminiRequestBody = {
+        contents: [{ parts: [{ text: `Text to convert into a mindmap:\n${content}` }] }],
+        generationConfig: { temperature: TRANSFORM_TEMPERATURE, maxOutputTokens: MINDMAP_MAX_TOKENS },
+        systemInstruction: buildSystemInstruction(
+            TEXT_TO_MINDMAP_PROMPT, nodePoolContext, strings.nodePool.ai.transformGuidance,
+            knowledgeBankContext, strings.knowledgeBank.ai.kbTransformGuidance
+        ),
+    };
     return callAndExtract(body);
 }

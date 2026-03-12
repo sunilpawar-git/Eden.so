@@ -19,6 +19,10 @@ export const slashCommandStrings = {
         label: 'Mindmap View',
         description: 'Toggle between text and mindmap visualization',
     },
+    convertToMindmap: {
+        label: 'Convert to Mindmap',
+        description: 'Restructure existing text into a mindmap with AI',
+    },
     noResults: 'No commands found',
     menuLabel: 'Slash commands',
     prefixSeparator: ':',

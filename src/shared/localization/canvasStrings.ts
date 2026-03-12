@@ -74,7 +74,14 @@ export const canvasStrings = {
     mindmap: {
         ariaLabel: 'Mindmap visualization',
         emptyFallback: 'Empty',
-        emptyHint: 'Double-click to add content, then view as mindmap',
+        emptyHint: 'Type a heading and press Enter to generate content, then view as mindmap',
         errorFallback: 'Unable to render mindmap',
+        errorRetry: 'Retry',
+        errorSwitchToText: 'Switch to Text View',
+        convertEmpty: 'Add content first, then convert to mindmap',
+        switchedToMindmap: 'Switched to Mindmap View',
+        switchedToText: 'Switched to Text View',
+        convertToMindmap: 'Convert to Mindmap',
+        loading: 'Loading mindmap...',
     },
 };

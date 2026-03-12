@@ -85,7 +85,7 @@ describe('Slash commands — toggle-mindmap', () => {
     it('registry includes toggle-mindmap command', () => {
         const cmd = slashCommands.find(c => c.id === 'toggle-mindmap');
         expect(cmd).toBeDefined();
-        expect(cmd?.icon).toBe('🧠');
+        expect(cmd?.icon).toBe('🗺️');
         expect(cmd?.prefix).toBe('mindmap');
     });
 

@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
 import { enterFocusWithEditing } from '../stores/focusStore';
+import { toggleContentModeWithUndo } from '../services/contentModeToggleService';
 import { useIdeaCardActions } from './useIdeaCardActions';
 import { useIdeaCardDuplicateAction } from './useIdeaCardDuplicateAction';
 import { useIdeaCardShareAction } from './useIdeaCardShareAction';
@@ -45,16 +46,17 @@ export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
 
     const focusBody = useCallback(() => { if (editor) editor.commands.focus(); }, [editor]);
     const focusHeading = useCallback(() => { headingRef.current?.focus(); }, [headingRef]);
+    const handleMindmapToggle = useCallback(() => { toggleContentModeWithUndo(id); }, [id]);
     const nodeShortcuts: NodeShortcutMap = useMemo(() => ({
-        t: handleTagOpen, c: handleCollapseToggle, f: handleFocusClick,
-    }), [handleTagOpen, handleCollapseToggle, handleFocusClick]);
+        t: handleTagOpen, c: handleCollapseToggle, f: handleFocusClick, m: handleMindmapToggle,
+    }), [handleTagOpen, handleCollapseToggle, handleFocusClick, handleMindmapToggle]);
     useNodeShortcuts(selected ?? false, nodeShortcuts);
 
     const { handleKeyDown, handleDoubleClick } = useNodeInput({
         nodeId: id, isEditing, editor, getMarkdown, setContent, getEditableContent, saveContent,
         submitHandlerRef, isGenerating: Boolean(isGenerating),
         isNewEmptyNode: !prompt && !output, focusHeading, shortcuts: nodeShortcuts,
-        nodeOutput: output,
+        nodeOutput: output, contentMode: resolvedData.contentMode,
     });
 
     const onTagsChange = useCallback((ids: string[]) => {

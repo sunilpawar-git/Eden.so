@@ -130,6 +130,7 @@ export const strings = {
         nodeColorGreen: 'Green (Complete)',
         tags: 'Tags',
         tagsShortcut: 'T',
+        mindmapShortcut: 'M',
         unpin: 'Unpin',
         mindmapView: 'Mindmap View',
         textView: 'Text View',

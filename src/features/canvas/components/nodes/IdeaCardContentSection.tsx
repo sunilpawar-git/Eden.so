@@ -41,6 +41,8 @@ export interface IdeaCardContentSectionProps {
     contentMode?: ContentMode;
     /** Raw markdown content for MindmapRenderer */
     output?: string;
+    /** Called when user clicks the mindmap mode badge to switch back to text */
+    onContentModeToggle?: () => void;
 }
 
 interface ContentViewState {
@@ -110,11 +112,19 @@ export const IdeaCardContentSection = React.memo((props: IdeaCardContentSectionP
             )}
 
             {vs.showMindmap && (
-                <MindmapErrorBoundary>
-                    <Suspense fallback={null}>
-                        <LazyMindmapRenderer markdown={props.output ?? ''} />
-                    </Suspense>
-                </MindmapErrorBoundary>
+                <>
+                    {props.onContentModeToggle && (
+                        <button className={styles.mindmapBadge} onClick={props.onContentModeToggle}
+                            aria-label={strings.nodeUtils.textView}>
+                            {strings.nodeUtils.textView}
+                        </button>
+                    )}
+                    <MindmapErrorBoundary onSwitchToText={props.onContentModeToggle}>
+                        <Suspense fallback={<div className={styles.mindmapLoading}>{strings.canvas.mindmap.loading}</div>}>
+                            <LazyMindmapRenderer markdown={props.output ?? ''} />
+                        </Suspense>
+                    </MindmapErrorBoundary>
+                </>
             )}
 
             {/* Stable tree position — never unmounts during editing transitions */}

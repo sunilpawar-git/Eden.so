@@ -34,8 +34,8 @@ describe('Mindmap bundle isolation', () => {
             resolve(SRC_ROOT, 'features/canvas/components/nodes/MindmapRenderer.tsx'),
             'utf-8',
         );
-        // Should be `export function MindmapRenderer` (named export)
-        expect(content).toMatch(/export\s+function\s+MindmapRenderer/);
+        // Should be a named export (export function or export const with React.memo)
+        expect(content).toMatch(/export\s+(?:function|const)\s+MindmapRenderer/);
         // Should NOT have a default export
         expect(content).not.toMatch(/export\s+default/);
     });

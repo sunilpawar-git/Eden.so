@@ -4,6 +4,8 @@ import { useLinkPreviewFetch } from './useLinkPreviewFetch';
 import { extractUrls } from './nodeInputUtils';
 import { getViewModeKeyAction, applyViewModeKeyAction } from './nodeInputKeyHandler';
 import { useSubmitHandlerEffect, usePasteHandlerEffect } from './nodeInputEffects';
+import { isContentModeMindmap } from '../types/contentMode';
+import { enterFocusWithEditing } from '../stores/focusStore';
 import type { UseNodeInputOptions, UseNodeInputReturn } from './useNodeInput.types';
 
 export type { NodeShortcutMap } from './nodeInputKeyHandler';
@@ -15,7 +17,7 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         nodeId, isEditing, editor, getMarkdown, setContent,
         getEditableContent, saveContent, submitHandlerRef,
         isGenerating, isNewEmptyNode, focusHeading, shortcuts,
-        nodeOutput,
+        nodeOutput, contentMode,
     } = options;
 
     // Scoped selector: only subscribe to draftContent when THIS node is editing.
@@ -61,8 +63,13 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     }, [isEditing, handleViewModeKey]);
 
     const handleDoubleClick = useCallback(() => {
-        if (!isGenerating) enterEditing();
-    }, [isGenerating, enterEditing]);
+        if (isGenerating) return;
+        if (isContentModeMindmap(contentMode)) {
+            enterFocusWithEditing(nodeId);
+            return;
+        }
+        enterEditing();
+    }, [isGenerating, enterEditing, contentMode, nodeId]);
 
     return { handleKeyDown, handleDoubleClick };
 }

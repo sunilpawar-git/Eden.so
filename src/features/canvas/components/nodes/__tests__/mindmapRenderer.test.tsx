@@ -56,11 +56,11 @@ describe('MindmapRenderer', () => {
         expect(svg).toBeInTheDocument();
     });
 
-    it('sets aria-label for accessibility', () => {
+    it('sets aria-label for accessibility on container and SVG', () => {
         render(<MindmapRenderer markdown="# Topic" />);
-        expect(
-            screen.getByLabelText(strings.canvas.mindmap.ariaLabel),
-        ).toBeInTheDocument();
+        const elements = screen.getAllByLabelText(strings.canvas.mindmap.ariaLabel);
+        expect(elements.length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByTestId('mindmap-renderer')).toHaveAttribute('aria-label', strings.canvas.mindmap.ariaLabel);
     });
 
     it('has data-testid for test targeting', () => {

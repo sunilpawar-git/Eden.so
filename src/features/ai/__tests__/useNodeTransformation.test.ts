@@ -62,7 +62,8 @@ describe('useNodeTransformation - Phase 4', () => {
             'Original content to transform',
             'refine',
             '',
-            ''
+            '',
+            undefined,
         );
     });
 
