@@ -3,6 +3,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { strings } from '@/shared/localization/strings';
 import { NodeContextMenu } from '../NodeContextMenu';
 import { pressEscape } from '@/shared/hooks/__tests__/helpers/escapeTestHelpers';
@@ -64,6 +66,15 @@ describe('NodeContextMenu', () => {
         render(<NodeContextMenu {...defaultProps} isPinned={true} />);
         expect(screen.getByText(strings.nodeUtils.unpin)).toBeInTheDocument();
         expect(screen.queryByText(strings.nodeUtils.pin)).not.toBeInTheDocument();
+    });
+
+    it('pin icon changes between pinned and unpinned states', () => {
+        const { rerender } = render(<NodeContextMenu {...defaultProps} isPinned={false} />);
+        expect(screen.getByText('📌')).toBeInTheDocument();
+        expect(screen.queryByText('📍')).not.toBeInTheDocument();
+        rerender(<NodeContextMenu {...defaultProps} isPinned={true} />);
+        expect(screen.getByText('📍')).toBeInTheDocument();
+        expect(screen.queryByText('📌')).not.toBeInTheDocument();
     });
 
     it('shows Expand when isCollapsed is true', () => {
@@ -170,5 +181,30 @@ describe('NodeContextMenu', () => {
         const left = parseInt(menu.style.left, 10);
         expect(left).toBeLessThanOrEqual(200);
         expect(top).toBeLessThanOrEqual(200);
+    });
+
+    describe('height-awareness regression guard', () => {
+        it('useContextMenuPosition depends on expandedPanel (heightTrigger)', () => {
+            const src = readFileSync(
+                join(process.cwd(), 'src/features/canvas/components/nodes/NodeContextMenu.tsx'), 'utf-8',
+            );
+            expect(src).toContain('heightTrigger');
+            expect(src).toMatch(/\[menuRef,\s*position,\s*heightTrigger,\s*setClamped\]/);
+        });
+
+        it('menu CSS has max-height and overflow-y safety net', () => {
+            const css = readFileSync(
+                join(process.cwd(), 'src/features/canvas/components/nodes/NodeContextMenu.module.css'), 'utf-8',
+            );
+            expect(css).toContain('max-height');
+            expect(css).toContain('overflow-y');
+        });
+
+        it('expandedPanel is passed to useContextMenuPosition call', () => {
+            const src = readFileSync(
+                join(process.cwd(), 'src/features/canvas/components/nodes/NodeContextMenu.tsx'), 'utf-8',
+            );
+            expect(src).toMatch(/useContextMenuPosition\(menuRef,\s*position,\s*expandedPanel/);
+        });
     });
 });

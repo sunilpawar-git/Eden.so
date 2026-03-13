@@ -50,7 +50,7 @@ export interface NodeContextMenuProps {
 }
 
 /** Group definitions with ordered group keys */
-const GROUP_ORDER: readonly (keyof typeof CONTEXT_MENU_GROUPS)[] = ['primary', 'organize', 'appearance', 'insert', 'sharing'];
+const GROUP_ORDER: ReadonlyArray<keyof typeof CONTEXT_MENU_GROUPS> = ['primary', 'organize', 'appearance', 'insert', 'sharing'];
 const GROUP_LABELS: Record<string, () => string> = {
     primary: () => strings.contextMenu.primary,
     organize: () => strings.contextMenu.organize,
@@ -69,7 +69,7 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
     const contextMenuIcons = useSettingsStore((s) => s.contextMenuIcons);
 
     useEscapeLayer(ESCAPE_PRIORITY.CONTEXT_MENU, true, onClose);
-    useContextMenuPosition(menuRef, position, setClampedPos);
+    useContextMenuPosition(menuRef, position, expandedPanel, setClampedPos);
     useContextMenuOutsideClick(menuRef, onClose);
 
     const action = useCallback((fn?: () => void) => () => { fn?.(); onClose(); }, [onClose]);
@@ -80,7 +80,7 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
     // Build grouped items from the configurable list
     const groupedItems = useMemo(() => {
         const contextSet = new Set(contextMenuIcons);
-        const groups: { key: string; items: ActionId[] }[] = [];
+        const groups: Array<{ key: string; items: ActionId[] }> = [];
 
         for (const groupKey of GROUP_ORDER) {
             const groupActions = CONTEXT_MENU_GROUPS[groupKey] as readonly string[];
@@ -100,7 +100,7 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
         switch (id) {
             case 'pin':
                 if (!props.onPinToggle) return null;
-                return <MenuItem key={id} icon="📌"
+                return <MenuItem key={id} icon={props.isPinned ? '📍' : '📌'}
                     label={props.isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
                     onClick={action(props.onPinToggle)} />;
             case 'duplicate':
@@ -205,6 +205,7 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
 function useContextMenuPosition(
     menuRef: React.RefObject<HTMLDivElement | null>,
     position: { x: number; y: number },
+    heightTrigger: unknown,
     setClamped: (pos: { x: number; y: number }) => void,
 ) {
     useLayoutEffect(() => {
@@ -227,7 +228,7 @@ function useContextMenuPosition(
             x: Math.max(VIEWPORT_PADDING_PX, x),
             y: Math.max(VIEWPORT_PADDING_PX, y),
         });
-    }, [menuRef, position, setClamped]);
+    }, [menuRef, position, heightTrigger, setClamped]);
 }
 
 function useContextMenuOutsideClick(

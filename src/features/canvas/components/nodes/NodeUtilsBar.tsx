@@ -91,7 +91,7 @@ export const NodeUtilsBar = React.memo(forwardRef<HTMLDivElement, NodeUtilsBarPr
                         <TooltipButton key={id}
                             label={props.isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
                             tooltipText={props.isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
-                            icon={meta.icon}
+                            icon={props.isPinned ? '📍' : '📌'}
                             onClick={props.onPinToggle ?? props.onMoreClick}
                             disabled={disabled} tooltipPlacement="right" />
                     );
