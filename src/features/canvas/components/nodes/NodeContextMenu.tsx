@@ -10,12 +10,11 @@ import { getPortalRoot } from '@/shared/utils/portalRoot';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
-import { type ActionId, ACTION_REGISTRY } from '@/shared/stores/iconRegistry';
+import { type ActionId } from '@/shared/stores/iconRegistry';
 import { CONTEXT_MENU_GROUPS } from '../../types/utilsBarLayout';
-import { MenuItem, ExpandToggle, MenuSeparator, GroupLabel } from './ContextMenuItems';
-import { InlineColorPicker } from './InlineColorPicker';
-import { InlineSharePanel } from './InlineSharePanel';
-import { normalizeNodeColorKey, type NodeColorKey } from '../../types/node';
+import { type NodeColorKey } from '../../types/node';
+import { MenuSeparator, GroupLabel } from './ContextMenuItems';
+import { renderContextMenuItem, type ContextMenuItemContext } from './renderContextMenuItem';
 import styles from './NodeContextMenu.module.css';
 
 const VIEWPORT_PADDING_PX = 8;
@@ -92,100 +91,26 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
         return groups;
     }, [contextMenuIcons]);
 
-    /** Render a single context menu item */
-    const renderItem = useCallback((id: ActionId) => {
-        const meta = ACTION_REGISTRY.get(id);
-        if (!meta) return null;
+    /** Build context object for the external render helper */
+    const itemCtx: ContextMenuItemContext = useMemo(() => ({
+        onClose, action, expandedPanel, togglePanel,
+        onPinToggle: props.onPinToggle, isPinned: props.isPinned,
+        onDuplicateClick: props.onDuplicateClick,
+        onCollapseToggle: props.onCollapseToggle, isCollapsed: props.isCollapsed,
+        onFocusClick: props.onFocusClick, onTagClick: props.onTagClick,
+        onContentModeToggle: props.onContentModeToggle, isMindmapMode: props.isMindmapMode,
+        onColorChange: props.onColorChange, nodeColorKey: props.nodeColorKey,
+        onImageClick: props.onImageClick, onAttachmentClick: props.onAttachmentClick,
+        onShareClick: props.onShareClick, isSharing: props.isSharing,
+        onPoolToggle: props.onPoolToggle, isInPool: props.isInPool,
+        onAIClick: props.onAIClick, onConnectClick: props.onConnectClick,
+        onCopyClick: props.onCopyClick, onDeleteClick: props.onDeleteClick,
+    }), [props, onClose, action, expandedPanel, togglePanel]);
 
-        switch (id) {
-            case 'pin':
-                if (!props.onPinToggle) return null;
-                return <MenuItem key={id} icon={props.isPinned ? '📍' : '📌'}
-                    label={props.isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin}
-                    onClick={action(props.onPinToggle)} />;
-            case 'duplicate':
-                if (!props.onDuplicateClick) return null;
-                return <MenuItem key={id} icon="📑" label={strings.nodeUtils.duplicate}
-                    onClick={action(props.onDuplicateClick)} />;
-            case 'collapse':
-                if (!props.onCollapseToggle) return null;
-                return <MenuItem key={id} icon={props.isCollapsed ? '🔽' : '🔼'}
-                    label={props.isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse}
-                    onClick={action(props.onCollapseToggle)} />;
-            case 'focus':
-                if (!props.onFocusClick) return null;
-                return <MenuItem key={id} icon="🔍" label={strings.nodeUtils.focus}
-                    onClick={action(props.onFocusClick)} />;
-            case 'tags':
-                return <MenuItem key={id} icon="🏷️" label={strings.nodeUtils.tags}
-                    onClick={action(props.onTagClick)} />;
-            case 'mindmap':
-                if (!props.onContentModeToggle) return null;
-                return <MenuItem key={id} icon="🗺️"
-                    label={props.isMindmapMode ? strings.nodeUtils.textView : strings.nodeUtils.mindmapView}
-                    onClick={action(props.onContentModeToggle)} />;
-            case 'color':
-                if (!props.onColorChange) return null;
-                return (
-                    <React.Fragment key={id}>
-                        <ExpandToggle icon="🎨" label={strings.nodeUtils.color}
-                            expanded={expandedPanel === 'color'} onToggle={() => togglePanel('color')} />
-                        {expandedPanel === 'color' && (
-                            <div className={styles.expandableContent}>
-                                <InlineColorPicker selectedColorKey={normalizeNodeColorKey(props.nodeColorKey)}
-                                    onColorSelect={props.onColorChange} onClose={onClose} />
-                            </div>
-                        )}
-                    </React.Fragment>
-                );
-            case 'image':
-                if (!props.onImageClick) return null;
-                return <MenuItem key={id} icon="🖼️" label={strings.nodeUtils.image}
-                    onClick={action(props.onImageClick)} />;
-            case 'attachment':
-                if (!props.onAttachmentClick) return null;
-                return <MenuItem key={id} icon="📎" label={strings.nodeUtils.attachment}
-                    onClick={action(props.onAttachmentClick)} />;
-            case 'share':
-                if (!props.onShareClick) return null;
-                return (
-                    <React.Fragment key={id}>
-                        <ExpandToggle icon="📤" label={strings.nodeUtils.share}
-                            expanded={expandedPanel === 'share'} onToggle={() => togglePanel('share')} />
-                        {expandedPanel === 'share' && (
-                            <div className={styles.expandableContent}>
-                                <InlineSharePanel onShare={props.onShareClick}
-                                    isSharing={props.isSharing ?? false} onClose={onClose} />
-                            </div>
-                        )}
-                    </React.Fragment>
-                );
-            case 'pool':
-                if (!props.onPoolToggle) return null;
-                return <MenuItem key={id} icon="🧠"
-                    label={props.isInPool ? strings.nodePool.removeFromPool : strings.nodePool.addToPool}
-                    onClick={action(props.onPoolToggle)} />;
-            // Primary actions that might appear in context menu
-            case 'ai':
-                if (!props.onAIClick) return null;
-                return <MenuItem key={id} icon={meta.icon} label={meta.label()}
-                    onClick={action(props.onAIClick)} />;
-            case 'connect':
-                if (!props.onConnectClick) return null;
-                return <MenuItem key={id} icon={meta.icon} label={meta.label()}
-                    onClick={action(props.onConnectClick)} />;
-            case 'copy':
-                if (!props.onCopyClick) return null;
-                return <MenuItem key={id} icon={meta.icon} label={meta.label()}
-                    onClick={action(props.onCopyClick)} />;
-            case 'delete':
-                if (!props.onDeleteClick) return null;
-                return <MenuItem key={id} icon={meta.icon} label={meta.label()}
-                    onClick={action(props.onDeleteClick)} />;
-            default:
-                return null;
-        }
-    }, [props, action, expandedPanel, togglePanel, onClose]);
+    const renderItem = useCallback(
+        (id: ActionId) => renderContextMenuItem(id, itemCtx),
+        [itemCtx],
+    );
 
     return createPortal(
         <div className={styles.menu} ref={menuRef} role="menu"

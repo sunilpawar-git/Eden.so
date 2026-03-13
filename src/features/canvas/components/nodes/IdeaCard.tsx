@@ -3,12 +3,11 @@ import React from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useIdeaCard } from '../../hooks/useIdeaCard';
 import { useNodeContextMenu } from './useNodeContextMenu';
-import { NodeUtilsBar } from './NodeUtilsBar';
-import { IdeaCardContextMenuSection } from './IdeaCardContextMenuSection';
 import { NodeResizeButtons } from './NodeResizeButtons';
 import { IdeaCardHeadingSection } from './IdeaCardHeadingSection';
 import { IdeaCardContentSection } from './IdeaCardContentSection';
 import { IdeaCardTagsSection } from './IdeaCardTagsSection';
+import { IdeaCardActionsSection } from './IdeaCardActionsSection';
 import { MIN_NODE_WIDTH, MAX_NODE_WIDTH, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT, MINDMAP_MIN_WIDTH, MINDMAP_MIN_HEIGHT, normalizeNodeColorKey, type IdeaNodeData } from '../../types/node';
 import { isContentModeMindmap, type ContentMode } from '../../types/contentMode';
 import { toggleContentModeWithUndo } from '../../services/contentModeToggleService';
@@ -104,33 +103,24 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                     visible={!isCollapsed && (showTagInput || tagIds.length > 0)} />
                 {nodeColorKey === 'synthesis' && !isCollapsed && <SynthesisFooterWrapper nodeId={id} />}
             </div>
-            <NodeUtilsBar ref={barContainerRef} registerProximityLostFn={registerProximityLostFn}
-                onConnectClick={handleConnectClick} onCopyClick={handleCopy}
-                onDelete={handleDelete} onTransform={handleTransform} onRegenerate={handleRegenerate}
-                hasContent={hasContent} isTransforming={isTransforming} disabled={isGenerating ?? false}
-                onMoreClick={handleMoreClick} onAIClick={handleDoubleClick}
-                onPinToggle={handlePinToggle} onDuplicateClick={handleDuplicate}
-                onCollapseToggle={handleCollapseToggle} onFocusClick={handleFocusClick}
-                onTagClick={handleTagOpen} onImageClick={handleImageClick}
-                onAttachmentClick={handleAttachmentClick} onPoolToggle={handlePoolToggle}
-                onContentModeToggle={handleContentModeToggle}
+            <IdeaCardActionsSection nodeId={id} barContainerRef={barContainerRef}
+                registerProximityLostFn={registerProximityLostFn}
+                hasContent={hasContent} isGenerating={isGenerating ?? false}
+                isTransforming={isTransforming}
                 isPinned={isPinned ?? false} isCollapsed={isCollapsed ?? false}
                 isInPool={resolvedData.includeInAIPool ?? false}
-                isMindmapMode={isContentModeMindmap(resolvedData.contentMode)} />
-            {contextMenu.isOpen && contextMenu.position && (
-                <IdeaCardContextMenuSection nodeId={id} position={contextMenu.position} onClose={contextMenu.close}
-                    onTagClick={handleTagOpen} onImageClick={handleImageClick} onAttachmentClick={handleAttachmentClick}
-                    onFocusClick={handleFocusClick} onDuplicateClick={handleDuplicate} onShareClick={handleShare}
-                    isSharing={isSharing} onPinToggle={handlePinToggle} onCollapseToggle={handleCollapseToggle}
-                    onPoolToggle={handlePoolToggle} onColorChange={handleColorChange} nodeColorKey={nodeColorKey}
-                    isPinned={isPinned ?? false} isCollapsed={isCollapsed ?? false}
-                    isInPool={resolvedData.includeInAIPool ?? false}
-                    onContentModeToggle={handleContentModeToggle}
-                    isMindmapMode={isContentModeMindmap(resolvedData.contentMode)}
-                    onDeleteClick={handleDelete} onCopyClick={handleCopy}
-                    onConnectClick={handleConnectClick} onAIClick={handleDoubleClick}
-                    hasContent={hasContent} />
-            )}
+                contentMode={resolvedData.contentMode} nodeColorKey={nodeColorKey}
+                isSharing={isSharing}
+                handleConnectClick={handleConnectClick} handleCopy={handleCopy}
+                handleDelete={handleDelete} handleTransform={handleTransform}
+                handleRegenerate={handleRegenerate} handleMoreClick={handleMoreClick}
+                handleDoubleClick={handleDoubleClick} handlePinToggle={handlePinToggle}
+                handleDuplicate={handleDuplicate} handleCollapseToggle={handleCollapseToggle}
+                handleFocusClick={handleFocusClick} handleTagOpen={handleTagOpen}
+                handleImageClick={handleImageClick} handleAttachmentClick={handleAttachmentClick}
+                handlePoolToggle={handlePoolToggle} handleContentModeToggle={handleContentModeToggle}
+                handleColorChange={handleColorChange} handleShare={handleShare}
+                contextMenu={contextMenu} />
             <Handle type="source" position={Position.Bottom} id={`${id}-source`}
                 isConnectable className={`${handleStyles.handle} ${handleStyles.handleBottom}`} />
         </div>

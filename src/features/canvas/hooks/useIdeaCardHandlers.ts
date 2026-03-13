@@ -46,7 +46,7 @@ export function useIdeaCardHandlers(params: UseIdeaCardHandlersParams) {
 
     const focusBody = useCallback(() => { if (editor) editor.commands.focus(); }, [editor]);
     const focusHeading = useCallback(() => { headingRef.current?.focus(); }, [headingRef]);
-    const handleMindmapToggle = useCallback(() => { toggleContentModeWithUndo(id); }, [id]);
+    const handleMindmapToggle = useCallback(() => { void toggleContentModeWithUndo(id).catch((e: unknown) => captureError(e as Error)); }, [id]);
     const nodeShortcuts: NodeShortcutMap = useMemo(() => ({
         t: handleTagOpen, c: handleCollapseToggle, f: handleFocusClick, m: handleMindmapToggle,
     }), [handleTagOpen, handleCollapseToggle, handleFocusClick, handleMindmapToggle]);
