@@ -8,7 +8,6 @@ import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { useOfflineQueueStore } from '@/features/workspace/stores/offlineQueueStore';
 import { useBackgroundSyncStatus } from '@/app/hooks/useBackgroundSyncStatus';
 import { strings } from '@/shared/localization/strings';
-import styles from './SyncStatusIndicator.module.css';
 
 type DotVariant = 'green' | 'spinner' | 'yellow' | 'gray' | 'red' | 'blue';
 
@@ -44,6 +43,15 @@ function getIndicatorState(
     }
 }
 
+const DOT_CLASSES: Record<DotVariant, string> = {
+    green:   'bg-[var(--color-success)] animate-[sync-fade_150ms_ease]',
+    spinner: 'bg-[var(--color-primary)] animate-[sync-pulse_1s_ease-in-out_infinite]',
+    yellow:  'bg-[var(--color-warning)]',
+    gray:    'bg-[var(--color-text-muted)]',
+    red:     'bg-[var(--color-error)]',
+    blue:    'bg-[var(--color-primary)] animate-[sync-pulse_1.2s_ease-in-out_infinite]',
+};
+
 export function SyncStatusIndicator() {
     const status = useSaveStatusStore((s) => s.status);
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
@@ -55,9 +63,16 @@ export function SyncStatusIndicator() {
     );
 
     return (
-        <div className={styles.indicator}>
-            <span className={`${styles.dot} ${styles[variant]}`} />
-            <span className={styles.label}>{label}</span>
+        <div
+            className="flex items-center py-1 px-2 text-xs text-[var(--color-text-secondary)] select-none min-w-[145px]"
+            style={{ gap: 'var(--sync-indicator-gap, 6px)' }}
+        >
+            <span
+                data-testid="sync-dot"
+                className={`rounded-full shrink-0 ${DOT_CLASSES[variant]}`}
+                style={{ width: 'var(--sync-dot-size, 8px)', height: 'var(--sync-dot-size, 8px)' }}
+            />
+            <span className="whitespace-nowrap leading-none">{label}</span>
         </div>
     );
 }

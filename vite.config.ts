@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
@@ -6,6 +7,7 @@ import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
     plugins: [
+        tailwindcss(),
         react(),
         VitePWA({
             registerType: 'prompt',
