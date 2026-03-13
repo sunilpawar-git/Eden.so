@@ -130,6 +130,31 @@ describe('MindmapRenderer', () => {
         });
     });
 
+    describe('foreignObject pointer isolation (prevents dblclick/scroll blocking)', () => {
+        it('CSS sets pointer-events:none on .markmap-foreign so foreignObjects cannot intercept events', () => {
+            const { container } = render(<MindmapRenderer markdown="# Topic" />);
+            const style = container.querySelector('style');
+            const allStyles = Array.from(document.styleSheets)
+                .flatMap(ss => { try { return Array.from(ss.cssRules).map(r => r.cssText); } catch { return []; } })
+                .join('\n');
+            const cssText = (style?.textContent ?? '') + allStyles;
+            expect(cssText).toMatch(/markmap-foreign[^}]*pointer-events\s*:\s*none/);
+        });
+
+        it('does NOT stop dblclick propagation — double-click reaches parent node for focus overlay', () => {
+            let dblclickReached = false;
+            const { container } = render(
+                <div onDoubleClick={() => { dblclickReached = true; }}>
+                    <MindmapRenderer markdown="# Topic" />
+                </div>,
+            );
+            const mindmapEl = container.querySelector('[data-testid="mindmap-renderer"]')!;
+            const event = new MouseEvent('dblclick', { bubbles: true });
+            mindmapEl.dispatchEvent(event);
+            expect(dblclickReached).toBe(true);
+        });
+    });
+
     describe('pointer isolation (prevents ReactFlow drag on mindmap click)', () => {
         it('stops pointerDown propagation', () => {
             render(<MindmapRenderer markdown="# Topic" />);

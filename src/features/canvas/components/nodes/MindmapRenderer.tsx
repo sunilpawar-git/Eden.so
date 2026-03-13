@@ -10,6 +10,15 @@
  * the user scrolls the canvas — the "jumping mindmap" bug. We strip ALL
  * D3 zoom listeners after create. Wheel events pass through to ReactFlow.
  *
+ * foreignObject isolation: markmap places every node label in an SVG
+ * foreignObject and registers mousedown + dblclick D3 handlers on each.
+ * These foreignObjects extend beyond the visible SVG area (their natural
+ * layout width can be 300-700px in a 280px node) and their hit-test boxes
+ * intercept scroll + double-click events from the parent ReactFlow node.
+ * We inject `pointer-events: none` on `.markmap-foreign` so all pointer
+ * events fall through to the container div / ReactFlow, making double-click
+ * for the focus overlay work correctly.
+ *
  * Fit strategy: ALL fit() calls go through scheduleFit() which uses
  * requestAnimationFrame to coalesce multiple callers (setData completion,
  * ResizeObserver) into at most one fit() per frame. autoFit is OFF so
@@ -142,6 +151,9 @@ export const MindmapRenderer = React.memo(function MindmapRenderer({ markdown }:
             aria-label={strings.canvas.mindmap.ariaLabel}
             onPointerDown={handlePointerDown}
         >
+            {/* Disable pointer events on markmap foreignObjects so they don't
+                intercept scroll or double-click from the parent ReactFlow node */}
+            <style>{`.markmap-foreign { pointer-events: none; }`}</style>
             <svg ref={svgRef} className={styles.svg} role="img"
                 aria-label={strings.canvas.mindmap.ariaLabel} />
         </div>
