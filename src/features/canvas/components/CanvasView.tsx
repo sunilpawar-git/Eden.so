@@ -23,6 +23,7 @@ import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID, NO_DRAG_CLASS, P
 import { useCanvasHandlers } from '../hooks/useCanvasHandlers';
 import { useCanvasDragHandlers } from '../hooks/useCanvasDragHandlers';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
+import { useBrowserZoomLock } from '../hooks/useBrowserZoomLock';
 import '@/styles/semanticZoom.css';
 import { dragPositionReducer, INITIAL_DRAG_STATE } from '../hooks/dragPositionReducer';
 import { usePanToNode } from '../hooks/usePanToNode';
@@ -82,6 +83,7 @@ function CanvasViewInner() {
     const [dragState, dragDispatch] = useReducer(dragPositionReducer, INITIAL_DRAG_STATE);
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked, dragDispatch);
     useSemanticZoom();
+    useBrowserZoomLock();
     const paneHandlers = useDoubleClickToCreate();
     const overridesRef = useRef(dragState.overrides);
     overridesRef.current = dragState.overrides;
