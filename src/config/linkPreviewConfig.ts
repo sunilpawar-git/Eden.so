@@ -11,6 +11,11 @@ export function getFetchLinkMetaUrl(): string {
     return `${CLOUD_FUNCTIONS_URL}/fetchLinkMeta`;
 }
 
+/** Endpoint for fetching article HTML via server proxy (bypasses CORS on target sites) */
+export function getFetchArticleHtmlUrl(): string {
+    return `${CLOUD_FUNCTIONS_URL}/fetchArticleHtml`;
+}
+
 /**
  * Endpoint for proxying images via server.
  * Includes auth token as query param because <img> tags cannot send headers.

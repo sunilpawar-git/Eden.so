@@ -18,3 +18,19 @@ export function getIconLabel(mimeType: string, filename: string): string {
     const ext = filename.split('.').pop()?.toUpperCase();
     return ext && ext.length > 0 ? ext : '?';
 }
+
+const PDF_EXTENSIONS = new Set(['pdf']);
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif', 'heic']);
+
+/**
+ * Returns the effective MIME type for reader support checks.
+ * Falls back to inferring from the filename extension when mimeType is empty —
+ * which happens for attachments uploaded before the mimeType attr was added.
+ */
+export function effectiveMimeType(mimeType: string, filename: string): string {
+    if (mimeType) return mimeType;
+    const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+    if (PDF_EXTENSIONS.has(ext)) return 'application/pdf';
+    if (IMAGE_EXTENSIONS.has(ext)) return `image/${ext}`;
+    return '';
+}

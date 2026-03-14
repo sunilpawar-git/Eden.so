@@ -10,7 +10,7 @@ import type { NodeViewProps } from '@tiptap/react';
 import type { AttachmentNodeAttrs, AttachmentStatus, AttachmentExtensionOptions } from '../../extensions/attachmentExtension';
 import { isReaderSupportedMime } from '@/features/reader/utils/safeUrl';
 import { strings } from '@/shared/localization/strings';
-import { isSafeUrl, getIconLabel } from './AttachmentCardView.utils';
+import { isSafeUrl, getIconLabel, effectiveMimeType } from './AttachmentCardView.utils';
 import styles from './AttachmentCardView.module.css';
 
 interface StatusBadgeProps {
@@ -41,7 +41,9 @@ export const AttachmentCardView = React.memo(function AttachmentCardView({ node,
     const { url, filename, thumbnailUrl, mimeType, status } = attrs;
     const extOptions = extension.options as AttachmentExtensionOptions;
 
-    const canOpenInReader = isReaderSupportedMime(mimeType) && isSafeUrl(url) && !!extOptions.onOpenReader;
+    // Use effectiveMimeType to handle legacy attachments where mimeType was not stored
+    const resolvedMime = effectiveMimeType(mimeType, filename);
+    const canOpenInReader = isReaderSupportedMime(resolvedMime) && isSafeUrl(url) && !!extOptions.onOpenReader;
 
     const handleDownload = useCallback(() => {
         if (!url || !isSafeUrl(url)) return;
@@ -62,10 +64,10 @@ export const AttachmentCardView = React.memo(function AttachmentCardView({ node,
 
     const handleOpenReader = useCallback(() => {
         if (!canOpenInReader || !extOptions.onOpenReader) return;
-        extOptions.onOpenReader(extOptions.nodeId ?? '', url, filename, mimeType);
-    }, [canOpenInReader, extOptions, url, filename, mimeType]);
+        extOptions.onOpenReader(extOptions.nodeId ?? '', url, filename, resolvedMime);
+    }, [canOpenInReader, extOptions, url, filename, resolvedMime]);
 
-    const iconLabel = getIconLabel(mimeType, filename);
+    const iconLabel = getIconLabel(resolvedMime, filename);
 
     return (
         <NodeViewWrapper className={styles.wrapper} data-drag-handle>

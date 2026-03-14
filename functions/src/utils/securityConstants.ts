@@ -24,6 +24,9 @@ export const GEMINI_FETCH_TIMEOUT_MS = 30_000;
 /** Rate limit: max metadata requests per window per user */
 export const META_RATE_LIMIT = 20;
 
+/** Rate limit: max article HTML fetch requests per window per user */
+export const ARTICLE_RATE_LIMIT = 10;
+
 /** Rate limit: max image proxy requests per window per user */
 export const IMAGE_RATE_LIMIT = 30;
 

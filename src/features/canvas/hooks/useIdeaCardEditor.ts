@@ -64,16 +64,31 @@ export function useIdeaCardEditor(options: UseIdeaCardEditorOptions): UseIdeaCar
         [onAfterImageInsertRef],
     );
 
+    // Refs for reader props — TipTap reads extension.options once at editor creation,
+    // so we must use refs to guarantee the latest values are always reachable.
+    const onOpenReaderRef = useRef(onOpenReader);
+    onOpenReaderRef.current = onOpenReader;
+    const nodeIdRef = useRef(nodeId);
+    nodeIdRef.current = nodeId;
+
+    // Stable wrapper reads from ref at call time — editor never needs to be recreated
+    // when nodeId or onOpenReader changes (same pattern as stableDocumentInsertFn above).
+    const stableOnOpenReader = useCallback(
+        (nId: string, url: string, filename: string, mimeType: string) =>
+            onOpenReaderRef.current?.(nId, url, filename, mimeType),
+        [],
+    );
+
     const editorExtensions: Extension[] = useMemo(() => {
         const exts: Extension[] = [
             SubmitKeymap.configure({ handlerRef: submitHandlerRef }) as Extension,
-            AttachmentExtension.configure({ nodeId, onOpenReader }) as unknown as Extension,
+            AttachmentExtension.configure({ nodeId, onOpenReader: stableOnOpenReader }) as unknown as Extension,
         ];
         if (imageUploadFn) {
             exts.push(createFileHandlerExtension(imageUploadFn, stableDocumentInsertFn, stableAfterImageInsert) as Extension);
         }
         return exts;
-    }, [imageUploadFn, stableDocumentInsertFn, stableAfterImageInsert, nodeId, onOpenReader]);
+    }, [imageUploadFn, stableDocumentInsertFn, stableAfterImageInsert, nodeId, stableOnOpenReader]);
 
     const blurRef = useRef<(md: string) => void>(() => undefined);
     const displayContent = isEditing ? getEditableContent() : (output ?? '');

@@ -3,14 +3,16 @@
  * Mozilla Readability (the engine behind Firefox Reader View).
  *
  * Uses the browser's native DOMParser to parse fetched HTML, avoiding
- * any CSP or iframe issues. For cross-origin URLs, a proxy/Cloud Function
- * is recommended for production use.
+ * any CSP or iframe issues. Fetching is done via the fetchArticleHtml
+ * Cloud Function to bypass CORS restrictions on target sites.
  */
 import { Readability } from '@mozilla/readability';
 import DOMPurify from 'dompurify';
 import type { SafeReaderUrl, ArticleReaderSource } from '../types/reader';
 import { captureError } from '@/shared/services/sentryService';
 import { strings } from '@/shared/localization/strings';
+import { getAuthToken } from '@/features/auth/services/authTokenService';
+import { getFetchArticleHtmlUrl, isProxyConfigured } from '@/config/linkPreviewConfig';
 
 export interface ExtractedArticle {
     title: string;
@@ -22,6 +24,8 @@ export interface ExtractedArticle {
 
 /**
  * Fetch a URL and extract article content via Readability.
+ * Uses the fetchArticleHtml Cloud Function to bypass CORS restrictions.
+ * Falls back to a direct fetch in dev environments without a configured proxy.
  * Returns null if the URL cannot be fetched or parsed.
  */
 export async function extractArticleContent(
@@ -30,18 +34,43 @@ export async function extractArticleContent(
 ): Promise<ExtractedArticle | null> {
     let html: string;
     try {
-        const response = await fetch(url, {
-            signal,
-            headers: { Accept: 'text/html' },
-        });
-        if (!response.ok) return null;
-        html = await response.text();
+        html = isProxyConfigured()
+            ? await fetchViaProxy(url, signal)
+            : await fetchDirect(url, signal);
     } catch (err) {
         captureError(err, { context: 'contentExtractor.fetch', url });
         return null;
     }
 
     return parseArticleFromHtml(html, url);
+}
+
+/** Fetch via fetchArticleHtml Cloud Function (production path, bypasses CORS) */
+async function fetchViaProxy(url: string, signal?: AbortSignal): Promise<string> {
+    const token = await getAuthToken();
+    const response = await fetch(getFetchArticleHtmlUrl(), {
+        method: 'POST',
+        signal,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ url }),
+    });
+    if (!response.ok) throw new Error(`Proxy fetch failed: ${response.status}`);
+    const data = await response.json() as { html?: string; error?: string };
+    if (!data.html) throw new Error(data.error ?? 'No HTML returned from proxy');
+    return data.html;
+}
+
+/** Direct fetch fallback — only works for CORS-permissive sites or same-origin */
+async function fetchDirect(url: string, signal?: AbortSignal): Promise<string> {
+    const response = await fetch(url, {
+        signal,
+        headers: { Accept: 'text/html' },
+    });
+    if (!response.ok) throw new Error(`Direct fetch failed: ${response.status}`);
+    return response.text();
 }
 
 /** Parse article content from raw HTML string (testable without fetch) */

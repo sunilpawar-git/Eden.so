@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { DOCUMENT_TYPE_LABELS, DOCUMENT_ACCEPTED_MIME_TYPES } from '../../../types/document';
 import { strings } from '@/shared/localization/strings';
-import { getIconLabel, isSafeUrl } from '../AttachmentCardView.utils';
+import { getIconLabel, isSafeUrl, effectiveMimeType } from '../AttachmentCardView.utils';
 
 describe('DOCUMENT_TYPE_LABELS SSOT coverage', () => {
     it('has a label for every accepted MIME type', () => {
@@ -58,6 +58,31 @@ describe('isSafeUrl', () => {
 
     it('rejects blob: URIs', () => {
         expect(isSafeUrl('blob:https://example.com/uuid')).toBe(false);
+    });
+});
+
+describe('effectiveMimeType', () => {
+    it('returns the mimeType unchanged when provided', () => {
+        expect(effectiveMimeType('application/pdf', 'doc.pdf')).toBe('application/pdf');
+        expect(effectiveMimeType('image/png', 'photo.png')).toBe('image/png');
+    });
+
+    it('infers application/pdf from .pdf extension when mimeType is empty', () => {
+        expect(effectiveMimeType('', 'report.pdf')).toBe('application/pdf');
+        expect(effectiveMimeType('', 'What Is Identity PDF.pdf')).toBe('application/pdf');
+    });
+
+    it('infers image/png from .png extension when mimeType is empty', () => {
+        expect(effectiveMimeType('', 'photo.png')).toBe('image/png');
+    });
+
+    it('infers image/jpeg from .jpg extension when mimeType is empty', () => {
+        expect(effectiveMimeType('', 'selfie.jpg')).toBe('image/jpg');
+    });
+
+    it('returns empty string for unknown extension when mimeType is empty', () => {
+        expect(effectiveMimeType('', 'archive.zip')).toBe('');
+        expect(effectiveMimeType('', 'readme')).toBe('');
     });
 });
 
