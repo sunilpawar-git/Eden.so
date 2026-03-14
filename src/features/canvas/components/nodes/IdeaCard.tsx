@@ -1,8 +1,11 @@
 /** IdeaCard - Unified note/AI card component. Orchestrates editor, keyboard, and UI state via useNodeInput (SSOT) */
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import { useIdeaCard } from '../../hooks/useIdeaCard';
 import { useNodeContextMenu } from './useNodeContextMenu';
+import { useReaderPanelStore } from '@/features/reader/stores/readerPanelStore';
+import { extractArticleContent, buildArticleSource } from '@/features/reader/services/contentExtractor';
+import { toSafeArticleUrl } from '@/features/reader/utils/safeUrl';
 import { NodeResizeButtons } from './NodeResizeButtons';
 import { IdeaCardHeadingSection } from './IdeaCardHeadingSection';
 import { IdeaCardContentSection } from './IdeaCardContentSection';
@@ -61,6 +64,16 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
     const { handleMoreClick, handleContentModeToggle } = useIdeaCardMenuActions(id, barContainerRef, contextMenu.openAtElement);
     const resizerBounds = getResizerBounds(resolvedData.contentMode);
 
+    const handleOpenLinkInReader = useCallback((url: string) => {
+        const safeUrl = toSafeArticleUrl(url);
+        if (!safeUrl) return;
+        extractArticleContent(safeUrl).then((article) => {
+            if (!article) return;
+            const source = buildArticleSource(safeUrl, article);
+            useReaderPanelStore.getState().openPanel(source);
+        }).catch(() => undefined);
+    }, []);
+
     return (
         <div ref={cardWrapperRef}
             className={`${styles.cardWrapper} ${handleStyles.resizerWrapper} ${isCollapsed ? styles.cardWrapperCollapsed : ''} ${isPinned ? RF_NO_DRAG : ''}`}
@@ -97,7 +110,8 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                         linkPreviews={linkPreviews}
                         contentMode={resolvedData.contentMode}
                         output={resolvedData.output}
-                        onContentModeToggle={handleContentModeToggle} />
+                        onContentModeToggle={handleContentModeToggle}
+                        onOpenInReader={handleOpenLinkInReader} />
                 )}
                 <IdeaCardTagsSection tagIds={tagIds} onChange={onTagsChange}
                     visible={!isCollapsed && (showTagInput || tagIds.length > 0)} />

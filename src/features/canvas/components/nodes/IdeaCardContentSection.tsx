@@ -43,6 +43,8 @@ export interface IdeaCardContentSectionProps {
     output?: string;
     /** Called when user clicks the mindmap mode badge to switch back to text */
     onContentModeToggle?: () => void;
+    /** Opens a link preview URL in the reader side panel */
+    onOpenInReader?: (url: string) => void;
 }
 
 interface ContentViewState {
@@ -112,6 +114,7 @@ export const IdeaCardContentSection = React.memo((props: IdeaCardContentSectionP
     const {
         contentRef, selected, isEditing, onKeyDown, isGenerating,
         hasContent, prompt, editor, handleDoubleClick, linkPreviews,
+        onOpenInReader,
     } = props;
 
     const vs = deriveViewState(
@@ -148,7 +151,9 @@ export const IdeaCardContentSection = React.memo((props: IdeaCardContentSectionP
                 />
             </div>
 
-            {vs.showLinkPreviews && <LinkPreviewList previews={linkPreviews ?? {}} />}
+            {vs.showLinkPreviews && (
+                <LinkPreviewList previews={linkPreviews ?? {}} onOpenInReader={onOpenInReader} />
+            )}
 
             {vs.showPlaceholder && (
                 <div className={styles.placeholder} onDoubleClick={handleDoubleClick}

@@ -1,6 +1,7 @@
 import { useCallback, useState, useRef } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useFocusStore } from '../stores/focusStore';
+import { resolveReaderSource } from '@/features/reader/services/resolveReaderSource';
 import { useNodeData } from './useNodeData';
 import { useIdeaCardEditor } from './useIdeaCardEditor';
 import { useIdeaCardState } from './useIdeaCardState';
@@ -56,12 +57,21 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
         useCanvasStore.getState().stopEditing();
     }, []);
 
+    const handleOpenReader = useCallback((
+        nId: string, url: string, filename: string, mimeType: string,
+    ) => {
+        const source = resolveReaderSource({ url, filename, mimeType });
+        if (source) useFocusStore.getState().openReader(nId, source);
+    }, []);
+
     const { editor, getMarkdown, setContent, submitHandlerRef } = useIdeaCardEditor({
         isEditing, output, getEditableContent, placeholder, saveContent,
         onExitEditing,
         imageUploadFn,
         documentInsertFnRef,
         onAfterImageInsertRef,
+        nodeId: id,
+        onOpenReader: handleOpenReader,
     });
 
     const handlers = useIdeaCardHandlers({
