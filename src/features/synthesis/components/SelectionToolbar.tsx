@@ -41,7 +41,7 @@ export const SelectionToolbar = React.memo(function SelectionToolbar() {
 
     return (
         <>
-            <div className={styles.toolbar} role="toolbar" aria-label={synthesisStrings.labels.synthesize}>
+            <div className={styles.toolbar} role="toolbar" aria-label={synthesisStrings.labels.synthesize} data-testid="selection-toolbar">
                 <span className={styles.count}>
                     {nodeCount} {synthesisStrings.labels.ideas}
                 </span>

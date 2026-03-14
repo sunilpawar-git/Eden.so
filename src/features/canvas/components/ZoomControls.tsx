@@ -2,12 +2,13 @@ import { memo, useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
+import { UndoRedoButtons } from './UndoRedoButtons';
 import { CanvasRadar } from './CanvasRadar';
 import styles from './ZoomControls.module.css';
 
 /**
  * Custom Zoom Controls component.
- * Replaces the default ReactFlow Controls to add a Lock button
+ * Replaces the default ReactFlow Controls to add Undo/Redo + Lock button
  * and allow full TDD coverage.
  */
 export const ZoomControls = memo(function ZoomControls() {
@@ -24,6 +25,12 @@ export const ZoomControls = memo(function ZoomControls() {
     return (
         <div className={styles.container} data-testid="zoom-controls">
             <CanvasRadar />
+
+            {/* Undo/Redo buttons — extracted to UndoRedoButtons for selector-based rendering */}
+            <UndoRedoButtons />
+
+            <div className={styles.divider} />
+
             <button
                 className={styles.button}
                 onClick={() => zoomIn()}

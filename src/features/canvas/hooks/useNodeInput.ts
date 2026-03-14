@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
-import { useNodeData } from './useNodeData';
 import { useLinkPreviewFetch } from './useLinkPreviewFetch';
 import { extractUrls } from './nodeInputUtils';
 import { getViewModeKeyAction, applyViewModeKeyAction } from './nodeInputKeyHandler';
 import { useSubmitHandlerEffect, usePasteHandlerEffect } from './nodeInputEffects';
+import { isContentModeMindmap } from '../types/contentMode';
+import { enterFocusWithEditing } from '../stores/focusStore';
 import type { UseNodeInputOptions, UseNodeInputReturn } from './useNodeInput.types';
 
 export type { NodeShortcutMap } from './nodeInputKeyHandler';
@@ -16,12 +17,13 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
         nodeId, isEditing, editor, getMarkdown, setContent,
         getEditableContent, saveContent, submitHandlerRef,
         isGenerating, isNewEmptyNode, focusHeading, shortcuts,
+        nodeOutput, contentMode,
     } = options;
 
-    const draftContentStore = useCanvasStore((s) => s.draftContent);
-    const draftContent = isEditing ? draftContentStore : null;
-    const nodeData = useNodeData(nodeId);
-    const nodeOutput = nodeData?.output;
+    // Scoped selector: only subscribe to draftContent when THIS node is editing.
+    // Unscoped `(s) => s.draftContent` caused O(N) re-renders per keystroke — all N
+    // IdeaCards would re-render on every keystroke even though only one is editing.
+    const draftContent = useCanvasStore((s) => s.editingNodeId === nodeId ? s.draftContent : null);
     const detectedUrls = useMemo(
         () => extractUrls(isEditing ? draftContent : (nodeOutput ?? null)),
         [isEditing, draftContent, nodeOutput],
@@ -61,8 +63,13 @@ export function useNodeInput(options: UseNodeInputOptions): UseNodeInputReturn {
     }, [isEditing, handleViewModeKey]);
 
     const handleDoubleClick = useCallback(() => {
-        if (!isGenerating) enterEditing();
-    }, [isGenerating, enterEditing]);
+        if (isGenerating) return;
+        if (isContentModeMindmap(contentMode)) {
+            enterFocusWithEditing(nodeId);
+            return;
+        }
+        enterEditing();
+    }, [isGenerating, enterEditing, contentMode, nodeId]);
 
     return { handleKeyDown, handleDoubleClick };
 }

@@ -89,6 +89,64 @@
     margin: var(--space-md) auto;
 }
 
+/* Mindmap needs the panel to stretch to full allowed height so the
+   SVG has space.  Text mode keeps shrink-to-content behaviour.
+   ~90% width × 92vh gives ~25-30 % more area for an immersive view. */
+.panelMindmap {
+    width: min(90%, var(--focus-panel-max-width, 1200px));
+    max-height: none;
+    height: min(92vh, calc(100vh - var(--space-lg) * 2));
+}
+
+/* Turn contentArea into a flex column so mindmapWrapper fills all
+   remaining height.  Disable scroll — mindmap has its own pan/zoom. */
+.contentAreaMindmap {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.mindmapWrapper {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+}
+
+.mindmapLoading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 120px;
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-size: var(--font-size-base);
+    animation: mindmapPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes mindmapPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.mindmapEmptyState {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-style: italic;
+    gap: var(--space-sm);
+    user-select: none;
+}
+
+.mindmapEmptyIcon {
+    font-size: 2.5rem;
+    opacity: 0.5;
+}
+
 @keyframes backdropFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

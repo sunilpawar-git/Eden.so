@@ -6,11 +6,13 @@
 import { create } from 'zustand';
 import type { Viewport } from '@xyflow/react';
 import type { CanvasNode, IdeaNodeData, LinkPreviewMetadata, NodeColorKey } from '../types/node';
+import type { ContentMode } from '../types/contentMode';
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { InputMode } from '../types/slashCommand';
 import type { CanvasEdge } from '../types/edge';
 import {
     createNodeMutationActions,
+    createNodeDeletionActions,
     createNodeDataActions,
     createEdgeAndLayoutActions,
     createSelectionActions,
@@ -19,7 +21,7 @@ import {
 } from './canvasStoreActions';
 import { createClusterSlice, type ClusterSlice } from '@/features/clustering/stores/clusterSlice';
 
-import { EMPTY_SELECTED_IDS, getNodeMap } from './canvasStoreUtils';
+import { EMPTY_SELECTED_IDS, getNodeMap, DEFAULT_VIEWPORT, DEFAULT_INPUT_MODE } from './canvasStoreUtils';
 
 // Re-export for backward compatibility (importers reference canvasStore.ts as entry point)
 export { EMPTY_SELECTED_IDS, getNodeMap };
@@ -30,6 +32,12 @@ interface CanvasState {
     selectedNodeIds: Set<string>;
     viewport: Viewport;
 
+    /** Derived scalar: count of nodes with includeInAIPool === true.
+     *  Updated atomically in pool-mutating actions to avoid O(N) selectors. */
+    poolCount: number;
+    /** Derived scalar: count of pinned nodes. Same O(N) avoidance pattern. */
+    pinnedCount: number;
+
     // Editing state (SSOT — only one node editable at a time)
     editingNodeId: string | null;
     draftContent: string | null;
@@ -39,6 +47,7 @@ interface CanvasState {
 interface CanvasActions {
     // Node actions
     addNode: (node: CanvasNode) => void;
+    addNodeAndEdge: (node: CanvasNode, edge: CanvasEdge) => void;
     duplicateNode: (nodeId: string) => string | undefined;
     updateNodeDimensions: (nodeId: string, width: number, height: number) => void;
     updateNodeContent: (nodeId: string, content: string) => void;
@@ -78,6 +87,10 @@ interface CanvasActions {
 
     // Bulk operations
     setNodes: (nodes: CanvasNode[]) => void;
+    insertNodeAtIndex: (node: CanvasNode, index: number) => void;
+    /** Batch restore: inserts all entries in ONE set() call, avoiding N-cascade updates */
+    insertNodesAtIndices: (entries: Array<{ node: CanvasNode; index: number }>) => void;
+    deleteNodes: (nodeIds: string[]) => void;
     setEdges: (edges: CanvasEdge[]) => void;
     clearCanvas: () => void;
 
@@ -96,6 +109,9 @@ interface CanvasActions {
 
     // Calendar event actions
     setNodeCalendarEvent: (nodeId: string, event: CalendarEventMetadata | undefined) => void;
+
+    // Content mode actions
+    updateNodeContentMode: (nodeId: string, contentMode: ContentMode) => void;
 }
 
 export type CanvasStore = CanvasState & CanvasActions & ClusterSlice;
@@ -104,15 +120,18 @@ const initialState: CanvasState = {
     nodes: [],
     edges: [],
     selectedNodeIds: EMPTY_SELECTED_IDS as Set<string>,
-    viewport: { x: 32, y: 32, zoom: 1 },
+    viewport: DEFAULT_VIEWPORT,
+    poolCount: 0,
+    pinnedCount: 0,
     editingNodeId: null,
     draftContent: null,
-    inputMode: 'note',
+    inputMode: DEFAULT_INPUT_MODE,
 };
 
 export const useCanvasStore = create<CanvasStore>()((set, get) => ({
     ...initialState,
     ...createNodeMutationActions(set, get),
+    ...createNodeDeletionActions(set),
     ...createNodeDataActions(set),
     ...createEdgeAndLayoutActions(set, get),
     ...createSelectionActions(set, get),

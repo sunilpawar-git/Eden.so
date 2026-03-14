@@ -123,6 +123,34 @@ describe('#10 — setTimeout inside useEffect must have clearTimeout', () => {
         }
         expect(violations, fmtMsg('setTimeout without clearTimeout in useEffect', 'Clear timeout in return function', violations)).toEqual([]);
     });
+
+    // Extends #10 to useCallback bodies. A standalone setTimeout (line starting
+    // with `setTimeout`) inside useCallback is a memory leak: if the component
+    // unmounts before the timer fires, the callback runs against a torn-down
+    // tree. Fix: store the return value in a ref and clear it in a useEffect
+    // cleanup (timerRef.current = setTimeout(...) + clearTimeout on unmount).
+    it('hooks with standalone setTimeout inside useCallback store the timer ID in a ref', () => {
+        const violations: string[] = [];
+        for (const file of srcFiles.filter((f) => f.includes('/hooks/'))) {
+            const content = read(file);
+            for (const m of content.matchAll(/useCallback\s*\(\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{([\s\S]*?)\},\s*\[/g)) {
+                const body = m[1] ?? '';
+                // A line whose first non-whitespace token is `setTimeout` is a
+                // fire-and-forget call whose ID is not captured for cleanup.
+                if (/\n\s+setTimeout\s*\(/.test(body)) {
+                    violations.push(`${rel(file)}:${content.slice(0, m.index).split('\n').length}`);
+                }
+            }
+        }
+        expect(
+            violations,
+            fmtMsg(
+                'standalone setTimeout in useCallback (timer ID not stored)',
+                'Store timer ID: timerRef.current = setTimeout(...). Add useEffect cleanup: clearTimeout(timerRef.current)',
+                violations,
+            ),
+        ).toEqual([]);
+    });
 });
 
 // ─── #13: no bare array indices as React keys ─────────────────────────────
@@ -244,3 +272,46 @@ describe('File size limits (300-line max)', () => {
 function fmtMsg(issue: string, fix: string, violations: string[]): string {
     return `${issue}:\n  Fix: ${fix}\n\n${violations.map((v) => `  - ${v}`).join('\n')}`;
 }
+
+// ─── Keyboard: approved keydown listener allowlist ────────────────────────────
+
+describe('Keyboard: raw addEventListener("keydown") allowlist', () => {
+    // Only these three files are permitted to attach global keydown listeners:
+    //   useKeyboardShortcuts — capture-phase, all plain + modifier shortcuts
+    //   useEscapeLayer       — single global Escape listener (priority-ordered)
+    //   useNodeShortcuts     — per-node capture listener guarded by GLOBAL_SHORTCUT_KEYS
+    //
+    // All other Escape handling → useEscapeLayer
+    // All other shortcut handling → useKeyboardShortcuts
+    // Local input handlers (SearchBar, TagInput, WorkspaceItem) use React
+    // onKeyDown props which are NOT addEventListener calls and are NOT restricted.
+    const KEYDOWN_ALLOWLIST = new Set([
+        'app/hooks/useKeyboardShortcuts.ts',
+        'shared/hooks/useEscapeLayer.ts',
+        'features/canvas/hooks/useNodeShortcuts.ts',
+    ]);
+
+    it('no file outside the allowlist attaches a raw document keydown listener', () => {
+        const violations: string[] = [];
+        for (const file of srcFiles) {
+            const r = rel(file);
+            if (KEYDOWN_ALLOWLIST.has(r)) continue;
+            const content = read(file);
+            if (
+                content.includes("addEventListener('keydown'") ||
+                content.includes('addEventListener("keydown"')
+            ) {
+                violations.push(r);
+            }
+        }
+        expect(
+            violations,
+            fmtMsg(
+                'raw keydown listener outside allowlist',
+                'Use useEscapeLayer (Escape) or useKeyboardShortcuts (shortcuts). ' +
+                'Local input handlers must use React onKeyDown props, not addEventListener.',
+                violations,
+            ),
+        ).toEqual([]);
+    });
+});

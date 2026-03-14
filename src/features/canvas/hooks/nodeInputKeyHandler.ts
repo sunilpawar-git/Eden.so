@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/react';
-import { GLOBAL_SHORTCUT_KEYS } from '@/shared/constants/shortcutKeys';
+import { GLOBAL_SHORTCUT_KEYS, toLowerKey } from '@/shared/constants/shortcutKeys';
 
 export type NodeShortcutMap = Record<string, () => void>;
 
@@ -24,7 +24,7 @@ export function getViewModeKeyAction(
         if (handler) return { type: 'shortcut', handler };
     }
 
-    if (GLOBAL_SHORTCUT_KEYS.has(e.key.toLowerCase())) return { type: 'skip' };
+    if (GLOBAL_SHORTCUT_KEYS.has(toLowerKey(e.key))) return { type: 'skip' };
 
     return { type: 'print', char: e.key };
 }

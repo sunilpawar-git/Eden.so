@@ -6,12 +6,14 @@ import { describe, it, expect } from 'vitest';
 import { slashCommands, filterCommands, getCommandById } from '@/features/canvas/services/slashCommands';
 
 describe('Slash Commands Integration', () => {
-    it('should have ai-generate, insert-image, insert-document, and analyze-document commands', () => {
+    it('should have exactly 4 slash commands — mindmap is context-menu only', () => {
         expect(slashCommands).toHaveLength(4);
         expect(slashCommands.some(c => c.id === 'ai-generate')).toBe(true);
         expect(slashCommands.some(c => c.id === 'insert-image')).toBe(true);
         expect(slashCommands.some(c => c.id === 'insert-document')).toBe(true);
         expect(slashCommands.some(c => c.id === 'analyze-document')).toBe(true);
+        expect(slashCommands.some(c => (c.id as string) === 'toggle-mindmap')).toBe(false);
+        expect(slashCommands.some(c => (c.id as string) === 'convert-to-mindmap')).toBe(false);
     });
 
     it('should find ai-generate by id', () => {

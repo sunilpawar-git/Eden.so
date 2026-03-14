@@ -17,12 +17,19 @@ import { ViewportSync } from './ViewportSync';
 import { SelectionToolbar } from '@/features/synthesis/components/SelectionToolbar';
 import { ClusterOverlay } from '@/features/clustering/components/ClusterOverlay';
 import { buildRfNodes, cleanupDataShells, type PrevRfNodes } from './buildRfNodes';
-import { mapCanvasEdgesToRfEdges, applyPositionAndRemoveChanges } from './canvasChangeHelpers';
-import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID } from './canvasViewConstants';
+import { buildRfEdges, type PrevRfEdges } from './buildRfEdges';
+import { applyPositionAndRemoveChanges } from './canvasChangeHelpers';
+import { nodeTypes, edgeTypes, DEFAULT_EDGE_OPTIONS, SNAP_GRID, NO_DRAG_CLASS, PAN_ACTIVATION_KEY, MULTI_SELECT_KEY, BACKGROUND_GAP, BACKGROUND_DOT_SIZE } from './canvasViewConstants';
 import { useCanvasHandlers } from '../hooks/useCanvasHandlers';
+import { useCanvasDragHandlers } from '../hooks/useCanvasDragHandlers';
 import { useSemanticZoom } from '../hooks/useSemanticZoom';
+import { useBrowserZoomLock } from '../hooks/useBrowserZoomLock';
 import '@/styles/semanticZoom.css';
 import { dragPositionReducer, INITIAL_DRAG_STATE } from '../hooks/dragPositionReducer';
+import { usePanToNode } from '../hooks/usePanToNode';
+import { useDoubleClickToCreate } from '../hooks/useDoubleClickToCreate';
+import { CanvasTooltip } from './CanvasTooltip';
+import { PanToNodeContext } from '../contexts/PanToNodeContext';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
@@ -53,7 +60,7 @@ function commitOverridesToStore(
     dispatch({ type: 'RESET' });
 }
 
-function CanvasViewInner() {
+function useCanvasViewState() {
     const nodes = useCanvasStore((s) => s.nodes);
     const edges = useCanvasStore((s) => s.edges);
     const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
@@ -65,34 +72,36 @@ function CanvasViewInner() {
     const isFocused = useFocusStore((s) => s.focusedNodeId !== null);
     const isInteractionDisabled = isCanvasLocked || isFocused;
     const isNavigateMode = canvasScrollMode === 'navigate';
+    return { nodes, edges, selectedNodeIds, viewport, currentWorkspaceId, isSwitching, canvasGrid, isCanvasLocked, isInteractionDisabled, isNavigateMode };
+}
+
+function CanvasViewInner() {
+    const { nodes, edges, selectedNodeIds, viewport, currentWorkspaceId, isSwitching, canvasGrid, isCanvasLocked, isInteractionDisabled, isNavigateMode } = useCanvasViewState();
+    const panCtx = usePanToNode();
     const prevRfNodesRef = useRef<PrevRfNodes>({ arr: [], map: new Map() });
+    const prevRfEdgesRef = useRef<PrevRfEdges>({ arr: [], map: new Map() });
     const [dragState, dragDispatch] = useReducer(dragPositionReducer, INITIAL_DRAG_STATE);
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked, dragDispatch);
     useSemanticZoom();
+    useBrowserZoomLock();
+    const paneHandlers = useDoubleClickToCreate();
     const overridesRef = useRef(dragState.overrides);
     overridesRef.current = dragState.overrides;
-    const commitDragOverrides = useCallback(
-        () => commitOverridesToStore(overridesRef.current, dragDispatch),
-        [], // stable: reads only from overridesRef (a ref, not a reactive value)
-    );
+    const commitDragOverrides = useCallback(() => commitOverridesToStore(overridesRef.current, dragDispatch), []);
+    const drag = useCanvasDragHandlers(commitDragOverrides);
     const handleMoveEnd = useCallback(
-        (_event: unknown, newViewport: Viewport) => onMoveEndImpl(currentWorkspaceId, newViewport),
-        [currentWorkspaceId],
+        (_event: unknown, vp: Viewport) => onMoveEndImpl(currentWorkspaceId, vp), [currentWorkspaceId],
     );
-
     const rfNodes: Node[] = useMemo(
         () => buildRfNodes(nodes, selectedNodeIds, prevRfNodesRef, dragState.overrides),
         [nodes, selectedNodeIds, dragState.overrides],
     );
-
-    const rfEdges = useMemo(() => mapCanvasEdgesToRfEdges(edges), [edges]);
-
-    useEffect(() => {
-        cleanupDataShells(new Set(nodes.map((n) => n.id)));
-    }, [nodes]);
+    const rfEdges = useMemo(() => buildRfEdges(edges, prevRfEdgesRef), [edges]);
+    useEffect(() => { cleanupDataShells(new Set(nodes.map((n) => n.id))); }, [nodes]);
 
     return (
-        <div className={getContainerClassName(isSwitching)} data-canvas-container>
+        <PanToNodeContext.Provider value={panCtx}>
+        <div className={getContainerClassName(isSwitching)} data-canvas-container onDoubleClick={paneHandlers.onDoubleClick} onTouchEnd={paneHandlers.onTouchEnd}>
             <ReactFlow
                 nodes={rfNodes}
                 edges={rfEdges}
@@ -100,8 +109,10 @@ function CanvasViewInner() {
                 onEdgesChange={handlers.onEdgesChange}
                 onConnect={handlers.onConnect}
                 onSelectionChange={handlers.onSelectionChange}
-                onNodeDragStop={commitDragOverrides}
-                onSelectionDragStop={commitDragOverrides}
+                onNodeDragStart={drag.historyDragStart}
+                onNodeDragStop={drag.handleNodeDragStop}
+                onSelectionDragStart={drag.handleSelectionDragStart}
+                onSelectionDragStop={drag.handleSelectionDragStop}
                 onMoveEnd={handleMoveEnd}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
@@ -111,27 +122,33 @@ function CanvasViewInner() {
                 snapGrid={SNAP_GRID}
                 minZoom={0.1}
                 maxZoom={2}
+                /* Double-click creates a new node — disable ReactFlow's default zoom.
+                   Users zoom via pinch, scroll-wheel, or ZoomControls toolbar. */
+                zoomOnDoubleClick={false}
                 zoomOnScroll={!isInteractionDisabled && !isNavigateMode}
                 panOnScroll={!isInteractionDisabled && isNavigateMode}
                 panOnDrag={isInteractionDisabled ? false : [1, 2]}
                 nodesDraggable={!isInteractionDisabled}
-                noDragClassName="nodrag"
+                noDragClassName={NO_DRAG_CLASS}
                 elementsSelectable={!isInteractionDisabled}
                 nodesConnectable={!isInteractionDisabled}
                 {...(isNavigateMode && { panOnScrollMode: PanOnScrollMode.Free })}
                 selectionOnDrag={!isInteractionDisabled}
                 selectionMode={SelectionMode.Partial}
-                panActivationKeyCode="Space"
-                multiSelectionKeyCode="Shift"
+                panActivationKeyCode={PAN_ACTIVATION_KEY}
+                multiSelectionKeyCode={MULTI_SELECT_KEY}
+                onlyRenderVisibleElements
             >
                 <ViewportSync viewport={viewport} />
-                {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={16} size={1} />}
+                {canvasGrid && <Background variant={BackgroundVariant.Dots} gap={BACKGROUND_GAP} size={BACKGROUND_DOT_SIZE} />}
                 <ZoomControls />
             </ReactFlow>
             <ClusterOverlay />
             <SelectionToolbar />
             <FocusOverlay />
+            <CanvasTooltip />
         </div>
+        </PanToNodeContext.Provider>
     );
 }
 

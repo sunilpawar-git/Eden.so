@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/react';
 import type { SubmitKeymapHandler } from '../extensions/submitKeymap';
 import type { NodeShortcutMap } from './nodeInputKeyHandler';
+import type { ContentMode } from '../types/contentMode';
 
 export type { NodeShortcutMap };
 
@@ -17,6 +18,10 @@ export interface UseNodeInputOptions {
     isNewEmptyNode: boolean;
     focusHeading?: () => void;
     shortcuts?: NodeShortcutMap;
+    /** Node output passed from parent — avoids redundant useNodeData subscription */
+    nodeOutput?: string;
+    /** Current content rendering mode — guards double-click from entering edit on mindmap */
+    contentMode?: ContentMode;
 }
 
 export interface UseNodeInputReturn {

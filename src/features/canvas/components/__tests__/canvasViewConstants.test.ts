@@ -6,6 +6,15 @@ import {
     DEFAULT_EDGE_OPTIONS,
     DEFAULT_VIEWPORT,
     SNAP_GRID,
+    EDGE_TYPE_DELETABLE,
+    NO_DRAG_CLASS,
+    PAN_ACTIVATION_KEY,
+    MULTI_SELECT_KEY,
+    BACKGROUND_GAP,
+    BACKGROUND_DOT_SIZE,
+    DEFAULT_INPUT_MODE,
+    sourceHandleId,
+    targetHandleId,
 } from '../canvasViewConstants';
 import { IdeaCard } from '../nodes/IdeaCard';
 import { DeletableEdge } from '../edges/DeletableEdge';
@@ -32,8 +41,8 @@ describe('canvasViewConstants', () => {
     });
 
     describe('DEFAULT_EDGE_OPTIONS', () => {
-        it('has type deletable', () => {
-            expect(DEFAULT_EDGE_OPTIONS.type).toBe('deletable');
+        it('uses EDGE_TYPE_DELETABLE constant', () => {
+            expect(DEFAULT_EDGE_OPTIONS.type).toBe(EDGE_TYPE_DELETABLE);
         });
 
         it('has ArrowClosed marker end', () => {
@@ -53,10 +62,41 @@ describe('canvasViewConstants', () => {
         it('is tuple of 16x16', () => {
             expect(SNAP_GRID).toEqual([16, 16]);
         });
+    });
 
-        it('is readonly tuple type', () => {
-            expect(SNAP_GRID[0]).toBe(16);
-            expect(SNAP_GRID[1]).toBe(16);
+    describe('interaction constants', () => {
+        it('NO_DRAG_CLASS is nodrag', () => {
+            expect(NO_DRAG_CLASS).toBe('nodrag');
+        });
+
+        it('PAN_ACTIVATION_KEY is Space', () => {
+            expect(PAN_ACTIVATION_KEY).toBe('Space');
+        });
+
+        it('MULTI_SELECT_KEY is Shift', () => {
+            expect(MULTI_SELECT_KEY).toBe('Shift');
+        });
+
+        it('BACKGROUND_GAP is 16', () => {
+            expect(BACKGROUND_GAP).toBe(16);
+        });
+
+        it('BACKGROUND_DOT_SIZE is 1', () => {
+            expect(BACKGROUND_DOT_SIZE).toBe(1);
+        });
+
+        it('DEFAULT_INPUT_MODE is note', () => {
+            expect(DEFAULT_INPUT_MODE).toBe('note');
+        });
+    });
+
+    describe('handle ID helpers', () => {
+        it('sourceHandleId returns nodeId-source', () => {
+            expect(sourceHandleId('abc')).toBe('abc-source');
+        });
+
+        it('targetHandleId returns nodeId-target', () => {
+            expect(targetHandleId('abc')).toBe('abc-target');
         });
     });
 });

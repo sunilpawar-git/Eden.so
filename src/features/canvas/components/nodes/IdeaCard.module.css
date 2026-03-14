@@ -170,6 +170,49 @@
     color: var(--color-text-secondary);
 }
 
+/* Mindmap mode badge — small pill to switch back to text view */
+.mindmapBadge {
+    position: absolute;
+    top: var(--space-xs);
+    right: var(--space-xs);
+    z-index: 2;
+    padding: 2px var(--space-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-elevated);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+
+.contentArea:hover .mindmapBadge {
+    opacity: 1;
+}
+
+.mindmapBadge:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+/* Mindmap loading skeleton (Suspense fallback) */
+.mindmapLoading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-size: var(--font-size-sm);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 /* Generating state */
 .generating {
     display: flex;

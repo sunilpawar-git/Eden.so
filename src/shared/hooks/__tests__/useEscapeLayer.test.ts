@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { fireEvent } from '@testing-library/dom';
+import { createElement, StrictMode } from 'react';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { _resetEscapeLayer, _getActiveEntryCount } from '../useEscapeLayer.testUtils';
 import { ESCAPE_PRIORITY } from '../escapePriorities';
@@ -128,6 +129,20 @@ describe('useEscapeLayer', () => {
         u1();
         expect(_getActiveEntryCount()).toBe(1);
         u2();
+        expect(_getActiveEntryCount()).toBe(0);
+    });
+
+    // React 18 Strict Mode intentionally double-invokes effects (mount →
+    // cleanup → remount). This test locks in the correctness of the
+    // closure-captured `id` in the cleanup: the entry registered during the
+    // first (discarded) mount must be removed, leaving exactly 1 active entry.
+    it('React 18 Strict Mode double-invoke leaves exactly 1 active entry', () => {
+        const { unmount } = renderHook(
+            () => useEscapeLayer(ESCAPE_PRIORITY.MODAL, true, vi.fn()),
+            { wrapper: ({ children }) => createElement(StrictMode, null, children) },
+        );
+        expect(_getActiveEntryCount()).toBe(1);
+        unmount();
         expect(_getActiveEntryCount()).toBe(0);
     });
 });

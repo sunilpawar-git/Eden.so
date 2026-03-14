@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { BranchNode } from '../services/branchTraversal';
 import { useExportDialog } from '../hooks/useExportDialog';
 import { ExportPreview } from './ExportPreview';
 import { exportStrings } from '../strings/exportStrings';
 import { strings } from '@/shared/localization/strings';
+import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
+import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import styles from './ExportDialog.module.css';
 
 interface ExportDialogProps {
@@ -15,17 +17,15 @@ interface ExportDialogProps {
 export const ExportDialog = React.memo(function ExportDialog({ roots, onClose }: ExportDialogProps) {
     const { markdown, isPolishing, togglePolish, copyToClipboard, download } = useExportDialog(roots);
 
-    const handleKeyDown = useCallback(
-        (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        },
-        [onClose]
-    );
-
-    useEffect(() => {
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [handleKeyDown]);
+    // Escape closes the dialog at MODAL priority (80), the highest level.
+    // This integrates ExportDialog into the centralized escape-layer system so
+    // it respects priority ordering: dialog (80) closes before settings (70),
+    // which closes before clear-selection (10), etc.
+    // `true` is hardcoded — component is only rendered when the dialog is
+    // visible (conditional render at parent), so the layer is always active
+    // while mounted. If this ever changes to render-always/show-with-CSS,
+    // wire `isVisible` as the active flag instead.
+    useEscapeLayer(ESCAPE_PRIORITY.MODAL, true, onClose);
 
     const handleBackdropClick = useCallback(() => onClose(), [onClose]);
     const stopPropagation = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);

@@ -4,7 +4,8 @@
  * Separate from canvasStore to avoid unnecessary re-renders of canvas subscribers
  */
 import { create } from 'zustand';
-import { useCanvasStore } from './canvasStore';
+import { useCanvasStore, getNodeMap } from './canvasStore';
+import { isContentModeMindmap } from '../types/contentMode';
 
 interface FocusState {
     focusedNodeId: string | null;
@@ -25,8 +26,14 @@ export const useFocusStore = create<FocusStore>()((set) => ({
     exitFocus: () => set({ focusedNodeId: null }),
 }));
 
-/** SSOT helper: enter focus + start editing in one batched call */
+/** SSOT helper: enter focus + start editing in one batched call.
+ *  Mindmap nodes open in view-only mode (no startEditing) so the
+ *  MindmapRenderer is visible instead of the TipTap editor. */
 export function enterFocusWithEditing(nodeId: string): void {
     useFocusStore.getState().enterFocus(nodeId);
-    useCanvasStore.getState().startEditing(nodeId);
+    const state = useCanvasStore.getState();
+    const node = getNodeMap(state.nodes).get(nodeId);
+    if (!isContentModeMindmap(node?.data.contentMode)) {
+        state.startEditing(nodeId);
+    }
 }

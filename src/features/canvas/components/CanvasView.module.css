@@ -5,6 +5,9 @@
     width: 100%;
     height: 100%;
     position: relative;
+    /* Prevent browser-level touch gestures (pinch-zoom, pan) on the canvas.
+       ReactFlow handles all zoom/pan internally via its own touch listeners. */
+    touch-action: none;
 }
 
 /* ReactFlow custom styling */

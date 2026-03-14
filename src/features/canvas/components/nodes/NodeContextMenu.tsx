@@ -1,16 +1,20 @@
 /**
  * NodeContextMenu — Portal-rendered right-click / "More..." context menu.
- * Groups secondary actions; Color/Share render as expandable sub-panels.
+ * Actions are now driven by user-configurable contextMenuIcons in settingsStore.
+ * Color/Share render as expandable sub-panels.
  */
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '@/shared/localization/strings';
+import { getPortalRoot } from '@/shared/utils/portalRoot';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
-import { MenuItem, ExpandToggle, MenuSeparator, GroupLabel } from './ContextMenuItems';
-import { InlineColorPicker } from './InlineColorPicker';
-import { InlineSharePanel } from './InlineSharePanel';
-import { normalizeNodeColorKey, type NodeColorKey } from '../../types/node';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { type ActionId } from '@/shared/stores/iconRegistry';
+import { CONTEXT_MENU_GROUPS } from '../../types/utilsBarLayout';
+import { type NodeColorKey } from '../../types/node';
+import { MenuSeparator, GroupLabel } from './ContextMenuItems';
+import { renderContextMenuItem, type ContextMenuItemContext } from './renderContextMenuItem';
 import styles from './NodeContextMenu.module.css';
 
 const VIEWPORT_PADDING_PX = 8;
@@ -34,7 +38,25 @@ export interface NodeContextMenuProps {
     readonly isPinned: boolean;
     readonly isCollapsed: boolean;
     readonly isInPool: boolean;
+    readonly onContentModeToggle?: () => void;
+    readonly isMindmapMode?: boolean;
+    // Primary actions that may appear in context menu via icon placement
+    readonly onDeleteClick?: () => void;
+    readonly onCopyClick?: () => void;
+    readonly onConnectClick?: () => void;
+    readonly onAIClick?: () => void;
+    readonly hasContent?: boolean;
 }
+
+/** Group definitions with ordered group keys */
+const GROUP_ORDER: ReadonlyArray<keyof typeof CONTEXT_MENU_GROUPS> = ['primary', 'organize', 'appearance', 'insert', 'sharing'];
+const GROUP_LABELS: Record<string, () => string> = {
+    primary: () => strings.contextMenu.primary,
+    organize: () => strings.contextMenu.organize,
+    appearance: () => strings.contextMenu.appearance,
+    insert: () => strings.contextMenu.insert,
+    sharing: () => strings.contextMenu.sharing,
+};
 
 export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeContextMenuProps) {
     const { position, onClose } = props;
@@ -42,8 +64,11 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
     const [expandedPanel, setExpandedPanel] = useState<'color' | 'share' | null>(null);
     const [clampedPos, setClampedPos] = useState(position);
 
+    // Read configurable context menu icons (scalar selector)
+    const contextMenuIcons = useSettingsStore((s) => s.contextMenuIcons);
+
     useEscapeLayer(ESCAPE_PRIORITY.CONTEXT_MENU, true, onClose);
-    useContextMenuPosition(menuRef, position, setClampedPos);
+    useContextMenuPosition(menuRef, position, expandedPanel, setClampedPos);
     useContextMenuOutsideClick(menuRef, onClose);
 
     const action = useCallback((fn?: () => void) => () => { fn?.(); onClose(); }, [onClose]);
@@ -51,62 +76,61 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
         setExpandedPanel((prev) => (prev === panel ? null : panel));
     }, []);
 
-    const pinLabel = props.isPinned ? strings.nodeUtils.unpin : strings.nodeUtils.pin;
-    const collapseLabel = props.isCollapsed ? strings.nodeUtils.expand : strings.nodeUtils.collapse;
+    // Build grouped items from the configurable list
+    const groupedItems = useMemo(() => {
+        const contextSet = new Set(contextMenuIcons);
+        const groups: Array<{ key: string; items: ActionId[] }> = [];
+
+        for (const groupKey of GROUP_ORDER) {
+            const groupActions = CONTEXT_MENU_GROUPS[groupKey] as readonly string[];
+            const items = groupActions.filter((a) => contextSet.has(a as ActionId)) as ActionId[];
+            if (items.length > 0) {
+                groups.push({ key: groupKey, items });
+            }
+        }
+        return groups;
+    }, [contextMenuIcons]);
+
+    /** Build context object for the external render helper */
+    const itemCtx: ContextMenuItemContext = useMemo(() => ({
+        onClose, action, expandedPanel, togglePanel,
+        onPinToggle: props.onPinToggle, isPinned: props.isPinned,
+        onDuplicateClick: props.onDuplicateClick,
+        onCollapseToggle: props.onCollapseToggle, isCollapsed: props.isCollapsed,
+        onFocusClick: props.onFocusClick, onTagClick: props.onTagClick,
+        onContentModeToggle: props.onContentModeToggle, isMindmapMode: props.isMindmapMode,
+        onColorChange: props.onColorChange, nodeColorKey: props.nodeColorKey,
+        onImageClick: props.onImageClick, onAttachmentClick: props.onAttachmentClick,
+        onShareClick: props.onShareClick, isSharing: props.isSharing,
+        onPoolToggle: props.onPoolToggle, isInPool: props.isInPool,
+        onAIClick: props.onAIClick, onConnectClick: props.onConnectClick,
+        onCopyClick: props.onCopyClick, onDeleteClick: props.onDeleteClick,
+    }), [props, onClose, action, expandedPanel, togglePanel]);
+
+    const renderItem = useCallback(
+        (id: ActionId) => renderContextMenuItem(id, itemCtx),
+        [itemCtx],
+    );
 
     return createPortal(
         <div className={styles.menu} ref={menuRef} role="menu"
             style={{ top: clampedPos.y, left: clampedPos.x }}>
-            <GroupLabel>{strings.contextMenu.organize}</GroupLabel>
-            {props.onPinToggle && <MenuItem icon="📌" label={pinLabel} onClick={action(props.onPinToggle)} />}
-            {props.onDuplicateClick && <MenuItem icon="📑" label={strings.nodeUtils.duplicate} onClick={action(props.onDuplicateClick)} />}
-            {props.onCollapseToggle && <MenuItem icon={props.isCollapsed ? '🔽' : '🔼'} label={collapseLabel} onClick={action(props.onCollapseToggle)} />}
-            {props.onFocusClick && <MenuItem icon="🔍" label={strings.nodeUtils.focus} onClick={action(props.onFocusClick)} />}
-            <MenuSeparator />
-            <GroupLabel>{strings.contextMenu.appearance}</GroupLabel>
-            <MenuItem icon="🏷️" label={strings.nodeUtils.tags} onClick={action(props.onTagClick)} />
-            {props.onColorChange && (
-                <>
-                    <ExpandToggle icon="🎨" label={strings.nodeUtils.color}
-                        expanded={expandedPanel === 'color'} onToggle={() => togglePanel('color')} />
-                    {expandedPanel === 'color' && (
-                        <div className={styles.expandableContent}>
-                            <InlineColorPicker selectedColorKey={normalizeNodeColorKey(props.nodeColorKey)}
-                                onColorSelect={props.onColorChange} onClose={onClose} />
-                        </div>
-                    )}
-                </>
-            )}
-            <MenuSeparator />
-            <GroupLabel>{strings.contextMenu.insert}</GroupLabel>
-            {props.onImageClick && <MenuItem icon="🖼️" label={strings.nodeUtils.image} onClick={action(props.onImageClick)} />}
-            {props.onAttachmentClick && <MenuItem icon="📎" label={strings.nodeUtils.attachment} onClick={action(props.onAttachmentClick)} />}
-            <MenuSeparator />
-            <GroupLabel>{strings.contextMenu.sharing}</GroupLabel>
-            {props.onShareClick && (
-                <>
-                    <ExpandToggle icon="📤" label={strings.nodeUtils.share}
-                        expanded={expandedPanel === 'share'} onToggle={() => togglePanel('share')} />
-                    {expandedPanel === 'share' && (
-                        <div className={styles.expandableContent}>
-                            <InlineSharePanel onShare={props.onShareClick}
-                                isSharing={props.isSharing ?? false} onClose={onClose} />
-                        </div>
-                    )}
-                </>
-            )}
-            {props.onPoolToggle && (
-                <MenuItem icon="🧠" label={props.isInPool ? strings.nodePool.removeFromPool : strings.nodePool.addToPool}
-                    onClick={action(props.onPoolToggle)} />
-            )}
+            {groupedItems.map((group, gi) => (
+                <React.Fragment key={group.key}>
+                    {gi > 0 && <MenuSeparator />}
+                    <GroupLabel>{GROUP_LABELS[group.key]?.() ?? group.key}</GroupLabel>
+                    {group.items.map(renderItem)}
+                </React.Fragment>
+            ))}
         </div>,
-        document.body,
+        getPortalRoot(),
     );
 });
 
 function useContextMenuPosition(
     menuRef: React.RefObject<HTMLDivElement | null>,
     position: { x: number; y: number },
+    heightTrigger: unknown,
     setClamped: (pos: { x: number; y: number }) => void,
 ) {
     useLayoutEffect(() => {
@@ -129,7 +153,7 @@ function useContextMenuPosition(
             x: Math.max(VIEWPORT_PADDING_PX, x),
             y: Math.max(VIEWPORT_PADDING_PX, y),
         });
-    }, [menuRef, position, setClamped]);
+    }, [menuRef, position, heightTrigger, setClamped]);
 }
 
 function useContextMenuOutsideClick(
@@ -138,7 +162,8 @@ function useContextMenuOutsideClick(
 ) {
     useEffect(() => {
         const handler = (e: PointerEvent) => {
-            if (menuRef.current?.contains(e.target as Node)) return;
+            if (!(e.target instanceof Node)) return;
+            if (menuRef.current?.contains(e.target)) return;
             onClose();
         };
         document.addEventListener('pointerdown', handler, true);

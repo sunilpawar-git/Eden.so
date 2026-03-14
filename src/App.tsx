@@ -2,7 +2,7 @@
  * App Entry Point
  * Uses React.lazy for code splitting of non-critical components
  */
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
@@ -11,6 +11,7 @@ import { subscribeToAuthState } from '@/features/auth/services/authService';
 import { Layout } from '@/app/components/Layout';
 import { CanvasView } from '@/features/canvas/components/CanvasView';
 import { KeyboardShortcutsProvider } from '@/features/canvas/components/KeyboardShortcutsProvider';
+import { SearchInputRefProvider } from '@/features/search/context/SearchInputRefContext';
 import { ToastContainer } from '@/shared/components/Toast';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
@@ -30,6 +31,7 @@ import { usePinnedWorkspaceStore } from '@/features/workspace/stores/pinnedWorks
 import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { strings } from '@/shared/localization/strings';
+import { OnboardingWalkthrough } from '@/features/onboarding';
 import '@/styles/global.css';
 
 // Lazy load non-critical components for better initial load performance
@@ -41,7 +43,7 @@ const SettingsPanel = lazy(() =>
 );
 
 function AuthenticatedApp() {
-    const user = useAuthStore((s) => s.user);
+    const userId = useAuthStore((s) => s.user?.id);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const isSwitching = useWorkspaceStore((s) => s.isSwitching);
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
@@ -58,15 +60,17 @@ function AuthenticatedApp() {
     useQueueDrainer();
     useAutosave(currentWorkspaceId ?? '', initialLoading);
 
-    // Initialize pinned workspace and subscription stores on login
     useEffect(() => {
-        if (user) {
+        if (userId) {
             void usePinnedWorkspaceStore.getState().loadPinnedIds();
-            void useSubscriptionStore.getState().loadSubscription(user.id);
+            void useSubscriptionStore.getState().loadSubscription(userId);
         }
-    }, [user]);
+    }, [userId]);
 
-    // Show offline fallback when offline with a load error and no cached data
+    const openSettings = useCallback(() => setIsSettingsOpen(true), []);
+    const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
+    const wsCtx = useMemo(() => ({ currentWorkspaceId, isSwitching }), [currentWorkspaceId, isSwitching]);
+
     if (!isOnline && loadError && !hasOfflineData) {
         return (
             <OfflineFallback
@@ -75,16 +79,12 @@ function AuthenticatedApp() {
             />
         );
     }
-
-    // Always keep ReactFlowProvider mounted to prevent blink on workspace switch
-    const wsCtx = { currentWorkspaceId, isSwitching };
     return (
         <WorkspaceContext.Provider value={wsCtx}>
             <ReactFlowProvider>
-                <KeyboardShortcutsProvider
-                    onOpenSettings={() => setIsSettingsOpen(true)}
-                />
-                <Layout onSettingsClick={() => setIsSettingsOpen(true)}>
+                <SearchInputRefProvider>
+                    <KeyboardShortcutsProvider onOpenSettings={openSettings} />
+                    <Layout onSettingsClick={openSettings}>
                     <CanvasView />
                     {initialLoading && (
                         <div className="canvas-loading-overlay">
@@ -92,13 +92,12 @@ function AuthenticatedApp() {
                             <p>{strings.common.loading}</p>
                         </div>
                     )}
-                </Layout>
+                    </Layout>
+                </SearchInputRefProvider>
                 <Suspense fallback={null}>
-                    <SettingsPanel
-                        isOpen={isSettingsOpen}
-                        onClose={() => setIsSettingsOpen(false)}
-                    />
+                    <SettingsPanel isOpen={isSettingsOpen} onClose={closeSettings} />
                 </Suspense>
+                <OnboardingWalkthrough />
             </ReactFlowProvider>
         </WorkspaceContext.Provider>
     );

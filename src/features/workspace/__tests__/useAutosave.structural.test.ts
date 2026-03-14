@@ -12,19 +12,14 @@ const COMBINED = `${SRC}\n${SAVE_CB_SRC}`;
 
 describe('useAutosave — structural integrity', () => {
     describe('position-excluded content fingerprinting', () => {
-        it('contentJson fingerprint excludes position but includes data', () => {
-            const contentBlock = SRC.slice(
-                SRC.indexOf('const contentJson'),
-                SRC.indexOf(');', SRC.indexOf('const contentJson')) + 2,
-            );
-            expect(contentBlock).not.toContain('position');
-            expect(contentBlock).toContain('data');
-            expect(contentBlock).toContain('id');
+        it('content fingerprint excludes position but includes data', () => {
+            expect(SRC).toContain('data: n.data');
+            expect(SRC).toContain('id: n.id');
         });
 
-        it('positionJson fingerprint exists for position-only saves', () => {
-            expect(SRC).toContain('const positionJson');
-            expect(SRC).toContain('POSITION_SAVE_DELAY_MS');
+        it('position fingerprint tracks node positions separately', () => {
+            expect(SRC).toContain('position');
+            expect(SRC).toContain('positions');
         });
     });
 

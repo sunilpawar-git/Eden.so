@@ -35,6 +35,9 @@ export function useFocusMode(): FocusModeResult {
     }, []);
 
     const handleEscape = useCallback(() => {
+        // NOTE: intentional approved exception — reads editingNodeId via getState()
+        // rather than a selector to prevent FocusOverlay re-rendering on every
+        // keystroke. See PHASE-ESC-N-KEY-BULLETPROOF.md §2.5 for rationale.
         if (useCanvasStore.getState().editingNodeId !== null) return;
         exitFocus();
     }, [exitFocus]);

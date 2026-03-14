@@ -10,6 +10,9 @@ import { documentAgentStrings } from '@/features/documentAgent/strings/documentA
 import { synthesisStrings } from '@/features/synthesis/strings/synthesisStrings';
 import { exportStrings } from '@/features/export/strings/exportStrings';
 import { contextMenuStrings } from './contextMenuStrings';
+import { slashCommandStrings } from './slashCommandStrings';
+import { searchStrings } from '@/features/search/strings/searchStrings';
+import { onboardingStrings } from '@/features/onboarding/strings/onboardingStrings';
 
 export const strings = {
     app: {
@@ -67,6 +70,7 @@ export const strings = {
         loadingComponent: 'Loading component...',
         comingSoon: 'Coming soon!',
         closeSymbol: '\u00D7',
+        undo: 'Undo',
     },
     settings: settingsStrings,
     shortcuts: {
@@ -77,17 +81,9 @@ export const strings = {
         clearSelection: 'Clear Selection',
         undo: 'Undo',
         redo: 'Redo',
-        search: 'Search',
+        search: 'Open Search',
     },
-    search: {
-        placeholder: 'Search notes...',
-        noResults: 'No results found',
-        resultsCount: 'results',
-        inWorkspace: 'in',
-        prompt: 'Prompt',
-        heading: 'Heading',
-        output: 'Output',
-    },
+    search: searchStrings,
     tags: {
         addTag: 'Add tag',
         placeholder: 'Add tag...',
@@ -99,6 +95,9 @@ export const strings = {
         collapse: 'Collapse',
         more: 'More actions',
         moreIcon: '•••',
+        connectIcon: '🔗',
+        copyIcon: '📋',
+        deleteIcon: '🗑️',
         collapseShortcut: 'C',
         color: 'Color',
         connect: 'Connect',
@@ -131,7 +130,10 @@ export const strings = {
         nodeColorGreen: 'Green (Complete)',
         tags: 'Tags',
         tagsShortcut: 'T',
+        mindmapShortcut: 'M',
         unpin: 'Unpin',
+        mindmapView: 'Mindmap View',
+        textView: 'Text View',
     },
     tooltip: {
         shortcutSeparator: ' ',
@@ -168,28 +170,7 @@ export const strings = {
         loadingFromCache: 'Loading from local cache...',
         noOfflineData: 'No offline data available for this workspace.',
     },
-    slashCommands: {
-        aiGenerate: {
-            label: 'AI Generate',
-            description: 'Generate content with AI',
-        },
-        insertImage: {
-            label: 'Insert Image',
-            description: 'Upload an image from your device',
-        },
-        insertDocument: {
-            label: 'Attach Document',
-            description: 'Attach a PDF, TXT, or CSV file',
-        },
-        analyzeDocument: {
-            label: 'Analyze Document',
-            description: 'Extract insights from attached documents',
-        },
-        noResults: 'No commands found',
-        menuLabel: 'Slash commands',
-        prefixSeparator: ':',
-        prefixLabel: 'Command mode active',
-    },
+    slashCommands: slashCommandStrings,
     editing: {
         enterEditMode: 'Enter edit mode',
         exitEditMode: 'Exit edit mode',
@@ -205,6 +186,7 @@ export const strings = {
         fetchError: 'Could not load link preview',
         proxyError: 'Link preview proxy unavailable',
         authRequired: 'Sign in to see link previews',
+        imageFailed: 'Image could not be loaded',
     },
     layout: {
         arrangeNodes: 'Auto Arrange',
@@ -291,6 +273,7 @@ export const strings = {
     synthesis: synthesisStrings,
     export: exportStrings,
     contextMenu: contextMenuStrings,
+    onboarding: onboardingStrings,
 } as const;
 
 export type StringKeys = typeof strings;

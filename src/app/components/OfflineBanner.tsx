@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { useOfflineQueueStore } from '@/features/workspace/stores/offlineQueueStore';
 import { strings } from '@/shared/localization/strings';
-import styles from './OfflineBanner.module.css';
 
 export function OfflineBanner() {
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
@@ -27,17 +26,25 @@ export function OfflineBanner() {
     }
 
     return (
-        <div className={styles.banner}>
-            <span className={styles.message}>
+        <div
+            className="flex items-center justify-between py-1 px-4 border-b text-sm animate-[slideDown_150ms_ease]"
+            style={{
+                background: 'var(--offline-banner-bg, hsl(38, 90%, 95%))',
+                color: 'var(--offline-banner-text, hsl(38, 80%, 20%))',
+                borderBottomColor: 'var(--offline-banner-border, hsl(38, 70%, 80%))',
+            }}
+        >
+            <span className="flex-1">
                 {strings.offline.offlineBanner}
                 {pendingCount > 0 && (
-                    <span className={styles.count}>
+                    <span className="opacity-80">
                         {' · '}{pendingCount} {strings.offline.pendingSync}
                     </span>
                 )}
             </span>
             <button
-                className={styles.dismiss}
+                className="text-xs underline p-1 opacity-70 transition-opacity duration-150 ease-in-out hover:opacity-100"
+                style={{ color: 'var(--offline-banner-text, hsl(38, 80%, 20%))' }}
                 onClick={() => setIsDismissed(true)}
             >
                 {strings.offline.dismiss}

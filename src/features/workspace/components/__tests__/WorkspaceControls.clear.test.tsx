@@ -7,8 +7,11 @@ import { WorkspaceControls } from '../WorkspaceControls';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
+import { useHistoryStore } from '@/features/canvas/stores/historyStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
+// vi.mock is hoisted by Vitest above all imports, so this resolves to the mock
+import { toastWithAction as mockToastWithAction } from '@/shared/stores/toastStore';
 
 vi.mock('../../services/workspaceService', () => ({
     deleteWorkspace: vi.fn().mockResolvedValue(undefined),
@@ -26,6 +29,7 @@ vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
 
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: { success: vi.fn(), error: vi.fn() },
+    toastWithAction: vi.fn(),
 }));
 
 const NODE_FIXTURE = {
@@ -54,6 +58,7 @@ describe('WorkspaceControls - Clear Canvas', () => {
         });
 
         useCanvasStore.setState({ nodes: [], edges: [], selectedNodeIds: new Set() });
+        useHistoryStore.getState().dispatch({ type: 'CLEAR' });
         useSettingsStore.setState({ canvasFreeFlow: false });
         mockConfirm.mockResolvedValue(false);
     });
@@ -98,6 +103,42 @@ describe('WorkspaceControls - Clear Canvas', () => {
 
         await act(async () => { fireEvent.click(screen.getByTitle(strings.canvas.clearCanvas)); });
 
+        expect(useCanvasStore.getState().nodes).toHaveLength(1);
+    });
+
+    it('should push a clearCanvas history entry when confirmed', async () => {
+        useCanvasStore.setState({ nodes: [NODE_FIXTURE] });
+        mockConfirm.mockResolvedValue(true);
+        render(<WorkspaceControls />);
+
+        await act(async () => { fireEvent.click(screen.getByTitle(strings.canvas.clearCanvas)); });
+
+        expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+        expect(useHistoryStore.getState().undoStack[0]!.type).toBe('clearCanvas');
+    });
+
+    it('should show an actionable undo toast when confirmed', async () => {
+        useCanvasStore.setState({ nodes: [NODE_FIXTURE] });
+        mockConfirm.mockResolvedValue(true);
+        render(<WorkspaceControls />);
+
+        await act(async () => { fireEvent.click(screen.getByTitle(strings.canvas.clearCanvas)); });
+
+        expect(mockToastWithAction).toHaveBeenCalledOnce();
+        const [msg, type] = (mockToastWithAction as ReturnType<typeof vi.fn>).mock.calls[0]!;
+        expect(typeof msg).toBe('string');
+        expect(type).toBe('info');
+    });
+
+    it('undo via historyStore restores the cleared node', async () => {
+        useCanvasStore.setState({ nodes: [NODE_FIXTURE] });
+        mockConfirm.mockResolvedValue(true);
+        render(<WorkspaceControls />);
+
+        await act(async () => { fireEvent.click(screen.getByTitle(strings.canvas.clearCanvas)); });
+        expect(useCanvasStore.getState().nodes).toHaveLength(0);
+
+        act(() => useHistoryStore.getState().dispatch({ type: 'UNDO' }));
         expect(useCanvasStore.getState().nodes).toHaveLength(1);
     });
 });

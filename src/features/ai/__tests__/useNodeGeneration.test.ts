@@ -14,8 +14,8 @@ vi.mock('../services/geminiService', () => ({
     generateContentWithContext: vi.fn(),
 }));
 
-vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
-    usePanToNode: () => ({ panToPosition: vi.fn() }),
+vi.mock('@/features/canvas/contexts/PanToNodeContext', () => ({
+    usePanToNodeContext: () => ({ panToPosition: vi.fn() }),
 }));
 
 // Mock KB context hook
@@ -109,7 +109,8 @@ describe('useNodeGeneration', () => {
                 'Updated prompt',
                 [],
                 '',
-                ''
+                '',
+                undefined
             );
         });
 
@@ -131,7 +132,8 @@ describe('useNodeGeneration', () => {
                 'Heading prompt',
                 [],
                 '',
-                ''
+                '',
+                undefined
             );
         });
 
@@ -152,7 +154,8 @@ describe('useNodeGeneration', () => {
                 'Legacy prompt',
                 [],
                 '',
-                ''
+                '',
+                undefined
             );
         });
 

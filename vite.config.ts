@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
@@ -6,6 +7,7 @@ import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
     plugins: [
+        tailwindcss(),
         react(),
         VitePWA({
             registerType: 'prompt',
@@ -69,6 +71,10 @@ export default defineConfig({
                     // Firebase - second largest, separate chunk
                     if (id.includes('firebase')) {
                         return 'vendor-firebase';
+                    }
+                    // Analytics — lazy-loaded after first paint
+                    if (id.includes('posthog')) {
+                        return 'vendor-analytics';
                     }
                     // State management libraries
                     if (id.includes('zustand') || id.includes('@tanstack')) {

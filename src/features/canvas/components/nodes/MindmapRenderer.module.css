@@ -1,0 +1,19 @@
+/**
+ * MindmapRenderer styles — container fills the node body,
+ * SVG takes full space with no overflow leakage.
+ */
+.container {
+    width: 100%;
+    height: 100%;
+    min-height: 80px;
+    overflow: hidden;
+    border-radius: var(--radius-sm, 4px);
+    /* Ensure pointer events are captured for isolation */
+    touch-action: none;
+}
+
+.svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}

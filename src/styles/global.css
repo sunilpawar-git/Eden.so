@@ -1,6 +1,8 @@
 /**
  * Global Styles
  */
+/* Tailwind CSS v4 — utilities layer only; our variables/themes cascade on top */
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import './variables.css';
 @import './themes/dark.css';
@@ -119,4 +121,23 @@ a {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* ─── Shared keyframes for Tailwind animate-[...] arbitrary usage ───────────
+   Components migrated from CSS Modules reference these by name.
+   Keep in sync with .claude/skills/css-migrate/SKILL.md token table.
+─────────────────────────────────────────────────────────────────────────── */
+@keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+}
+
+@keyframes sync-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+
+@keyframes sync-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }

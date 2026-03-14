@@ -1,11 +1,16 @@
 /**
- * AboutSection — App version, changelog, and bug report links
+ * AboutSection — App version, changelog, bug report links, and walkthrough replay.
  */
 import { strings } from '@/shared/localization/strings';
+import { useOnboardingSignalStore } from '@/features/onboarding/stores/onboardingSignalStore';
 import panelStyles from '../SettingsPanel.module.css';
 import styles from './AccountSection.module.css';
 
 export function AboutSection() {
+    function handleReplay() {
+        useOnboardingSignalStore.getState().requestReplay();
+    }
+
     return (
         <div className={panelStyles.section}>
             <h3 className={panelStyles.sectionTitle}>{strings.settings.about}</h3>
@@ -32,6 +37,14 @@ export function AboutSection() {
                 >
                     {strings.settings.reportBug}
                 </a>
+                <button
+                    className={styles.aboutLink}
+                    onClick={handleReplay}
+                    type="button"
+                    data-testid="replay-walkthrough-btn"
+                >
+                    {strings.onboarding.replayWalkthrough}
+                </button>
             </div>
         </div>
     );

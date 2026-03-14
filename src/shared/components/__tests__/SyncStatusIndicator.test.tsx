@@ -79,16 +79,14 @@ describe('SyncStatusIndicator', () => {
 
     it('renders correct dot color class for saved status', () => {
         mockSaveStatus = 'saved';
-        const { container } = render(<SyncStatusIndicator />);
-        const dot = container.querySelector('[class*="dot"]');
-        expect(dot).toBeInTheDocument();
+        render(<SyncStatusIndicator />);
+        expect(screen.getByTestId('sync-dot')).toBeInTheDocument();
     });
 
     it('renders correct dot color class for offline status', () => {
         mockIsOnline = false;
-        const { container } = render(<SyncStatusIndicator />);
-        const dot = container.querySelector('[class*="dot"]');
-        expect(dot).toBeInTheDocument();
+        render(<SyncStatusIndicator />);
+        expect(screen.getByTestId('sync-dot')).toBeInTheDocument();
     });
 
     it('renders background sync status when pending and online', () => {

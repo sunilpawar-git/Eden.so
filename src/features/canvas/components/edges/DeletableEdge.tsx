@@ -10,9 +10,46 @@ import {
     type EdgeProps,
 } from '@xyflow/react';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { useHistoryStore } from '../../stores/historyStore';
 import { useSettingsStore, type ConnectorStyle } from '@/shared/stores/settingsStore';
+import { toastWithAction } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
+import { safeClone } from '@/shared/utils/safeClone';
 import styles from './DeletableEdge.module.css';
+
+/** Deletes an edge, pushes undo command, and shows an actionable undo toast. */
+function deleteEdgeWithUndo(id: string): void {
+    const state = useCanvasStore.getState();
+    const edge = state.edges.find((e) => e.id === id);
+    if (!edge) return;
+    const frozenEdge = safeClone(edge);
+    state.deleteEdge(id);
+    useHistoryStore.getState().dispatch({
+        type: 'PUSH',
+        command: {
+            type: 'deleteEdge',
+            timestamp: Date.now(),
+            undo: () => {
+                const currentNodeIds = new Set(
+                    useCanvasStore.getState().nodes.map((n) => n.id)
+                );
+                if (
+                    currentNodeIds.has(frozenEdge.sourceNodeId) &&
+                    currentNodeIds.has(frozenEdge.targetNodeId)
+                ) {
+                    useCanvasStore.getState().addEdge(frozenEdge);
+                }
+            },
+            redo: () => {
+                useCanvasStore.getState().deleteEdge(id);
+            },
+        },
+    });
+    toastWithAction(strings.canvas.history.edgeDeleted, 'info', {
+        label: strings.common.undo,
+        onClick: () => useHistoryStore.getState().dispatch({ type: 'UNDO', source: 'toast' }),
+    });
+}
 
 /**
  * Returns dynamic CSS class name based on the chosen ConnectorStyle.
@@ -56,9 +93,7 @@ export const DeletableEdge = React.memo(function DeletableEdge({
         targetPosition,
     });
 
-    const handleDelete = useCallback(() => {
-        useCanvasStore.getState().deleteEdge(id);
-    }, [id]);
+    const handleDelete = useCallback(() => { deleteEdgeWithUndo(id); }, [id]);
 
     const handleMouseEnter = useCallback(() => setIsHovered(true), []);
     const handleMouseLeave = useCallback(() => setIsHovered(false), []);

@@ -93,6 +93,10 @@ export function WorkspaceItem({ id, name, type, isActive, nodeCount, onSelect, o
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') handleBlur();
+        // NOTE: Escape here is intentionally local — it cancels the in-place rename
+        // and is NOT migrated to useEscapeLayer. Correct UX for a controlled text
+        // input; does not interact with canvas-level escape handling.
+        // See PHASE-ESC-N-KEY-BULLETPROOF.md §2.6.
         else if (e.key === 'Escape') {
             setIsEditing(false);
             setEditName(name);

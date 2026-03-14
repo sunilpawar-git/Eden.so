@@ -19,8 +19,8 @@ vi.mock('@/features/knowledgeBank/hooks/useKnowledgeBankContext', () => ({
     useKnowledgeBankContext: () => ({ getKBContext: mockGetKBContext }),
 }));
 
-vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
-    usePanToNode: () => ({ panToPosition: vi.fn() }),
+vi.mock('@/features/canvas/contexts/PanToNodeContext', () => ({
+    usePanToNodeContext: () => ({ panToPosition: vi.fn() }),
 }));
 
 vi.mock('../hooks/useNodePoolContext', () => ({
@@ -59,7 +59,8 @@ describe('useNodeGeneration - Knowledge Bank context', () => {
             'Test prompt',
             [],
             '',
-            kbBlock
+            kbBlock,
+            undefined
         );
     });
 
@@ -78,7 +79,8 @@ describe('useNodeGeneration - Knowledge Bank context', () => {
             'Test prompt',
             [],
             '',
-            ''
+            '',
+            undefined
         );
     });
 });

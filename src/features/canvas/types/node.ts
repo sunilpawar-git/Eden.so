@@ -3,6 +3,7 @@
  */
 import type { CalendarEventMetadata } from '@/features/calendar/types/calendarEvent';
 import type { AttachmentMeta } from './document';
+import type { ContentMode } from './contentMode';
 
 /**
  * Node dimension constraints (in pixels)
@@ -16,6 +17,13 @@ export const MAX_NODE_HEIGHT = 800;
 
 export const DEFAULT_NODE_WIDTH = 280;
 export const DEFAULT_NODE_HEIGHT = 220;
+
+/** Minimum width for mindmap rendering — equals DEFAULT_NODE_WIDTH so toggling
+ *  to mindmap mode keeps the node the same size as its neighbours, giving an
+ *  even tile grid. markmap's autoFit scales the SVG to fill any container. */
+export const MINDMAP_MIN_WIDTH = DEFAULT_NODE_WIDTH;
+/** Minimum height for mindmap rendering — equals DEFAULT_NODE_HEIGHT. */
+export const MINDMAP_MIN_HEIGHT = DEFAULT_NODE_HEIGHT;
 
 /** Resize increment per arrow click (96px = 1 CSS inch = 6 grid snaps) */
 export const RESIZE_INCREMENT_PX = 96;
@@ -105,6 +113,8 @@ export interface IdeaNodeData {
     synthesisSourceIds?: string[];
     /** Synthesis mode used to create this node */
     synthesisMode?: string;
+    /** Rendering mode: 'text' (default) or 'mindmap'. Undefined treated as 'text'. */
+    contentMode?: ContentMode;
     [key: string]: unknown;
 }
 
