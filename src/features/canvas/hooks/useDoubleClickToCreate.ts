@@ -16,6 +16,7 @@ import { useCanvasStore } from '../stores/canvasStore';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { useAddNode } from './useAddNode';
 import { snapToMasonrySlot } from '../services/snapToMasonrySlot';
+import { resolveGridColumnsFromStore } from '../services/gridColumnsResolver';
 import { FOCUS_NODE_EVENT } from './useQuickCapture';
 import { useDoubleTap } from '@/shared/hooks/useDoubleTap';
 
@@ -76,9 +77,10 @@ export function useDoubleClickToCreate(): PaneDoubleClickHandlers {
 
         // In masonry mode, snap to nearest grid slot
         const isFreeFlow = useSettingsStore.getState().canvasFreeFlow;
+        const cols = resolveGridColumnsFromStore();
         const position = isFreeFlow
             ? flowPosition
-            : snapToMasonrySlot(flowPosition, useCanvasStore.getState().nodes);
+            : snapToMasonrySlot(flowPosition, useCanvasStore.getState().nodes, cols);
 
         // Create the node — addNode handles undo, pan, and fires single analytics event
         const nodeId = addNode({ position, source: 'canvas-double-click' });

@@ -98,7 +98,7 @@
   --header-text: hsl(0, 0%, 100%);
   --output-bg: hsl(220, 14%, 98%);
   --card-shadow: 0 1px 3px hsla(220, 13%, 13%, 0.06);
-  --card-shadow-hover: 0 4px 12px hsla(220, 13%, 13%, 0.1);
+  --card-shadow-hover: 0 8px 24px hsla(220, 13%, 13%, 0.12);
   --tooltip-bg: hsl(220, 13%, 18%);
   --tooltip-text: hsl(0, 0%, 100%);
 

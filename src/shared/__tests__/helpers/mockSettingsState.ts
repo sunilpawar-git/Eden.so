@@ -8,6 +8,7 @@ import type {
     ConnectorStyle,
     CanvasScrollMode,
     SettingsTabId,
+    GridColumnsPreference,
 } from '@/shared/stores/settingsStore';
 import type { ActionId } from '@/shared/stores/iconRegistry';
 import { DEFAULT_UTILS_BAR, DEFAULT_CONTEXT_MENU } from '@/shared/stores/iconRegistry';
@@ -23,6 +24,7 @@ export interface MockSettingsOverrides {
     connectorStyle?: ConnectorStyle;
     isCanvasLocked?: boolean;
     canvasFreeFlow?: boolean;
+    gridColumns?: GridColumnsPreference;
     lastSettingsTab?: SettingsTabId;
     setTheme?: ReturnType<typeof vi.fn>;
     toggleCanvasGrid?: ReturnType<typeof vi.fn>;
@@ -33,6 +35,7 @@ export interface MockSettingsOverrides {
     setConnectorStyle?: ReturnType<typeof vi.fn>;
     toggleCanvasLocked?: ReturnType<typeof vi.fn>;
     toggleCanvasFreeFlow?: ReturnType<typeof vi.fn>;
+    setGridColumns?: ReturnType<typeof vi.fn>;
     setLastSettingsTab?: ReturnType<typeof vi.fn>;
     getResolvedTheme?: () => 'light' | 'dark' | 'sepia' | 'grey' | 'darkBlack';
     loadFromStorage?: ReturnType<typeof vi.fn>;
@@ -57,6 +60,7 @@ export function createMockSettingsState(overrides: MockSettingsOverrides = {}) {
         connectorStyle: 'solid' as ConnectorStyle,
         isCanvasLocked: false,
         canvasFreeFlow: false,
+        gridColumns: 4 as GridColumnsPreference,
         lastSettingsTab: 'appearance' as SettingsTabId,
         setTheme: vi.fn(),
         toggleCanvasGrid: vi.fn(),
@@ -67,6 +71,7 @@ export function createMockSettingsState(overrides: MockSettingsOverrides = {}) {
         setConnectorStyle: vi.fn(),
         toggleCanvasLocked: vi.fn(),
         toggleCanvasFreeFlow: vi.fn(),
+        setGridColumns: vi.fn(),
         setLastSettingsTab: vi.fn(),
         getResolvedTheme: () => 'light' as const,
         loadFromStorage: vi.fn(),

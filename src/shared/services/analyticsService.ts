@@ -115,7 +115,7 @@ export function trackCanvasRedo(
 type SettingKey =
     | 'theme' | 'canvasGrid' | 'autoSave' | 'autoSaveInterval'
     | 'compactMode' | 'canvasScrollMode' | 'connectorStyle'
-    | 'isCanvasLocked' | 'canvasFreeFlow' | 'autoAnalyzeDocuments' | 'data_export'
+    | 'isCanvasLocked' | 'canvasFreeFlow' | 'gridColumns' | 'autoAnalyzeDocuments' | 'data_export'
     | 'branch_export' | 'canvas_undo' | 'canvas_redo'
     | 'toolbarButtonOrder' | 'toolbarHiddenButtons' | 'toolbarReset'
     | 'utilsBarIcons' | 'contextMenuIcons' | 'iconPlacementReset';

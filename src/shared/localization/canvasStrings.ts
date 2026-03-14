@@ -67,6 +67,8 @@ export const canvasStrings = {
         nodesDeleted: (count: number) => `${count} nodes deleted`,
         edgeDeleted: 'Connection removed',
         canvasCleared: 'Canvas cleared',
+        arrangeUndone: 'Arrangement undone',
+        arrangeUndoAction: 'Undo arrange',
         deleteNodesConfirmTitle: 'Delete nodes',
         deleteNodesConfirm: (count: number) => `Delete ${count} nodes? This can be undone.`,
         deleteNodesConfirmButton: 'Delete',

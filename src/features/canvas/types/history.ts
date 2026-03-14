@@ -15,7 +15,8 @@ export type CanvasCommandType =
     | 'changeColor'
     | 'transformContent'
     | 'toggleContentMode'
-    | 'clearCanvas';
+    | 'clearCanvas'
+    | 'arrangeNodes';
 
 export interface CanvasCommand {
     readonly type: CanvasCommandType;

@@ -51,8 +51,8 @@ describe('Free Flow Placement Integration', () => {
         });
     });
 
-    describe('multiple branches stack vertically', () => {
-        it('should stack 3 children without overlaps', () => {
+    describe('multiple branches avoid overlaps', () => {
+        it('should place 3rd child without overlapping existing children', () => {
             const parent = createIdeaNode('parent', WORKSPACE_ID, { x: 50, y: 50 });
             useCanvasStore.getState().addNode(parent);
 
@@ -71,9 +71,14 @@ describe('Free Flow Placement Integration', () => {
             const freshNodes = useCanvasStore.getState().nodes;
             const position = calculateBranchPlacement(parent, freshNodes);
 
-            const expectedY = 50 + 2 * (DEFAULT_NODE_HEIGHT + GRID_GAP);
-            expect(position.x).toBe(branchX);
-            expect(position.y).toBe(expectedY);
+            for (const node of freshNodes) {
+                if (node.id === 'parent') continue;
+                const nw = node.width ?? DEFAULT_NODE_WIDTH;
+                const nh = node.height ?? DEFAULT_NODE_HEIGHT;
+                const overlapX = position.x < node.position.x + nw && position.x + DEFAULT_NODE_WIDTH > node.position.x;
+                const overlapY = position.y < node.position.y + nh && position.y + DEFAULT_NODE_HEIGHT > node.position.y;
+                expect(overlapX && overlapY).toBe(false);
+            }
         });
     });
 

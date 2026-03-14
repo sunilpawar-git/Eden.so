@@ -1,6 +1,6 @@
 /**
- * Free Flow Placement Service Tests (TDD-first)
- * Tests pure placement functions for free-flow node positioning
+ * Free Flow Placement Service Tests
+ * Tests pure placement functions with spiral collision avoidance
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -10,6 +10,9 @@ import {
 import type { CanvasNode } from '../../types/node';
 import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '../../types/node';
 import { GRID_GAP, GRID_PADDING } from '../gridLayoutService';
+
+const STEP_X = DEFAULT_NODE_WIDTH + GRID_GAP;
+const STEP_Y = DEFAULT_NODE_HEIGHT + GRID_GAP;
 
 const createMockNode = (
     id: string,
@@ -39,7 +42,7 @@ describe('freeFlowPlacementService', () => {
         it('should place new node to the right of the latest node', () => {
             const nodes = [createMockNode('n1', 32, 32)];
             const position = calculateSmartPlacement(nodes);
-            expect(position.x).toBe(32 + DEFAULT_NODE_WIDTH + GRID_GAP);
+            expect(position.x).toBe(32 + STEP_X);
             expect(position.y).toBe(32);
         });
 
@@ -49,32 +52,43 @@ describe('freeFlowPlacementService', () => {
                 createMockNode('n2', 800, 800),
             ];
             const position = calculateSmartPlacement(nodes, 'n1');
-            expect(position.x).toBe(32 + DEFAULT_NODE_WIDTH + GRID_GAP);
+            expect(position.x).toBe(32 + STEP_X);
             expect(position.y).toBe(32);
         });
 
-        it('should avoid collision with existing node at target position', () => {
-            const targetX = 32 + DEFAULT_NODE_WIDTH + GRID_GAP;
+        it('should avoid collision using spiral search', () => {
+            const targetX = 32 + STEP_X;
             const nodes = [
                 createMockNode('n1', 32, 32),
                 createMockNode('n2', targetX, 32),
             ];
             const position = calculateSmartPlacement(nodes);
-            expect(position.x).toBe(targetX);
-            expect(position.y).toBe(32 + DEFAULT_NODE_HEIGHT + GRID_GAP);
+
+            const collidesWithN1 = position.x < 32 + DEFAULT_NODE_WIDTH && position.x + DEFAULT_NODE_WIDTH > 32 &&
+                position.y < 32 + DEFAULT_NODE_HEIGHT && position.y + DEFAULT_NODE_HEIGHT > 32;
+            const collidesWithN2 = position.x < targetX + DEFAULT_NODE_WIDTH && position.x + DEFAULT_NODE_WIDTH > targetX &&
+                position.y < 32 + DEFAULT_NODE_HEIGHT && position.y + DEFAULT_NODE_HEIGHT > 32;
+
+            expect(collidesWithN1).toBe(false);
+            expect(collidesWithN2).toBe(false);
         });
 
-        it('should stack below multiple collisions', () => {
-            const targetX = 32 + DEFAULT_NODE_WIDTH + GRID_GAP;
+        it('should find an open slot among multiple blocking nodes', () => {
+            const targetX = 32 + STEP_X;
             const nodes = [
                 createMockNode('n1', 32, 32),
                 createMockNode('n2', targetX, 32),
-                createMockNode('n3', targetX, 32 + DEFAULT_NODE_HEIGHT + GRID_GAP),
+                createMockNode('n3', targetX, 32 + STEP_Y),
             ];
             const position = calculateSmartPlacement(nodes);
-            const expectedY = 32 + 2 * (DEFAULT_NODE_HEIGHT + GRID_GAP);
-            expect(position.x).toBe(targetX);
-            expect(position.y).toBe(expectedY);
+
+            for (const node of nodes) {
+                const overlapX = position.x < node.position.x + DEFAULT_NODE_WIDTH &&
+                    position.x + DEFAULT_NODE_WIDTH > node.position.x;
+                const overlapY = position.y < node.position.y + DEFAULT_NODE_HEIGHT &&
+                    position.y + DEFAULT_NODE_HEIGHT > node.position.y;
+                expect(overlapX && overlapY).toBe(false);
+            }
         });
 
         it('should use latest node by createdAt when no focusedNodeId', () => {
@@ -83,8 +97,14 @@ describe('freeFlowPlacementService', () => {
                 createMockNode('n2', 500, 100, { createdAt: new Date('2024-01-02') }),
             ];
             const position = calculateSmartPlacement(nodes);
-            expect(position.x).toBe(500 + DEFAULT_NODE_WIDTH + GRID_GAP);
+            expect(position.x).toBe(500 + STEP_X);
             expect(position.y).toBe(100);
+        });
+
+        it('should fall back to origin when focusedNodeId not found in nodes', () => {
+            const nodes = [createMockNode('n1', 200, 200)];
+            const position = calculateSmartPlacement(nodes, 'nonexistent-id');
+            expect(position).toEqual({ x: GRID_PADDING, y: GRID_PADDING });
         });
 
         it('should respect custom node widths for offset calculation', () => {
@@ -102,28 +122,37 @@ describe('freeFlowPlacementService', () => {
         it('should place branch to the right of the source node', () => {
             const source = createMockNode('src', 100, 100);
             const position = calculateBranchPlacement(source, [source]);
-            expect(position.x).toBe(100 + DEFAULT_NODE_WIDTH + GRID_GAP);
+            expect(position.x).toBe(100 + STEP_X);
             expect(position.y).toBe(100);
         });
 
-        it('should stack vertically when sibling already exists at branch position', () => {
+        it('should resolve collision when sibling exists at branch position', () => {
             const source = createMockNode('src', 100, 100);
-            const branchX = 100 + DEFAULT_NODE_WIDTH + GRID_GAP;
+            const branchX = 100 + STEP_X;
             const sibling = createMockNode('sib', branchX, 100);
             const position = calculateBranchPlacement(source, [source, sibling]);
-            expect(position.x).toBe(branchX);
-            expect(position.y).toBe(100 + DEFAULT_NODE_HEIGHT + GRID_GAP);
+
+            const collidesWithSibling = position.x < branchX + DEFAULT_NODE_WIDTH &&
+                position.x + DEFAULT_NODE_WIDTH > branchX &&
+                position.y < 100 + DEFAULT_NODE_HEIGHT &&
+                position.y + DEFAULT_NODE_HEIGHT > 100;
+            expect(collidesWithSibling).toBe(false);
         });
 
-        it('should stack below multiple siblings', () => {
+        it('should find open slot among multiple siblings', () => {
             const source = createMockNode('src', 100, 100);
-            const branchX = 100 + DEFAULT_NODE_WIDTH + GRID_GAP;
+            const branchX = 100 + STEP_X;
             const sib1 = createMockNode('sib1', branchX, 100);
-            const sib2 = createMockNode('sib2', branchX, 100 + DEFAULT_NODE_HEIGHT + GRID_GAP);
+            const sib2 = createMockNode('sib2', branchX, 100 + STEP_Y);
             const position = calculateBranchPlacement(source, [source, sib1, sib2]);
-            const expectedY = 100 + 2 * (DEFAULT_NODE_HEIGHT + GRID_GAP);
-            expect(position.x).toBe(branchX);
-            expect(position.y).toBe(expectedY);
+
+            for (const node of [sib1, sib2]) {
+                const overlapX = position.x < node.position.x + DEFAULT_NODE_WIDTH &&
+                    position.x + DEFAULT_NODE_WIDTH > node.position.x;
+                const overlapY = position.y < node.position.y + DEFAULT_NODE_HEIGHT &&
+                    position.y + DEFAULT_NODE_HEIGHT > node.position.y;
+                expect(overlapX && overlapY).toBe(false);
+            }
         });
 
         it('should respect source node custom width', () => {
@@ -137,7 +166,7 @@ describe('freeFlowPlacementService', () => {
         it('should handle source at origin', () => {
             const source = createMockNode('src', 0, 0);
             const position = calculateBranchPlacement(source, [source]);
-            expect(position.x).toBe(DEFAULT_NODE_WIDTH + GRID_GAP);
+            expect(position.x).toBe(STEP_X);
             expect(position.y).toBe(0);
         });
     });

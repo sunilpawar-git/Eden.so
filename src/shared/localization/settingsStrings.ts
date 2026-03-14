@@ -26,6 +26,8 @@ export const settingsStrings = {
     connectorDashed: 'Dashed',
     connectorDotted: 'Dotted',
     freeFlow: 'Free flow mode',
+    gridColumnsLabel: 'Grid columns',
+    gridColumnsAuto: 'Auto',
     canvasDisplay: 'Display',
     compactModeDescription: 'Reduce spacing for more content on screen',
     close: 'Close',

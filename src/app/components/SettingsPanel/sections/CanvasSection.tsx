@@ -8,6 +8,7 @@ import { Toggle } from '@/shared/components/Toggle';
 import { SegmentedControl } from '@/shared/components/SegmentedControl';
 import { ConnectorStylePicker } from './ConnectorStylePicker';
 import { AIMemorySection } from './AIMemorySection';
+import { GridColumnsControl } from '@/features/settings/components/GridColumnsControl';
 import styles from '../SettingsPanel.module.css';
 
 const SCROLL_MODE_OPTIONS = [
@@ -39,6 +40,7 @@ export const CanvasSection = React.memo(function CanvasSection() {
                 onChange={() => useSettingsStore.getState().toggleCanvasFreeFlow()}
                 label={strings.settings.freeFlow}
             />
+            <GridColumnsControl />
 
             <h3 className={styles.sectionTitle}>{strings.settings.canvasScrollMode}</h3>
             <SegmentedControl

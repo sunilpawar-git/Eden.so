@@ -29,6 +29,7 @@ import {
     deleteNodesFromArrays,
 } from './canvasStoreHelpers';
 import { duplicateNode as cloneNode } from '../services/nodeDuplicationService';
+import { resolveGridColumnsFromStore } from '../services/gridColumnsResolver';
 import { EMPTY_SELECTED_IDS, getNodeMap, DEFAULT_VIEWPORT, DEFAULT_INPUT_MODE, countPooledNodes, countPinnedNodes } from './canvasStoreUtils';
 import type { CanvasStore } from './canvasStore';
 import type { ClusterGroup } from '@/features/clustering/types/cluster';
@@ -188,10 +189,15 @@ export function createEdgeAndLayoutActions(set: SetFn, get: GetFn) {
 
         setEdges: (edges: CanvasEdge[]) => set({ edges }),
 
-        arrangeNodes: () => set((s) => ({ nodes: arrangeNodesInGrid(s.nodes) })),
+        arrangeNodes: () => {
+            const cols = resolveGridColumnsFromStore();
+            set((s) => ({ nodes: arrangeNodesInGrid(s.nodes, cols) }));
+        },
 
-        arrangeAfterResize: (nodeId: string) =>
-            set((s) => ({ nodes: arrangeNodesAfterResize(s.nodes, nodeId) })),
+        arrangeAfterResize: (nodeId: string) => {
+            const cols = resolveGridColumnsFromStore();
+            set((s) => ({ nodes: arrangeNodesAfterResize(s.nodes, nodeId, cols) }));
+        },
 
         setViewport: (viewport: Viewport) => set({ viewport }),
 

@@ -50,6 +50,7 @@ export const DEFAULT_SETTINGS_STATE = {
     isCanvasLocked: false,
     canvasFreeFlow: false,
     lastSettingsTab: 'appearance' as const,
+    gridColumns: 4 as const,
 };
 
 /** Resets the settings store to default state */
