@@ -76,6 +76,6 @@ export function useIdeaCard({ id, rfData, selected }: UseIdeaCardParams) {
     return {
         resolvedData, heading, prompt, output, isGenerating, isPinned, isCollapsed, tagIds, linkPreviews, calendarEvent,
         isAICard, showTagInput, contentRef, cardWrapperRef, barContainerRef, headingRef,
-        editor, hasContent: Boolean(output), isEditing, calendar, registerProximityLostFn, ...handlers,
+        editor, hasContent: Boolean(output), isEditing, onExitEditing, calendar, registerProximityLostFn, ...handlers,
     };
 }

@@ -54,8 +54,12 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
         handleTransform, handleHeadingChange, handleCopy, handleDuplicate, handleShare,
         isSharing, isTransforming, handlePinToggle, handleCollapseToggle, handlePoolToggle, handleColorChange,
         handleTagOpen, handleFocusClick, handleImageClick, handleAttachmentClick, slashHandler, onSubmitAI, onTagsChange, onKeyDownReact,
-        hasContent, isEditing, calendar, focusBody, registerProximityLostFn,
+        hasContent, isEditing, onExitEditing, calendar, focusBody, registerProximityLostFn,
     } = api;
+    const handleHeadingBlur = React.useCallback(
+        () => { onExitEditing(); },
+        [onExitEditing],
+    );
     const nodeColorKey = normalizeNodeColorKey(resolvedData.colorKey);
     const contextMenu = useNodeContextMenu();
     const { handleMoreClick, handleContentModeToggle } = useIdeaCardMenuActions(id, barContainerRef, contextMenu.openAtElement);
@@ -85,7 +89,8 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                 )}
                 <IdeaCardHeadingSection headingRef={headingRef} heading={heading ?? ''} isEditing={isEditing}
                     onHeadingChange={handleHeadingChange} onEnterKey={focusBody}
-                    onDoubleClick={handleDoubleClick} onSlashCommand={slashHandler}
+                    onDoubleClick={handleDoubleClick} onBlur={handleHeadingBlur}
+                    onSlashCommand={slashHandler}
                     onSubmitAI={onSubmitAI} calendarEvent={calendarEvent}
                     onCalendarRetry={calendar.handleRetry} isCollapsed={isCollapsed ?? false} />
                 {!isCollapsed && (
