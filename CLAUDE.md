@@ -27,16 +27,33 @@ src/
 │   ├── ai/                # Gemini generation, transformation
 │   ├── workspace/         # Workspace CRUD, loader, sync
 │   ├── knowledgeBank/     # KB entries, TF-IDF scoring
+│   ├── clustering/        # Similarity + cluster suggestions
+│   ├── search/            # Full-text search (debounced)
 │   ├── calendar/          # Google Calendar sync
 │   └── documentAgent/     # Image analysis, auto-spawn
 ├── shared/
 │   ├── components/        # Reusable UI (Button, Toast)
-│   ├── hooks/             # Generic hooks (useDebounce)
-│   ├── utils/             # Pure functions
+│   ├── hooks/             # Generic hooks (useDebouncedCallback)
+│   ├── services/          # logger.ts, Sentry, analytics
+│   ├── utils/             # Pure functions (firebaseUtils, contentSanitizer)
 │   └── localization/      # String resources
-├── config/                # Environment, constants
+├── migrations/            # Firestore schema migrations (migrationRunner.ts)
+├── workers/               # Web Workers (knowledgeWorker.ts — TF-IDF off-thread)
+├── config/                # Environment, firestoreQueryConfig, constants
 └── styles/                # CSS variables, global styles
 ```
+
+### Firestore Data Model
+
+```
+users/{userId}/
+  workspaces/{workspaceId}   # + schemaVersion, userId
+    nodes/{nodeId}           # + schemaVersion, userId, workspaceId
+    edges/{edgeId}           # + userId, workspaceId
+  knowledgeBank/{entryId}
+```
+
+Every node and edge document stores `userId` + `workspaceId`. Firestore rules validate both the path-level auth **and** `resource.data.userId == request.auth.uid`.
 
 ### SOLID Principles Enforcement
 - **S**: One file = One responsibility
@@ -151,8 +168,32 @@ const selectedNodeIds = useStore(state => state.selectedNodeIds);
 // 4. Use viewport-only rendering (lazy render)
 <ReactFlow onlyRenderVisibleElements={true} />
 
-// 5. Memoize callbacks
-const onNodeDrag = useCallback(() => {}, []);
+// 5. Memoize callbacks — use useRef for reactive values, keep deps stable
+const userRef = useRef(user);
+userRef.current = user;
+const handleAction = useCallback(async () => {
+    const u = userRef.current; // always fresh, no stale closure
+}, []); // ✅ stable reference
+```
+
+### Heavy computation off the main thread
+
+TF-IDF scoring and similarity clustering must **never** block the UI thread. Use the Web Worker client:
+
+```typescript
+import { computeClustersAsync, rankEntriesAsync } from '@/workers/knowledgeWorkerClient';
+
+// Runs in Web Worker; falls back to main thread if Workers unavailable
+const result = await computeClustersAsync(nodes, { minClusterSize: 3 });
+```
+
+### Search input debouncing
+
+All search inputs must debounce before triggering computation. Use the shared hook:
+
+```typescript
+import { useDebouncedCallback } from '@/shared/hooks/useDebounce';
+const debouncedSearch = useDebouncedCallback(search, 250);
 ```
 
 ## 🔒 SECURITY PROTOCOL
@@ -197,6 +238,14 @@ service cloud.firestore {
 - Input validation on all user content
 - XSS prevention: sanitize markdown output
 - CORS configured for production domain only
+- Base64 stripped before every Firestore write — `stripBase64Images()` in `contentSanitizer.ts`
+- `data:` URIs removed from CSP `img-src` directive
+- Secret scanning enforced via Gitleaks in CI
+
+### Storage Security
+- All files stored in Firebase Storage only — Firestore holds URLs, never binary
+- `onNodeDeleted` Cloud Function removes associated Storage files on node deletion
+- GCS lifecycle rules (`storage-lifecycle.json`) auto-delete `tmp/` files after 7 days
 
 ## 🧪 TDD PROTOCOL (STRICT)
 
@@ -340,6 +389,49 @@ const node = useMemo(
 
 **Enforcement:** Structural test detects `getNodeMap` inside selectors.
 
+### 🔴 CRITICAL: useCallback Deps Must Not Include Reactive Zustand State
+
+When a `useCallback` includes reactive Zustand state in its deps array, the callback reference changes every time that state changes — feeding re-renders back into components that consume it.
+
+```typescript
+// ❌ WRONG — callback recreated on every workspace switch
+const handleSwitch = useCallback(async (id: string) => {
+    if (id === currentWorkspaceId || !user) return;
+    ...
+}, [user, currentWorkspaceId]); // re-created on EVERY change
+
+// ✅ CORRECT — read live values via ref, keep deps stable
+const userRef = useRef(user);
+const currentIdRef = useRef(currentWorkspaceId);
+userRef.current = user;
+currentIdRef.current = currentWorkspaceId;
+
+const handleSwitch = useCallback(async (id: string) => {
+    const curId = currentIdRef.current; // always fresh
+    const currentUser = userRef.current;
+    if (id === curId || !currentUser) return;
+    ...
+}, []); // stable — never recreated
+```
+
+### 🔴 CRITICAL: useEffect Deps Must Use Primitive Selectors, Not Object References
+
+Selecting a Zustand object reference (`s.user`) in a `useEffect` dep causes the effect to re-run whenever the store reconstructs that object — even if the underlying data didn't change. Always select the primitive you actually need:
+
+```typescript
+// ❌ WRONG — entire user object triggers re-runs on any auth state update
+const user = useAuthStore((s) => s.user);
+useEffect(() => { ... }, [user]); // re-runs even if user.id didn't change
+
+// ✅ CORRECT — primitive string; effect only re-runs when ID actually changes
+const userId = useAuthStore((s) => s.user?.id);
+useEffect(() => {
+    if (!userId) return;
+    const uid: string = userId; // narrowed for TypeScript
+    ...
+}, [userId]);
+```
+
 ## ✅ COMMIT CONVENTIONS
 
 Format: `type(scope): description`
@@ -354,6 +446,81 @@ Format: `type(scope): description`
 | perf | Performance |
 | security | Security fix |
 
+## 🗄️ FIRESTORE PATTERNS
+
+### Query safety
+- All `getDocs` calls **must** use `limit()` from `FIRESTORE_QUERY_CAP` in `firestoreQueryConfig.ts`
+- Structural test `firestoreQueryCap.structural.test.ts` enforces this — build fails without it
+
+### Write safety
+- Writes ≤500 ops: use `runTransaction()` for read-then-write consistency
+- Writes >500 ops: use `chunkedBatchWrite()` from `firebaseUtils.ts` (auto-chunks at 500)
+- Never create a raw `writeBatch` and add unlimited ops to it
+
+### Schema versioning
+Every workspace and node document carries `schemaVersion: number`. On load, `migrationRunner.ts` applies all pending migrations in version order. Migrations must be:
+- **Pure functions** (no side effects — no network calls)
+- **Idempotent** (safe to run twice)
+- **Backward-compatible** (old clients must still read new docs)
+
+```typescript
+// Adding a new migration — bump CURRENT_SCHEMA_VERSION
+export const CURRENT_SCHEMA_VERSION = 3;
+
+const migrations: Migration[] = [
+    ...existingMigrations,
+    {
+        version: 3,
+        name: 'add_my_new_field',
+        migrateNode: (node) => ({ ...node, myField: node.myField ?? 'default' }),
+    },
+];
+```
+
+### Bundle-first loading
+`loadUserWorkspaces` tries `loadWorkspaceBundle()` first (fast, cached). Bundle cache is invalidated automatically on workspace create/delete. Falls back to direct Firestore queries if bundle is unavailable.
+
+## 🧹 LOGGING & ERROR HANDLING
+
+**Always use the structured logger — never `console.*` directly:**
+
+```typescript
+import { logger } from '@/shared/services/logger';
+logger.error('message', error, { contextKey: value }); // → Sentry + console
+logger.warn('message', ...args);                        // → console only
+logger.info('message', ...args);                        // → console only in dev
+```
+
+**Fire-and-forget async calls must have `.catch()`:**
+
+```typescript
+// ❌ Silent failure
+void doAsyncThing();
+
+// ✅ Surfaced failure
+doAsyncThing().catch((err) => logger.warn('[context] thing failed:', err));
+```
+
+**`useEffect` async functions must have a single outer try/catch:**
+
+```typescript
+// ❌ Code before try{} can throw and leave state unresolved
+async function load() {
+    await setup();         // if this throws — loading state stuck!
+    try { ... } catch {}
+}
+
+// ✅ Single wrapping try/catch
+async function load() {
+    try {
+        await setup();
+        ...
+    } catch (err) {
+        logger.error(...);
+    }
+}
+```
+
 ## 🚫 TECH DEBT PREVENTION
 
 Before ANY commit:
@@ -362,5 +529,8 @@ Before ANY commit:
 3. `npm run build` → success
 4. File audit: `find src -name "*.ts*" | xargs wc -l | awk '$1 > 300'` → empty
 5. String audit: No inline strings in components
+6. ID audit: No `Date.now()` for entity IDs — use `crypto.randomUUID()`
+7. Selector audit: No object references in `useEffect` deps — use primitive selectors
+8. Callback audit: No reactive Zustand state in `useCallback` deps — use `useRef`
 
 **NO EXCEPTIONS. NO "TODO: fix later". NO SHORTCUTS.**
