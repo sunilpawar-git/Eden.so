@@ -9,7 +9,6 @@
 import React, { useState, useCallback } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { ShortcutsPanel } from './ShortcutsPanel';
-import styles from './HelpButton.module.css';
 
 export interface HelpButtonProps {
     readonly isOnboardingActive: boolean; // true while WelcomeScreen OR coach marks are showing
@@ -36,7 +35,7 @@ export const HelpButton = React.memo(function HelpButton({
     return (
         <>
             <button
-                className={styles.helpButton}
+                className="fixed bottom-6 right-6 z-[var(--z-sticky)] w-9 h-9 rounded-full bg-[var(--color-surface-elevated)] border border-[var(--color-border)] text-[var(--color-text-secondary)] text-[var(--font-size-sm)] font-semibold cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex items-center justify-center transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]"
                 onClick={toggle}
                 aria-label={strings.onboarding.helpButtonLabel}
                 aria-expanded={isOpen}

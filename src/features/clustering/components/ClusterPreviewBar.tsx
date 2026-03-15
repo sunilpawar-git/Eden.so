@@ -3,7 +3,6 @@ import React from 'react';
 import { clusterStrings } from '@/shared/localization/clusterStrings';
 import type { ClusterPhase } from '../stores/clusterPreviewStore';
 import type { ClusterGroup } from '../types/cluster';
-import styles from './ClusterPreviewBar.module.css';
 
 interface ClusterPreviewBarProps {
     readonly phase: ClusterPhase;
@@ -21,14 +20,14 @@ export const ClusterPreviewBar = React.memo(function ClusterPreviewBar({ phase, 
         : clusterStrings.labels.foundThemes(previewGroups?.length ?? 0);
 
     return (
-        <div className={styles.bar} role="status">
-            <span className={styles.text}>{text}</span>
+        <div className="absolute bottom-[var(--space-2xl)] left-1/2 -translate-x-1/2 flex items-center gap-2 py-1 px-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-[var(--card-shadow)] z-[var(--z-sticky)] select-none" role="status">
+            <span className="text-[var(--font-size-sm)] text-[var(--color-text-primary)] whitespace-nowrap">{text}</span>
             {phase === 'preview' && (
                 <>
-                    <button className={styles.button} onClick={onAccept} aria-label={clusterStrings.labels.accept}>
+                    <button className="py-0.5 px-2 text-[var(--font-size-sm)] rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" onClick={onAccept} aria-label={clusterStrings.labels.accept}>
                         {clusterStrings.labels.accept}
                     </button>
-                    <button className={styles.button} onClick={onDismiss} aria-label={clusterStrings.labels.dismiss}>
+                    <button className="py-0.5 px-2 text-[var(--font-size-sm)] rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" onClick={onDismiss} aria-label={clusterStrings.labels.dismiss}>
                         {clusterStrings.labels.dismiss}
                     </button>
                 </>

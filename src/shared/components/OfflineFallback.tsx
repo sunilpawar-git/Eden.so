@@ -6,7 +6,6 @@
 import { useState, useEffect } from 'react';
 import { swCacheService } from '@/shared/services/swCacheService';
 import { strings } from '@/shared/localization/strings';
-import styles from './OfflineFallback.module.css';
 
 const FIRESTORE_CACHE_PROBE_URL = 'https://firestore.googleapis.com';
 
@@ -40,9 +39,9 @@ export function OfflineFallback({ hasOfflineData, onRetry }: OfflineFallbackProp
         : strings.offlineFallback.noDataMessage;
 
     return (
-        <div className={styles.container} role="alert">
-            <div className={styles.content}>
-                <div className={styles.icon} aria-hidden="true">
+        <div className="flex items-center justify-center min-h-[60vh] p-[var(--space-xl)]" role="alert">
+            <div className="flex flex-col items-center text-center max-w-[400px] gap-4">
+                <div className="text-[var(--color-text-muted)] mb-2" aria-hidden="true">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="1" y1="1" x2="23" y2="23" />
                         <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
@@ -53,9 +52,9 @@ export function OfflineFallback({ hasOfflineData, onRetry }: OfflineFallbackProp
                         <line x1="12" y1="20" x2="12.01" y2="20" />
                     </svg>
                 </div>
-                <h2 className={styles.title}>{title}</h2>
-                <p className={styles.message}>{message}</p>
-                <button className={styles.retryButton} onClick={onRetry}>
+                <h2 className="text-[var(--font-size-xl)] font-semibold text-[var(--color-text-primary)] m-0">{title}</h2>
+                <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] leading-[var(--line-height-relaxed)] m-0">{message}</p>
+                <button className="bg-[var(--color-primary)] text-[var(--header-text)] border-none rounded-md py-2 px-6 text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out mt-2 hover:bg-[var(--color-primary-hover)]" onClick={onRetry}>
                     {strings.offlineFallback.retryButton}
                 </button>
             </div>

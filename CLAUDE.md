@@ -119,17 +119,62 @@ className={styles.primaryButton}  // Uses CSS variable
 import styles from './Button.module.css';
 <button className={`${styles.btn} mt-4`}>...</button>
 
-// ✅ CORRECT — full migration, Tailwind only
+// ❌ FORBIDDEN — Tailwind spacing utilities are zeroed by global * reset
 <button className="mt-4 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg">...</button>
 
-// ✅ CORRECT — CSS variable values in Tailwind arbitrary syntax
-className="text-[var(--color-text-primary)] bg-[var(--color-surface)]"
+// ✅ CORRECT — layout + color via Tailwind, spacing via style prop
+<button
+    className="flex items-center bg-[var(--color-primary)] text-white rounded-lg"
+    style={{ marginTop: 16, padding: '8px 16px' }}
+>...</button>
 
-// ✅ CORRECT — Tailwind spacing maps to our tokens
-// --space-sm: 8px  → use p-2, gap-2 (0.5rem ≈ 8px)
-// --space-md: 16px → use p-4, gap-4
-// --space-lg: 24px → use p-6, gap-6
+// ✅ CORRECT — CSS variable values in Tailwind arbitrary syntax (for non-spacing properties)
+className="text-[var(--color-text-primary)] bg-[var(--color-surface)] rounded-[var(--radius-md)]"
+
+// ✅ CORRECT — spacing token → style prop (NOT Tailwind class)
+// --space-sm: 8px  → style={{ padding: 8 }}   or style={{ gap: 8 }}
+// --space-md: 16px → style={{ padding: 16 }}  or style={{ margin: 16 }}
+// --space-lg: 24px → style={{ padding: 24 }}
 ```
+
+### 🔴 CRITICAL: Global CSS Reset Kills Tailwind Spacing Utilities
+
+**Root cause discovered during LoginPage migration (Wave 4).**
+
+`src/styles/global.css` contains a bare `*` reset declared **after** `@import "tailwindcss"`:
+
+```css
+@import "tailwindcss";   /* ← Tailwind utilities go into @layer utilities */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;   /* ← bare rule, outside any layer — wins the cascade */
+}
+```
+
+In Tailwind v4, utilities live in `@layer utilities`. CSS rules declared **outside any layer** always win over layered rules regardless of source order. This means **every Tailwind spacing utility is zeroed out** by the global reset:
+
+```tsx
+// ❌ These classes produce ZERO spacing — reset wins the cascade
+<div className="py-12 px-10 mb-8 mt-4 gap-3">
+
+// ✅ Use inline style props for ALL spacing — reset cannot override inline styles
+<div style={{ padding: '48px 40px', marginBottom: 32, gap: 12 }}>
+```
+
+**Rule: During any Tailwind migration, use `style` props for all `margin`, `padding`, and `gap` values. Use Tailwind `className` only for layout (`flex`, `items-center`), colors, borders, border-radius, shadows, and font weights — properties the reset does not touch.**
+
+```tsx
+// ✅ CORRECT pattern for this codebase
+<div
+    className="flex flex-col items-center rounded-[var(--radius-xl)]"
+    style={{ padding: '56px 48px', marginBottom: 32 }}
+>
+```
+
+**Do NOT attempt to fix this by reordering `global.css`** — the `*` reset must stay to normalize browser defaults for the canvas.
+
+---
 
 ### Hard rules during migration
 
@@ -138,6 +183,7 @@ className="text-[var(--color-text-primary)] bg-[var(--color-surface)]"
 3. **No new `.module.css` files** may be created for any component going forward
 4. **Theme-aware colors** must use `var(--color-*)` arbitrary syntax, never Tailwind's built-in palette (e.g. `bg-blue-500` → `bg-[var(--color-primary)]`)
 5. **Canvas components stay in CSS** — `IdeaCard`, `CanvasView`, node/edge files are last-resort migrations
+6. **Spacing via `style` props** — `margin`, `padding`, `gap` must use inline `style` props, not Tailwind spacing utilities (see "Global CSS Reset" section above)
 
 ---
 

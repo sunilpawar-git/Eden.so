@@ -2,8 +2,8 @@
 import React, { useMemo } from 'react';
 import { useStore, type ReactFlowState } from '@xyflow/react';
 import type { CanvasNode } from '@/features/canvas/types/node';
+import clsx from 'clsx';
 import type { ClusterGroup, ClusterBounds } from '../types/cluster';
-import styles from './ClusterBoundaries.module.css';
 
 /** Scalar selectors — each returns a primitive, preventing object-reference churn during pan/zoom */
 const selectTx = (s: ReactFlowState) => s.transform[0];
@@ -70,7 +70,7 @@ export const ClusterBoundaries = React.memo(function ClusterBoundaries({
 
     return (
         <div
-            className={styles.layer}
+            className="absolute top-0 left-0 pointer-events-none z-0"
             style={{
                 transform: `translate(${tx}px, ${ty}px) scale(${scale})`,
                 transformOrigin: '0 0',
@@ -79,7 +79,10 @@ export const ClusterBoundaries = React.memo(function ClusterBoundaries({
             {clustersWithBounds.map((cluster) => (
                 <div
                     key={cluster.id}
-                    className={`${styles.boundary} ${variant === 'preview' ? styles.preview : ''}`}
+                    className={clsx(
+                        'absolute bg-[color-mix(in_oklch,var(--cluster-hue)_8%,transparent)] border border-[color-mix(in_oklch,var(--cluster-hue)_30%,transparent)] rounded-[var(--cluster-boundary-radius)] transition-opacity duration-150 ease-in-out',
+                        variant === 'preview' && 'border-dashed border-2'
+                    )}
                     style={{
                         left: `${cluster.bounds.x}px`,
                         top: `${cluster.bounds.y}px`,
@@ -90,7 +93,7 @@ export const ClusterBoundaries = React.memo(function ClusterBoundaries({
                     role="group"
                     aria-label={cluster.label}
                 >
-                    <span className={styles.label}>{cluster.label}</span>
+                    <span className="absolute top-[calc(-1*var(--space-lg))] left-2 text-[var(--font-size-sm)] text-[var(--color-text-secondary)] opacity-[var(--cluster-label-opacity)] whitespace-nowrap select-none">{cluster.label}</span>
                 </div>
             ))}
         </div>

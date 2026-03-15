@@ -4,8 +4,8 @@
  */
 import React from 'react';
 import type { CalendarEventMetadata } from '../types/calendarEvent';
+import clsx from 'clsx';
 import { calendarStrings as cs } from '../localization/calendarStrings';
-import styles from './CalendarBadge.module.css';
 
 const TYPE_ICONS: Record<string, string> = {
     event: '📅',
@@ -50,9 +50,20 @@ export const CalendarBadge = React.memo(({ metadata, onClick, onRetry }: Calenda
     const badgeTitle = status === 'failed' ? (error ?? cs.errors.createFailed) : cs.badge.viewEvent;
     const Tag = onClick ? 'button' : 'div';
 
+    const typeBorderClass: Record<string, string> = {
+        event: 'border-l-[3px] border-l-[var(--color-primary)]',
+        reminder: 'border-l-[3px] border-l-[var(--color-warning)]',
+        todo: 'border-l-[3px] border-l-[var(--color-success)]',
+    };
+
     return (
         <Tag
-            className={styles.badge}
+            className={clsx(
+                'inline-flex items-center gap-0.5 py-0.5 px-1 border border-[var(--color-border)] rounded-sm bg-[var(--color-surface-elevated)] cursor-pointer text-[var(--font-size-sm)] leading-[var(--line-height-tight)] transition-all duration-150 ease-in-out max-w-full overflow-hidden whitespace-nowrap hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-focus)]',
+                typeBorderClass[type],
+                status === 'pending' && 'opacity-80',
+                status === 'failed' && 'border-[var(--color-error)]'
+            )}
             data-testid="calendar-badge"
             data-type={type}
             data-status={status}
@@ -60,13 +71,13 @@ export const CalendarBadge = React.memo(({ metadata, onClick, onRetry }: Calenda
             title={badgeTitle}
             {...(onClick ? { type: 'button' as const } : {})}
         >
-            <span className={styles.icon}>{TYPE_ICONS[type] ?? DEFAULT_TYPE_ICON}</span>
-            <span className={styles.title} data-testid="badge-title">{title}</span>
-            <span className={styles.date} data-testid="badge-date">{formatBadgeDate(date)}</span>
-            <span className={styles.status}>{STATUS_ICONS[status] ?? DEFAULT_STATUS_ICON}</span>
+            <span className="shrink-0 text-[var(--font-size-sm)]">{TYPE_ICONS[type] ?? DEFAULT_TYPE_ICON}</span>
+            <span className="overflow-hidden text-ellipsis text-[var(--color-text-primary)] font-medium" data-testid="badge-title">{title}</span>
+            <span className="text-[var(--color-text-secondary)] shrink-0" data-testid="badge-date">{formatBadgeDate(date)}</span>
+            <span className="shrink-0 text-[var(--font-size-xs)]">{STATUS_ICONS[status] ?? DEFAULT_STATUS_ICON}</span>
             {(status === 'failed' || status === 'pending') && onRetry && (
                 <span
-                    className={styles.retryBtn}
+                    className="shrink-0 px-0.5 border-none bg-transparent text-[var(--color-primary)] cursor-pointer text-[var(--font-size-sm)] font-bold rounded-sm hover:bg-[var(--color-primary-light)]"
                     onClick={handleRetryClick}
                     title={cs.badge.retry}
                     role="button"

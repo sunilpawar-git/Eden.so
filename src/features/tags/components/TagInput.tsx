@@ -5,8 +5,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTagStore } from '../stores/tagStore';
 import { strings } from '@/shared/localization/strings';
+import clsx from 'clsx';
 import { tagNameSchema } from '@/shared/validation/schemas';
-import styles from './TagInput.module.css';
 
 interface TagInputProps {
     selectedTagIds: string[];
@@ -68,17 +68,20 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
     );
 
     return (
-        <div className={`${styles.container} ${compact ? styles.compact : ''}`}>
+        <div className={clsx('flex flex-wrap items-center py-1', compact ? 'gap-0.5' : 'gap-1')}>
             {selectedTags.map((tag) => (
                 tag && (
                     <span
                         key={tag.id}
-                        className={styles.tag}
+                        className={clsx(
+                            'inline-flex items-center gap-0.5 rounded-sm text-white',
+                            compact ? 'py-px px-1 text-[10px]' : 'py-0.5 px-1.5 text-[var(--font-size-xs)]'
+                        )}
                         style={{ backgroundColor: tag.color }}
                     >
-                        <span className={styles.tagName}>{tag.name}</span>
+                        <span className="max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">{tag.name}</span>
                         <button
-                            className={styles.removeButton}
+                            className="flex items-center justify-center w-3.5 h-3.5 p-0 border-none bg-transparent text-inherit opacity-70 cursor-pointer text-xs leading-none hover:opacity-100"
                             onClick={() => handleRemoveTag(tag.id)}
                             aria-label={`${strings.tags.removeTag} ${tag.name}`}
                         >
@@ -92,7 +95,7 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
                 <input
                     ref={inputRef}
                     type="text"
-                    className={styles.input}
+                    className="w-20 py-0.5 px-1.5 border border-[var(--color-primary)] rounded-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-xs)] focus:outline-none"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleInputKeyDown}
@@ -104,7 +107,7 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
                 />
             ) : (
                 <button
-                    className={styles.addButton}
+                    className="flex items-center justify-center w-5 h-5 p-0 border border-dashed border-[var(--color-border)] rounded-sm bg-transparent text-[var(--color-text-muted)] cursor-pointer text-xs transition-all duration-150 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                     onClick={handleAddClick}
                     aria-label={strings.tags.addTag}
                 >

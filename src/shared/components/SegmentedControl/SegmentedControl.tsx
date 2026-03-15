@@ -3,7 +3,7 @@
  * Each option uses a visually hidden radio input for native semantics.
  */
 import React from 'react';
-import styles from './SegmentedControl.module.css';
+import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
 interface SegmentOption<T extends string> {
@@ -28,13 +28,18 @@ function SegmentedControlInner<T extends string>({
     onChange,
 }: SegmentedControlProps<T>) {
     return (
-        <div className={styles.container} role="radiogroup" aria-label={label}>
+        <div className="flex border border-[var(--color-border)] rounded-md overflow-hidden" role="radiogroup" aria-label={label}>
             {options.map((option) => {
                 const isActive = option.value === value;
                 return (
                     <label
                         key={option.value}
-                        className={`${styles.segment} ${isActive ? styles.segmentActive : ''}`}
+                        className={clsx(
+                            'flex-1 flex items-center justify-center gap-1 py-1 px-2 text-center text-[var(--font-size-sm)] text-[var(--color-text-secondary)] cursor-pointer transition-all duration-150 ease-in-out border-r border-[var(--color-border)] last:border-r-0 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-[var(--color-primary)] has-[input:focus-visible]:outline-offset-[-2px]',
+                            isActive
+                                ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-medium'
+                                : 'hover:bg-[var(--color-surface-hover)]'
+                        )}
                     >
                         <input
                             type="radio"
@@ -42,10 +47,10 @@ function SegmentedControlInner<T extends string>({
                             value={option.value}
                             checked={isActive}
                             onChange={() => onChange(option.value)}
-                            className={styles.hiddenRadio}
+                            className="sr-only"
                         />
-                        {option.preview != null && <span className={styles.preview}>{option.preview}</span>}
-                        <span className={styles.segmentLabel}>{option.label}</span>
+                        {option.preview != null && <span className="flex items-center">{option.preview}</span>}
+                        <span className="whitespace-nowrap">{option.label}</span>
                     </label>
                 );
             })}

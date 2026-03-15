@@ -4,7 +4,7 @@
 .panel {
     position: fixed;
     top: 0;
-    left: var(--sidebar-width);
+    /* left is set dynamically via inline style to track sidebar pin/hover state */
     bottom: 0;
     width: 340px;
     background: var(--color-surface);

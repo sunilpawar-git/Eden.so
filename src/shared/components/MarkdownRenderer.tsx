@@ -3,8 +3,9 @@
  * Uses react-markdown for safe rendering (XSS prevention built-in)
  */
 import React from 'react';
+import clsx from 'clsx';
 import ReactMarkdown from 'react-markdown';
-import styles from './MarkdownRenderer.module.css';
+import './markdownContent.css';
 
 interface MarkdownRendererProps {
     /** Markdown content to render */
@@ -17,12 +18,8 @@ export const MarkdownRenderer = React.memo(({
     content,
     className,
 }: MarkdownRendererProps) => {
-    const combinedClassName = className 
-        ? `${styles.markdownContent} ${className}` 
-        : styles.markdownContent;
-    
     return (
-        <div className={combinedClassName}>
+        <div className={clsx('markdown-content text-[var(--font-size-sm)] text-[var(--color-text-primary)] leading-[1.7] break-words tracking-[0.01em]', className)}>
             <ReactMarkdown>{content}</ReactMarkdown>
         </div>
     );

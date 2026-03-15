@@ -8,7 +8,6 @@
 import { useId, useState, useLayoutEffect, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '@/shared/localization/strings';
-import styles from './PortalTooltip.module.css';
 
 /** Offset (px) between target element edge and tooltip */
 const TOOLTIP_OFFSET_PX = 8;
@@ -74,22 +73,17 @@ export function PortalTooltip({
 
     if (!visible || !positionStyle) return null;
 
-    const classNames = [
-        styles.tooltip,
-        styles.tooltipVisible,
-    ].join(' ');
-
     const tooltip = (
         <div
             id={tooltipId}
-            className={classNames}
+            className="fixed z-[var(--z-tooltip)] py-2 px-4 bg-[linear-gradient(135deg,var(--color-surface-elevated),var(--color-surface))] text-[var(--color-text-primary)] text-[var(--font-size-xs)] font-medium font-[var(--font-family)] whitespace-nowrap rounded-xl border border-[var(--color-border)] shadow-[var(--card-shadow)] pointer-events-none opacity-100 visible transition-opacity duration-150 ease-in-out flex items-center gap-1"
             style={positionStyle}
             role="tooltip"
             data-testid="portal-tooltip"
         >
-            <span className={styles.label}>{text}</span>
+            <span className="leading-none">{text}</span>
             {shortcut && (
-                <span className={styles.shortcutHint}>
+                <span className="text-[var(--color-text-muted)] text-[var(--font-size-xxs)] leading-none">
                     {strings.tooltip.shortcutSeparator}{shortcut}
                 </span>
             )}

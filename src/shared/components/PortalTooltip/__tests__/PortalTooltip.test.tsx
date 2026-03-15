@@ -7,15 +7,6 @@ import { render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { PortalTooltip } from '../PortalTooltip';
 
-// Mock CSS module
-vi.mock('../PortalTooltip.module.css', () => ({
-    default: {
-        tooltip: 'tooltip',
-        tooltipVisible: 'tooltipVisible',
-        label: 'label',
-        shortcutHint: 'shortcutHint',
-    },
-}));
 
 /** Helper: creates a target ref with mocked getBoundingClientRect */
 function createMockTargetRef(rect: Partial<DOMRect> = {}) {
@@ -83,10 +74,8 @@ describe('PortalTooltip', () => {
             />
         );
 
-        // The tooltip should NOT be inside the render container
-        expect(container.querySelector('.tooltip')).toBeNull();
-        // It should be in document.body
-        expect(document.body.querySelector('.tooltip')).toBeInTheDocument();
+        expect(container.querySelector('[data-testid="portal-tooltip"]')).toBeNull();
+        expect(document.body.querySelector('[data-testid="portal-tooltip"]')).toBeInTheDocument();
     });
 
     it('positions tooltip relative to target element', () => {
@@ -98,14 +87,13 @@ describe('PortalTooltip', () => {
             />
         );
 
-        const tooltip = document.body.querySelector('.tooltip') as HTMLElement;
+        const tooltip = document.body.querySelector('[data-testid="portal-tooltip"]') as HTMLElement;
         expect(tooltip).toBeInTheDocument();
-        // Should have inline style with position values derived from getBoundingClientRect
         expect(tooltip.style.top).toBeTruthy();
         expect(tooltip.style.left).toBeTruthy();
     });
 
-    it('applies the tooltip CSS class', () => {
+    it('applies tooltip role and visible styling', () => {
         render(
             <PortalTooltip
                 text="Copy"
@@ -114,9 +102,9 @@ describe('PortalTooltip', () => {
             />
         );
 
-        const tooltip = document.body.querySelector('.tooltip');
+        const tooltip = document.body.querySelector('[role="tooltip"]');
         expect(tooltip).toBeInTheDocument();
-        expect(tooltip).toHaveClass('tooltipVisible');
+        expect(tooltip?.className).toMatch(/opacity-100/);
     });
 
     it('renders keyboard shortcut hint when shortcut prop is provided', () => {
@@ -143,7 +131,9 @@ describe('PortalTooltip', () => {
         );
 
         expect(screen.getByText('Tags')).toBeInTheDocument();
-        expect(document.body.querySelector('.shortcutHint')).toBeNull();
+        const tooltip = document.body.querySelector('[data-testid="portal-tooltip"]');
+        const spans = tooltip?.querySelectorAll('span') ?? [];
+        expect(spans).toHaveLength(1);
     });
 
     it('supports placement left (positions to left of target via inline style)', () => {
@@ -156,9 +146,8 @@ describe('PortalTooltip', () => {
             />
         );
 
-        const tooltip = document.body.querySelector('.tooltip') as HTMLElement;
+        const tooltip = document.body.querySelector('[data-testid="portal-tooltip"]') as HTMLElement;
         expect(tooltip).toBeInTheDocument();
-        // Left placement uses translateX(-100%) in inline style
         expect(tooltip.style.transform).toContain('translateX(-100%)');
     });
 
@@ -171,7 +160,7 @@ describe('PortalTooltip', () => {
             />
         );
 
-        const tooltip = document.body.querySelector('.tooltip') as HTMLElement;
+        const tooltip = document.body.querySelector('[data-testid="portal-tooltip"]') as HTMLElement;
         expect(tooltip).toBeInTheDocument();
         expect(tooltip.style.transform).not.toContain('translateX(-100%)');
     });

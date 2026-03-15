@@ -2,7 +2,6 @@
 import React, { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { synthesisStrings } from '../strings/synthesisStrings';
-import styles from './SynthesisFooter.module.css';
 
 interface SynthesisFooterProps {
     readonly sourceCount: number;
@@ -22,12 +21,12 @@ export const SynthesisFooter = React.memo(function SynthesisFooter({
     }, [sourceNodeIds]);
 
     return (
-        <div className={styles.footer}>
-            <button className={styles.sourceLink} onClick={handleHighlightSources} type="button" aria-label={synthesisStrings.labels.highlightSources}>
+        <div className="flex items-center justify-between py-1 px-2 border-t border-[var(--color-border)] text-[var(--font-size-xs)] text-[var(--color-text-secondary)]">
+            <button className="bg-transparent border-none text-[var(--node-status-synthesis)] cursor-pointer text-[var(--font-size-xs)] p-0 underline underline-offset-[var(--space-xxs)] hover:opacity-[var(--opacity-hover-subtle)]" onClick={handleHighlightSources} type="button" aria-label={synthesisStrings.labels.highlightSources}>
                 {synthesisStrings.labels.viewSources(sourceCount)}
             </button>
             <button
-                className={styles.reSynthBtn}
+                className="bg-transparent border border-[var(--color-border)] rounded-sm text-[var(--color-text-secondary)] cursor-pointer text-[var(--font-size-sm)] leading-none py-0.5 px-1 hover:bg-[var(--color-hover)] hover:text-[var(--node-status-synthesis)]"
                 onClick={onReSynthesize}
                 type="button"
                 aria-label={synthesisStrings.labels.reSynthesize}

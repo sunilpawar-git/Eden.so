@@ -16,7 +16,7 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useSidebarStore } from '@/shared/stores/sidebarStore';
 import { useSidebarHover } from '@/shared/hooks/useSidebarHover';
-import styles from './Layout.module.css';
+import './Layout.css';
 
 interface LayoutProps {
     children: ReactNode;
@@ -43,27 +43,30 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
 
     return (
         <div
-            className={styles.layout}
+            className="layout-root flex w-full min-h-screen"
             data-sidebar-pinned={String(isPinned)}
             data-sidebar-open={String(isHoverOpen)}
         >
             <div
                 ref={triggerZoneRef}
                 data-testid="sidebar-trigger-zone"
-                className={styles.sidebarZone}
+                className="layout-sidebar-zone shrink-0"
             >
                 <Sidebar onSettingsClick={onSettingsClick} />
             </div>
             <KnowledgeBankPanel />
-            <div className={styles.mainArea}>
-                <header className={styles.topBar}>
+            <div className="layout-main-area flex-1 flex flex-col overflow-hidden">
+                <header
+                    className="flex items-center gap-[var(--space-md)] bg-[var(--color-surface-elevated)] border-b border-[var(--color-border)] z-[var(--z-sticky)] shrink-0"
+                    style={{ padding: '18px 24px 18px 21px' }}
+                >
                     <KnowledgeBankAddButton />
                     <SearchBar ref={searchRef} onResultClick={handleSearchResultClick} />
                     <WorkspaceControls />
                     <SyncStatusIndicator />
                 </header>
                 <OfflineBanner />
-                <main className={styles.main}>{children}</main>
+                <main className="flex-1 relative overflow-hidden bg-[var(--canvas-background)]">{children}</main>
             </div>
         </div>
     );
