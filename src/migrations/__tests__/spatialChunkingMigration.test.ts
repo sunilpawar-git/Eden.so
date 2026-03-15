@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { migrateFlatToTiled, type MigrationResult } from '../spatialChunkingMigration';
+
+const mockGetDocs = vi.fn();
+const mockSetDoc = vi.fn();
+const mockUpdateDoc = vi.fn();
 
 vi.mock('@/config/firebase', () => ({ db: {} }));
 vi.mock('@/shared/services/logger', () => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
-
-const mockGetDocs = vi.fn();
-const mockSetDoc = vi.fn();
-const mockUpdateDoc = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn((...args: string[]) => ({ _path: args.join('/'), id: args[args.length - 1] })),
@@ -33,8 +34,6 @@ vi.mock('@/shared/utils/firebaseUtils', () => ({
 vi.mock('@/migrations/migrationRunner', () => ({
     CURRENT_SCHEMA_VERSION: 3,
 }));
-
-import { migrateFlatToTiled, type MigrationResult } from '../spatialChunkingMigration';
 
 function makeNodeDoc(id: string, x: number, y: number) {
     return {

@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { useViewportTileLoader } from '../useViewportTileLoader';
+import type { CanvasNode } from '@/features/canvas/types/node';
+
+const mockLoadTiles = vi.fn();
+const mockEvictStaleTiles = vi.fn().mockReturnValue([]);
+const mockClearCache = vi.fn();
+
+let storedViewport = { x: 0, y: 0, zoom: 1 };
+const mockSetNodes = vi.fn();
 
 vi.mock('@/shared/services/logger', () => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -8,10 +17,6 @@ vi.mock('@/shared/services/logger', () => ({
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: { error: vi.fn(), success: vi.fn() },
 }));
-
-const mockLoadTiles = vi.fn();
-const mockEvictStaleTiles = vi.fn().mockReturnValue([]);
-const mockClearCache = vi.fn();
 
 vi.mock('@/features/workspace/services/tileLoader', () => ({
     tileLoader: {
@@ -23,8 +28,6 @@ vi.mock('@/features/workspace/services/tileLoader', () => ({
     },
 }));
 
-let storedViewport = { x: 0, y: 0, zoom: 1 };
-const mockSetNodes = vi.fn();
 vi.mock('@/features/canvas/stores/canvasStore', () => ({
     useCanvasStore: Object.assign(
         (selector: (s: Record<string, unknown>) => unknown) => selector({
@@ -44,9 +47,6 @@ vi.mock('@/features/canvas/stores/canvasStore', () => ({
 vi.mock('@/features/workspace/services/tileCalculator', () => ({
     getViewportTileIds: vi.fn(() => ['tile_0_0']),
 }));
-
-import { useViewportTileLoader } from '../useViewportTileLoader';
-import type { CanvasNode } from '@/features/canvas/types/node';
 
 function makeNode(id: string): CanvasNode {
     return {

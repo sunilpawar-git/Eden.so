@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { tileLoader } from '../tileLoader';
+import type { CanvasNode } from '@/features/canvas/types/node';
+
+const mockGetDocs = vi.fn();
 
 vi.mock('@/config/firebase', () => ({ db: {} }));
 vi.mock('@/shared/services/logger', () => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
-
-const mockGetDocs = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
     collection: vi.fn((...args: string[]) => ({ _path: args.join('/') })),
@@ -18,9 +20,6 @@ vi.mock('@/migrations/migrationRunner', () => ({
     migrateNode: vi.fn((node: unknown) => node),
     CURRENT_SCHEMA_VERSION: 3,
 }));
-
-import { tileLoader } from '../tileLoader';
-import type { CanvasNode } from '@/features/canvas/types/node';
 
 function makeNodeDoc(overrides: Partial<CanvasNode> & { id: string }) {
     return {

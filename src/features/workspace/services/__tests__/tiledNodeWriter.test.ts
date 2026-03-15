@@ -1,14 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('@/config/firebase', () => ({ db: {} }));
-vi.mock('@/shared/services/logger', () => ({
-    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-}));
+import { saveTiledNodes, appendTiledNode, reassignNodeTile } from '../tiledNodeWriter';
+import type { CanvasNode } from '@/features/canvas/types/node';
+import { stripBase64Images } from '@/shared/utils/contentSanitizer';
 
 const mockSetDoc = vi.fn();
 const mockDeleteDoc = vi.fn();
 const mockGetDocs = vi.fn();
 const mockRunTransaction = vi.fn();
+
+vi.mock('@/config/firebase', () => ({ db: {} }));
+vi.mock('@/shared/services/logger', () => ({
+    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
 
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn((...args: string[]) => ({ _path: args.join('/'), id: args[args.length - 1] })),
@@ -34,10 +37,6 @@ vi.mock('@/shared/utils/firebaseUtils', () => ({
 vi.mock('@/migrations/migrationRunner', () => ({
     CURRENT_SCHEMA_VERSION: 3,
 }));
-
-import { saveTiledNodes, appendTiledNode, reassignNodeTile } from '../tiledNodeWriter';
-import type { CanvasNode } from '@/features/canvas/types/node';
-import { stripBase64Images } from '@/shared/utils/contentSanitizer';
 
 function makeNode(overrides: Partial<CanvasNode> & { id: string; tileId: string }): CanvasNode {
     return {
