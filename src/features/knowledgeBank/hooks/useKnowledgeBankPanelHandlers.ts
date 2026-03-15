@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
+import { logger } from '@/shared/services/logger';
 
 export function useKnowledgeBankPanelHandlers() {
     const kb = strings.knowledgeBank;
@@ -23,7 +24,7 @@ export function useKnowledgeBankPanelHandlers() {
         try {
             await updateKBEntry(userId, workspaceId, entryId, { enabled: newEnabled });
         } catch (error) {
-            console.error('KB toggle persist failed', error);
+            logger.error('KB toggle persist failed', error);
             useKnowledgeBankStore.getState().toggleEntry(entryId);
             toast.error(kb.errors.saveFailed);
         }
@@ -46,7 +47,7 @@ export function useKnowledgeBankPanelHandlers() {
         try {
             await updateKBEntry(userId, workspaceId, entryId, { pinned: newPinned });
         } catch (error) {
-            console.error('KB pin persist failed', error);
+            logger.error('KB pin persist failed', error);
             if (newPinned) {
                 useKnowledgeBankStore.getState().unpinEntry(entryId);
             } else {
@@ -65,7 +66,7 @@ export function useKnowledgeBankPanelHandlers() {
         try {
             await updateKBEntry(userId, workspaceId, entryId, updates);
         } catch (error) {
-            console.error('KB update persist failed', error);
+            logger.error('KB update persist failed', error);
             toast.error(kb.errors.saveFailed);
         }
     }, [kb.errors.saveFailed]);
@@ -83,7 +84,7 @@ export function useKnowledgeBankPanelHandlers() {
             await deleteKBEntry(userId, workspaceId, entryId);
             useKnowledgeBankStore.getState().removeEntry(entryId);
         } catch (error) {
-            console.error('KB delete failed', error);
+            logger.error('KB delete failed', error);
             toast.error(kb.errors.deleteFailed);
         }
     }, [kb.errors.deleteFailed]);

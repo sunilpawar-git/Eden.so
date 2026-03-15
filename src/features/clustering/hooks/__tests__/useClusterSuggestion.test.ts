@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { computeClusters } from '../../services/similarityService';
+import { computeClustersAsync } from '@/workers/knowledgeWorkerClient';
 import { labelClusters } from '../../services/clusterLabelService';
 import { toast } from '@/shared/stores/toastStore';
 import { useClusterSuggestion } from '../useClusterSuggestion';
@@ -8,8 +8,8 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useClusterPreviewStore } from '../../stores/clusterPreviewStore';
 import type { CanvasNode } from '@/features/canvas/types/node';
 
-vi.mock('../../services/similarityService', () => ({
-    computeClusters: vi.fn(),
+vi.mock('@/workers/knowledgeWorkerClient', () => ({
+    computeClustersAsync: vi.fn(),
 }));
 vi.mock('../../services/clusterLabelService', () => ({
     labelClusters: vi.fn(),
@@ -18,7 +18,7 @@ vi.mock('@/shared/stores/toastStore', () => ({
     toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
 
-const mockCompute = vi.mocked(computeClusters);
+const mockCompute = vi.mocked(computeClustersAsync);
 const mockLabel = vi.mocked(labelClusters);
 
 function makeNode(id: string): CanvasNode {
@@ -38,7 +38,7 @@ beforeEach(() => {
 
 describe('useClusterSuggestion', () => {
     it('calls computeClusters with current nodes', async () => {
-        mockCompute.mockReturnValue({ clusters: MOCK_CLUSTERS, unclustered: ['n3'] });
+        mockCompute.mockResolvedValue({ clusters: MOCK_CLUSTERS, unclustered: ['n3'] });
         mockLabel.mockResolvedValue(MOCK_CLUSTERS);
 
         const { result } = renderHook(() => useClusterSuggestion());
@@ -48,7 +48,7 @@ describe('useClusterSuggestion', () => {
     });
 
     it('calls labelClusters after computing', async () => {
-        mockCompute.mockReturnValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
+        mockCompute.mockResolvedValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
         mockLabel.mockResolvedValue(MOCK_CLUSTERS);
 
         const { result } = renderHook(() => useClusterSuggestion());
@@ -59,7 +59,7 @@ describe('useClusterSuggestion', () => {
 
     it('sets preview groups after successful labeling', async () => {
         const labeled = [{ ...MOCK_CLUSTERS[0]!, label: 'Themed' }];
-        mockCompute.mockReturnValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
+        mockCompute.mockResolvedValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
         mockLabel.mockResolvedValue(labeled);
 
         const { result } = renderHook(() => useClusterSuggestion());
@@ -70,7 +70,7 @@ describe('useClusterSuggestion', () => {
     });
 
     it('acceptClusters commits to canvas store', async () => {
-        mockCompute.mockReturnValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
+        mockCompute.mockResolvedValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
         mockLabel.mockResolvedValue(MOCK_CLUSTERS);
 
         const { result } = renderHook(() => useClusterSuggestion());
@@ -82,7 +82,7 @@ describe('useClusterSuggestion', () => {
     });
 
     it('dismissClusters clears preview without store mutation', async () => {
-        mockCompute.mockReturnValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
+        mockCompute.mockResolvedValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
         mockLabel.mockResolvedValue(MOCK_CLUSTERS);
 
         const { result } = renderHook(() => useClusterSuggestion());
@@ -95,7 +95,7 @@ describe('useClusterSuggestion', () => {
     });
 
     it('shows toast when no clusters found', async () => {
-        mockCompute.mockReturnValue({ clusters: [], unclustered: ['n1', 'n2', 'n3'] });
+        mockCompute.mockResolvedValue({ clusters: [], unclustered: ['n1', 'n2', 'n3'] });
 
         const { result } = renderHook(() => useClusterSuggestion());
         await act(() => result.current.suggestClusters());
@@ -105,7 +105,7 @@ describe('useClusterSuggestion', () => {
     });
 
     it('resets phase and shows error toast on labeling failure', async () => {
-        mockCompute.mockReturnValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
+        mockCompute.mockResolvedValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
         mockLabel.mockRejectedValue(new Error('API failure'));
 
         const { result } = renderHook(() => useClusterSuggestion());
@@ -117,7 +117,7 @@ describe('useClusterSuggestion', () => {
     });
 
     it('ignores re-entrant calls while not idle', async () => {
-        mockCompute.mockReturnValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
+        mockCompute.mockResolvedValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
         mockLabel.mockResolvedValue(MOCK_CLUSTERS);
 
         const { result } = renderHook(() => useClusterSuggestion());
@@ -129,7 +129,7 @@ describe('useClusterSuggestion', () => {
     });
 
     it('uses getState() for store reads (no stale closures)', async () => {
-        mockCompute.mockReturnValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
+        mockCompute.mockResolvedValue({ clusters: MOCK_CLUSTERS, unclustered: [] });
         mockLabel.mockResolvedValue(MOCK_CLUSTERS);
 
         const { result } = renderHook(() => useClusterSuggestion());

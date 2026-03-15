@@ -4,6 +4,7 @@
  * PostHog is dynamically imported after first paint to keep it off the critical path.
  * Safe to call even when PostHog is not configured (no-ops silently).
  */
+import { logger } from '@/shared/services/logger';
 
 const KEY = import.meta.env.VITE_POSTHOG_KEY;
 const HOST = import.meta.env.VITE_POSTHOG_HOST ?? 'https://app.posthog.com';
@@ -29,7 +30,7 @@ async function getPosthog(): Promise<PostHogLike | null> {
             })
             .catch((err: unknown) => {
                 if (import.meta.env.DEV) {
-                    console.warn('[Analytics] Failed to load posthog-js', err);
+                    logger.warn('[Analytics] Failed to load posthog-js', err);
                 }
                 return null;
             });
@@ -43,7 +44,7 @@ async function getPosthog(): Promise<PostHogLike | null> {
 export function initAnalytics(): void {
     if (!KEY) {
         if (import.meta.env.DEV) {
-            console.info('[Analytics] VITE_POSTHOG_KEY not set — skipping initialization.');
+            logger.info('[Analytics] VITE_POSTHOG_KEY not set — skipping initialization.');
         }
         return;
     }

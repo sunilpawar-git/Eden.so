@@ -4,8 +4,9 @@ import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useClusterPreviewStore } from '../stores/clusterPreviewStore';
 import { toast } from '@/shared/stores/toastStore';
 import { clusterStrings } from '@/shared/localization/clusterStrings';
-import { computeClusters } from '../services/similarityService';
+import { computeClustersAsync } from '@/workers/knowledgeWorkerClient';
 import { labelClusters } from '../services/clusterLabelService';
+import { logger } from '@/shared/services/logger';
 
 /** Pure action callbacks — zero store subscriptions, safe for any consumer */
 export function useClusterActions() {
@@ -16,7 +17,7 @@ export function useClusterActions() {
         store.setPhase('computing');
         try {
             const nodes = useCanvasStore.getState().nodes;
-            const result = computeClusters(nodes);
+            const result = await computeClustersAsync(nodes);
 
             if (result.clusters.length === 0) {
                 toast.info(clusterStrings.labels.noThemes);
@@ -28,7 +29,7 @@ export function useClusterActions() {
             const labeled = await labelClusters(result.clusters, nodes);
             store.setPreview(labeled);
         } catch (err: unknown) {
-            console.error('[useClusterSuggestion] clustering failed:', err);
+            logger.error('[useClusterSuggestion] clustering failed:', err);
             toast.error(clusterStrings.labels.clusterError);
             store.reset();
         }

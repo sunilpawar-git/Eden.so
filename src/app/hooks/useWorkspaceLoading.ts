@@ -9,6 +9,7 @@ import { indexedDbService, IDB_STORES } from '@/shared/services/indexedDbService
 import { loadUserWorkspaces } from '@/features/workspace/services/workspaceService';
 import { getLastWorkspaceId } from '@/features/workspace/services/lastWorkspaceService';
 import type { CanvasBackground } from '@/features/workspace/types/workspace';
+import { logger } from '@/shared/services/logger';
 
 export function useWorkspaceLoading() {
     const user = useAuthStore((s) => s.user);
@@ -49,11 +50,11 @@ export function useWorkspaceLoading() {
 
                 if (loaded.length > 0) {
                     void workspaceCache.preload(userId, loaded.map(ws => ws.id)).catch((err: unknown) => {
-                        console.warn('[useWorkspaceLoading] Cache preload failed:', err);
+                        logger.warn('[useWorkspaceLoading] Cache preload failed:', err);
                     });
                 }
             } catch (error) {
-                console.error('[useWorkspaceLoading] Failed to load workspaces:', error);
+                logger.error('[useWorkspaceLoading] Failed to load workspaces:', error);
                 const cached = await indexedDbService.get<Array<{
                     id: string;
                     name: string;

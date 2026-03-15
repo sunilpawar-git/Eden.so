@@ -12,6 +12,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { shareNodeToWorkspace } from '../services/nodeShareService';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
+import { logger } from '@/shared/services/logger';
 
 export function useIdeaCardShareAction(nodeId: string) {
     const [isSharing, setIsSharing] = useState(false);
@@ -31,7 +32,7 @@ export function useIdeaCardShareAction(nodeId: string) {
             await shareNodeToWorkspace(userId, node, targetWorkspaceId);
             toast.success(strings.nodeUtils.shareSuccess);
         } catch (error) {
-            console.error('Share failed:', error);
+            logger.error('Share failed:', error);
             toast.error(strings.nodeUtils.shareError);
         } finally {
             sharingRef.current = false;

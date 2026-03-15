@@ -11,6 +11,7 @@ import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import { loadWorkspaceKB } from '../services/workspaceSwitchHelpers';
 import { persistLastWorkspaceId } from '../services/lastWorkspaceService';
 import { strings } from '@/shared/localization/strings';
+import { logger } from '@/shared/services/logger';
 
 interface UseWorkspaceSwitcherResult {
     isSwitching: boolean;
@@ -87,7 +88,7 @@ export function useWorkspaceSwitcher(): UseWorkspaceSwitcherResult {
         } catch (err) {
             const message = err instanceof Error ? err.message : strings.workspace.switchError;
             setError(message);
-            console.error('[useWorkspaceSwitcher]', err);
+            logger.error('[useWorkspaceSwitcher]', err);
         } finally {
             useWorkspaceStore.getState().setSwitching(false);
             switchingRef.current = false;

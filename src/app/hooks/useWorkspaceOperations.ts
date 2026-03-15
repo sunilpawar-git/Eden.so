@@ -13,6 +13,7 @@ import {
     saveWorkspace, updateWorkspaceOrder
 } from '@/features/workspace/services/workspaceService';
 import { useOfflineQueueStore } from '@/features/workspace/stores/offlineQueueStore';
+import { logger } from '@/shared/services/logger';
 
 export function useWorkspaceOperations() {
     const user = useAuthStore((s) => s.user);
@@ -39,7 +40,7 @@ export function useWorkspaceOperations() {
             useCanvasStore.getState().clearCanvas();
             toast.success(`${strings.workspace.created}: ${workspace.name}`);
         } catch (error) {
-            console.error('[Sidebar] Failed to create workspace:', error);
+            logger.error('[Sidebar] Failed to create workspace:', error);
             toast.error(strings.errors.generic);
         } finally { setIsCreating(false); }
     }, [user, currentWorkspaceId, isCreating]);
@@ -59,7 +60,7 @@ export function useWorkspaceOperations() {
             } else { useWorkspaceStore.getState().addWorkspace(newDivider); }
             toast.success(strings.workspace.addDivider);
         } catch (error) {
-            console.error('[Sidebar] Failed to create divider:', error);
+            logger.error('[Sidebar] Failed to create divider:', error);
             toast.error(strings.errors.generic);
         } finally { setIsCreatingDivider(false); }
     }, [user, currentWorkspaceId, isCreatingDivider]);

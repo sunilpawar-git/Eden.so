@@ -4,9 +4,11 @@
  */
 import {
     doc, setDoc, getDocs, deleteDoc, collection, serverTimestamp,
-    getCountFromServer, query, where, writeBatch,
+    getCountFromServer, query, where, writeBatch, limit,
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+import { KB_ENTRIES_CAP } from '@/config/firestoreQueryConfig';
+import { logger } from '@/shared/services/logger';
 import type { KnowledgeBankEntry, KnowledgeBankEntryInput } from '../types/knowledgeBank';
 import {
     KB_MAX_DOCUMENTS, KB_MAX_CONTENT_SIZE,
@@ -201,7 +203,11 @@ export async function loadKBEntries(
     userId: string,
     workspaceId: string
 ): Promise<KnowledgeBankEntry[]> {
-    const snapshot = await getDocs(getKBCollectionRef(userId, workspaceId));
+    const q = query(getKBCollectionRef(userId, workspaceId), limit(KB_ENTRIES_CAP));
+    const snapshot = await getDocs(q);
+    if (snapshot.size >= KB_ENTRIES_CAP) {
+        logger.warn('[knowledgeBankService] KB entries cap reached', { cap: KB_ENTRIES_CAP, workspaceId });
+    }
     return snapshot.docs.map((docSnapshot) => {
         const data = docSnapshot.data();
         /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- Firestore DocumentData */
@@ -232,15 +238,21 @@ export async function deleteAllKBEntries(
     userId: string,
     workspaceId: string
 ): Promise<void> {
-    const snapshot = await getDocs(getKBCollectionRef(userId, workspaceId));
-    const deletions = snapshot.docs.map(async (d) => {
-        // Clean up Storage files for image entries
-        const data = d.data();
-        if (data.originalFileName && data.type === 'image') {
-            const { deleteKBFile } = await import('./storageService');
-            await deleteKBFile(userId, workspaceId, d.id, data.originalFileName as string);
+    const colRef = getKBCollectionRef(userId, workspaceId);
+    const { FIRESTORE_BATCH_DELETE_CAP } = await import('@/config/firestoreQueryConfig');
+    let snapshot = await getDocs(query(colRef, limit(FIRESTORE_BATCH_DELETE_CAP)));
+    while (snapshot.size > 0) {
+        const batch = writeBatch(db);
+        for (const d of snapshot.docs) {
+            const data = d.data();
+            if (data.originalFileName && data.type === 'image') {
+                const { deleteKBFile } = await import('./storageService');
+                await deleteKBFile(userId, workspaceId, d.id, data.originalFileName as string);
+            }
+            batch.delete(d.ref);
         }
-        await deleteDoc(d.ref);
-    });
-    await Promise.all(deletions);
+        await batch.commit();
+        if (snapshot.size < FIRESTORE_BATCH_DELETE_CAP) break;
+        snapshot = await getDocs(query(colRef, limit(FIRESTORE_BATCH_DELETE_CAP)));
+    }
 }

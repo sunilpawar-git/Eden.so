@@ -2,6 +2,7 @@
  * Helpers for workspace switching - non-blocking side-effects extracted
  * from useWorkspaceSwitcher to keep the hook focused.
  */
+import { logger } from '@/shared/services/logger';
 
 /** Load Knowledge Bank entries for a workspace (non-blocking, fire-and-forget) */
 export async function loadWorkspaceKB(userId: string, workspaceId: string): Promise<void> {
@@ -11,6 +12,6 @@ export async function loadWorkspaceKB(userId: string, workspaceId: string): Prom
         const kbEntries = await loadKBEntries(userId, workspaceId);
         useKnowledgeBankStore.getState().setEntries(kbEntries);
     } catch (err: unknown) {
-        console.error('[loadWorkspaceKB] KB load failed:', err);
+        logger.error('[loadWorkspaceKB] KB load failed:', err);
     }
 }

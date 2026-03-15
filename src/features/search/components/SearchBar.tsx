@@ -5,6 +5,7 @@
  */
 import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef, useId } from 'react';
 import { useSearch } from '../hooks/useSearch';
+import { useDebouncedCallback } from '@/shared/hooks/useDebounce';
 import { splitByRanges } from '../services/fuzzyMatch';
 import { searchStrings } from '../strings/searchStrings';
 import { SearchFilterBar } from './SearchFilterBar';
@@ -95,6 +96,8 @@ function SearchResultsList({ results, activeIndex, listboxId, onSelect, onHover 
     );
 }
 
+const SEARCH_DEBOUNCE_MS = 250;
+
 function useSearchBarState(onResultClick?: (nodeId: string, workspaceId: string) => void) {
     const [inputValue, setInputValue] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -105,14 +108,16 @@ function useSearchBarState(onResultClick?: (nodeId: string, workspaceId: string)
         filters, setFilters, clearFilters, isFilterBarOpen, toggleFilterBar,
     } = useSearch();
 
+    const debouncedSearch = useDebouncedCallback(search, SEARCH_DEBOUNCE_MS);
+
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
             setInputValue(value);
-            search(value);
+            debouncedSearch(value);
             setIsOpen(value.length > 0);
         },
-        [search],
+        [debouncedSearch],
     );
 
     const handleResultSelect = useCallback(

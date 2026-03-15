@@ -19,6 +19,7 @@ import { mergeNodes, mergeEdges } from '../services/mergeNodes';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { useHistoryStore } from '@/features/canvas/stores/historyStore';
 import { strings } from '@/shared/localization/strings';
+import { logger } from '@/shared/services/logger';
 
 interface UseWorkspaceLoaderResult {
     isLoading: boolean;
@@ -47,7 +48,7 @@ async function backgroundRefresh(
 
         onMerge(freshNodes, freshEdges);
     } catch (err) {
-        console.warn('[useWorkspaceLoader] Background refresh failed:', err);
+        logger.warn('[useWorkspaceLoader] Background refresh failed:', err);
     }
 }
 
@@ -142,7 +143,7 @@ async function loadKBIfMounted(
             useKnowledgeBankStore.getState().setEntries(kbEntries);
         }
     } catch (err: unknown) {
-        console.error('[useWorkspaceLoader] KB load failed:', err);
+        logger.error('[useWorkspaceLoader] KB load failed:', err);
     }
 }
 
@@ -201,7 +202,7 @@ export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResul
                         ? err.message
                         : strings.offline.noOfflineData;
                     setError(message);
-                    console.error('[useWorkspaceLoader]', err);
+                    logger.error('[useWorkspaceLoader]', err);
                 }
             } finally {
                 if (mounted) setIsLoading(false);

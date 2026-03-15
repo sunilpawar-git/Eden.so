@@ -91,7 +91,7 @@ describe('#9 — catch blocks must report errors (no silent swallowing)', () => 
             return r.includes('/services/') || r.includes('/hooks/');
         });
         const violations: string[] = [];
-        const REPORTING = ['captureError', 'console.error', 'console.warn', 'toast.', 'setError', 'throw', 'reject'];
+        const REPORTING = ['captureError', 'console.error', 'console.warn', 'logger.error', 'logger.warn', 'toast.', 'setError', 'throw', 'reject'];
 
         for (const file of targets) {
             const content = read(file);

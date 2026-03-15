@@ -6,6 +6,7 @@
 import { strings } from '@/shared/localization/strings';
 import { sanitizeContent } from '../utils/sanitizer';
 import { callGemini, isGeminiAvailable, extractGeminiText } from './geminiClient';
+import { logger } from '@/shared/services/logger';
 
 const MAX_DOCUMENT_INPUT = 25_000;
 const MAX_OUTPUT_TOKENS = 512;
@@ -39,7 +40,7 @@ export async function summarizeDocument(
 
         return extractGeminiText(result.data);
     } catch (error) {
-        console.warn('Document summarization failed', error);
+        logger.warn('Document summarization failed', error);
         return null;
     }
 }

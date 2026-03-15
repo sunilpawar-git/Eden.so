@@ -4,6 +4,7 @@
  */
 import type { Metric } from 'web-vitals';
 import { strings } from '@/shared/localization/strings';
+import { logger } from '@/shared/services/logger';
 
 /** Map metric names to localized labels */
 const METRIC_LABELS: Record<string, string> = {
@@ -30,7 +31,7 @@ function createConsoleReporter(): MetricReporter {
         
         // Only log in development
         if (import.meta.env.DEV) {
-            console.info(`[WebVitals] ${label}: ${value}`);
+            logger.info(`[WebVitals] ${label}: ${value}`);
         }
     };
 }
@@ -51,7 +52,7 @@ export async function initWebVitals(reporter?: MetricReporter): Promise<void> {
         onLCP(report);
         onTTFB(report);
     } catch (error) {
-        console.warn('[WebVitals] Failed to initialize:', error);
+        logger.warn('[WebVitals] Failed to initialize:', error);
     }
 }
 

@@ -132,6 +132,8 @@ export function isNodePinned(node: CanvasNode | { data?: IdeaNodeData | null }):
 export interface CanvasNode {
     id: string;
     workspaceId: string;
+    /** Denormalized for auditability — path-based auth is primary */
+    userId?: string;
     type: NodeType;
     data: IdeaNodeData;
     position: NodePosition;
@@ -139,6 +141,8 @@ export interface CanvasNode {
     height?: number;
     createdAt: Date;
     updatedAt: Date;
+    /** Schema version for forward-compatible migrations */
+    schemaVersion?: number;
 }
 
 /**

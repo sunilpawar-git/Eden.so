@@ -59,6 +59,7 @@ export const strings = {
         networkError: 'Network error. Please check your connection.',
         aiError: 'AI generation failed. Please try again.',
         quotaExceeded: 'API quota exceeded. Please try again later.',
+        queryCapReached: 'Some items could not be loaded — workspace may be too large.',
     },
     common: {
         confirm: 'Confirm',

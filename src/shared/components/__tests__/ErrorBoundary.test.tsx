@@ -30,6 +30,16 @@ vi.mock('@/shared/localization/strings', () => ({
     },
 }));
 
+// Mock logger to capture calls without side effects
+const mockLoggerError = vi.fn();
+vi.mock('@/shared/services/logger', () => ({
+    logger: {
+        error: (...args: unknown[]) => mockLoggerError(...args),
+        warn: vi.fn(),
+        info: vi.fn(),
+    },
+}));
+
 // Component that throws an error
 function ErrorThrower({ shouldThrow = true }: { shouldThrow?: boolean }) {
     if (shouldThrow) {
@@ -125,8 +135,8 @@ describe('ErrorBoundary', () => {
         expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
     });
 
-    it('should log error to console', () => {
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    it('should log error via logger', () => {
+        mockLoggerError.mockClear();
 
         render(
             <ErrorBoundary>
@@ -134,17 +144,12 @@ describe('ErrorBoundary', () => {
             </ErrorBoundary>
         );
 
-        expect(consoleSpy).toHaveBeenCalledWith(
+        expect(mockLoggerError).toHaveBeenCalledWith(
             '[ErrorBoundary] Caught error:',
-            'Test error message'
-        );
-        expect(consoleSpy).toHaveBeenCalledWith(
-            '[ErrorBoundary] Component stack:',
-            expect.stringContaining('ErrorThrower')
-        );
-        expect(consoleSpy).toHaveBeenCalledWith(
-            '[ErrorBoundary] Error stack:',
-            expect.stringContaining('Test error message')
+            expect.objectContaining({ message: 'Test error message' }),
+            expect.objectContaining({
+                componentStack: expect.stringContaining('ErrorThrower'),
+            }),
         );
     });
 });

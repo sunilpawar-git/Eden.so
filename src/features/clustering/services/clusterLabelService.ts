@@ -5,6 +5,7 @@ import { clusterStrings } from '@/shared/localization/clusterStrings';
 import type { CanvasNode } from '@/features/canvas/types/node';
 import type { ClusterGroup } from '../types/cluster';
 import { HTML_TAG_RE } from '@/shared/utils/htmlUtils';
+import { logger } from '@/shared/services/logger';
 
 const MAX_HEADINGS_PER_CLUSTER = 5;
 const MAX_CLUSTERS_TO_LABEL = 10;
@@ -63,7 +64,7 @@ export async function labelClusters(
             return { ...cluster, label: newLabel };
         });
     } catch (err: unknown) {
-        console.error('[clusterLabelService] AI labeling failed, using default labels:', err);
+        logger.error('[clusterLabelService] AI labeling failed, using default labels:', err);
         return clusters;
     }
 }

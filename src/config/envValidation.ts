@@ -5,6 +5,7 @@
  */
 import { strings } from '@/shared/localization/strings';
 import { captureError } from '@/shared/services/sentryService';
+import { logger } from '@/shared/services/logger';
 
 const REQUIRED_VARS = [
     'VITE_FIREBASE_API_KEY',
@@ -27,7 +28,7 @@ export function validateProductionEnv(): string[] {
         if (!value || value.trim().length === 0) {
             const msg = strings.security.envMissing(name);
             errors.push(msg);
-            console.error(`[EnvValidation] ${msg}`);
+            logger.error(`[EnvValidation] ${msg}`);
             captureError(new Error(msg), { envVar: name });
         }
     }
