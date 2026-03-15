@@ -7,6 +7,8 @@
 import { loadNodes, appendNode, updateWorkspaceNodeCount } from '@/features/workspace/services/workspaceService';
 import { buildClonedNode } from './nodeCloneUtils';
 import { calculateMasonryPosition } from './gridLayoutService';
+import { resolveGridColumns } from './gridColumnsResolver';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
 import type { CanvasNode } from '../types/node';
 
 /**
@@ -29,7 +31,8 @@ export async function shareNodeToWorkspace(
     if (!targetWorkspaceId) throw new Error('Invalid workspace');
 
     const existingNodes = await loadNodes(userId, targetWorkspaceId);
-    const position = calculateMasonryPosition(existingNodes);
+    const cols = resolveGridColumns(useSettingsStore.getState().gridColumns);
+    const position = calculateMasonryPosition(existingNodes, cols);
 
     const newNode = buildClonedNode(sourceNode, { workspaceId: targetWorkspaceId, position });
 

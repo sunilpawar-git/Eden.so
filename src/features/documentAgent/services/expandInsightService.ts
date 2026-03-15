@@ -2,10 +2,11 @@
  * Expand Insight Service — breaks an insight node into child section nodes.
  * Pure function. All nodes + edges returned for single atomic setState().
  */
-import { createIdeaNode } from '@/features/canvas/types/node';
+import { createIdeaNode, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '@/features/canvas/types/node';
 import { createEdge } from '@/features/canvas/types/edge';
 import { strings } from '@/shared/localization/strings';
 import { formatBulletList } from '../utils/llmResponseUtils';
+import { findNearestOpenSlot } from '@/features/canvas/services/spiralPlacement';
 import type { CanvasNode, NodeColorKey } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import type { ExtractionResult } from '../types/documentAgent';
@@ -80,18 +81,27 @@ export function expandInsightToNodes(
     insightNode: CanvasNode,
     result: ExtractionResult,
     parentDocNodeId: string,
+    existingNodes: CanvasNode[] = [],
 ): ExpandResult {
     const sections = buildSections(result);
     const nodes: CanvasNode[] = [];
     const edges: CanvasEdge[] = [];
 
+    const allNodes = [insightNode, ...existingNodes.filter((n) => n.id !== insightNode.id)];
+
     for (const [i, section] of sections.entries()) {
         const nodeId = `expand-${crypto.randomUUID()}`;
 
-        const position = {
+        const idealPosition = {
             x: insightNode.position.x + FAN_OFFSET_X,
             y: insightNode.position.y + FAN_SPACING_Y * (i + 1),
         };
+
+        const position = findNearestOpenSlot(
+            idealPosition.x, idealPosition.y,
+            DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT,
+            allNodes,
+        );
 
         const node = createIdeaNode(nodeId, insightNode.workspaceId, position);
         node.data = {
@@ -112,6 +122,7 @@ export function expandInsightToNodes(
 
         nodes.push(node);
         edges.push(edge);
+        allNodes.push(node);
     }
 
     return { nodes, edges };

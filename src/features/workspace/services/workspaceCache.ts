@@ -9,6 +9,7 @@ import type { CanvasNode } from '@/features/canvas/types/node';
 import type { CanvasEdge } from '@/features/canvas/types/edge';
 import { loadNodes, loadEdges } from './workspaceService';
 import { idbCacheService } from './idbCacheService';
+import { logger } from '@/shared/services/logger';
 
 export interface WorkspaceData {
     nodes: CanvasNode[];
@@ -87,7 +88,7 @@ async function preload(userId: string, workspaceIds: string[]): Promise<void> {
                 ]);
                 set(workspaceId, { nodes, edges, loadedAt: Date.now() });
             } catch (err) {
-                console.warn(`[WorkspaceCache] Failed to preload ${workspaceId}:`, err);
+                logger.warn(`[WorkspaceCache] Failed to preload ${workspaceId}:`, err);
             }
         })
     );

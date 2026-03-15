@@ -13,6 +13,7 @@ export interface IdeaCardHeadingSectionProps {
     onHeadingChange: (heading: string) => void;
     onEnterKey: () => void;
     onDoubleClick: () => void;
+    onBlur?: (heading: string) => void;
     onSlashCommand: (id: string) => void;
     onSubmitAI: (prompt: string) => void;
     calendarEvent?: CalendarEventMetadata;
@@ -22,12 +23,12 @@ export interface IdeaCardHeadingSectionProps {
 
 export const IdeaCardHeadingSection = React.memo(({
     headingRef, heading, isEditing, onHeadingChange, onEnterKey, onDoubleClick,
-    onSlashCommand, onSubmitAI, calendarEvent, onCalendarRetry, isCollapsed,
+    onBlur, onSlashCommand, onSubmitAI, calendarEvent, onCalendarRetry, isCollapsed,
 }: IdeaCardHeadingSectionProps) => (
     <div className={styles.headingSection} data-node-section="heading">
         <NodeHeading ref={headingRef} heading={heading} isEditing={isEditing}
             onHeadingChange={onHeadingChange} onEnterKey={onEnterKey}
-            onDoubleClick={onDoubleClick} onSlashCommand={onSlashCommand}
+            onDoubleClick={onDoubleClick} onBlur={onBlur} onSlashCommand={onSlashCommand}
             onSubmitAI={onSubmitAI} />
         {calendarEvent && (
             <CalendarBadge metadata={calendarEvent}

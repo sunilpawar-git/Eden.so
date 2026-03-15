@@ -27,6 +27,12 @@ vi.mock('firebase/firestore', () => ({
         delete: mockBatchDelete,
         commit: mockBatchCommit,
     })),
+    runTransaction: vi.fn((_db: unknown, cb: (txn: unknown) => Promise<void>) => {
+        const txn = { set: mockBatchSet, delete: mockBatchDelete };
+        return cb(txn);
+    }),
+    query: vi.fn((ref: unknown) => ref),
+    limit: vi.fn(),
     serverTimestamp: vi.fn(() => ({ _serverTimestamp: true })),
 }));
 
@@ -53,9 +59,9 @@ describe('WorkspaceService Save with Delete Sync', () => {
         it('should delete nodes from Firestore that no longer exist locally', async () => {
             mockGetDocs.mockResolvedValue({
                 docs: [
-                    { id: 'node-a' },
-                    { id: 'node-b' },
-                    { id: 'node-c' },
+                    { id: 'node-a', data: () => ({ data: {} }) },
+                    { id: 'node-b', data: () => ({ data: {} }) },
+                    { id: 'node-c', data: () => ({ data: {} }) },
                 ],
             });
 
@@ -65,7 +71,6 @@ describe('WorkspaceService Save with Delete Sync', () => {
             ]);
 
             expect(mockBatchDelete).toHaveBeenCalled();
-            expect(mockBatchCommit).toHaveBeenCalled();
         });
 
         it('should save all current nodes', async () => {
@@ -77,18 +82,16 @@ describe('WorkspaceService Save with Delete Sync', () => {
             ]);
 
             expect(mockBatchSet).toHaveBeenCalledTimes(2);
-            expect(mockBatchCommit).toHaveBeenCalled();
         });
 
         it('should handle empty nodes array', async () => {
             mockGetDocs.mockResolvedValue({
-                docs: [{ id: 'node-a' }],
+                docs: [{ id: 'node-a', data: () => ({ data: {} }) }],
             });
 
             await saveNodes('user-1', 'ws-1', []);
 
             expect(mockBatchDelete).toHaveBeenCalled();
-            expect(mockBatchCommit).toHaveBeenCalled();
         });
 
         // REGRESSION: Firebase undefined value sanitization
@@ -199,7 +202,6 @@ describe('WorkspaceService Save with Delete Sync', () => {
             await saveEdges('user-1', 'ws-1', [createMockEdge('edge-a')]);
 
             expect(mockBatchDelete).toHaveBeenCalled();
-            expect(mockBatchCommit).toHaveBeenCalled();
         });
 
         it('should save all current edges', async () => {
@@ -211,7 +213,6 @@ describe('WorkspaceService Save with Delete Sync', () => {
             ]);
 
             expect(mockBatchSet).toHaveBeenCalledTimes(2);
-            expect(mockBatchCommit).toHaveBeenCalled();
         });
     });
 });

@@ -54,12 +54,12 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
         handleTransform, handleHeadingChange, handleCopy, handleDuplicate, handleShare,
         isSharing, isTransforming, handlePinToggle, handleCollapseToggle, handlePoolToggle, handleColorChange,
         handleTagOpen, handleFocusClick, handleImageClick, handleAttachmentClick, slashHandler, onSubmitAI, onTagsChange, onKeyDownReact,
-        hasContent, isEditing, calendar, focusBody, registerProximityLostFn,
+        hasContent, isEditing, onHeadingBlur, calendar, focusBody, registerProximityLostFn,
     } = api;
     const nodeColorKey = normalizeNodeColorKey(resolvedData.colorKey);
     const contextMenu = useNodeContextMenu();
     const { handleMoreClick, handleContentModeToggle } = useIdeaCardMenuActions(id, barContainerRef, contextMenu.openAtElement);
-    const resizerBounds = getResizerBounds(resolvedData.contentMode);
+    const { minWidth, minHeight } = getResizerBounds(resolvedData.contentMode);
 
     return (
         <div ref={cardWrapperRef}
@@ -68,10 +68,8 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
             onTouchStart={contextMenu.onTouchStart} onTouchMove={contextMenu.onTouchMove}
             onTouchEnd={contextMenu.onTouchEnd}>
             <NodeResizer
-                minWidth={resizerBounds.minWidth}
-                maxWidth={MAX_NODE_WIDTH}
-                minHeight={resizerBounds.minHeight}
-                maxHeight={MAX_NODE_HEIGHT}
+                minWidth={minWidth} maxWidth={MAX_NODE_WIDTH}
+                minHeight={minHeight} maxHeight={MAX_NODE_HEIGHT}
                 isVisible={selected && !isCollapsed} />
             <NodeResizeButtons nodeId={id} />
             <Handle type="target" position={Position.Top} id={`${id}-target`}
@@ -85,7 +83,8 @@ export const IdeaCard = React.memo(function IdeaCard({ id, data: rfData, selecte
                 )}
                 <IdeaCardHeadingSection headingRef={headingRef} heading={heading ?? ''} isEditing={isEditing}
                     onHeadingChange={handleHeadingChange} onEnterKey={focusBody}
-                    onDoubleClick={handleDoubleClick} onSlashCommand={slashHandler}
+                    onDoubleClick={handleDoubleClick} onBlur={onHeadingBlur}
+                    onSlashCommand={slashHandler}
                     onSubmitAI={onSubmitAI} calendarEvent={calendarEvent}
                     onCalendarRetry={calendar.handleRetry} isCollapsed={isCollapsed ?? false} />
                 {!isCollapsed && (

@@ -9,16 +9,17 @@ import type { CanvasNode, NodePosition } from '../types/node';
 import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, isNodePinned } from '../types/node';
 import { getDefaultColumnX } from '../types/masonryLayout';
 import { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from './gridConstants';
+import { collidesWithAny, findNearestOpenSlot } from './spiralPlacement';
 
 /**
  * Finds the column index closest to the given X position.
  * Clamps to [0, GRID_COLUMNS - 1].
  */
-function findNearestColumn(x: number): number {
+function findNearestColumn(x: number, columnCount: number): number {
     let bestCol = 0;
     let bestDist = Infinity;
 
-    for (let col = 0; col < GRID_COLUMNS; col++) {
+    for (let col = 0; col < columnCount; col++) {
         const colX = getDefaultColumnX(col, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
         const colCenter = colX + DEFAULT_NODE_WIDTH / 2;
         const dist = Math.abs(x - colCenter);
@@ -69,10 +70,14 @@ function findColumnBottomY(column: number, nodes: CanvasNode[]): number {
 export function snapToMasonrySlot(
     clickPosition: NodePosition,
     nodes: CanvasNode[],
+    columnCount = GRID_COLUMNS,
 ): NodePosition {
-    const column = findNearestColumn(clickPosition.x);
+    const column = findNearestColumn(clickPosition.x, columnCount);
     const x = getDefaultColumnX(column, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
     const y = findColumnBottomY(column, nodes);
 
+    if (collidesWithAny(x, y, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, nodes)) {
+        return findNearestOpenSlot(x, y, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, nodes);
+    }
     return { x, y };
 }

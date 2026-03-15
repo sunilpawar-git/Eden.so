@@ -10,6 +10,7 @@ import { saveWorkspace, updateWorkspaceOrder, deleteWorkspace } from '@/features
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceLoading } from './useWorkspaceLoading';
 import { useWorkspaceOperations } from './useWorkspaceOperations';
+import { logger } from '@/shared/services/logger';
 
 export function useSidebarWorkspaces() {
     // 1. Initial loading logic
@@ -31,7 +32,7 @@ export function useSidebarWorkspaces() {
                 await deleteWorkspace(user.id, id);
                 removeWorkspace(id);
             } catch (error) {
-                console.error('[Sidebar] Failed to delete divider:', error);
+                logger.error('[Sidebar] Failed to delete divider:', error);
                 toast.error(strings.errors.generic);
             }
         }
@@ -41,7 +42,7 @@ export function useSidebarWorkspaces() {
         if (id === currentWorkspaceId) return;
         try { await switchWorkspace(id); }
         catch (error) {
-            console.error('[Sidebar] Switch failed:', error);
+            logger.error('[Sidebar] Switch failed:', error);
             toast.error(strings.workspace.switchError);
         }
     };
@@ -54,7 +55,7 @@ export function useSidebarWorkspaces() {
             updateWorkspace(id, { name });
             await saveWorkspace(user.id, { ...workspace, name });
         } catch (error) {
-            console.error('[Sidebar] Rename failed:', error);
+            logger.error('[Sidebar] Rename failed:', error);
             toast.error(strings.errors.generic);
         }
     };
@@ -66,7 +67,7 @@ export function useSidebarWorkspaces() {
         const updates = updated.map((ws, i) => ({ id: ws.id, orderIndex: i }));
         try { await updateWorkspaceOrder(user.id, updates); }
         catch (error) {
-            console.error('[Sidebar] Reorder failed:', error);
+            logger.error('[Sidebar] Reorder failed:', error);
             toast.error(strings.errors.generic);
         }
     };

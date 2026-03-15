@@ -10,6 +10,7 @@ import { useFocusStore } from '../stores/focusStore';
 import { createIdeaNode, type NodePosition } from '../types/node';
 import { calculateNextNodePosition } from '../stores/canvasStoreHelpers';
 import { calculateSmartPlacement } from '../services/freeFlowPlacementService';
+import { resolveGridColumnsFromStore } from '../services/gridColumnsResolver';
 import { usePanToNode } from './usePanToNode';
 import { trackNodeCreated } from '@/shared/services/analyticsService';
 import { useUndoableActions } from './useUndoableActions';
@@ -60,10 +61,11 @@ export function useAddNode() {
         const nodes = useCanvasStore.getState().nodes;
         const focusedNodeId = useFocusStore.getState().focusedNodeId;
 
+        const cols = resolveGridColumnsFromStore();
         const position = validPosition
             ?? (canvasFreeFlow
                 ? calculateSmartPlacement(nodes, focusedNodeId ?? undefined)
-                : calculateNextNodePosition(nodes));
+                : calculateNextNodePosition(nodes, cols));
 
         const nodeId = `idea-${crypto.randomUUID()}`;
         const newNode = createIdeaNode(nodeId, currentWorkspaceId, position);

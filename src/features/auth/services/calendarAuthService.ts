@@ -6,6 +6,7 @@
 import { auth } from '@/config/firebase';
 import { useAuthStore } from '../stores/authStore';
 import { calendarStrings as cs } from '@/shared/localization/calendarStrings';
+import { logger } from '@/shared/services/logger';
 
 const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
@@ -22,7 +23,7 @@ export function getCalendarToken(): string | null {
     if (!token || !expiry) return null;
 
     if (DANGEROUS_TOKEN_CHARS.test(token)) {
-        console.warn('Invalid calendar token format detected, clearing');
+        logger.warn('Invalid calendar token format detected, clearing');
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(EXPIRY_KEY);
         return null;

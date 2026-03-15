@@ -37,9 +37,10 @@ vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
 }));
 
 // Mock toast store — vi.hoisted ensures fns are available at vi.mock hoist time
-const { mockToastSuccess, mockToastInfo } = vi.hoisted(() => ({
+const { mockToastSuccess, mockToastInfo, mockToastWithAction } = vi.hoisted(() => ({
     mockToastSuccess: vi.fn(),
     mockToastInfo: vi.fn(),
+    mockToastWithAction: vi.fn(),
 }));
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: {
@@ -47,6 +48,7 @@ vi.mock('@/shared/stores/toastStore', () => ({
         error: vi.fn(),
         info: mockToastInfo,
     },
+    toastWithAction: mockToastWithAction,
 }));
 
 describe('WorkspaceControls', () => {
@@ -205,7 +207,11 @@ describe('WorkspaceControls', () => {
 
             fireEvent.click(screen.getByTitle(strings.workspace.arrangeNodesTooltip));
 
-            expect(mockToastSuccess).toHaveBeenCalledWith(strings.layout.arrangeSuccess);
+            expect(mockToastWithAction).toHaveBeenCalledWith(
+                strings.layout.arrangeSuccess,
+                'success',
+                expect.objectContaining({ label: expect.any(String) }),
+            );
         });
 
         it('should show success toast with pinned count when some nodes are pinned', () => {

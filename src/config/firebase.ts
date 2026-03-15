@@ -7,6 +7,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getFunctions } from 'firebase/functions';
+import { logger } from '@/shared/services/logger';
 
 // These values should come from environment variables in production
 const firebaseConfig = {
@@ -20,7 +22,7 @@ const firebaseConfig = {
 
 // Validate config in development
 if (import.meta.env.DEV && !firebaseConfig.apiKey) {
-    console.warn(
+    logger.warn(
         'Firebase config not found. Create .env.local with VITE_FIREBASE_* variables.'
     );
 }
@@ -37,6 +39,7 @@ export const db = initializeFirestore(app, {
 });
 
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
 
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');

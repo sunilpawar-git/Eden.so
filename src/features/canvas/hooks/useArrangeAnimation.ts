@@ -1,47 +1,99 @@
 /**
- * useArrangeAnimation Hook - Adds CSS transition to node rearrangement
- * Sets a data attribute on the container to enable transition, then removes it
+ * useArrangeAnimation Hook — Staggered column-cascade animation for arrange.
+ *
+ * Architecture:
+ * - Uses React.useReducer with arrangeAnimationReducer (zero Zustand coupling).
+ * - Computes per-node transition-delay from column assignments.
+ * - Sets data attributes on ReactFlow node wrappers for CSS transitions.
+ * - Schedules cleanup via setTimeout (no useEffect for cleanup — avoids stale closure).
+ * - Timer is ref-tracked and cleared on unmount to prevent memory leaks.
+ * - Reads canvas store via getState() only — no subscriptions.
  */
-import { useCallback, useRef, type RefObject } from 'react';
+import { useCallback, useRef, useReducer, useEffect, type RefObject } from 'react';
+import {
+    arrangeAnimationReducer,
+    computeTotalAnimationMs,
+    INITIAL_ARRANGE_ANIM_STATE,
+    STAGGER_DELAY_PER_COLUMN_MS,
+} from '../services/arrangeAnimationReducer';
+import { computeColumnAssignments } from '../services/gridLayoutService';
+import { useCanvasStore } from '../stores/canvasStore';
+import { resolveGridColumnsFromStore } from '../services/gridColumnsResolver';
 
-/** Must exceed the CSS transition duration (0.4s) in CanvasView.module.css to ensure cleanup happens after animation completes */
-const ANIMATION_CLEANUP_DELAY_MS = 500;
-
-/** Stable canvas container selector using data attribute (not dependent on CSS module class names) */
 const CANVAS_CONTAINER_SELECTOR = '[data-canvas-container]';
+const ARRANGE_DATA_ATTR = 'data-arranging';
+const CLEANUP_BUFFER_MS = 50;
 
 /**
- * Wraps an arrange function with a CSS transition animation.
- * Adds `data-arranging="true"` to the container element during the transition.
- * Accepts an optional ref; falls back to DOM query for the canvas container.
+ * Wraps an arrange function with a staggered column-cascade CSS animation.
+ * Sets per-node `--arrange-delay` custom property and `data-arranging` on the container.
+ *
+ * Returns `animatedArrange` to trigger the animation and `lastTotalAnimMs` ref
+ * for callers that need the actual computed animation duration.
  */
 export function useArrangeAnimation(
     containerRef: RefObject<HTMLElement | null> | null,
-    arrangeNodes: () => void
+    arrangeNodes: () => void,
 ) {
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [, dispatch] = useReducer(arrangeAnimationReducer, INITIAL_ARRANGE_ANIM_STATE);
+    const cleanupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastTotalAnimMsRef = useRef(0);
+
+    useEffect(() => {
+        return () => {
+            if (cleanupTimerRef.current !== null) {
+                clearTimeout(cleanupTimerRef.current);
+                cleanupTimerRef.current = null;
+            }
+        };
+    }, []);
 
     const animatedArrange = useCallback(() => {
         const container = containerRef?.current
             ?? document.querySelector<HTMLElement>(CANVAS_CONTAINER_SELECTOR);
 
+        const nodes = useCanvasStore.getState().nodes;
+        const cols = resolveGridColumnsFromStore();
+        const columnAssignments = computeColumnAssignments(nodes, cols);
+
+        dispatch({ type: 'START_ANIMATE', columnAssignments });
+
         if (container) {
-            container.setAttribute('data-arranging', 'true');
+            container.setAttribute(ARRANGE_DATA_ATTR, 'true');
+
+            const nodeEls = container.querySelectorAll<HTMLElement>(':scope .react-flow__node');
+            for (const el of nodeEls) {
+                const nodeId = el.getAttribute('data-id');
+                if (nodeId != null) {
+                    const colIdx = columnAssignments.get(nodeId);
+                    const delayMs = colIdx != null ? colIdx * STAGGER_DELAY_PER_COLUMN_MS : 0;
+                    el.style.setProperty('--arrange-delay', `${delayMs}ms`);
+                }
+            }
         }
 
         arrangeNodes();
 
-        if (timeoutRef.current !== null) {
-            clearTimeout(timeoutRef.current);
+        if (cleanupTimerRef.current !== null) {
+            clearTimeout(cleanupTimerRef.current);
         }
 
-        timeoutRef.current = setTimeout(() => {
+        const totalMs = computeTotalAnimationMs(columnAssignments) + CLEANUP_BUFFER_MS;
+        lastTotalAnimMsRef.current = totalMs;
+
+        cleanupTimerRef.current = setTimeout(() => {
+            dispatch({ type: 'RESET' });
+
             if (container) {
-                container.removeAttribute('data-arranging');
+                container.removeAttribute(ARRANGE_DATA_ATTR);
+                const nodeEls = container.querySelectorAll<HTMLElement>(':scope .react-flow__node');
+                for (const el of nodeEls) {
+                    el.style.removeProperty('--arrange-delay');
+                }
             }
-            timeoutRef.current = null;
-        }, ANIMATION_CLEANUP_DELAY_MS);
+            cleanupTimerRef.current = null;
+        }, totalMs);
     }, [containerRef, arrangeNodes]);
 
-    return { animatedArrange };
+    return { animatedArrange, lastTotalAnimMsRef };
 }

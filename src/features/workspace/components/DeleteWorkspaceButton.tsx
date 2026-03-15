@@ -8,6 +8,7 @@ import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import { useConfirm } from '@/shared/stores/confirmStore';
 import styles from './WorkspaceControls.module.css';
+import { logger } from '@/shared/services/logger';
 
 export function DeleteWorkspaceButton() {
     const user = useAuthStore((s) => s.user);
@@ -50,7 +51,7 @@ export function DeleteWorkspaceButton() {
 
             toast.success(strings.workspace.deleteSuccess);
         } catch (error) {
-            console.error('[DeleteWorkspaceButton] Failed to delete workspace:', error);
+            logger.error('[DeleteWorkspaceButton] Failed to delete workspace:', error);
             toast.error(strings.errors.generic);
         } finally {
             setIsDeleting(false);

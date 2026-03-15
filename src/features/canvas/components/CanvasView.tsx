@@ -30,6 +30,7 @@ import { usePanToNode } from '../hooks/usePanToNode';
 import { useDoubleClickToCreate } from '../hooks/useDoubleClickToCreate';
 import { CanvasTooltip } from './CanvasTooltip';
 import { PanToNodeContext } from '../contexts/PanToNodeContext';
+import { useFitViewAfterArrange } from '../hooks/useFitViewAfterArrange';
 import styles from './CanvasView.module.css';
 
 function getContainerClassName(isSwitching: boolean): string {
@@ -84,6 +85,7 @@ function CanvasViewInner() {
     const handlers = useCanvasHandlers(currentWorkspaceId, isCanvasLocked, dragDispatch);
     useSemanticZoom();
     useBrowserZoomLock();
+    useFitViewAfterArrange();
     const paneHandlers = useDoubleClickToCreate();
     const overridesRef = useRef(dragState.overrides);
     overridesRef.current = dragState.overrides;

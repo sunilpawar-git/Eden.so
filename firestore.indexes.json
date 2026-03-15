@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "knowledgeBank",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "parentEntryId", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

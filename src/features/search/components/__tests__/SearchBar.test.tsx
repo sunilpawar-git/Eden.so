@@ -1,14 +1,15 @@
 /**
  * SearchBar Component Tests
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { SearchBar } from '../SearchBar';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 
 describe('SearchBar', () => {
     beforeEach(() => {
+        vi.useFakeTimers();
         useCanvasStore.setState({
             nodes: [
                 {
@@ -42,11 +43,13 @@ describe('SearchBar', () => {
         expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
     });
 
+    afterEach(() => { vi.useRealTimers(); });
+
     it('should show results when typing', () => {
         render(<SearchBar />);
         const input = screen.getByPlaceholderText(/search/i);
         fireEvent.change(input, { target: { value: 'React' } });
-        // Text is split across highlight <mark> + <span>, use role query
+        act(() => { vi.advanceTimersByTime(300); });
         const resultItems = screen.getAllByRole('option');
         expect(resultItems.length).toBeGreaterThanOrEqual(1);
     });
@@ -64,6 +67,7 @@ describe('SearchBar', () => {
         render(<SearchBar onResultClick={onResultClick} />);
         const input = screen.getByPlaceholderText(/search/i);
         fireEvent.change(input, { target: { value: 'React' } });
+        act(() => { vi.advanceTimersByTime(300); });
         const resultItem = screen.getAllByRole('option')[0]!;
         fireEvent.click(resultItem);
         expect(onResultClick).toHaveBeenCalledWith('node-1', 'ws-1');
@@ -79,6 +83,7 @@ describe('SearchBar', () => {
         render(<SearchBar />);
         const input = screen.getByPlaceholderText(/search/i);
         fireEvent.change(input, { target: { value: 'React' } });
+        act(() => { vi.advanceTimersByTime(300); });
         fireEvent.keyDown(input, { key: 'ArrowDown' });
         const items = screen.getAllByRole('option');
         expect(items[0]).toHaveAttribute('aria-selected', 'true');

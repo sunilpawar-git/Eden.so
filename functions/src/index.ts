@@ -10,3 +10,6 @@ initializeApp();
 export { fetchLinkMeta } from './fetchLinkMeta.js';
 export { proxyImage } from './proxyImage.js';
 export { geminiProxy } from './geminiProxy.js';
+export { onNodeDeleted } from './onNodeDeleted.js';
+export { scheduledStorageCleanup } from './scheduledStorageCleanup.js';
+export { workspaceBundle } from './workspaceBundle.js';

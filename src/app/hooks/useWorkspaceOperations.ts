@@ -1,7 +1,7 @@
 /**
  * useWorkspaceOperations Hook - Handles creation, deletion, renaming and reordering
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -13,6 +13,7 @@ import {
     saveWorkspace, updateWorkspaceOrder
 } from '@/features/workspace/services/workspaceService';
 import { useOfflineQueueStore } from '@/features/workspace/stores/offlineQueueStore';
+import { logger } from '@/shared/services/logger';
 
 export function useWorkspaceOperations() {
     const user = useAuthStore((s) => s.user);
@@ -22,47 +23,60 @@ export function useWorkspaceOperations() {
 
     const [isCreating, setIsCreating] = useState(false);
     const [isCreatingDivider, setIsCreatingDivider] = useState(false);
+    const userRef = useRef(user);
+    const currentIdRef = useRef(currentWorkspaceId);
+    userRef.current = user;
+    currentIdRef.current = currentWorkspaceId;
 
     const handleNewWorkspace = useCallback(async () => {
-        if (!user || isCreating) return;
+        const currentUser = userRef.current;
+        if (!currentUser || isCreating) return;
         setIsCreating(true);
         try {
+            const curId = currentIdRef.current;
             const { nodes, edges } = useCanvasStore.getState();
-            if (currentWorkspaceId && (nodes.length > 0 || edges.length > 0)) {
-                useOfflineQueueStore.getState().queueSave(user.id, currentWorkspaceId, nodes, edges);
-                useWorkspaceStore.getState().setNodeCount(currentWorkspaceId, nodes.length);
+            if (curId && (nodes.length > 0 || edges.length > 0)) {
+                useOfflineQueueStore.getState().queueSave(currentUser.id, curId, nodes, edges);
+                useWorkspaceStore.getState().setNodeCount(curId, nodes.length);
             }
-            const workspace = await createNewWorkspace(user.id);
-            // Use getState() for actions - stable references, no re-render dependency
+            const workspace = await createNewWorkspace(currentUser.id);
             useWorkspaceStore.getState().addWorkspace({ ...workspace, nodeCount: 0 });
             useWorkspaceStore.getState().setCurrentWorkspaceId(workspace.id);
             useCanvasStore.getState().clearCanvas();
             toast.success(`${strings.workspace.created}: ${workspace.name}`);
         } catch (error) {
-            console.error('[Sidebar] Failed to create workspace:', error);
+            logger.error('[Sidebar] Failed to create workspace:', error);
             toast.error(strings.errors.generic);
         } finally { setIsCreating(false); }
-    }, [user, currentWorkspaceId, isCreating]);
+    }, [isCreating]); // stable — user/currentId read via refs
 
     const handleNewDivider = useCallback(async () => {
-        if (!user || isCreatingDivider) return;
+        const currentUser = userRef.current;
+        if (!currentUser || isCreatingDivider) return;
         setIsCreatingDivider(true);
         try {
-            const newDivider = await createNewDividerWorkspace(user.id);
-            if (currentWorkspaceId) {
-                const { workspaces: currentList } = useWorkspaceStore.getState();
-                const targetIndex = currentList.findIndex(ws => ws.id === currentWorkspaceId);
-                useWorkspaceStore.getState().insertWorkspaceAfter(newDivider, currentWorkspaceId);
-                const { workspaces: updatedList } = useWorkspaceStore.getState();
+            const curId = currentIdRef.current;
+            const newDivider = await createNewDividerWorkspace(currentUser.id);
+            if (curId) {
+                useWorkspaceStore.getState().insertWorkspaceAfter(newDivider, curId);
+                const updatedList = useWorkspaceStore.getState().workspaces;
+                const insertedIndex = updatedList.findIndex(ws => ws.id === newDivider.id);
+                if (insertedIndex === -1) {
+                    logger.warn('[useWorkspaceOperations] Divider not found in updated list after insert');
+                }
+                const orderIndex = insertedIndex >= 0 ? insertedIndex : updatedList.length - 1;
                 const updates = updatedList.map((ws, i) => ({ id: ws.id, orderIndex: i }));
-                await Promise.all([saveWorkspace(user.id, { ...newDivider, orderIndex: targetIndex + 1 }), updateWorkspaceOrder(user.id, updates)]);
+                await Promise.all([
+                    saveWorkspace(currentUser.id, { ...newDivider, orderIndex }),
+                    updateWorkspaceOrder(currentUser.id, updates),
+                ]);
             } else { useWorkspaceStore.getState().addWorkspace(newDivider); }
             toast.success(strings.workspace.addDivider);
         } catch (error) {
-            console.error('[Sidebar] Failed to create divider:', error);
+            logger.error('[Sidebar] Failed to create divider:', error);
             toast.error(strings.errors.generic);
         } finally { setIsCreatingDivider(false); }
-    }, [user, currentWorkspaceId, isCreatingDivider]);
+    }, [isCreatingDivider]); // stable — user/currentId read via refs
 
     return {
         isCreating,

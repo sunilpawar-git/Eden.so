@@ -1,11 +1,9 @@
 /**
  * Canvas Store Helpers - Pure functions for node/edge operations
- * Extracted from canvasStore.ts to reduce store callback size
+ * Extracted from canvasStore.ts to reduce store callback size.
+ * Node dimension helpers live in nodeDimensionHelpers.ts.
  */
-import type { CanvasNode, NodePosition, NodeColorKey } from '../types/node';
-import { clampNodeDimensions, MINDMAP_MIN_WIDTH, MINDMAP_MIN_HEIGHT } from '../types/node';
-import type { ContentMode } from '../types/contentMode';
-import { isContentModeMindmap } from '../types/contentMode';
+import type { CanvasNode, NodePosition } from '../types/node';
 import type { CanvasEdge } from '../types/edge';
 import {
     arrangeMasonry,
@@ -13,98 +11,14 @@ import {
     rearrangeAfterResize,
 } from '../services/gridLayoutService';
 
-/**
- * Updates a node's dimensions with clamping
- */
-export function updateNodeDimensionsInArray(
-    nodes: CanvasNode[],
-    nodeId: string,
-    width: number,
-    height: number
-): CanvasNode[] {
-    return nodes.map((node) => {
-        if (node.id !== nodeId) return node;
-        let w = width, h = height;
-        if (isContentModeMindmap(node.data.contentMode)) {
-            w = Math.max(w, MINDMAP_MIN_WIDTH);
-            h = Math.max(h, MINDMAP_MIN_HEIGHT);
-        }
-        const clamped = clampNodeDimensions(w, h);
-        return { ...node, width: clamped.width, height: clamped.height, updatedAt: new Date() };
-    });
-}
-
-/**
- * Updates a single data field on a node
- */
-export function updateNodeDataField<K extends keyof CanvasNode['data']>(
-    nodes: CanvasNode[],
-    nodeId: string,
-    field: K,
-    value: CanvasNode['data'][K]
-): CanvasNode[] {
-    return nodes.map((node) =>
-        node.id === nodeId
-            ? { ...node, data: { ...node.data, [field]: value }, updatedAt: new Date() }
-            : node
-    );
-}
-
-/** Sets contentMode and auto-enlarges small nodes to mindmap-friendly size (never shrinks). */
-export function updateContentModeInArray(
-    nodes: CanvasNode[], nodeId: string, contentMode: ContentMode,
-): CanvasNode[] {
-    return nodes.map((node) => {
-        if (node.id !== nodeId) return node;
-        const updated: CanvasNode = { ...node, data: { ...node.data, contentMode }, updatedAt: new Date() };
-        if (contentMode === 'mindmap') {
-            const w = node.width ?? 0, h = node.height ?? 0;
-            if (w < MINDMAP_MIN_WIDTH || h < MINDMAP_MIN_HEIGHT) {
-                const c = clampNodeDimensions(Math.max(w, MINDMAP_MIN_WIDTH), Math.max(h, MINDMAP_MIN_HEIGHT));
-                updated.width = c.width;
-                updated.height = c.height;
-            }
-        }
-        return updated;
-    });
-}
-
-/**
- * Appends text to a node's output field
- */
-export function appendToNodeOutputInArray(
-    nodes: CanvasNode[],
-    nodeId: string,
-    chunk: string
-): CanvasNode[] {
-    return nodes.map((node) =>
-        node.id === nodeId
-            ? {
-                ...node,
-                data: { ...node.data, output: (node.data.output ?? '') + chunk },
-                updatedAt: new Date(),
-            }
-            : node
-    );
-}
-
-/**
- * Toggles a node's prompt collapsed state
- */
-export function togglePromptCollapsedInArray(
-    nodes: CanvasNode[],
-    nodeId: string
-): CanvasNode[] {
-    return nodes.map((node) =>
-        node.id === nodeId
-            ? {
-                ...node,
-                data: { ...node.data, isPromptCollapsed: !node.data.isPromptCollapsed },
-                updatedAt: new Date(),
-            }
-            : node
-    );
-}
+export {
+    updateNodeDimensionsInArray,
+    updateNodeDataField,
+    updateContentModeInArray,
+    appendToNodeOutputInArray,
+    togglePromptCollapsedInArray,
+    setNodeColorInArray,
+} from './nodeDimensionHelpers';
 
 /** Deletes a node and its connected edges */
 export function deleteNodeFromArrays(
@@ -173,16 +87,16 @@ export { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from '../services/gridLayoutServ
  * Pinned nodes are excluded from arrangement and keep their position.
  * Pure function — does not mutate input. Preserves input array order.
  */
-export function arrangeNodesInGrid(nodes: CanvasNode[]): CanvasNode[] {
-    return arrangeMasonry(nodes);
+export function arrangeNodesInGrid(nodes: CanvasNode[], columnCount?: number): CanvasNode[] {
+    return arrangeMasonry(nodes, columnCount);
 }
 
 /**
  * Calculates the position for the next node in the grid (Masonry).
  * Stacks in the shortest column.
  */
-export function calculateNextNodePosition(nodes: CanvasNode[]): NodePosition {
-    return calculateMasonryPosition(nodes);
+export function calculateNextNodePosition(nodes: CanvasNode[], columnCount?: number): NodePosition {
+    return calculateMasonryPosition(nodes, columnCount);
 }
 
 /**
@@ -191,9 +105,10 @@ export function calculateNextNodePosition(nodes: CanvasNode[]): NodePosition {
  */
 export function arrangeNodesAfterResize(
     nodes: CanvasNode[],
-    resizedNodeId: string
+    resizedNodeId: string,
+    columnCount?: number,
 ): CanvasNode[] {
-    return rearrangeAfterResize(nodes, resizedNodeId);
+    return rearrangeAfterResize(nodes, resizedNodeId, columnCount);
 }
 
 /** Toggles isPinned on a single node. No-op if nodeId not found. */
@@ -239,23 +154,6 @@ export function clearAllNodePoolInArray(nodes: CanvasNode[]): CanvasNode[] {
 }
 
 /**
- * Sets node color in an idempotent way (no-op when unchanged or missing node).
- */
-export function setNodeColorInArray(
-    nodes: CanvasNode[],
-    nodeId: string,
-    colorKey: NodeColorKey
-): CanvasNode[] {
-    const target = nodes.find((node) => node.id === nodeId);
-    if (!target || target.data.colorKey === colorKey) return nodes;
-    return nodes.map((node) =>
-        node.id === nodeId
-            ? { ...node, data: { ...node.data, colorKey }, updatedAt: new Date() }
-            : node
-    );
-}
-
-/**
  * Inserts a node at a specific array index (Z-index restoration for undo).
  * Clamps index to valid range — no out-of-bounds risk.
  */
@@ -290,4 +188,3 @@ export function deleteNodesFromArrays(
         ),
     };
 }
-

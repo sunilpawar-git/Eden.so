@@ -25,6 +25,10 @@ export interface Workspace {
     includeAllNodesInPool?: boolean;
     /** Persisted cluster groups (stored as workspace metadata, not subcollection) */
     clusterGroups?: ClusterGroup[];
+    /** Schema version for forward-compatible migrations */
+    schemaVersion?: number;
+    /** Enables tile-based spatial chunking for viewport-aware node loading */
+    spatialChunkingEnabled?: boolean;
 }
 
 /**

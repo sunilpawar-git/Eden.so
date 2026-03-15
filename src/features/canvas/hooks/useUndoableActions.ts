@@ -91,5 +91,27 @@ export function useUndoableActions() {
         });
     }, []);
 
-    return { deleteNodeWithUndo, addNodeWithUndo };
+    const arrangeWithUndo = useCallback(() => {
+        const hc = strings.canvas.history;
+        const snapshot = useCanvasStore.getState().nodes
+            .map((n) => ({ id: n.id, position: structuredClone(n.position) }));
+
+        withUndo('arrangeNodes', () => {
+            useCanvasStore.getState().arrangeNodes();
+        }, () => {
+            useCanvasStore.setState((s) => ({
+                nodes: s.nodes.map((node) => {
+                    const saved = snapshot.find((sn) => sn.id === node.id);
+                    return saved ? { ...node, position: saved.position, updatedAt: new Date() } : node;
+                }),
+            }));
+        });
+
+        toastWithAction(strings.layout.arrangeSuccess, 'success', {
+            label: hc.arrangeUndoAction,
+            onClick: () => useHistoryStore.getState().dispatch({ type: 'UNDO', source: 'toast' }),
+        });
+    }, []);
+
+    return { deleteNodeWithUndo, addNodeWithUndo, arrangeWithUndo };
 }

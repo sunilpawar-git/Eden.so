@@ -8,13 +8,14 @@ import type { ColumnStack, NodePlacement } from '../types/masonryLayout';
 import { checkVerticalOverlap, getDefaultColumnX } from '../types/masonryLayout';
 
 import { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from './gridConstants';
+import { collidesWithAny, findNearestOpenSlot } from './spiralPlacement';
 // Re-export from SSOT so existing importers keep working
 export { GRID_COLUMNS, GRID_GAP, GRID_PADDING } from './gridConstants';
 
 /**
  * Finds the index of the shortest column.
  */
-function findShortestColumn(columnY: number[]): number {
+export function findShortestColumn(columnY: number[]): number {
     let minCol = 0;
     let minHeight = columnY[0] ?? GRID_PADDING;
     for (let i = 1; i < columnY.length; i++) {
@@ -37,8 +38,8 @@ interface ColumnAssignment {
  * Assigns each node to a column using shortest-column logic.
  * Returns array of column assignment pairs in placement order.
  */
-function assignNodesToColumns(sortedNodes: CanvasNode[]): ColumnAssignment[] {
-    const columnY: number[] = new Array<number>(GRID_COLUMNS).fill(GRID_PADDING);
+function assignNodesToColumns(sortedNodes: CanvasNode[], columnCount = GRID_COLUMNS): ColumnAssignment[] {
+    const columnY: number[] = new Array<number>(columnCount).fill(GRID_PADDING);
     const assignments: ColumnAssignment[] = [];
 
     for (const node of sortedNodes) {
@@ -56,16 +57,16 @@ function assignNodesToColumns(sortedNodes: CanvasNode[]): ColumnAssignment[] {
  * Builds column stacks from assignments with computed Y positions.
  * Each stack contains placements ordered top-to-bottom.
  */
-function buildColumnStacks(assignments: ColumnAssignment[]): Map<number, ColumnStack> {
+function buildColumnStacks(assignments: ColumnAssignment[], columnCount = GRID_COLUMNS): Map<number, ColumnStack> {
     const stacks = new Map<number, ColumnStack>();
 
     // Initialize empty stacks for all columns
-    for (let i = 0; i < GRID_COLUMNS; i++) {
+    for (let i = 0; i < columnCount; i++) {
         stacks.set(i, { columnIndex: i, placements: [] });
     }
 
     // Group assignments by column and compute Y positions
-    const columnY: number[] = new Array<number>(GRID_COLUMNS).fill(GRID_PADDING);
+    const columnY: number[] = new Array<number>(columnCount).fill(GRID_PADDING);
 
     for (const { node, column } of assignments) {
         const width = node.width ?? DEFAULT_NODE_WIDTH;
@@ -126,7 +127,7 @@ function findMaxRightEdgeOfOverlappingNeighbors(
  * Other columns use max right edge of overlapping neighbors + GAP,
  * or default column X if no overlaps.
  */
-function computeNeighborAwareX(stacks: Map<number, ColumnStack>): void {
+function computeNeighborAwareX(stacks: Map<number, ColumnStack>, columnCount = GRID_COLUMNS): void {
     // Column 0: all nodes at GRID_PADDING
     const col0 = stacks.get(0);
     if (col0) {
@@ -135,8 +136,8 @@ function computeNeighborAwareX(stacks: Map<number, ColumnStack>): void {
         }
     }
 
-    // Columns 1-3: compute based on overlapping neighbors
-    for (let colIdx = 1; colIdx < GRID_COLUMNS; colIdx++) {
+    // Columns 1..N-1: compute based on overlapping neighbors
+    for (let colIdx = 1; colIdx < columnCount; colIdx++) {
         const stack = stacks.get(colIdx);
         const leftStack = stacks.get(colIdx - 1);
 
@@ -164,29 +165,22 @@ function computeNeighborAwareX(stacks: Map<number, ColumnStack>): void {
  * Calculates the next position in a Masonry layout.
  * Finds the shortest column and stacks that place.
  */
-export function calculateMasonryPosition(nodes: CanvasNode[]): NodePosition {
+export function calculateMasonryPosition(nodes: CanvasNode[], columnCount = GRID_COLUMNS): NodePosition {
     const unpinned = nodes.filter((n) => !isNodePinned(n));
 
     if (unpinned.length === 0) {
         return { x: GRID_PADDING, y: GRID_PADDING };
     }
 
-    // Sort unpinned nodes by creation date
     const sorted = [...unpinned].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // Pass 1: Assign nodes to columns
-    const assignments = assignNodesToColumns(sorted);
+    const assignments = assignNodesToColumns(sorted, columnCount);
+    const stacks = buildColumnStacks(assignments, columnCount);
+    computeNeighborAwareX(stacks, columnCount);
 
-    // Pass 2: Build column stacks with Y positions
-    const stacks = buildColumnStacks(assignments);
-
-    // Pass 3: Compute neighbor-aware X positions
-    computeNeighborAwareX(stacks);
-
-    // Find shortest column for new node
-    const columnY: number[] = new Array<number>(GRID_COLUMNS).fill(GRID_PADDING);
+    const columnY: number[] = new Array<number>(columnCount).fill(GRID_PADDING);
     for (const { node, column } of assignments) {
         const height = node.height ?? DEFAULT_NODE_HEIGHT;
         const colY = columnY[column] ?? GRID_PADDING;
@@ -196,14 +190,11 @@ export function calculateMasonryPosition(nodes: CanvasNode[]): NodePosition {
     const targetCol = findShortestColumn(columnY);
     const targetY = columnY[targetCol] ?? GRID_PADDING;
 
-    // Calculate X for new node based on overlapping neighbors
     const leftStack = stacks.get(targetCol - 1);
-    const newNodeHeight = DEFAULT_NODE_HEIGHT; // New nodes use default height
+    const newNodeHeight = DEFAULT_NODE_HEIGHT;
 
     const maxRightEdge = findMaxRightEdgeOfOverlappingNeighbors(
-        leftStack,
-        targetY,
-        newNodeHeight
+        leftStack, targetY, newNodeHeight,
     );
 
     let targetX: number;
@@ -215,6 +206,9 @@ export function calculateMasonryPosition(nodes: CanvasNode[]): NodePosition {
         targetX = getDefaultColumnX(targetCol, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
     }
 
+    if (collidesWithAny(targetX, targetY, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, nodes)) {
+        return findNearestOpenSlot(targetX, targetY, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, nodes);
+    }
     return { x: targetX, y: targetY };
 }
 
@@ -228,28 +222,20 @@ export function calculateMasonryPosition(nodes: CanvasNode[]): NodePosition {
  *   Pass 3: Compute neighbor-aware X positions
  *   Pass 4: Map placements back, preserving input order
  */
-export function arrangeMasonry(nodes: CanvasNode[]): CanvasNode[] {
+export function arrangeMasonry(nodes: CanvasNode[], columnCount = GRID_COLUMNS): CanvasNode[] {
     if (nodes.length === 0) return [];
 
     const unpinned = nodes.filter((n) => !isNodePinned(n));
-
     if (unpinned.length === 0) return nodes;
 
-    // Sort unpinned by creation date
     const sorted = [...unpinned].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // Pass 1: Assign unpinned nodes to columns
-    const assignments = assignNodesToColumns(sorted);
+    const assignments = assignNodesToColumns(sorted, columnCount);
+    const stacks = buildColumnStacks(assignments, columnCount);
+    computeNeighborAwareX(stacks, columnCount);
 
-    // Pass 2: Build column stacks with Y positions
-    const stacks = buildColumnStacks(assignments);
-
-    // Pass 3: Compute neighbor-aware X positions
-    computeNeighborAwareX(stacks);
-
-    // Pass 4: Create placement lookup by node ID
     const placementMap = new Map<string, NodePlacement>();
     for (const stack of stacks.values()) {
         for (const placement of stack.placements) {
@@ -257,7 +243,6 @@ export function arrangeMasonry(nodes: CanvasNode[]): CanvasNode[] {
         }
     }
 
-    // Map over original array to preserve input order
     return nodes.map((node) => {
         if (isNodePinned(node)) return node;
 
@@ -281,7 +266,28 @@ export function arrangeMasonry(nodes: CanvasNode[]): CanvasNode[] {
  */
 export function rearrangeAfterResize(
     nodes: CanvasNode[],
-    _resizedNodeId: string
+    _resizedNodeId: string,
+    columnCount = GRID_COLUMNS,
 ): CanvasNode[] {
-    return arrangeMasonry(nodes);
+    return arrangeMasonry(nodes, columnCount);
+}
+
+/**
+ * Computes column assignments for each node (used by stagger animation).
+ * @returns Map of nodeId to column index
+ */
+export function computeColumnAssignments(
+    nodes: CanvasNode[],
+    columnCount = GRID_COLUMNS,
+): Map<string, number> {
+    const unpinned = nodes.filter((n) => !isNodePinned(n));
+    const sorted = [...unpinned].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    const assignments = assignNodesToColumns(sorted, columnCount);
+    const result = new Map<string, number>();
+    for (const { node, column } of assignments) {
+        result.set(node.id, column);
+    }
+    return result;
 }

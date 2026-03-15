@@ -11,6 +11,7 @@ import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useConfirmStore } from '@/shared/stores/confirmStore';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
+import { logger } from '@/shared/services/logger';
 
 export function useDocumentGroupHandlers() {
     const handleToggleGroup = useCallback(async (parentId: string) => {
@@ -29,7 +30,7 @@ export function useDocumentGroupHandlers() {
             const updates = affected.map((e) => ({ entryId: e.id, enabled: e.enabled }));
             await updateKBEntryBatch(userId, workspaceId, updates);
         } catch (error) {
-            console.error('KB group toggle persist failed', error);
+            logger.error('KB group toggle persist failed', error);
             useKnowledgeBankStore.getState().toggleDocumentGroup(parentId);
             toast.error(strings.knowledgeBank.errors.saveFailed);
         }
@@ -67,7 +68,7 @@ export function useDocumentGroupHandlers() {
             );
             await Promise.allSettled(storageCleanups);
         } catch (error) {
-            console.error('KB group delete failed', error);
+            logger.error('KB group delete failed', error);
             toast.error(kb.errors.deleteFailed);
         }
     }, []);

@@ -14,6 +14,10 @@ import {
     validatePlacement,
     validateActionList,
 } from './iconRegistry';
+import { type GridColumnsPreference, VALID_GRID_COLUMNS } from '@/features/canvas/services/gridColumnsResolver';
+
+export type { GridColumnsPreference };
+export { VALID_GRID_COLUMNS };
 
 export type ThemeOption = 'light' | 'dark' | 'system' | 'sepia' | 'grey' | 'darkBlack';
 type ResolvedTheme = 'light' | 'dark' | 'sepia' | 'grey' | 'darkBlack';
@@ -42,6 +46,7 @@ const STORAGE_KEYS = {
     connectorStyle: 'settings-connectorStyle',
     isCanvasLocked: 'settings-isCanvasLocked',
     canvasFreeFlow: 'settings-canvasFreeFlow',
+    gridColumns: 'settings-gridColumns',
     autoAnalyzeDocuments: 'settings-autoAnalyzeDocuments',
     lastSettingsTab: 'settings-lastSettingsTab',
     utilsBarIcons: 'settings-utilsBarIcons',
@@ -63,6 +68,7 @@ interface SettingsState {
     connectorStyle: ConnectorStyle;
     isCanvasLocked: boolean;
     canvasFreeFlow: boolean;
+    gridColumns: GridColumnsPreference;
     autoAnalyzeDocuments: boolean;
     lastSettingsTab: SettingsTabId;
     utilsBarIcons: ActionId[];
@@ -76,6 +82,7 @@ interface SettingsState {
     setConnectorStyle: (style: ConnectorStyle) => void;
     toggleCanvasLocked: () => void;
     toggleCanvasFreeFlow: () => void;
+    setGridColumns: (columns: GridColumnsPreference) => void;
     toggleAutoAnalyzeDocuments: () => void;
     setLastSettingsTab: (tab: SettingsTabId) => void;
     setUtilsBarIcons: (icons: ActionId[]) => void;
@@ -91,6 +98,22 @@ function clamp(value: number, min: number, max: number): number {
 
 function getClampedStorageItem(key: string, defaultVal: number, min: number, max: number): number {
     return clamp(getStorageItem<number>(key, defaultVal), min, max);
+}
+
+const DEFAULT_GRID_COLUMNS: GridColumnsPreference = 4;
+
+/** Loads gridColumns from localStorage, parsing mixed string/number type safely. */
+function loadGridColumnsFromStorage(): GridColumnsPreference {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEYS.gridColumns);
+        if (raw === null) return DEFAULT_GRID_COLUMNS;
+        if (raw === 'auto') return 'auto';
+        const num = Number(raw);
+        if (VALID_GRID_COLUMNS.includes(num as GridColumnsPreference)) return num as GridColumnsPreference;
+        return DEFAULT_GRID_COLUMNS;
+    } catch {
+        return DEFAULT_GRID_COLUMNS;
+    }
 }
 
 /** Build initial state values from localStorage (pure helper, no actions). */
@@ -109,6 +132,7 @@ function createInitialState() {
         connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'solid', VALID_CONNECTOR_STYLES),
         isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
         canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
+        gridColumns: loadGridColumnsFromStorage(),
         autoAnalyzeDocuments: getStorageItem<boolean>(STORAGE_KEYS.autoAnalyzeDocuments, true),
         lastSettingsTab: getValidatedStorageItem(STORAGE_KEYS.lastSettingsTab, 'appearance', VALID_SETTINGS_TABS),
         utilsBarIcons: placement.utilsBar,
@@ -121,7 +145,8 @@ function createSettingsActions(
     set: (partial: Partial<SettingsState>) => void,
     get: () => SettingsState,
 ): Omit<SettingsState, keyof ReturnType<typeof createInitialState>> {
-    const toggle = (key: 'canvasGrid' | 'compactMode' | 'isCanvasLocked' | 'canvasFreeFlow' | 'autoAnalyzeDocuments') => {
+    type SettingKey = 'canvasGrid' | 'compactMode' | 'isCanvasLocked' | 'canvasFreeFlow' | 'autoAnalyzeDocuments';
+    const toggle = (key: SettingKey) => {
         const v = !get()[key]; set({ [key]: v }); setStorageItem(STORAGE_KEYS[key], v); trackSettingsChanged(key, v);
     };
     return {
@@ -137,6 +162,10 @@ function createSettingsActions(
         setConnectorStyle: (style) => { set({ connectorStyle: style }); setStorageItem(STORAGE_KEYS.connectorStyle, style); trackSettingsChanged('connectorStyle', style); },
         toggleCanvasLocked: () => toggle('isCanvasLocked'),
         toggleCanvasFreeFlow: () => toggle('canvasFreeFlow'),
+        setGridColumns: (columns: GridColumnsPreference) => {
+            if (!VALID_GRID_COLUMNS.includes(columns)) return;
+            set({ gridColumns: columns }); setStorageItem(STORAGE_KEYS.gridColumns, columns); trackSettingsChanged('gridColumns', columns);
+        },
         toggleAutoAnalyzeDocuments: () => toggle('autoAnalyzeDocuments'),
         setUtilsBarIcons: (icons) => {
             const validated = validateActionList(icons, UTILS_BAR_MAX);

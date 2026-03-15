@@ -9,19 +9,19 @@ import { indexedDbService, IDB_STORES } from '@/shared/services/indexedDbService
 import { loadUserWorkspaces } from '@/features/workspace/services/workspaceService';
 import { getLastWorkspaceId } from '@/features/workspace/services/lastWorkspaceService';
 import type { CanvasBackground } from '@/features/workspace/types/workspace';
+import { logger } from '@/shared/services/logger';
 
 export function useWorkspaceLoading() {
-    const user = useAuthStore((s) => s.user);
+    const userId = useAuthStore((s) => s.user?.id);
 
     useEffect(() => {
-        if (!user) return;
-        const userId = user.id;
+        if (!userId) return;
+        const uid: string = userId;
 
         async function load() {
-            await workspaceCache.hydrateFromIdb();
             try {
-                const loaded = await loadUserWorkspaces(userId);
-                // Use getState() for actions - stable references, no re-render dependency
+                await workspaceCache.hydrateFromIdb();
+                const loaded = await loadUserWorkspaces(uid);
                 useWorkspaceStore.getState().setWorkspaces(loaded);
 
                 const metadata = loaded.map(ws => ({
@@ -32,13 +32,14 @@ export function useWorkspaceLoading() {
                     backgroundColor: ws.canvasSettings.backgroundColor,
                     updatedAt: Date.now(),
                 }));
-                void indexedDbService.put(IDB_STORES.metadata, '__workspace_metadata__', metadata);
+                indexedDbService
+                    .put(IDB_STORES.metadata, '__workspace_metadata__', metadata)
+                    .catch((err: unknown) => logger.warn('[useWorkspaceLoading] IDB write failed:', err));
 
                 const currentId = useWorkspaceStore.getState().currentWorkspaceId;
                 const firstReal = loaded.find(ws => ws.type !== 'divider');
 
                 if (!loaded.some(ws => ws.id === currentId)) {
-                    // Prefer the last workspace from the previous session
                     const lastId = getLastWorkspaceId();
                     if (lastId && loaded.some(ws => ws.id === lastId)) {
                         useWorkspaceStore.getState().setCurrentWorkspaceId(lastId);
@@ -48,12 +49,12 @@ export function useWorkspaceLoading() {
                 }
 
                 if (loaded.length > 0) {
-                    void workspaceCache.preload(userId, loaded.map(ws => ws.id)).catch((err: unknown) => {
-                        console.warn('[useWorkspaceLoading] Cache preload failed:', err);
+                    workspaceCache.preload(uid, loaded.map(ws => ws.id)).catch((err: unknown) => {
+                        logger.warn('[useWorkspaceLoading] Cache preload failed:', err);
                     });
                 }
             } catch (error) {
-                console.error('[useWorkspaceLoading] Failed to load workspaces:', error);
+                logger.error('[useWorkspaceLoading] Failed to load workspaces:', error);
                 const cached = await indexedDbService.get<Array<{
                     id: string;
                     name: string;
@@ -65,7 +66,7 @@ export function useWorkspaceLoading() {
                 if (cached?.length) {
                     useWorkspaceStore.getState().setWorkspaces(cached.map(m => ({
                         id: m.id,
-                        userId,
+                        userId: uid,
                         name: m.name,
                         type: (m.type ?? 'workspace') as 'workspace' | 'divider',
                         orderIndex: m.orderIndex ?? 0,
@@ -77,5 +78,5 @@ export function useWorkspaceLoading() {
             }
         }
         void load();
-    }, [user]);
+    }, [userId]);
 }

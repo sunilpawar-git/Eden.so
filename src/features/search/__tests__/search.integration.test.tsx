@@ -2,8 +2,8 @@
  * Search Integration Tests
  * TDD: Tests for complete search flow including node selection
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { Layout } from '@/app/components/Layout';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -17,6 +17,7 @@ vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
 
 describe('Search Integration', () => {
     beforeEach(() => {
+        vi.useFakeTimers();
         useCanvasStore.setState({
             nodes: [
                 {
@@ -54,6 +55,8 @@ describe('Search Integration', () => {
         });
     });
 
+    afterEach(() => { vi.useRealTimers(); });
+
     it('should select node when clicking search result', () => {
         render(
             <Layout onSettingsClick={() => { }}>
@@ -63,8 +66,8 @@ describe('Search Integration', () => {
 
         const input = screen.getByPlaceholderText(/search/i);
         fireEvent.change(input, { target: { value: 'React' } });
+        act(() => { vi.advanceTimersByTime(300); });
 
-        // Results rendered as role="option" items with highlighted text
         const resultItems = screen.getAllByRole('option');
         expect(resultItems.length).toBeGreaterThanOrEqual(1);
 
@@ -88,6 +91,7 @@ describe('Search Integration', () => {
 
         const input = screen.getByPlaceholderText(/search/i);
         fireEvent.change(input, { target: { value: 'React' } });
+        act(() => { vi.advanceTimersByTime(300); });
 
         const resultItems = screen.getAllByRole('option');
         fireEvent.click(resultItems[0]!);
@@ -129,6 +133,7 @@ describe('Search Integration', () => {
 
         const input = screen.getByPlaceholderText(/search/i);
         fireEvent.change(input, { target: { value: 'React' } });
+        act(() => { vi.advanceTimersByTime(300); });
 
         const resultItems = screen.getAllByRole('option');
         fireEvent.click(resultItems[0]!);

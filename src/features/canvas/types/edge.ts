@@ -7,6 +7,8 @@ export type RelationshipType = 'related' | 'derived';
 export interface CanvasEdge {
     id: string;
     workspaceId: string;
+    /** Denormalized for auditability — path-based auth is primary */
+    userId?: string;
     sourceNodeId: string;
     targetNodeId: string;
     relationshipType: RelationshipType;

@@ -9,6 +9,7 @@ import type { SummarizeCallbacks } from './summarizeEntries';
 import { summarizeEntries } from './summarizeEntries';
 import { summarizeDocument } from './documentSummarizer';
 import { updateKBEntry } from './knowledgeBankService';
+import { logger } from '@/shared/services/logger';
 
 /**
  * Run full summarization pipeline after upload.
@@ -44,6 +45,6 @@ export async function runPostUploadSummarization(
             });
         }
     } catch (error) {
-        console.warn('Post-upload summarization failed', error);
+        logger.warn('Post-upload summarization failed', error);
     }
 }

@@ -6,6 +6,8 @@ export const searchStrings = {
     placeholder: 'Search notes...',
     noResults: 'No results found',
     resultsCount: 'results',
+    searchIcon: '🔍',
+    filterIcon: '⚙',
     prompt: 'Prompt',
     heading: 'Heading',
     output: 'Output',

@@ -1,6 +1,7 @@
 /**
  * useArrangeAnimation Hook Tests (TDD-first)
- * Verifies data-arranging attribute lifecycle for CSS transition animations
+ * Verifies data-arranging attribute lifecycle for CSS transition animations,
+ * unmount cleanup, and dynamic total animation time tracking.
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
@@ -20,11 +21,12 @@ describe('useArrangeAnimation', () => {
         document.body.removeChild(containerDiv);
     });
 
-    it('should return an animatedArrange function', () => {
+    it('should return an animatedArrange function and lastTotalAnimMsRef', () => {
         const mockArrange = vi.fn();
         const ref = { current: containerDiv };
         const { result } = renderHook(() => useArrangeAnimation(ref, mockArrange));
         expect(typeof result.current.animatedArrange).toBe('function');
+        expect(result.current.lastTotalAnimMsRef).toBeDefined();
     });
 
     it('should set data-arranging attribute when called', () => {
@@ -66,5 +68,20 @@ describe('useArrangeAnimation', () => {
 
         act(() => { result.current.animatedArrange(); });
         expect(mockArrange).toHaveBeenCalledOnce();
+    });
+
+    it('should clear cleanup timer on unmount', () => {
+        const mockArrange = vi.fn();
+        const ref = { current: containerDiv };
+        const { result, unmount } = renderHook(() => useArrangeAnimation(ref, mockArrange));
+
+        act(() => { result.current.animatedArrange(); });
+        expect(containerDiv.getAttribute('data-arranging')).toBe('true');
+
+        unmount();
+
+        act(() => { vi.advanceTimersByTime(500); });
+        // data-arranging attribute stays because the cleanup timer was cleared
+        expect(containerDiv.getAttribute('data-arranging')).toBe('true');
     });
 });

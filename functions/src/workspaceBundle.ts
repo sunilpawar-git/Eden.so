@@ -1,0 +1,32 @@
+/**
+ * Cloud Function: workspaceBundle
+ * Generates a Firestore Bundle containing workspace list metadata for a user.
+ * Clients call this to get a prepackaged, cacheable snapshot of workspace metadata.
+ */
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getFirestore } from 'firebase-admin/firestore';
+import { WORKSPACE_LIST_CAP } from './constants';
+
+const WORKSPACE_LIST_QUERY = 'workspace-list';
+const BUNDLE_MAX_AGE_S = 300;
+
+export const workspaceBundle = onCall({ minInstances: 0 }, async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Authentication required');
+
+    const db = getFirestore();
+    const workspacesRef = db.collection('users').doc(uid).collection('workspaces');
+    const snapshot = await workspacesRef.limit(WORKSPACE_LIST_CAP).get();
+
+    const bundle = db.bundle(`user-${uid}-workspaces`);
+    bundle.add(WORKSPACE_LIST_QUERY, snapshot);
+
+    const buffer = bundle.build();
+
+    return {
+        bundle: Buffer.from(buffer).toString('base64'),
+        queryName: WORKSPACE_LIST_QUERY,
+        maxAgeSeconds: BUNDLE_MAX_AGE_S,
+        docCount: snapshot.size,
+    };
+});
