@@ -4,6 +4,7 @@
  * that lack the userId field (simulating legacy documents).
  */
 import { describe, it, expect, vi } from 'vitest';
+import { loadNodes, loadEdges } from '../services/workspaceService';
 
 const mockGetDocs = vi.fn();
 
@@ -31,8 +32,6 @@ vi.mock('@/config/firebase', () => ({
 vi.mock('@/shared/localization/strings', () => ({
     strings: { workspace: { untitled: 'Untitled' }, errors: {} },
 }));
-
-import { loadNodes, loadEdges } from '../services/workspaceService';
 
 describe('Backward compatibility — documents without userId', () => {
     it('loadNodes works with legacy documents lacking userId', async () => {

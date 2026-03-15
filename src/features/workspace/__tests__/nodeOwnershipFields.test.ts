@@ -3,6 +3,9 @@
  * Verifies that userId and workspaceId are written to Firestore node/edge documents.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { appendNode, saveNodes, saveEdges } from '../services/workspaceService';
+import type { CanvasNode } from '@/features/canvas/types/node';
+import type { CanvasEdge } from '@/features/canvas/types/edge';
 
 const mockSetDoc = vi.fn().mockResolvedValue(undefined);
 const mockGetDocs = vi.fn().mockResolvedValue({ docs: [], size: 0 });
@@ -39,10 +42,6 @@ vi.mock('@/config/firebase', () => ({
 vi.mock('@/shared/localization/strings', () => ({
     strings: { workspace: { untitled: 'Untitled' }, errors: {} },
 }));
-
-import { appendNode, saveNodes, saveEdges } from '../services/workspaceService';
-import type { CanvasNode } from '@/features/canvas/types/node';
-import type { CanvasEdge } from '@/features/canvas/types/edge';
 
 const TEST_USER_ID = 'user-123';
 const TEST_WORKSPACE_ID = 'ws-456';

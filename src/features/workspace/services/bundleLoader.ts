@@ -51,7 +51,7 @@ export async function loadWorkspaceBundle(): Promise<ReturnType<typeof getDocs> 
         if (cached) {
             bundleData = cached.data;
         } else {
-            const callable = httpsCallable<void, BundleResponse>(functions, 'workspaceBundle');
+            const callable = httpsCallable<undefined, BundleResponse>(functions, 'workspaceBundle');
             const result = await callable();
             bundleData = result.data.bundle;
             sessionStorage.setItem(BUNDLE_CACHE_KEY, JSON.stringify({
@@ -64,7 +64,7 @@ export async function loadWorkspaceBundle(): Promise<ReturnType<typeof getDocs> 
         await loadBundle(db, bytes);
         const q = await namedQuery(db, 'workspace-list');
         if (!q) return null;
-        return getDocs(q);
+        return await getDocs(q);
     } catch (err) {
         logger.warn('[bundleLoader] Bundle load failed, falling back to queries', err);
         return null;

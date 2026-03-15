@@ -10,19 +10,16 @@ import { captureError } from '@/shared/services/sentryService';
 
 export const logger = {
     error(message: string, error?: unknown, context?: Record<string, unknown>): void {
-        // eslint-disable-next-line no-console
         console.error(message, ...(error !== undefined ? [error] : []));
         const err = error instanceof Error ? error : new Error(message);
         captureError(err, context);
     },
 
     warn(message: string, ...args: unknown[]): void {
-        // eslint-disable-next-line no-console
         console.warn(message, ...args);
     },
 
     info(message: string, ...args: unknown[]): void {
-        // eslint-disable-next-line no-console
         console.info(message, ...args);
     },
 } as const;

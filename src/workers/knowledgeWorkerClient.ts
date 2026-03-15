@@ -14,7 +14,7 @@ interface ClusterResult {
     unclustered: readonly string[];
 }
 
-type PendingResolver = { resolve: (value: unknown) => void; reject: (err: Error) => void };
+interface PendingResolver { resolve: (value: unknown) => void; reject: (err: Error) => void }
 
 let worker: Worker | null = null;
 const pending = new Map<string, PendingResolver>();

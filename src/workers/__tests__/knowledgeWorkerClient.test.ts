@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { computeClustersAsync, rankEntriesAsync, terminateWorker } from '../knowledgeWorkerClient';
+import type { CanvasNode } from '@/features/canvas/types/node';
 
 vi.mock('@/features/clustering/services/similarityService', () => ({
     computeClusters: vi.fn(() => ({ clusters: [], unclustered: [] })),
@@ -11,9 +13,6 @@ vi.mock('@/features/knowledgeBank/services/relevanceScorer', () => ({
 vi.mock('@/shared/services/logger', () => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
-
-import { computeClustersAsync, rankEntriesAsync, terminateWorker } from '../knowledgeWorkerClient';
-import type { CanvasNode } from '@/features/canvas/types/node';
 
 describe('knowledgeWorkerClient (main-thread fallback)', () => {
     beforeEach(() => {

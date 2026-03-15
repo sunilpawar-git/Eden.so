@@ -15,7 +15,6 @@ const ENV = import.meta.env.VITE_APP_ENV ?? import.meta.env.MODE;
 export function initSentry(): void {
     if (!DSN) {
         if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console -- logger imports sentryService, avoid circular dependency
             console.info('[Sentry] VITE_SENTRY_DSN not set — skipping initialization.');
         }
         return;
