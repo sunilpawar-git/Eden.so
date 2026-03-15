@@ -94,27 +94,80 @@ export const CoachMark = React.memo(function CoachMark(props: CoachMarkProps) {
             <div
                 ref={markRef}
                 className={clsx(
-                    'fixed z-[calc(var(--z-modal)+1)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl p-6 max-w-[280px] shadow-[0_8px_24px_rgba(0,0,0,0.2)] pointer-events-auto outline-none',
+                    'fixed z-[calc(var(--z-modal)+1)] bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[0_8px_24px_rgba(0,0,0,0.2)] pointer-events-auto outline-none',
                     arrowClasses[placement]
                 )}
-                style={computePosition(rect, placement)}
+                style={{ ...computePosition(rect, placement), maxWidth: 280, padding: 'var(--space-lg)' }}
                 role="dialog"
                 aria-modal="true"
                 aria-label={title}
                 tabIndex={-1}
                 data-testid="coach-mark"
             >
-                <span className="text-[var(--color-text-muted)] text-[var(--font-size-xs)] block mb-1">{stepLabel}</span>
-                <h3 className="text-[var(--color-text-primary)] text-[var(--font-size-md)] font-semibold m-0 mb-1">{title}</h3>
-                <p className="text-[var(--color-text-secondary)] text-[var(--font-size-sm)] leading-[var(--line-height-normal)] m-0">{description}</p>
+                {/* Step label */}
+                <span
+                    className="block text-[var(--color-text-muted)]"
+                    style={{ fontSize: 'var(--font-size-xs)', marginBottom: 'var(--space-xs)' }}
+                >
+                    {stepLabel}
+                </span>
+
+                {/* Title */}
+                <h3
+                    className="font-semibold text-[var(--color-text-primary)]"
+                    style={{ fontSize: 'var(--font-size-base)', margin: '0 0 var(--space-xs)' }}
+                >
+                    {title}
+                </h3>
+
+                {/* Description */}
+                <p
+                    className="text-[var(--color-text-secondary)]"
+                    style={{ fontSize: 'var(--font-size-sm)', lineHeight: 'var(--line-height-normal)', margin: 0 }}
+                >
+                    {description}
+                </p>
+
+                {/* Try prompt */}
                 {tryPrompt && (
-                    <p className="mt-1 py-1 px-2 bg-[var(--color-primary-light)] rounded-sm text-[var(--color-primary)] text-[var(--font-size-xs)] font-medium mb-0" data-testid="try-prompt">{tryPrompt}</p>
+                    <p
+                        className="text-[var(--color-primary)] font-medium rounded-sm"
+                        style={{
+                            marginTop: 'var(--space-xs)',
+                            marginBottom: 0,
+                            padding: 'var(--space-xs) var(--space-sm)',
+                            background: 'var(--color-primary-light)',
+                            fontSize: 'var(--font-size-xs)',
+                        }}
+                        data-testid="try-prompt"
+                    >
+                        {tryPrompt}
+                    </p>
                 )}
-                <div className="flex justify-between items-center gap-2 mt-4">
-                    <button className="bg-transparent text-[var(--color-text-muted)] border-none text-[var(--font-size-sm)] cursor-pointer p-0 hover:text-[var(--color-text-secondary)]" onClick={handleSkip} type="button">
+
+                {/* Actions */}
+                <div
+                    className="flex justify-between items-center"
+                    style={{ gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}
+                >
+                    <button
+                        className="bg-transparent text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-secondary)]"
+                        style={{ border: 'none', fontSize: 'var(--font-size-sm)', padding: 0 }}
+                        onClick={handleSkip}
+                        type="button"
+                    >
                         {skipLabel}
                     </button>
-                    <button className="bg-[var(--color-primary)] text-[var(--color-text-on-primary)] border-none rounded-md py-1 px-4 text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]" onClick={handleNext} type="button">
+                    <button
+                        className="bg-[var(--color-primary)] text-[var(--color-text-on-primary)] font-medium rounded-md cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]"
+                        style={{
+                            border: 'none',
+                            padding: 'var(--space-xs) var(--space-md)',
+                            fontSize: 'var(--font-size-sm)',
+                        }}
+                        onClick={handleNext}
+                        type="button"
+                    >
                         {nextLabel}
                     </button>
                 </div>

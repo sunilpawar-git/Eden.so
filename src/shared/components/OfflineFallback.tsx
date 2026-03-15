@@ -40,8 +40,8 @@ export function OfflineFallback({ hasOfflineData, onRetry }: OfflineFallbackProp
 
     return (
         <div className="flex items-center justify-center min-h-[60vh] p-[var(--space-xl)]" role="alert">
-            <div className="flex flex-col items-center text-center max-w-[400px] gap-4">
-                <div className="text-[var(--color-text-muted)] mb-2" aria-hidden="true">
+            <div className="flex flex-col items-center text-center max-w-[400px]" style={{ gap: 16 }}>
+                <div className="text-[var(--color-text-muted)]" style={{ marginBottom: 8 }} aria-hidden="true">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="1" y1="1" x2="23" y2="23" />
                         <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
@@ -54,7 +54,7 @@ export function OfflineFallback({ hasOfflineData, onRetry }: OfflineFallbackProp
                 </div>
                 <h2 className="text-[var(--font-size-xl)] font-semibold text-[var(--color-text-primary)] m-0">{title}</h2>
                 <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] leading-[var(--line-height-relaxed)] m-0">{message}</p>
-                <button className="bg-[var(--color-primary)] text-[var(--header-text)] border-none rounded-md py-2 px-6 text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out mt-2 hover:bg-[var(--color-primary-hover)]" onClick={onRetry}>
+                <button className="bg-[var(--color-primary)] text-[var(--header-text)] border-none rounded-md text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]" style={{ padding: '8px 24px', marginTop: 8 }} onClick={onRetry}>
                     {strings.offlineFallback.retryButton}
                 </button>
             </div>

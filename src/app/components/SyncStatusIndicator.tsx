@@ -64,8 +64,8 @@ export function SyncStatusIndicator() {
 
     return (
         <div
-            className="flex items-center py-1 px-2 text-xs text-[var(--color-text-secondary)] select-none min-w-[145px]"
-            style={{ gap: 'var(--sync-indicator-gap, 6px)' }}
+            className="flex items-center text-xs text-[var(--color-text-secondary)] select-none min-w-[145px]"
+            style={{ gap: 'var(--sync-indicator-gap, 6px)', padding: '4px 8px' }}
         >
             <span
                 data-testid="sync-dot"

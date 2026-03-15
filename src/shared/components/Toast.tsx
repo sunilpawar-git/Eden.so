@@ -23,19 +23,21 @@ export function ToastContainer() {
     if (toasts.length === 0) return null;
 
     return (
-        <div className="fixed bottom-[var(--space-xl)] left-1/2 -translate-x-1/2 z-[var(--z-toast)] flex flex-col gap-2">
+        <div className="fixed bottom-[var(--space-xl)] left-1/2 -translate-x-1/2 z-[var(--z-toast)] flex flex-col" style={{ gap: 8 }}>
             {toasts.map((t) => (
                 <div
                     key={t.id}
                     className={clsx(
-                        'flex items-center gap-4 py-4 px-6 rounded-xl shadow-[var(--shadow-lg)] animate-[slideUpSmall_0.3s_ease] min-w-[300px] max-w-[500px]',
+                        'flex items-center rounded-xl shadow-[var(--shadow-lg)] animate-[slideUpSmall_0.3s_ease] min-w-[300px] max-w-[500px]',
                         toastTypeClasses[t.type]
                     )}
+                    style={{ gap: 16, padding: '16px 24px' }}
                 >
                     <span className="flex-1 text-[var(--font-size-sm)]">{t.message}</span>
                     {t.action && (
                         <button
-                            className="text-[var(--font-size-sm)] font-semibold underline text-inherit opacity-90 py-1 px-2 rounded-sm whitespace-nowrap cursor-pointer hover:opacity-100 hover:bg-white/15"
+                            className="text-[var(--font-size-sm)] font-semibold underline text-inherit opacity-90 rounded-sm whitespace-nowrap cursor-pointer hover:opacity-100 hover:bg-white/15"
+                            style={{ padding: '4px 8px' }}
                             onClick={() => { t.action?.onClick(); handleRemove(t.id); }}
                         >
                             {t.action.label}

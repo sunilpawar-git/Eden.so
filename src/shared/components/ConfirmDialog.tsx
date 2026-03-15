@@ -30,18 +30,20 @@ export function ConfirmDialog() {
             role="presentation"
         >
             <div
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-xl)] p-[var(--space-xl)] max-w-[400px] w-[90%] animate-[slideUpSmall_0.15s_ease-out_forwards]"
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-xl)] max-w-[400px] w-[90%] animate-[slideUpSmall_0.15s_ease-out_forwards]"
+                style={{ padding: 'var(--space-xl)' }}
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="confirm-title"
                 aria-describedby="confirm-message"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 id="confirm-title" className="text-[var(--font-size-lg)] font-semibold text-[var(--color-text-primary)] mb-2">{title}</h2>
-                <p id="confirm-message" className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] mb-[var(--space-xl)] leading-normal">{message}</p>
-                <div className="flex justify-end gap-2">
+                <h2 id="confirm-title" className="text-[var(--font-size-lg)] font-semibold text-[var(--color-text-primary)]" style={{ marginBottom: 8 }}>{title}</h2>
+                <p id="confirm-message" className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] leading-normal" style={{ marginBottom: 'var(--space-xl)' }}>{message}</p>
+                <div className="flex justify-end" style={{ gap: 8 }}>
                     <button
-                        className="py-2 px-6 rounded-md text-[var(--font-size-sm)] font-medium text-[var(--color-text-secondary)] bg-transparent border border-[var(--color-border)] transition-all duration-150 ease-in-out hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                        className="rounded-md text-[var(--font-size-sm)] font-medium text-[var(--color-text-secondary)] bg-transparent border border-[var(--color-border)] transition-all duration-150 ease-in-out hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                        style={{ padding: '8px 24px' }}
                         onClick={handleCancel}
                         autoFocus
                     >
@@ -49,11 +51,12 @@ export function ConfirmDialog() {
                     </button>
                     <button
                         className={clsx(
-                            'py-2 px-6 rounded-md text-[var(--font-size-sm)] font-medium text-[var(--color-text-on-primary)] transition-colors duration-150 ease-in-out',
+                            'rounded-md text-[var(--font-size-sm)] font-medium text-[var(--color-text-on-primary)] transition-colors duration-150 ease-in-out',
                             isDestructive
                                 ? 'bg-[var(--color-error)] hover:bg-[var(--color-error-dark,var(--color-error))] hover:opacity-90'
                                 : 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]'
                         )}
+                        style={{ padding: '8px 24px' }}
                         onClick={handleConfirm}
                     >
                         {confirmText}

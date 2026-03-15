@@ -19,9 +19,10 @@ export function LoadingFallback({
     return (
         <div
             className={clsx(
-                'flex flex-col items-center justify-center gap-4 p-[var(--space-xl)] min-h-[200px]',
+                'flex flex-col items-center justify-center min-h-[200px]',
                 fullScreen && 'fixed inset-0 min-h-screen bg-[var(--color-background)] z-[var(--z-modal)]'
             )}
+            style={{ gap: 16, padding: 'var(--space-xl)' }}
         >
             <div className="w-8 h-8 border-3 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin" />
             <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)]">{message}</p>

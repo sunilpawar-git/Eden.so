@@ -40,12 +40,19 @@ export const SelectionToolbar = React.memo(function SelectionToolbar() {
 
     return (
         <>
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 py-2 px-4 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-[var(--z-dropdown)] animate-[toolbarIn_var(--transition-fast)_ease-out]" role="toolbar" aria-label={synthesisStrings.labels.synthesize} data-testid="selection-toolbar">
+            <div
+                className="fixed left-1/2 -translate-x-1/2 flex items-center bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-[var(--z-dropdown)] animate-[toolbarIn_var(--transition-fast)_ease-out]"
+                style={{ bottom: 24, gap: 8, padding: '8px 16px' }}
+                role="toolbar"
+                aria-label={synthesisStrings.labels.synthesize}
+                data-testid="selection-toolbar"
+            >
                 <span className="text-[var(--font-size-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">
                     {nodeCount} {synthesisStrings.labels.ideas}
                 </span>
                 <button
-                    className="inline-flex items-center gap-1 py-1 px-4 border-none rounded-md bg-[var(--node-status-synthesis)] text-[var(--color-text-on-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-all duration-150 ease-in-out whitespace-nowrap hover:enabled:opacity-[var(--opacity-hover-subtle)] disabled:opacity-[var(--opacity-disabled)] disabled:cursor-not-allowed"
+                    className="inline-flex items-center border-none rounded-md bg-[var(--node-status-synthesis)] text-[var(--color-text-on-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-all duration-150 ease-in-out whitespace-nowrap hover:enabled:opacity-[var(--opacity-hover-subtle)] disabled:opacity-[var(--opacity-disabled)] disabled:cursor-not-allowed"
+                    style={{ gap: 4, padding: '4px 16px' }}
                     onClick={handleOpenPopover}
                     disabled={isSynthesizing || !canSynthesize}
                     aria-haspopup="true"
@@ -55,10 +62,10 @@ export const SelectionToolbar = React.memo(function SelectionToolbar() {
                 >
                     {isSynthesizing ? synthesisStrings.labels.generating : synthesisStrings.labels.synthesize}
                 </button>
-                <button className="inline-flex items-center gap-1 py-1 px-4 border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out whitespace-nowrap hover:bg-[var(--color-surface-elevated)]" onClick={handleQuickCopy} type="button">
+                <button className="inline-flex items-center border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out whitespace-nowrap hover:bg-[var(--color-surface-elevated)]" style={{ gap: 4, padding: '4px 16px' }} onClick={handleQuickCopy} type="button">
                     {exportStrings.labels.copyBranch}
                 </button>
-                <button className="inline-flex items-center gap-1 py-1 px-4 border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out whitespace-nowrap hover:bg-[var(--color-surface-elevated)]" onClick={handleOpenExport} type="button">
+                <button className="inline-flex items-center border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out whitespace-nowrap hover:bg-[var(--color-surface-elevated)]" style={{ gap: 4, padding: '4px 16px' }} onClick={handleOpenExport} type="button">
                     {exportStrings.labels.exportSelection}
                 </button>
                 {isOpen && (

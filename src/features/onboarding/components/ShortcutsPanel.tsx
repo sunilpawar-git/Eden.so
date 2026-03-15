@@ -39,38 +39,86 @@ export const ShortcutsPanel = React.memo(function ShortcutsPanel({
 
     return createPortal(
         <>
+            {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/40 z-[var(--z-modal)] flex items-end justify-end p-6"
+                className="fixed inset-0 bg-black/40 z-[var(--z-modal)]"
                 onClick={onClose}
                 aria-hidden="true"
             />
+
+            {/* Panel */}
             <div
-                className="fixed bottom-6 right-6 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] min-w-[320px] max-w-[400px] overflow-hidden z-[calc(var(--z-modal)+1)]"
+                className="fixed bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] overflow-hidden z-[calc(var(--z-modal)+1)]"
+                style={{
+                    bottom: 'var(--space-lg)',
+                    right: 'var(--space-lg)',
+                    minWidth: 320,
+                    maxWidth: 400,
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                }}
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
                 aria-label={strings.onboarding.shortcutsPanelTitle}
                 data-testid="shortcuts-panel"
             >
-                <div className="flex items-center justify-between py-4 px-6 border-b border-[var(--color-border)]">
-                    <h2 className="text-[var(--color-text-primary)] text-[var(--font-size-md)] font-semibold m-0">{strings.onboarding.shortcutsPanelTitle}</h2>
-                    <button className="bg-transparent border-none text-[var(--color-text-muted)] text-[var(--font-size-sm)] cursor-pointer p-0.5 leading-none hover:text-[var(--color-text-secondary)]" onClick={onClose} type="button" aria-label="Close">
+                {/* Header */}
+                <div
+                    className="flex items-center justify-between border-b border-[var(--color-border)]"
+                    style={{ padding: 'var(--space-md) var(--space-lg)' }}
+                >
+                    <h2
+                        className="font-semibold text-[var(--color-text-primary)]"
+                        style={{ fontSize: 'var(--font-size-base)', margin: 0 }}
+                    >
+                        {strings.onboarding.shortcutsPanelTitle}
+                    </h2>
+                    <button
+                        className="bg-transparent text-[var(--color-text-muted)] cursor-pointer leading-none hover:text-[var(--color-text-secondary)]"
+                        style={{ border: 'none', fontSize: 'var(--font-size-sm)', padding: 'var(--space-xxs)' }}
+                        onClick={onClose}
+                        type="button"
+                        aria-label="Close"
+                    >
                         ✕
                     </button>
                 </div>
 
-                <ul className="list-none py-2 px-6 m-0 flex flex-col">
+                {/* Shortcut rows */}
+                <ul
+                    className="flex flex-col"
+                    style={{ listStyle: 'none', padding: 'var(--space-sm) var(--space-lg)', margin: 0 }}
+                >
                     {SHORTCUT_ROWS.map((row) => (
-                        <li key={row.action} className="flex items-center justify-between py-1 border-b border-[var(--color-border)] last:border-b-0">
-                            <span className="text-[var(--color-text-secondary)] text-[var(--font-size-sm)]">{row.action}</span>
-                            <kbd className="text-[var(--color-text-muted)] text-[var(--font-size-xs)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-sm py-0.5 px-1 font-[inherit]">{row.keys}</kbd>
+                        <li
+                            key={row.action}
+                            className="flex items-center justify-between border-b border-[var(--color-border)] last:border-b-0"
+                            style={{ padding: 'var(--space-xs) 0' }}
+                        >
+                            <span
+                                className="text-[var(--color-text-secondary)]"
+                                style={{ fontSize: 'var(--font-size-sm)' }}
+                            >
+                                {row.action}
+                            </span>
+                            <kbd
+                                className="text-[var(--color-text-muted)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-sm font-[inherit]"
+                                style={{ fontSize: 'var(--font-size-xs)', padding: 'var(--space-xxs) var(--space-xs)' }}
+                            >
+                                {row.keys}
+                            </kbd>
                         </li>
                     ))}
                 </ul>
 
-                <div className="py-4 px-6 border-t border-[var(--color-border)]">
+                {/* Footer */}
+                <div
+                    className="border-t border-[var(--color-border)]"
+                    style={{ padding: 'var(--space-md) var(--space-lg)' }}
+                >
                     <button
-                        className="bg-transparent border-none text-[var(--color-primary)] text-[var(--font-size-sm)] cursor-pointer p-0 hover:underline"
+                        className="bg-transparent text-[var(--color-primary)] cursor-pointer hover:underline"
+                        style={{ border: 'none', fontSize: 'var(--font-size-sm)', padding: 0 }}
                         onClick={onReplay}
                         type="button"
                         data-testid="replay-btn"

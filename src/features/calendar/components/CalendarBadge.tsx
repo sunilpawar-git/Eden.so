@@ -59,11 +59,12 @@ export const CalendarBadge = React.memo(({ metadata, onClick, onRetry }: Calenda
     return (
         <Tag
             className={clsx(
-                'inline-flex items-center gap-0.5 py-0.5 px-1 border border-[var(--color-border)] rounded-sm bg-[var(--color-surface-elevated)] cursor-pointer text-[var(--font-size-sm)] leading-[var(--line-height-tight)] transition-all duration-150 ease-in-out max-w-full overflow-hidden whitespace-nowrap hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-focus)]',
+                'inline-flex items-center border border-[var(--color-border)] rounded-sm bg-[var(--color-surface-elevated)] cursor-pointer text-[var(--font-size-sm)] leading-[var(--line-height-tight)] transition-all duration-150 ease-in-out max-w-full overflow-hidden whitespace-nowrap hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-focus)]',
                 typeBorderClass[type],
                 status === 'pending' && 'opacity-80',
                 status === 'failed' && 'border-[var(--color-error)]'
             )}
+            style={{ gap: 2, padding: '2px 4px' }}
             data-testid="calendar-badge"
             data-type={type}
             data-status={status}
@@ -77,7 +78,8 @@ export const CalendarBadge = React.memo(({ metadata, onClick, onRetry }: Calenda
             <span className="shrink-0 text-[var(--font-size-xs)]">{STATUS_ICONS[status] ?? DEFAULT_STATUS_ICON}</span>
             {(status === 'failed' || status === 'pending') && onRetry && (
                 <span
-                    className="shrink-0 px-0.5 border-none bg-transparent text-[var(--color-primary)] cursor-pointer text-[var(--font-size-sm)] font-bold rounded-sm hover:bg-[var(--color-primary-light)]"
+                    className="shrink-0 border-none bg-transparent text-[var(--color-primary)] cursor-pointer text-[var(--font-size-sm)] font-bold rounded-sm hover:bg-[var(--color-primary-light)]"
+                    style={{ padding: '0 2px' }}
                     onClick={handleRetryClick}
                     title={cs.badge.retry}
                     role="button"

@@ -76,8 +76,8 @@ export function PortalTooltip({
     const tooltip = (
         <div
             id={tooltipId}
-            className="fixed z-[var(--z-tooltip)] py-2 px-4 bg-[linear-gradient(135deg,var(--color-surface-elevated),var(--color-surface))] text-[var(--color-text-primary)] text-[var(--font-size-xs)] font-medium font-[var(--font-family)] whitespace-nowrap rounded-xl border border-[var(--color-border)] shadow-[var(--card-shadow)] pointer-events-none opacity-100 visible transition-opacity duration-150 ease-in-out flex items-center gap-1"
-            style={positionStyle}
+            className="fixed z-[var(--z-tooltip)] bg-[linear-gradient(135deg,var(--color-surface-elevated),var(--color-surface))] text-[var(--color-text-primary)] text-[var(--font-size-xs)] font-medium font-[var(--font-family)] whitespace-nowrap rounded-xl border border-[var(--color-border)] shadow-[var(--card-shadow)] pointer-events-none opacity-100 visible transition-opacity duration-150 ease-in-out flex items-center"
+            style={{ ...positionStyle, padding: '8px 16px', gap: 4 }}
             role="tooltip"
             data-testid="portal-tooltip"
         >

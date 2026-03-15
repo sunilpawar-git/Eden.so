@@ -58,7 +58,7 @@ export function Layout({ children, onSettingsClick }: LayoutProps) {
             <div className="layout-main-area flex-1 flex flex-col overflow-hidden">
                 <header
                     className="flex items-center gap-[var(--space-md)] bg-[var(--color-surface-elevated)] border-b border-[var(--color-border)] z-[var(--z-sticky)] shrink-0"
-                    style={{ padding: '18px 24px 18px 21px' }}
+                    style={{ padding: '10px 24px 10px 21px' }}
                 >
                     <KnowledgeBankAddButton />
                     <SearchBar ref={searchRef} onResultClick={handleSearchResultClick} />

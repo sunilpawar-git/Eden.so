@@ -50,14 +50,22 @@ export const SynthesisModePopover = React.memo(function SynthesisModePopover({
     );
 
     return (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-dropdown)] p-1 min-w-[200px] z-[var(--z-dropdown)] flex flex-col gap-0.5" role="listbox" aria-label={synthesisStrings.labels.synthesize} ref={listRef} onKeyDown={handleKeyDown}>
+        <div
+            className="absolute bottom-full left-1/2 -translate-x-1/2 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-dropdown)] min-w-[200px] z-[var(--z-dropdown)] flex flex-col"
+            style={{ marginBottom: 4, padding: 4, gap: 2 }}
+            role="listbox"
+            aria-label={synthesisStrings.labels.synthesize}
+            ref={listRef}
+            onKeyDown={handleKeyDown}
+        >
             {MODES.map((mode, idx) => (
                 <button
                     key={mode}
                     className={clsx(
-                        'flex flex-col items-start gap-0.5 py-2 px-4 border-none rounded-md bg-transparent cursor-pointer text-left w-full transition-colors duration-150 ease-in-out hover:bg-[var(--color-hover)] focus-visible:bg-[var(--color-hover)] focus-visible:outline-none',
+                        'flex flex-col items-start border-none rounded-md bg-transparent cursor-pointer text-left w-full transition-colors duration-150 ease-in-out hover:bg-[var(--color-hover)] focus-visible:bg-[var(--color-hover)] focus-visible:outline-none',
                         idx === focusIndex && 'bg-[var(--color-primary-light)]'
                     )}
+                    style={{ gap: 2, padding: '8px 16px' }}
                     role="option"
                     aria-selected={idx === focusIndex}
                     onClick={() => onSelect(mode)}

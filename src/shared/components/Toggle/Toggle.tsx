@@ -21,8 +21,8 @@ export const Toggle = React.memo(function Toggle({ checked, onChange, label, des
     const descriptionId = description ? `${id}-desc` : undefined;
 
     return (
-        <label className="flex items-start justify-between gap-4 cursor-pointer" htmlFor={id}>
-            <span className="flex flex-col gap-0.5 flex-1 min-w-0">
+        <label className="flex items-start justify-between cursor-pointer" style={{ gap: 16 }} htmlFor={id}>
+            <span className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
                 <span className="text-[var(--font-size-sm)] text-[var(--color-text-primary)]">{label}</span>
                 {description != null && (
                     <span id={descriptionId} className="text-[var(--font-size-xs)] text-[var(--color-text-muted)]">{description}</span>
@@ -41,10 +41,11 @@ export const Toggle = React.memo(function Toggle({ checked, onChange, label, des
             />
             <span
                 className={clsx(
-                    'relative w-9 h-5 min-w-[36px] rounded-[10px] cursor-pointer p-0 transition-colors duration-150 ease-in-out shrink-0 mt-0.5 peer-focus-visible:outline-2 peer-focus-visible:outline-[var(--color-primary)] peer-focus-visible:outline-offset-2',
+                    'relative w-9 h-5 min-w-[36px] rounded-[10px] cursor-pointer transition-colors duration-150 ease-in-out shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-[var(--color-primary)] peer-focus-visible:outline-offset-2',
                     checked ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]',
                     disabled && 'opacity-50 cursor-not-allowed'
                 )}
+                style={{ padding: 0, marginTop: 2 }}
                 aria-hidden="true"
             >
                 <span

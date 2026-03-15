@@ -23,25 +23,75 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onDismiss }: We
             aria-labelledby="onboarding-welcome-title"
             data-testid="welcome-screen"
         >
-            <div className="max-w-[560px] w-full p-[var(--space-2xl)] flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                    <span className="text-[var(--color-text-primary)] text-[var(--font-size-lg)] font-bold tracking-[-0.01em]">{strings.app.name}</span>
+            <div
+                className="flex flex-col w-full"
+                style={{ maxWidth: 560, padding: 'var(--space-2xl)', gap: 'var(--space-md)' }}
+            >
+                {/* Logo row */}
+                <div className="flex items-center" style={{ gap: 'var(--space-sm)' }}>
+                    <span
+                        className="font-bold text-[var(--color-text-primary)]"
+                        style={{ fontSize: 'var(--font-size-lg)', letterSpacing: '-0.01em' }}
+                    >
+                        {strings.app.name}
+                    </span>
                 </div>
 
-                <span className="inline-block text-[var(--color-primary)] border border-[var(--color-primary)] rounded-full py-0.5 px-2 text-[var(--font-size-xs)] self-start">{strings.onboarding.welcome.earlyAccess}</span>
+                {/* Early access badge */}
+                <span
+                    className="inline-block self-start text-[var(--color-primary)] rounded-full"
+                    style={{
+                        border: '1px solid var(--color-primary)',
+                        padding: 'var(--space-xxs) var(--space-sm)',
+                        fontSize: 'var(--font-size-xs)',
+                    }}
+                >
+                    {strings.onboarding.welcome.earlyAccess}
+                </span>
 
-                <h1 id="onboarding-welcome-title" className="text-[var(--color-text-primary)] text-[var(--font-size-2xl)] font-bold leading-[var(--line-height-tight)] m-0">{strings.onboarding.welcome.title}</h1>
+                {/* Title */}
+                <h1
+                    id="onboarding-welcome-title"
+                    className="font-bold text-[var(--color-text-primary)]"
+                    style={{ fontSize: 'var(--font-size-2xl)', lineHeight: 'var(--line-height-tight)', margin: 0 }}
+                >
+                    {strings.onboarding.welcome.title}
+                </h1>
 
-                <p className="text-[var(--color-text-secondary)] text-[var(--font-size-sm)] m-0">{strings.onboarding.welcome.intro}</p>
+                {/* Intro */}
+                <p
+                    className="text-[var(--color-text-secondary)]"
+                    style={{ fontSize: 'var(--font-size-sm)', margin: 0 }}
+                >
+                    {strings.onboarding.welcome.intro}
+                </p>
 
-                <ul className="text-[var(--color-text-secondary)] text-[var(--font-size-sm)] leading-[var(--line-height-relaxed)] list-disc pl-6 m-0 flex flex-col gap-1">
+                {/* Bullets */}
+                <ul
+                    className="text-[var(--color-text-secondary)] flex flex-col"
+                    style={{
+                        fontSize: 'var(--font-size-sm)',
+                        lineHeight: 'var(--line-height-relaxed)',
+                        listStyle: 'disc',
+                        paddingLeft: 'var(--space-lg)',
+                        margin: 0,
+                        gap: 'var(--space-xs)',
+                    }}
+                >
                     <li>{strings.onboarding.welcome.bullet1}</li>
                     <li>{strings.onboarding.welcome.bullet2}</li>
                     <li>{strings.onboarding.welcome.bullet3}</li>
                 </ul>
 
+                {/* CTA */}
                 <button
-                    className="self-start bg-[var(--color-primary)] text-[var(--color-text-on-primary)] border-none rounded-md py-2 px-[var(--space-xl)] text-[var(--font-size-md)] font-medium cursor-pointer mt-2 transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]"
+                    className="self-start bg-[var(--color-primary)] text-[var(--color-text-on-primary)] font-medium cursor-pointer rounded-md transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]"
+                    style={{
+                        border: 'none',
+                        padding: 'var(--space-sm) var(--space-xl)',
+                        fontSize: 'var(--font-size-base)',
+                        marginTop: 'var(--space-sm)',
+                    }}
                     onClick={onDismiss}
                     autoFocus
                     type="button"

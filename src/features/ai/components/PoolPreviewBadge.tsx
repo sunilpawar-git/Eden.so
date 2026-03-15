@@ -19,7 +19,8 @@ export const PoolPreviewBadge = React.memo(function PoolPreviewBadge({
 
     return (
         <span
-            className="absolute -top-1 -right-1 min-w-4 h-4 px-[4px] py-0 rounded-lg bg-[var(--color-pool-active)] text-[var(--color-text-on-primary)] text-[10px] font-semibold leading-[16px] text-center pointer-events-none shadow-[0_1px_3px_hsla(0,0%,0%,0.2)]"
+            className="absolute -top-1 -right-1 min-w-4 h-4 rounded-lg bg-[var(--color-pool-active)] text-[var(--color-text-on-primary)] text-[10px] font-semibold leading-[16px] text-center pointer-events-none shadow-[0_1px_3px_hsla(0,0%,0%,0.2)]"
+            style={{ paddingLeft: 4, paddingRight: 4 }}
             aria-label={strings.nodePool.poolPreview(pooledCount, totalCount)}
             title={strings.nodePool.poolPreview(pooledCount, totalCount)}
         >

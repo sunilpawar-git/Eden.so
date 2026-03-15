@@ -14,15 +14,15 @@ export function UpgradePrompt({ featureName, onDismiss, onUpgrade }: UpgradeProm
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-[hsla(0,0%,0%,0.4)] z-[var(--z-modal)]" role="dialog" aria-modal="true">
             <div className="bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-xl)] p-[var(--space-xl)] max-w-[400px] w-[90%] shadow-[var(--shadow-xl)] text-center">
-                <h3 className="text-[var(--font-size-lg)] font-semibold text-[var(--color-text-primary)] mb-2">{strings.subscription.upgradeTitle}</h3>
-                <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] leading-[var(--line-height-relaxed)] mb-6">
+                <h3 className="text-[var(--font-size-lg)] font-semibold text-[var(--color-text-primary)]" style={{ marginBottom: 8 }}>{strings.subscription.upgradeTitle}</h3>
+                <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] leading-[var(--line-height-relaxed)]" style={{ marginBottom: 24 }}>
                     {strings.subscription.upgradeMessage} {featureName}
                 </p>
-                <div className="flex flex-col gap-2">
-                    <button className="bg-[var(--color-primary)] text-[var(--header-text)] border-none rounded-md py-2 px-6 text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]" onClick={onUpgrade}>
+                <div className="flex flex-col" style={{ gap: 8 }}>
+                    <button className="bg-[var(--color-primary)] text-[var(--header-text)] border-none rounded-md text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]" style={{ padding: '8px 24px' }} onClick={onUpgrade}>
                         {strings.subscription.upgradeCta}
                     </button>
-                    <button className="bg-transparent border-none text-[var(--color-text-secondary)] text-[var(--font-size-sm)] cursor-pointer p-1 hover:text-[var(--color-text-primary)]" onClick={onDismiss}>
+                    <button className="bg-transparent border-none text-[var(--color-text-secondary)] text-[var(--font-size-sm)] cursor-pointer hover:text-[var(--color-text-primary)]" style={{ padding: 4 }} onClick={onDismiss}>
                         {strings.subscription.dismissUpgrade}
                     </button>
                 </div>
