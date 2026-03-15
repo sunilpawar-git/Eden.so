@@ -21,7 +21,7 @@ const getSubcollectionDocRef = (userId: string, workspaceId: string, sub: string
 
 /** Create a new workspace and save to Firestore */
 export async function createNewWorkspace(userId: string, name?: string): Promise<Workspace> {
-    const workspaceId = `workspace-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const workspaceId = `workspace-${crypto.randomUUID()}`;
     const workspace = createWorkspace(workspaceId, userId, name ?? strings.workspace.untitled);
     workspace.nodeCount = 0;
     await saveWorkspace(userId, workspace);
@@ -31,7 +31,7 @@ export async function createNewWorkspace(userId: string, name?: string): Promise
 
 /** Create a new divider and save to Firestore */
 export async function createNewDividerWorkspace(userId: string): Promise<Workspace> {
-    const workspaceId = `divider-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const workspaceId = `divider-${crypto.randomUUID()}`;
     const workspace = createDivider(workspaceId, userId);
     await saveWorkspace(userId, workspace);
     invalidateBundleCache();
@@ -83,38 +83,43 @@ function validateClusterGroups(raw: unknown[] | undefined): Workspace['clusterGr
         && typeof (item as Record<string, unknown>).colorIndex === 'number');
 }
 
-/** Load workspace from Firestore */
-export async function loadWorkspace(userId: string, workspaceId: string): Promise<Workspace | null> {
-    const workspaceRef = doc(db, 'users', userId, 'workspaces', workspaceId);
-    const snapshot = await getDoc(workspaceRef);
-    if (!snapshot.exists()) return null;
-    const data = snapshot.data() as WorkspaceDoc;
-    let nodeCount = data.nodeCount;
-
-    // Backfill node count for backward compatibility on legacy workspaces
-    if (nodeCount === undefined && data.type !== 'divider') {
-        try {
-            const nodesRef = getSubcollectionRef(userId, workspaceId, 'nodes');
-            const countSnapshot = await getCountFromServer(nodesRef);
-            nodeCount = countSnapshot.data().count;
-            // Fire-and-forget update to backfill the missing field
-            setDoc(workspaceRef, { nodeCount }, { merge: true })
-                .catch((err: unknown) => logger.error('[workspaceService] Failed to backfill nodeCount:', err));
-        } catch (error: unknown) {
-            logger.error('[workspaceService] Failed to get nodeCount for workspace', error, { workspaceId });
-            nodeCount = 0;
-        }
+async function backfillNodeCount(
+    userId: string, workspaceId: string, docRef: ReturnType<typeof doc>,
+): Promise<number> {
+    try {
+        const countSnap = await getCountFromServer(getSubcollectionRef(userId, workspaceId, 'nodes'));
+        const count = countSnap.data().count;
+        setDoc(docRef, { nodeCount: count }, { merge: true })
+            .catch((err: unknown) => logger.error('[workspaceService] Failed to backfill nodeCount:', err));
+        return count;
+    } catch (error: unknown) {
+        logger.error('[workspaceService] Failed to get nodeCount for workspace', error, { workspaceId });
+        return 0;
     }
+}
 
+function buildWorkspace(data: WorkspaceDoc, userId: string, nodeCount: number): Workspace {
     return migrateWorkspace({
         id: data.id, userId, name: data.name,
         canvasSettings: data.canvasSettings ?? { backgroundColor: 'grid' },
         createdAt: data.createdAt?.toDate?.() ?? new Date(),
         updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
         orderIndex: data.orderIndex ?? Date.now(), type: data.type ?? 'workspace',
-        nodeCount: nodeCount ?? 0, includeAllNodesInPool: data.includeAllNodesInPool ?? false,
+        nodeCount, includeAllNodesInPool: data.includeAllNodesInPool ?? false,
         clusterGroups: validateClusterGroups(data.clusterGroups),
     });
+}
+
+/** Load workspace from Firestore */
+export async function loadWorkspace(userId: string, workspaceId: string): Promise<Workspace | null> {
+    const workspaceRef = doc(db, 'users', userId, 'workspaces', workspaceId);
+    const snapshot = await getDoc(workspaceRef);
+    if (!snapshot.exists()) return null;
+    const data = snapshot.data() as WorkspaceDoc;
+    const nodeCount = data.nodeCount !== undefined || data.type === 'divider'
+        ? (data.nodeCount ?? 0)
+        : await backfillNodeCount(userId, workspaceId, workspaceRef);
+    return buildWorkspace(data, userId, nodeCount);
 }
 
 /** Load all workspaces for a user from Firestore (tries bundle first, falls back to direct query) */
@@ -126,46 +131,19 @@ export async function loadUserWorkspaces(userId: string): Promise<Workspace[]> {
     if (snapshot.size >= WORKSPACE_LIST_CAP) {
         logger.warn('[workspaceService] Workspace list cap reached', { cap: WORKSPACE_LIST_CAP });
     }
-
     const workspaces: Workspace[] = [];
-    const CHUNK_SIZE = 20; // Limit concurrent getCountFromServer calls
-
+    const CHUNK_SIZE = 20;
     for (let i = 0; i < snapshot.docs.length; i += CHUNK_SIZE) {
         const chunk = snapshot.docs.slice(i, i + CHUNK_SIZE);
-
-        const processedChunk = await Promise.all(chunk.map(async (docSnapshot) => {
-            const data = docSnapshot.data() as WorkspaceDoc;
-            let nodeCount = data.nodeCount;
-
-            // Backfill node count for backward compatibility on legacy workspaces
-            if (nodeCount === undefined && data.type !== 'divider') {
-                try {
-                    const nodesRef = getSubcollectionRef(userId, data.id, 'nodes');
-                    const countSnapshot = await getCountFromServer(nodesRef);
-                    nodeCount = countSnapshot.data().count;
-                    // Fire-and-forget update to backfill the missing field
-                    setDoc(docSnapshot.ref, { nodeCount }, { merge: true })
-                        .catch((err: unknown) => logger.error('[workspaceService] Failed to backfill nodeCount:', err));
-                } catch (error: unknown) {
-                    logger.error('[workspaceService] Failed to get nodeCount for workspace', error, { workspaceId: data.id });
-                    nodeCount = 0;
-                }
-            }
-
-            return migrateWorkspace({
-                id: data.id, userId, name: data.name,
-                canvasSettings: data.canvasSettings ?? { backgroundColor: 'grid' },
-                createdAt: data.createdAt?.toDate?.() ?? new Date(),
-                updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
-                orderIndex: data.orderIndex ?? Date.now(), type: data.type ?? 'workspace',
-                nodeCount: nodeCount ?? 0, includeAllNodesInPool: data.includeAllNodesInPool ?? false,
-                clusterGroups: validateClusterGroups(data.clusterGroups),
-            });
+        const processed = await Promise.all(chunk.map(async (docSnap) => {
+            const data = docSnap.data() as WorkspaceDoc;
+            const nodeCount = data.nodeCount !== undefined || data.type === 'divider'
+                ? (data.nodeCount ?? 0)
+                : await backfillNodeCount(userId, data.id, docSnap.ref as ReturnType<typeof doc>);
+            return buildWorkspace(data, userId, nodeCount);
         }));
-
-        workspaces.push(...processedChunk);
+        workspaces.push(...processed);
     }
-
     return workspaces;
 }
 
@@ -211,7 +189,10 @@ export async function saveNodes(userId: string, workspaceId: string, nodes: Canv
         nodes.forEach((node) => ops.push({ type: 'set', ref: getSubcollectionDocRef(userId, workspaceId, 'nodes', node.id), data: buildNodeDoc(node) }));
         await chunkedBatchWrite(ops as Parameters<typeof chunkedBatchWrite>[0]);
     }
-    if (deletedNodeData.length > 0) void cleanupDeletedNodeStorage(deletedNodeData);
+    if (deletedNodeData.length > 0) {
+        cleanupDeletedNodeStorage(deletedNodeData).catch((err: unknown) =>
+            logger.warn('[workspaceService] Storage cleanup failed:', err));
+    }
 }
 
 /** Save edges to Firestore with delete sync. Uses runTransaction when total ops fit, batch otherwise. */
@@ -288,7 +269,8 @@ export async function deleteWorkspace(userId: string, workspaceId: string): Prom
     const edgesRef = getSubcollectionRef(userId, workspaceId, 'edges');
     const nodeSnap = await getDocs(query(nodesRef, limit(FIRESTORE_QUERY_CAP)));
     const nodesToClean = nodeSnap.docs.map((d) => ({ id: d.id, data: (d.data() as Record<string, unknown>).data ?? {}, type: 'idea', position: { x: 0, y: 0 } }) as CanvasNode);
-    void cleanupDeletedNodeStorage(nodesToClean);
+    void cleanupDeletedNodeStorage(nodesToClean).catch((err: unknown) =>
+        logger.warn('[workspaceService] deleteWorkspace storage cleanup failed:', err));
     await batchDeleteCollection(nodesRef);
     await batchDeleteCollection(edgesRef);
     const batch = writeBatch(db);

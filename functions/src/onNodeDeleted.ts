@@ -6,8 +6,7 @@
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { logger } from 'firebase-functions/v2';
-
-const FIREBASE_STORAGE_HOST = 'firebasestorage.googleapis.com';
+import { FIREBASE_STORAGE_HOST } from './constants';
 
 interface AttachmentMeta {
     url?: string;

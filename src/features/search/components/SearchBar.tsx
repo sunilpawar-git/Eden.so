@@ -203,7 +203,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
                     onFocus={() => { if (inputValue.length > 0) setIsOpen(true); }}
                     ref={inputRef}
                 />
-                <span className={styles.searchIcon}>🔍</span>
+                <span className={styles.searchIcon}>{searchStrings.searchIcon}</span>
                 <button
                     type="button"
                     className={styles.filterToggleBtn}
@@ -211,7 +211,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
                     aria-label={searchStrings.filterToggle}
                     title={searchStrings.filterToggle}
                 >
-                    ⚙
+                    {searchStrings.filterIcon}
                 </button>
             </div>
 

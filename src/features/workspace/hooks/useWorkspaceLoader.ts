@@ -147,77 +147,73 @@ async function loadKBIfMounted(
     }
 }
 
+interface LoadParams {
+    userId: string;
+    workspaceId: string;
+    getMounted: () => boolean;
+    setIsLoading: (v: boolean) => void;
+    setError: (v: string | null) => void;
+    setHasOfflineData: (v: boolean) => void;
+}
+
+async function runWorkspaceLoad(p: LoadParams): Promise<void> {
+    const { userId, workspaceId, getMounted, setIsLoading, setError, setHasOfflineData } = p;
+    const applyCallback: UpdateCallback = (n, e, vp) =>
+        applyIfMounted(n, e, vp, getMounted);
+    const mergeCallback: MergeCallback = (fn, fe) =>
+        mergeIfMounted(fn, fe, getMounted, workspaceId);
+
+    setIsLoading(true);
+    setError(null);
+
+    const cached = workspaceCache.get(workspaceId);
+    if (getMounted()) setHasOfflineData(cached != null);
+
+    if (cached) {
+        applyCallback(cached.nodes, cached.edges, cached.viewport);
+        if (getMounted()) setIsLoading(false);
+        await backgroundRefresh(userId, workspaceId, mergeCallback);
+        return;
+    }
+
+    const isOnline = useNetworkStatusStore.getState().isOnline;
+    if (!isOnline) {
+        if (getMounted()) { setError(strings.offline.noOfflineData); setIsLoading(false); }
+        return;
+    }
+
+    try {
+        await loadFromFirestore(userId, workspaceId, applyCallback);
+    } catch (err) {
+        if (getMounted()) {
+            setError(err instanceof Error ? err.message : strings.offline.noOfflineData);
+            logger.error('[useWorkspaceLoader]', err);
+        }
+    } finally {
+        if (getMounted()) setIsLoading(false);
+    }
+}
+
 export function useWorkspaceLoader(workspaceId: string): UseWorkspaceLoaderResult {
-    const user = useAuthStore((s) => s.user);
+    const userId = useAuthStore((s) => s.user?.id);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasOfflineData, setHasOfflineData] = useState(false);
 
     useEffect(() => {
-        // History is session-scoped — clear on workspace switch
         useHistoryStore.getState().dispatch({ type: 'CLEAR' });
 
-        if (!user || !workspaceId) {
-            setIsLoading(false);
-            return;
-        }
+        if (!userId || !workspaceId) { setIsLoading(false); return; }
 
-        const userId = user.id;
         let mounted = true;
         const getMounted = () => mounted;
 
-        const applyCallback: UpdateCallback = (n, e, vp) =>
-            applyIfMounted(n, e, vp, getMounted);
-        const mergeCallback: MergeCallback = (fn, fe) =>
-            mergeIfMounted(fn, fe, getMounted, workspaceId);
-
-        async function load() {
-            setIsLoading(true);
-            setError(null);
-
-            const cached = workspaceCache.get(workspaceId);
-            if (mounted) setHasOfflineData(cached != null);
-
-            if (cached) {
-                applyCallback(cached.nodes, cached.edges, cached.viewport);
-                if (mounted) setIsLoading(false);
-                await backgroundRefresh(userId, workspaceId, mergeCallback);
-                return;
-            }
-
-            const isOnline = useNetworkStatusStore.getState().isOnline;
-            if (!isOnline) {
-                if (mounted) {
-                    setError(strings.offline.noOfflineData);
-                    setIsLoading(false);
-                }
-                return;
-            }
-
-            try {
-                await loadFromFirestore(userId, workspaceId, applyCallback);
-            } catch (err) {
-                if (mounted) {
-                    const message = err instanceof Error
-                        ? err.message
-                        : strings.offline.noOfflineData;
-                    setError(message);
-                    logger.error('[useWorkspaceLoader]', err);
-                }
-            } finally {
-                if (mounted) setIsLoading(false);
-            }
-        }
-
-        async function loadAll() {
-            await load();
-            loadClustersIfMounted(workspaceId, getMounted);
-        }
-        void loadAll();
+        void runWorkspaceLoad({ userId, workspaceId, getMounted, setIsLoading, setError, setHasOfflineData })
+            .then(() => loadClustersIfMounted(workspaceId, getMounted));
         void loadKBIfMounted(userId, workspaceId, getMounted);
 
         return () => { mounted = false; };
-    }, [user, workspaceId]);
+    }, [userId, workspaceId]);
 
     return { isLoading, error, hasOfflineData };
 }

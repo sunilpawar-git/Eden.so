@@ -20,6 +20,7 @@ export const logger = {
     },
 
     info(message: string, ...args: unknown[]): void {
+        if (import.meta.env.PROD) return;
         console.info(message, ...args);
     },
 } as const;

@@ -22,6 +22,7 @@ export const scheduledStorageCleanup = onSchedule(
             const created = metadata.timeCreated ? new Date(metadata.timeCreated) : null;
             if (created && created < cutoff) {
                 await file.delete().catch(() => { /* already deleted */ });
+                logger.info(`Deleted orphan file: ${file.name}`);
                 deletedCount++;
             }
         }

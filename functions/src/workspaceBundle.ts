@@ -5,6 +5,7 @@
  */
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { WORKSPACE_LIST_CAP } from './constants';
 
 const WORKSPACE_LIST_QUERY = 'workspace-list';
 const BUNDLE_MAX_AGE_S = 300;
@@ -15,7 +16,7 @@ export const workspaceBundle = onCall({ minInstances: 0 }, async (request) => {
 
     const db = getFirestore();
     const workspacesRef = db.collection('users').doc(uid).collection('workspaces');
-    const snapshot = await workspacesRef.limit(100).get();
+    const snapshot = await workspacesRef.limit(WORKSPACE_LIST_CAP).get();
 
     const bundle = db.bundle(`user-${uid}-workspaces`);
     bundle.add(WORKSPACE_LIST_QUERY, snapshot);

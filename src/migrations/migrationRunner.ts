@@ -24,9 +24,9 @@ const migrations: Migration[] = [
         migrateNode: (node) => ({ ...node, schemaVersion: node.schemaVersion ?? 1 }),
     },
     {
+        // userId is written by workspaceService.saveNodes on every save — no client-side backfill needed.
         version: 2,
         name: 'ensure_userId_field',
-        migrateNode: (node) => ({ ...node, userId: node.userId ?? undefined }),
     },
 ];
 

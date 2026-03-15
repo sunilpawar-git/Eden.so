@@ -19,10 +19,13 @@ interface PendingResolver { resolve: (value: unknown) => void; reject: (err: Err
 let worker: Worker | null = null;
 const pending = new Map<string, PendingResolver>();
 let requestId = 0;
+let crashCount = 0;
+const MAX_WORKER_CRASHES = 3;
 
 function getWorker(): Worker | null {
     if (worker) return worker;
     if (typeof Worker === 'undefined') return null;
+    if (crashCount >= MAX_WORKER_CRASHES) return null;
     try {
         worker = new Worker(new URL('./knowledgeWorker.ts', import.meta.url), { type: 'module' });
         worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
@@ -36,8 +39,15 @@ function getWorker(): Worker | null {
                 entry.resolve(e.data.result);
             }
         };
-        worker.onerror = () => {
-            logger.warn('[knowledgeWorkerClient] Worker error, falling back to main thread');
+        worker.onerror = (event: ErrorEvent) => {
+            crashCount++;
+            logger.warn('[knowledgeWorkerClient] Worker crashed', {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                crashCount,
+                permanentFallback: crashCount >= MAX_WORKER_CRASHES,
+            });
             terminateWorker();
         };
         return worker;
@@ -83,4 +93,8 @@ export function terminateWorker(): void {
     worker = null;
     for (const [, entry] of pending) entry.reject(new Error('Worker terminated'));
     pending.clear();
+}
+
+export function resetWorkerCrashCount(): void {
+    crashCount = 0;
 }
