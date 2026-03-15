@@ -93,7 +93,7 @@ export const ClusterBoundaries = React.memo(function ClusterBoundaries({
                     role="group"
                     aria-label={cluster.label}
                 >
-                    <span className="absolute top-[calc(-1*var(--space-lg))] left-2 text-[var(--font-size-sm)] text-[var(--color-text-secondary)] opacity-[var(--cluster-label-opacity)] whitespace-nowrap select-none">{cluster.label}</span>
+                    <span className="absolute top-[calc(-1*var(--space-lg))] left-2 text-[var(--color-text-secondary)] opacity-[var(--cluster-label-opacity)] whitespace-nowrap select-none" style={{ fontSize: 'var(--font-size-sm)' }}>{cluster.label}</span>
                 </div>
             ))}
         </div>

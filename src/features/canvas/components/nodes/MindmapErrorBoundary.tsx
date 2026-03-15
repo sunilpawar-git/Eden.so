@@ -39,13 +39,13 @@ export class MindmapErrorBoundary extends React.Component<Props, State> {
         if (this.state.hasError) {
             return (
                 <div className="flex flex-col items-center justify-center w-full min-h-[80px]" style={{ gap: 8, padding: 16 }} data-testid="mindmap-error-fallback">
-                    <p className="text-[var(--color-text-secondary)] text-[var(--font-size-sm)] italic">{strings.canvas.mindmap.errorFallback}</p>
+                    <p className="text-[var(--color-text-secondary)] italic" style={{ fontSize: 'var(--font-size-sm)' }}>{strings.canvas.mindmap.errorFallback}</p>
                     <div className="flex" style={{ gap: 8 }}>
-                        <button className="border border-[var(--color-border)] rounded-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-xs)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" style={{ padding: '4px 8px' }} onClick={this.handleRetry}>
+                        <button className="rounded-sm text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', fontSize: 'var(--font-size-xs)', padding: '4px 8px' }} onClick={this.handleRetry}>
                             {strings.canvas.mindmap.errorRetry}
                         </button>
                         {this.props.onSwitchToText && (
-                            <button className="border border-[var(--color-border)] rounded-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-xs)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" style={{ padding: '4px 8px' }} onClick={this.handleSwitchToText}>
+                            <button className="rounded-sm text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', fontSize: 'var(--font-size-xs)', padding: '4px 8px' }} onClick={this.handleSwitchToText}>
                                 {strings.canvas.mindmap.errorSwitchToText}
                             </button>
                         )}

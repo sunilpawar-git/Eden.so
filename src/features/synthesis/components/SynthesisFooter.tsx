@@ -21,13 +21,13 @@ export const SynthesisFooter = React.memo(function SynthesisFooter({
     }, [sourceNodeIds]);
 
     return (
-        <div className="flex items-center justify-between border-t border-[var(--color-border)] text-[var(--font-size-xs)] text-[var(--color-text-secondary)]" style={{ padding: '4px 8px' }}>
-            <button className="bg-transparent border-none text-[var(--node-status-synthesis)] cursor-pointer text-[var(--font-size-xs)] underline underline-offset-[var(--space-xxs)] hover:opacity-[var(--opacity-hover-subtle)]" style={{ padding: 0 }} onClick={handleHighlightSources} type="button" aria-label={synthesisStrings.labels.highlightSources}>
+        <div className="flex items-center justify-between border-t border-[var(--color-border)] text-[var(--color-text-secondary)]" style={{ fontSize: 'var(--font-size-xs)', padding: '4px 8px' }}>
+            <button className="border-none text-[var(--node-status-synthesis)] cursor-pointer underline underline-offset-[var(--space-xxs)] hover:opacity-[var(--opacity-hover-subtle)]" style={{ background: 'transparent', fontSize: 'var(--font-size-xs)', padding: 0 }} onClick={handleHighlightSources} type="button" aria-label={synthesisStrings.labels.highlightSources}>
                 {synthesisStrings.labels.viewSources(sourceCount)}
             </button>
             <button
-                className="bg-transparent border border-[var(--color-border)] rounded-sm text-[var(--color-text-secondary)] cursor-pointer text-[var(--font-size-sm)] leading-none hover:bg-[var(--color-hover)] hover:text-[var(--node-status-synthesis)]"
-                style={{ padding: '2px 4px' }}
+                className="rounded-sm text-[var(--color-text-secondary)] cursor-pointer leading-none hover:bg-[var(--color-hover)] hover:text-[var(--node-status-synthesis)]"
+                style={{ background: 'transparent', border: '1px solid var(--color-border)', fontSize: 'var(--font-size-sm)', padding: '2px 4px' }}
                 onClick={onReSynthesize}
                 type="button"
                 aria-label={synthesisStrings.labels.reSynthesize}

@@ -33,18 +33,19 @@ export function ToastContainer() {
                     )}
                     style={{ gap: 16, padding: '16px 24px' }}
                 >
-                    <span className="flex-1 text-[var(--font-size-sm)]">{t.message}</span>
+                    <span className="flex-1" style={{ fontSize: 'var(--font-size-sm)' }}>{t.message}</span>
                     {t.action && (
                         <button
-                            className="text-[var(--font-size-sm)] font-semibold underline text-inherit opacity-90 rounded-sm whitespace-nowrap cursor-pointer hover:opacity-100 hover:bg-white/15"
-                            style={{ padding: '4px 8px' }}
+                            className="font-semibold underline text-inherit opacity-90 rounded-sm whitespace-nowrap cursor-pointer hover:opacity-100 hover:bg-white/15"
+                            style={{ fontSize: 'var(--font-size-sm)', padding: '4px 8px' }}
                             onClick={() => { t.action?.onClick(); handleRemove(t.id); }}
                         >
                             {t.action.label}
                         </button>
                     )}
                     <button
-                        className="text-[var(--font-size-lg)] opacity-70 p-0 leading-none text-inherit hover:opacity-100"
+                        className="opacity-70 p-0 leading-none text-inherit hover:opacity-100"
+                        style={{ fontSize: 'var(--font-size-lg)' }}
                         onClick={() => handleRemove(t.id)}
                         aria-label="Close"
                     >

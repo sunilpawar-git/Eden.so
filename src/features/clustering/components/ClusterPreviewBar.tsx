@@ -25,13 +25,13 @@ export const ClusterPreviewBar = React.memo(function ClusterPreviewBar({ phase, 
             style={{ gap: 8, padding: '4px 16px' }}
             role="status"
         >
-            <span className="text-[var(--font-size-sm)] text-[var(--color-text-primary)] whitespace-nowrap">{text}</span>
+            <span className="text-[var(--color-text-primary)] whitespace-nowrap" style={{ fontSize: 'var(--font-size-sm)' }}>{text}</span>
             {phase === 'preview' && (
                 <>
-                    <button className="text-[var(--font-size-sm)] rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" style={{ padding: '2px 8px' }} onClick={onAccept} aria-label={clusterStrings.labels.accept}>
+                    <button className="rounded-md text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', fontSize: 'var(--font-size-sm)', padding: '2px 8px' }} onClick={onAccept} aria-label={clusterStrings.labels.accept}>
                         {clusterStrings.labels.accept}
                     </button>
-                    <button className="text-[var(--font-size-sm)] rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" style={{ padding: '2px 8px' }} onClick={onDismiss} aria-label={clusterStrings.labels.dismiss}>
+                    <button className="rounded-md text-[var(--color-text-primary)] cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-surface-hover)]" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', fontSize: 'var(--font-size-sm)', padding: '2px 8px' }} onClick={onDismiss} aria-label={clusterStrings.labels.dismiss}>
                         {clusterStrings.labels.dismiss}
                     </button>
                 </>

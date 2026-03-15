@@ -19,7 +19,7 @@ export const MarkdownRenderer = React.memo(({
     className,
 }: MarkdownRendererProps) => {
     return (
-        <div className={clsx('markdown-content text-[var(--font-size-sm)] text-[var(--color-text-primary)] leading-[1.7] break-words tracking-[0.01em]', className)}>
+        <div className={clsx('markdown-content text-[var(--color-text-primary)] leading-[1.7] break-words tracking-[0.01em]', className)} style={{ fontSize: 'var(--font-size-sm)' }}>
             <ReactMarkdown>{content}</ReactMarkdown>
         </div>
     );

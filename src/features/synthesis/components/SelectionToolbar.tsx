@@ -47,12 +47,12 @@ export const SelectionToolbar = React.memo(function SelectionToolbar() {
                 aria-label={synthesisStrings.labels.synthesize}
                 data-testid="selection-toolbar"
             >
-                <span className="text-[var(--font-size-sm)] font-medium text-[var(--color-text-secondary)] whitespace-nowrap">
+                <span className="font-medium text-[var(--color-text-secondary)] whitespace-nowrap" style={{ fontSize: 'var(--font-size-sm)' }}>
                     {nodeCount} {synthesisStrings.labels.ideas}
                 </span>
                 <button
-                    className="inline-flex items-center border-none rounded-md bg-[var(--node-status-synthesis)] text-[var(--color-text-on-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-all duration-150 ease-in-out whitespace-nowrap hover:enabled:opacity-[var(--opacity-hover-subtle)] disabled:opacity-[var(--opacity-disabled)] disabled:cursor-not-allowed"
-                    style={{ gap: 4, padding: '4px 16px' }}
+                    className="inline-flex items-center border-none rounded-md text-[var(--color-text-on-primary)] font-medium cursor-pointer transition-all duration-150 ease-in-out whitespace-nowrap hover:enabled:opacity-[var(--opacity-hover-subtle)] disabled:opacity-[var(--opacity-disabled)] disabled:cursor-not-allowed"
+                    style={{ background: 'var(--node-status-synthesis)', gap: 4, padding: '4px 16px', fontSize: 'var(--font-size-sm)' }}
                     onClick={handleOpenPopover}
                     disabled={isSynthesizing || !canSynthesize}
                     aria-haspopup="true"
@@ -62,10 +62,10 @@ export const SelectionToolbar = React.memo(function SelectionToolbar() {
                 >
                     {isSynthesizing ? synthesisStrings.labels.generating : synthesisStrings.labels.synthesize}
                 </button>
-                <button className="inline-flex items-center border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out whitespace-nowrap hover:bg-[var(--color-surface-elevated)]" style={{ gap: 4, padding: '4px 16px' }} onClick={handleQuickCopy} type="button">
+                <button className="inline-flex items-center rounded-md text-[var(--color-text-primary)] font-medium cursor-pointer transition-colors duration-150 ease-in-out whitespace-nowrap" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', gap: 4, padding: '4px 16px', fontSize: 'var(--font-size-sm)' }} onClick={handleQuickCopy} type="button">
                     {exportStrings.labels.copyBranch}
                 </button>
-                <button className="inline-flex items-center border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out whitespace-nowrap hover:bg-[var(--color-surface-elevated)]" style={{ gap: 4, padding: '4px 16px' }} onClick={handleOpenExport} type="button">
+                <button className="inline-flex items-center rounded-md text-[var(--color-text-primary)] font-medium cursor-pointer transition-colors duration-150 ease-in-out whitespace-nowrap" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', gap: 4, padding: '4px 16px', fontSize: 'var(--font-size-sm)' }} onClick={handleOpenExport} type="button">
                     {exportStrings.labels.exportSelection}
                 </button>
                 {isOpen && (

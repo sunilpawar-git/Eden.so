@@ -61,19 +61,16 @@ export const SynthesisModePopover = React.memo(function SynthesisModePopover({
             {MODES.map((mode, idx) => (
                 <button
                     key={mode}
-                    className={clsx(
-                        'flex flex-col items-start border-none rounded-md bg-transparent cursor-pointer text-left w-full transition-colors duration-150 ease-in-out hover:bg-[var(--color-hover)] focus-visible:bg-[var(--color-hover)] focus-visible:outline-none',
-                        idx === focusIndex && 'bg-[var(--color-primary-light)]'
-                    )}
-                    style={{ gap: 2, padding: '8px 16px' }}
+                    className="flex flex-col items-start border-none rounded-md cursor-pointer text-left w-full transition-colors duration-150 ease-in-out hover:bg-[var(--color-hover)] focus-visible:bg-[var(--color-hover)] focus-visible:outline-none"
+                    style={{ background: idx === focusIndex ? 'var(--color-primary-light)' : 'transparent', gap: 2, padding: '8px 16px' }}
                     role="option"
                     aria-selected={idx === focusIndex}
                     onClick={() => onSelect(mode)}
                     tabIndex={idx === focusIndex ? 0 : -1}
                     type="button"
                 >
-                    <span className="text-[var(--font-size-sm)] font-medium text-[var(--color-text-primary)]">{synthesisStrings.modes[mode]}</span>
-                    <span className="text-[var(--font-size-xs)] text-[var(--color-text-secondary)]">
+                    <span className="font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'var(--font-size-sm)' }}>{synthesisStrings.modes[mode]}</span>
+                    <span className="text-[var(--color-text-secondary)]" style={{ fontSize: 'var(--font-size-xs)' }}>
                         {synthesisStrings.modeDescriptions[mode]}
                     </span>
                 </button>

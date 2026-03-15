@@ -65,8 +65,8 @@ export const WelcomeScreen = React.memo(function WelcomeScreen({ onDismiss }: We
 
                 {/* CTA */}
                 <button
-                    className="self-start bg-[var(--color-primary)] text-[var(--color-text-on-primary)] font-medium cursor-pointer rounded-md transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]"
-                    style={{ border: 'none', padding: 'var(--space-sm) var(--space-xl)', fontSize: 'var(--font-size-base)', marginTop: 'var(--space-sm)' }}
+                    className="self-start text-[var(--color-text-on-primary)] font-medium cursor-pointer rounded-md transition-colors duration-150 ease-in-out"
+                    style={{ background: 'var(--color-primary)', border: 'none', padding: 'var(--space-sm) var(--space-xl)', fontSize: 'var(--font-size-base)', marginTop: 'var(--space-sm)' }}
                     onClick={onDismiss} autoFocus type="button"
                 >
                     {strings.onboarding.welcome.ctaLabel}

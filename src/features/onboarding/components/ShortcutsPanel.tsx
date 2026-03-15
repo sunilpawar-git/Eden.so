@@ -71,8 +71,8 @@ export const ShortcutsPanel = React.memo(function ShortcutsPanel({ onClose, onRe
                         {strings.onboarding.shortcutsPanelTitle}
                     </h2>
                     <button
-                        className="bg-transparent text-[var(--color-text-muted)] cursor-pointer leading-none hover:text-[var(--color-text-secondary)]"
-                        style={{ border: 'none', fontSize: 'var(--font-size-sm)', padding: 'var(--space-xxs)' }}
+                        className="text-[var(--color-text-muted)] cursor-pointer leading-none hover:text-[var(--color-text-secondary)]"
+                        style={{ background: 'transparent', border: 'none', fontSize: 'var(--font-size-sm)', padding: 'var(--space-xxs)' }}
                         onClick={onClose} type="button" aria-label="Close"
                     >
                         ✕
@@ -84,8 +84,8 @@ export const ShortcutsPanel = React.memo(function ShortcutsPanel({ onClose, onRe
                 {/* Footer */}
                 <div className="border-t border-[var(--color-border)]" style={{ padding: 'var(--space-md) var(--space-lg)' }}>
                     <button
-                        className="bg-transparent text-[var(--color-primary)] cursor-pointer hover:underline"
-                        style={{ border: 'none', fontSize: 'var(--font-size-sm)', padding: 0 }}
+                        className="text-[var(--color-primary)] cursor-pointer hover:underline"
+                        style={{ background: 'transparent', border: 'none', fontSize: 'var(--font-size-sm)', padding: 0 }}
                         onClick={onReplay} type="button" data-testid="replay-btn"
                     >
                         {strings.onboarding.replayWalkthrough}

@@ -23,9 +23,9 @@ export const Toggle = React.memo(function Toggle({ checked, onChange, label, des
     return (
         <label className="flex items-start justify-between cursor-pointer" style={{ gap: 16 }} htmlFor={id}>
             <span className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
-                <span className="text-[var(--font-size-sm)] text-[var(--color-text-primary)]">{label}</span>
+                <span className="text-[var(--color-text-primary)]" style={{ fontSize: 'var(--font-size-sm)' }}>{label}</span>
                 {description != null && (
-                    <span id={descriptionId} className="text-[var(--font-size-xs)] text-[var(--color-text-muted)]">{description}</span>
+                    <span id={descriptionId} className="text-[var(--color-text-muted)]" style={{ fontSize: 'var(--font-size-xs)' }}>{description}</span>
                 )}
             </span>
             <input

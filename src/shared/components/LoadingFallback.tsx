@@ -25,7 +25,7 @@ export function LoadingFallback({
             style={{ gap: 16, padding: 'var(--space-xl)' }}
         >
             <div className="w-8 h-8 border-3 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin" />
-            <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)]">{message}</p>
+            <p className="text-[var(--color-text-secondary)]" style={{ fontSize: 'var(--font-size-sm)' }}>{message}</p>
         </div>
     );
 }

@@ -19,8 +19,8 @@ export function SwUpdatePrompt({ registration }: SwUpdatePromptProps) {
 
     return (
         <div
-            className="fixed flex items-center bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-lg)] z-[var(--z-toast)] text-[var(--font-size-sm)] animate-[slideUp_var(--transition-normal)]"
-            style={{ bottom: 24, right: 24, gap: 16, padding: 16 }}
+            className="fixed flex items-center bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-lg)] z-[var(--z-toast)] animate-[slideUp_var(--transition-normal)]"
+            style={{ fontSize: 'var(--font-size-sm)', bottom: 24, right: 24, gap: 16, padding: 16 }}
             role="alert"
         >
             <span className="text-[var(--color-text-primary)]">
@@ -28,15 +28,15 @@ export function SwUpdatePrompt({ registration }: SwUpdatePromptProps) {
             </span>
             <div className="flex" style={{ gap: 8 }}>
                 <button
-                    className="bg-[var(--color-primary)] text-[var(--header-text)] border-none rounded-md text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]"
-                    style={{ padding: '4px 16px' }}
+                    className="text-[var(--header-text)] border-none rounded-md font-medium cursor-pointer transition-colors duration-150 ease-in-out"
+                    style={{ background: 'var(--color-primary)', fontSize: 'var(--font-size-sm)', padding: '4px 16px' }}
                     onClick={acceptUpdate}
                 >
                     {strings.pwa.updateNow}
                 </button>
                 <button
-                    className="bg-transparent border-none text-[var(--color-text-secondary)] text-[var(--font-size-sm)] cursor-pointer transition-colors duration-150 ease-in-out hover:text-[var(--color-text-primary)]"
-                    style={{ padding: 4 }}
+                    className="bg-transparent border-none text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 ease-in-out hover:text-[var(--color-text-primary)]"
+                    style={{ fontSize: 'var(--font-size-sm)', padding: 4 }}
                     onClick={dismissUpdate}
                 >
                     {strings.pwa.dismissUpdate}

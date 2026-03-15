@@ -35,12 +35,12 @@ function SegmentedControlInner<T extends string>({
                     <label
                         key={option.value}
                         className={clsx(
-                            'flex-1 flex items-center justify-center text-center text-[var(--font-size-sm)] text-[var(--color-text-secondary)] cursor-pointer transition-all duration-150 ease-in-out border-r border-[var(--color-border)] last:border-r-0 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-[var(--color-primary)] has-[input:focus-visible]:outline-offset-[-2px]',
+                            'flex-1 flex items-center justify-center text-center text-[var(--color-text-secondary)] cursor-pointer transition-all duration-150 ease-in-out border-r border-[var(--color-border)] last:border-r-0 has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-[var(--color-primary)] has-[input:focus-visible]:outline-offset-[-2px]',
                             isActive
                                 ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-medium'
                                 : 'hover:bg-[var(--color-surface-hover)]'
                         )}
-                        style={{ gap: 4, padding: '4px 8px' }}
+                        style={{ fontSize: 'var(--font-size-sm)', gap: 4, padding: '4px 8px' }}
                     >
                         <input
                             type="radio"

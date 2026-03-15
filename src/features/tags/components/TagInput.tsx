@@ -73,11 +73,9 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
                 tag && (
                     <span
                         key={tag.id}
-                        className={clsx(
-                            'inline-flex items-center rounded-sm text-white',
-                            compact ? 'text-[10px]' : 'text-[var(--font-size-xs)]'
-                        )}
+                        className="inline-flex items-center rounded-sm text-white"
                         style={{
+                            fontSize: compact ? '10px' : 'var(--font-size-xs)',
                             backgroundColor: tag.color,
                             gap: 2,
                             padding: compact ? '1px 4px' : '2px 6px',
@@ -100,8 +98,8 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
                 <input
                     ref={inputRef}
                     type="text"
-                    className="w-20 border border-[var(--color-primary)] rounded-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] text-[var(--font-size-xs)] focus:outline-none"
-                    style={{ padding: '2px 6px' }}
+                    className="w-20 border border-[var(--color-primary)] rounded-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] focus:outline-none"
+                    style={{ fontSize: 'var(--font-size-xs)', padding: '2px 6px' }}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleInputKeyDown}

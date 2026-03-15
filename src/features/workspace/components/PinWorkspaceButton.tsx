@@ -30,9 +30,9 @@ export const PinWorkspaceButton = React.memo(function PinWorkspaceButton({ works
                 className={`flex items-center justify-center rounded shrink-0 transition-[color,background-color,opacity] duration-150 ease-in-out ${
                     isPinned
                         ? 'text-[var(--color-warning)] opacity-100 hover:text-[var(--color-error)]'
-                        : 'text-[var(--color-text-muted)] opacity-0 hover:text-[var(--color-primary)] hover:bg-[var(--color-hover)] hover:opacity-100'
+                        : 'text-[var(--color-text-muted)] opacity-0 hover:text-[var(--color-primary)] hover:opacity-100'
                 }`}
-                style={{ padding: 4, marginLeft: 4 }}
+                style={{ background: 'transparent', padding: 4, marginLeft: 4 }}
                 onClick={handleToggle}
                 title={title}
                 aria-label={label}

@@ -52,9 +52,9 @@ export function OfflineFallback({ hasOfflineData, onRetry }: OfflineFallbackProp
                         <line x1="12" y1="20" x2="12.01" y2="20" />
                     </svg>
                 </div>
-                <h2 className="text-[var(--font-size-xl)] font-semibold text-[var(--color-text-primary)] m-0">{title}</h2>
-                <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] leading-[var(--line-height-relaxed)] m-0">{message}</p>
-                <button className="bg-[var(--color-primary)] text-[var(--header-text)] border-none rounded-md text-[var(--font-size-sm)] font-medium cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]" style={{ padding: '8px 24px', marginTop: 8 }} onClick={onRetry}>
+                <h2 className="font-semibold text-[var(--color-text-primary)] m-0" style={{ fontSize: 'var(--font-size-xl)' }}>{title}</h2>
+                <p className="text-[var(--color-text-secondary)] leading-[var(--line-height-relaxed)] m-0" style={{ fontSize: 'var(--font-size-sm)' }}>{message}</p>
+                <button className="text-[var(--header-text)] border-none rounded-md font-medium cursor-pointer transition-colors duration-150 ease-in-out" style={{ background: 'var(--color-primary)', fontSize: 'var(--font-size-sm)', padding: '8px 24px', marginTop: 8 }} onClick={onRetry}>
                     {strings.offlineFallback.retryButton}
                 </button>
             </div>

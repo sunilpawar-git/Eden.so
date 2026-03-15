@@ -72,8 +72,8 @@ function CoachMarkPopup({ markRef, placement, rect, title, description, tryPromp
                 </p>
             )}
             <div className="flex justify-between items-center" style={{ gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
-                <button className="bg-transparent text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-secondary)]" style={{ border: 'none', fontSize: 'var(--font-size-sm)', padding: 0 }} onClick={onSkip} type="button">{skipLabel}</button>
-                <button className="bg-[var(--color-primary)] text-[var(--color-text-on-primary)] font-medium rounded-md cursor-pointer transition-colors duration-150 ease-in-out hover:bg-[var(--color-primary-hover)]" style={{ border: 'none', padding: 'var(--space-xs) var(--space-md)', fontSize: 'var(--font-size-sm)' }} onClick={onNext} type="button">{nextLabel}</button>
+                <button className="text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-secondary)]" style={{ background: 'transparent', border: 'none', fontSize: 'var(--font-size-sm)', padding: 0 }} onClick={onSkip} type="button">{skipLabel}</button>
+                <button className="text-[var(--color-text-on-primary)] font-medium rounded-md cursor-pointer transition-colors duration-150 ease-in-out" style={{ background: 'var(--color-primary)', border: 'none', padding: 'var(--space-xs) var(--space-md)', fontSize: 'var(--font-size-sm)' }} onClick={onNext} type="button">{nextLabel}</button>
             </div>
         </div>
     );

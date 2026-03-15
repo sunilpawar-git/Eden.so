@@ -10,6 +10,7 @@ import { createIdeaNode, DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '../type
 import type { CanvasNode, NodePosition } from '../types/node';
 import { GRID_GAP, GRID_PADDING, GRID_COLUMNS } from '../services/gridConstants';
 import { calculateMasonryPosition } from '../services/gridLayoutService';
+import { calculateSmartPlacement } from '../services/freeFlowPlacementService';
 import { snapToMasonrySlot } from '../services/snapToMasonrySlot';
 import { collidesWithAny } from '../services/spiralPlacement';
 import { getDefaultColumnX } from '../types/masonryLayout';
@@ -113,6 +114,54 @@ describe('calculateMasonryPosition — cross-mode collision', () => {
         ];
 
         const allNodes = [ffBlocker, ...gridNodes];
+        const position = calculateMasonryPosition(allNodes, GRID_COLUMNS);
+        assertNoCollision(position, allNodes);
+    });
+});
+
+describe('calculateMasonryPosition — all-pinned early return', () => {
+    it('avoids pinned node at grid origin when all nodes are pinned', () => {
+        const pinnedNode = makeNode('p0', GRID_PADDING, GRID_PADDING, 0);
+        pinnedNode.data = { ...pinnedNode.data, isPinned: true };
+
+        const position = calculateMasonryPosition([pinnedNode], GRID_COLUMNS);
+        assertNoCollision(position, [pinnedNode]);
+    });
+
+    it('avoids multiple pinned nodes clustered at grid origin', () => {
+        const row1Y = GRID_PADDING + DEFAULT_NODE_HEIGHT + GRID_GAP;
+        const p0 = makeNode('p0', GRID_PADDING, GRID_PADDING, 0);
+        p0.data = { ...p0.data, isPinned: true };
+        const p1 = makeNode('p1', GRID_PADDING, row1Y, 1);
+        p1.data = { ...p1.data, isPinned: true };
+
+        const allNodes = [p0, p1];
+        const position = calculateMasonryPosition(allNodes, GRID_COLUMNS);
+        assertNoCollision(position, allNodes);
+    });
+});
+
+describe('calculateMasonryPosition — virtual-vs-stored position mismatch', () => {
+    it('avoids node whose stored position matches the virtual target', () => {
+        const col0X = getDefaultColumnX(0, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
+        const col1X = getDefaultColumnX(1, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
+        const col2X = getDefaultColumnX(2, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
+        const col3X = getDefaultColumnX(3, DEFAULT_NODE_WIDTH, GRID_GAP, GRID_PADDING);
+        const row1Y = GRID_PADDING + DEFAULT_NODE_HEIGHT + GRID_GAP;
+
+        const gridNodes = [
+            makeNode('g0', col0X, GRID_PADDING, 0),
+            makeNode('g1', col1X, GRID_PADDING, 1),
+            makeNode('g2', col2X, GRID_PADDING, 2),
+            makeNode('g3', col3X, GRID_PADDING, 3),
+        ];
+
+        // Virtual target for 5th node = col0 row1 = (32, 292).
+        // Place a node at (32, 292) with an EARLY createdAt so virtual
+        // assignment puts it in col0 row0, diverging from its stored position.
+        const divergent = makeNode('div', col0X, row1Y, -1);
+        const allNodes = [divergent, ...gridNodes];
+
         const position = calculateMasonryPosition(allNodes, GRID_COLUMNS);
         assertNoCollision(position, allNodes);
     });

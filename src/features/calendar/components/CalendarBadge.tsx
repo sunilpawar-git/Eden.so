@@ -59,12 +59,12 @@ export const CalendarBadge = React.memo(({ metadata, onClick, onRetry }: Calenda
     return (
         <Tag
             className={clsx(
-                'inline-flex items-center border border-[var(--color-border)] rounded-sm bg-[var(--color-surface-elevated)] cursor-pointer text-[var(--font-size-sm)] leading-[var(--line-height-tight)] transition-all duration-150 ease-in-out max-w-full overflow-hidden whitespace-nowrap hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-focus)]',
+                'inline-flex items-center border border-[var(--color-border)] rounded-sm bg-[var(--color-surface-elevated)] cursor-pointer leading-[var(--line-height-tight)] transition-all duration-150 ease-in-out max-w-full overflow-hidden whitespace-nowrap hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-focus)]',
                 typeBorderClass[type],
                 status === 'pending' && 'opacity-80',
                 status === 'failed' && 'border-[var(--color-error)]'
             )}
-            style={{ gap: 2, padding: '2px 4px' }}
+            style={{ fontSize: 'var(--font-size-sm)', gap: 2, padding: '2px 4px' }}
             data-testid="calendar-badge"
             data-type={type}
             data-status={status}
@@ -72,14 +72,14 @@ export const CalendarBadge = React.memo(({ metadata, onClick, onRetry }: Calenda
             title={badgeTitle}
             {...(onClick ? { type: 'button' as const } : {})}
         >
-            <span className="shrink-0 text-[var(--font-size-sm)]">{TYPE_ICONS[type] ?? DEFAULT_TYPE_ICON}</span>
+            <span className="shrink-0">{TYPE_ICONS[type] ?? DEFAULT_TYPE_ICON}</span>
             <span className="overflow-hidden text-ellipsis text-[var(--color-text-primary)] font-medium" data-testid="badge-title">{title}</span>
             <span className="text-[var(--color-text-secondary)] shrink-0" data-testid="badge-date">{formatBadgeDate(date)}</span>
-            <span className="shrink-0 text-[var(--font-size-xs)]">{STATUS_ICONS[status] ?? DEFAULT_STATUS_ICON}</span>
+            <span className="shrink-0" style={{ fontSize: 'var(--font-size-xs)' }}>{STATUS_ICONS[status] ?? DEFAULT_STATUS_ICON}</span>
             {(status === 'failed' || status === 'pending') && onRetry && (
                 <span
-                    className="shrink-0 border-none bg-transparent text-[var(--color-primary)] cursor-pointer text-[var(--font-size-sm)] font-bold rounded-sm hover:bg-[var(--color-primary-light)]"
-                    style={{ padding: '0 2px' }}
+                    className="shrink-0 border-none bg-transparent text-[var(--color-primary)] cursor-pointer font-bold rounded-sm hover:bg-[var(--color-primary-light)]"
+                    style={{ fontSize: 'var(--font-size-sm)', padding: '0 2px' }}
                     onClick={handleRetryClick}
                     title={cs.badge.retry}
                     role="button"
