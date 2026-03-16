@@ -5,7 +5,7 @@ import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSettingsStore, type ThemeOption } from '@/shared/stores/settingsStore';
 import { Toggle } from '@/shared/components/Toggle';
-import panelStyles from '../SettingsPanel.module.css';
+import { SP_SECTION, SP_SECTION_STYLE, SP_SECTION_TITLE, SP_SECTION_TITLE_STYLE } from '../settingsPanelStyles';
 import styles from './AppearanceSection.module.css';
 
 interface ThemeSwatchConfig {
@@ -27,8 +27,10 @@ export const AppearanceSection = React.memo(function AppearanceSection() {
     const compactMode = useSettingsStore((state) => state.compactMode);
 
     return (
-        <div className={panelStyles.section}>
-            <h3 id="theme-picker-label" className={panelStyles.sectionTitle}>{strings.settings.theme}</h3>
+        <div className={SP_SECTION} style={SP_SECTION_STYLE}>
+            <h3 id="theme-picker-label" className={SP_SECTION_TITLE} style={SP_SECTION_TITLE_STYLE}>
+                {strings.settings.theme}
+            </h3>
             <div
                 className={styles.themeSwatchGrid}
                 role="radiogroup"

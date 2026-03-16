@@ -1,6 +1,7 @@
 /**
  * Settings Panel - Modal with tabbed settings sections
  */
+import { useEffect, useRef } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSettingsStore, type SettingsTabId } from '@/shared/stores/settingsStore';
 import { AppearanceSection } from './sections/AppearanceSection';
@@ -11,7 +12,13 @@ import { KeyboardSection } from './sections/KeyboardSection';
 import { AboutSection } from './sections/AboutSection';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
-import styles from './SettingsPanel.module.css';
+import {
+    SP_OVERLAY, SP_BACKDROP, SP_BACKDROP_STYLE, SP_PANEL, SP_PANEL_STYLE,
+    SP_HEADER, SP_HEADER_STYLE, SP_TITLE, SP_TITLE_STYLE,
+    SP_CLOSE_BTN, SP_CLOSE_BTN_STYLE, SP_CONTENT,
+    SP_TABS, SP_TABS_STYLE, SP_TAB, SP_TAB_STYLE, SP_TAB_ACTIVE_STYLE,
+    SP_SECTION_CONTENT, SP_SECTION_CONTENT_STYLE,
+} from './settingsPanelStyles';
 
 interface Tab {
     id: SettingsTabId;
@@ -27,6 +34,18 @@ const tabs: Tab[] = [
     { id: 'about', label: strings.settings.about },
 ];
 
+function SectionForTab({ tab }: { tab: SettingsTabId }) {
+    switch (tab) {
+        case 'appearance': return <AppearanceSection />;
+        case 'canvas': return <CanvasSection />;
+        case 'toolbar': return <ToolbarSection />;
+        case 'account': return <AccountSection />;
+        case 'keyboard': return <KeyboardSection />;
+        case 'about': return <AboutSection />;
+        default: { const _exhaustive: never = tab; return _exhaustive; }
+    }
+}
+
 interface SettingsPanelProps {
     isOpen: boolean;
     onClose: () => void;
@@ -34,64 +53,66 @@ interface SettingsPanelProps {
 
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     const activeTab = useSettingsStore((s) => s.lastSettingsTab);
+    const sectionRef = useRef<HTMLDivElement>(null);
 
     useEscapeLayer(ESCAPE_PRIORITY.SETTINGS_PANEL, isOpen, onClose);
 
+    useEffect(() => {
+        const el = sectionRef.current;
+        if (el) el.scrollTop = 0;
+    }, [activeTab]);
+
+    useEffect(() => {
+        const el = sectionRef.current;
+        if (!el) return;
+
+        const clampScroll = () => {
+            const maxScroll = el.scrollHeight - el.clientHeight;
+            if (el.scrollTop > maxScroll) el.scrollTop = Math.max(0, maxScroll);
+        };
+
+        const observer = new MutationObserver(clampScroll);
+        observer.observe(el, { childList: true, subtree: true });
+        return () => observer.disconnect();
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
-    const renderSection = () => {
-        switch (activeTab) {
-            case 'appearance':
-                return <AppearanceSection />;
-            case 'canvas':
-                return <CanvasSection />;
-            case 'toolbar':
-                return <ToolbarSection />;
-            case 'account':
-                return <AccountSection />;
-            case 'keyboard':
-                return <KeyboardSection />;
-            case 'about':
-                return <AboutSection />;
-            default: {
-                const _exhaustive: never = activeTab;
-                return _exhaustive;
-            }
-        }
-    };
-
     return (
-        <div className={styles.overlay} role="dialog" aria-modal="true">
-            <div 
-                className={styles.backdrop} 
+        <div className={SP_OVERLAY} role="dialog" aria-modal="true">
+            <div
+                className={SP_BACKDROP}
+                style={SP_BACKDROP_STYLE}
                 onClick={onClose}
                 data-testid="settings-backdrop"
             />
-            <div className={styles.panel}>
-                <div className={styles.header}>
-                    <h2 className={styles.title}>{strings.settings.title}</h2>
+            <div className={SP_PANEL} style={SP_PANEL_STYLE}>
+                <div className={SP_HEADER} style={SP_HEADER_STYLE}>
+                    <h2 className={SP_TITLE} style={SP_TITLE_STYLE}>{strings.settings.title}</h2>
                     <button
-                        className={styles.closeButton}
+                        className={SP_CLOSE_BTN}
+                        style={SP_CLOSE_BTN_STYLE}
                         onClick={onClose}
                         aria-label={strings.settings.close}
                     >
                         {strings.common.closeSymbol}
                     </button>
                 </div>
-                <div className={styles.content}>
-                    <nav className={styles.tabs}>
+                <div className={SP_CONTENT}>
+                    <nav className={SP_TABS} style={SP_TABS_STYLE}>
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
-                                className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
+                                className={SP_TAB}
+                                style={activeTab === tab.id ? SP_TAB_ACTIVE_STYLE : SP_TAB_STYLE}
                                 onClick={() => useSettingsStore.getState().setLastSettingsTab(tab.id)}
                             >
                                 {tab.label}
                             </button>
                         ))}
                     </nav>
-                    <div className={styles.sectionContent}>
-                        {renderSection()}
+                    <div ref={sectionRef} className={SP_SECTION_CONTENT} style={SP_SECTION_CONTENT_STYLE}>
+                        <SectionForTab tab={activeTab} />
                     </div>
                 </div>
             </div>

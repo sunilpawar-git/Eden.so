@@ -3,10 +3,14 @@
  * Extracted from ToolbarSection to stay under max-lines-per-function.
  */
 import React from 'react';
+import clsx from 'clsx';
 import { strings } from '@/shared/localization/strings';
 import { type ActionId } from '@/shared/stores/iconRegistry';
 import { IconItem, type ZoneId } from './IconItem';
-import styles from './ToolbarSection.module.css';
+import {
+    TB_BUTTON_LIST, TB_BUTTON_LIST_STYLE, TB_DROP_ZONE_ACTIVE,
+    TB_EMPTY_HINT, TB_EMPTY_HINT_STYLE,
+} from './toolbarSectionStyles';
 
 interface ToolbarZoneListProps {
     readonly zone: ZoneId;
@@ -35,13 +39,16 @@ export function ToolbarZoneList({
 
     return (
         <div
-            className={`${styles.buttonList} ${dragId && !isFull ? styles.dropZoneActive : ''}`}
+            className={clsx(TB_BUTTON_LIST, dragId && !isFull && TB_DROP_ZONE_ACTIVE)}
+            style={TB_BUTTON_LIST_STYLE}
             onDragOver={onZoneDragOver}
             onDrop={() => onDropOnZone(zone)}
             data-testid={`toolbar-${zone === 'utilsBar' ? 'utilsbar' : 'contextmenu'}-list`}
         >
             {icons.length === 0 && (
-                <span className={styles.emptyHint}>{strings.settings.toolbarEmpty}</span>
+                <span className={TB_EMPTY_HINT} style={TB_EMPTY_HINT_STYLE}>
+                    {strings.settings.toolbarEmpty}
+                </span>
             )}
             {icons.map((id, index) => (
                 <IconItem
