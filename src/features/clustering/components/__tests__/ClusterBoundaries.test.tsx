@@ -58,11 +58,11 @@ describe('ClusterBoundaries', () => {
         expect(boundary.style.getPropertyValue('--cluster-hue')).toBe('var(--cluster-color-3)');
     });
 
-    it('layer element has correct CSS class applied', () => {
+    it('layer element has absolute positioning for canvas overlay', () => {
         const { container } = render(<ClusterBoundaries clusters={[CLUSTER]} nodes={NODES} />);
         const layer = container.firstChild as HTMLElement;
         expect(layer).toBeInTheDocument();
-        expect(layer.className).toContain('layer');
+        expect(layer.className).toContain('absolute');
     });
 
     it('sets aria-label for accessibility', () => {
@@ -89,15 +89,15 @@ describe('ClusterBoundaries', () => {
         expect(layer.style.transform).toBe('translate(100px, 50px) scale(0.8)');
     });
 
-    it('applies preview variant CSS class', () => {
+    it('applies preview variant dashed border styling', () => {
         render(<ClusterBoundaries clusters={[CLUSTER]} nodes={NODES} variant="preview" />);
         const boundary = screen.getByRole('group');
-        expect(boundary.className).toContain('preview');
+        expect(boundary.className).toContain('border-dashed');
     });
 
-    it('applies committed variant without preview class', () => {
+    it('applies committed variant without dashed border', () => {
         render(<ClusterBoundaries clusters={[CLUSTER]} nodes={NODES} variant="committed" />);
         const boundary = screen.getByRole('group');
-        expect(boundary.className).not.toContain('preview');
+        expect(boundary.className).not.toContain('border-dashed');
     });
 });

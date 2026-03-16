@@ -8,7 +8,6 @@
 import { useId, useState, useLayoutEffect, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { strings } from '@/shared/localization/strings';
-import styles from './PortalTooltip.module.css';
 
 /** Offset (px) between target element edge and tooltip */
 const TOOLTIP_OFFSET_PX = 8;
@@ -51,6 +50,7 @@ function computePosition(
     };
 }
 
+/** Portal tooltip anchored to a ref; escapes parent stacking contexts and supports keyboard shortcut hints. */
 export function PortalTooltip({
     text,
     shortcut,
@@ -74,22 +74,17 @@ export function PortalTooltip({
 
     if (!visible || !positionStyle) return null;
 
-    const classNames = [
-        styles.tooltip,
-        styles.tooltipVisible,
-    ].join(' ');
-
     const tooltip = (
         <div
             id={tooltipId}
-            className={classNames}
-            style={positionStyle}
+            className="fixed z-[var(--z-tooltip)] bg-[linear-gradient(135deg,var(--color-surface-elevated),var(--color-surface))] text-[var(--color-text-primary)] font-medium font-[var(--font-family)] whitespace-nowrap rounded-xl border border-[var(--color-border)] shadow-[var(--card-shadow)] pointer-events-none opacity-100 visible transition-opacity duration-150 ease-in-out flex items-center"
+            style={{ ...positionStyle, fontSize: 'var(--font-size-xs)', padding: '8px 16px', gap: 4 }}
             role="tooltip"
             data-testid="portal-tooltip"
         >
-            <span className={styles.label}>{text}</span>
+            <span className="leading-none">{text}</span>
             {shortcut && (
-                <span className={styles.shortcutHint}>
+                <span className="text-[var(--color-text-muted)] leading-none" style={{ fontSize: 'var(--font-size-xxs)' }}>
                     {strings.tooltip.shortcutSeparator}{shortcut}
                 </span>
             )}

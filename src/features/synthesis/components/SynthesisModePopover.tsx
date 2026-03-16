@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { SynthesisMode } from '../services/synthesisPrompts';
 import { synthesisStrings } from '../strings/synthesisStrings';
-import styles from './SynthesisModePopover.module.css';
 
 interface SynthesisModePopoverProps {
     readonly onSelect: (mode: SynthesisMode) => void;
@@ -11,6 +10,7 @@ interface SynthesisModePopoverProps {
 
 const MODES: readonly SynthesisMode[] = ['summarize', 'outline', 'narrative', 'questions'];
 
+/** Keyboard-navigable popover for selecting one of the four synthesis modes. */
 export const SynthesisModePopover = React.memo(function SynthesisModePopover({
     onSelect,
     onClose,
@@ -50,19 +50,27 @@ export const SynthesisModePopover = React.memo(function SynthesisModePopover({
     );
 
     return (
-        <div className={styles.popover} role="listbox" aria-label={synthesisStrings.labels.synthesize} ref={listRef} onKeyDown={handleKeyDown}>
+        <div
+            className="absolute bottom-full left-1/2 -translate-x-1/2 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl shadow-[var(--shadow-dropdown)] min-w-[200px] z-[var(--z-dropdown)] flex flex-col"
+            style={{ marginBottom: 4, padding: 4, gap: 2 }}
+            role="listbox"
+            aria-label={synthesisStrings.labels.synthesize}
+            ref={listRef}
+            onKeyDown={handleKeyDown}
+        >
             {MODES.map((mode, idx) => (
                 <button
                     key={mode}
-                    className={styles.modeButton}
+                    className="flex flex-col items-start border-none rounded-md cursor-pointer text-left w-full transition-colors duration-150 ease-in-out hover:bg-[var(--color-hover)] focus-visible:bg-[var(--color-hover)] focus-visible:outline-none"
+                    style={{ background: idx === focusIndex ? 'var(--color-primary-light)' : 'transparent', gap: 2, padding: '8px 16px' }}
                     role="option"
                     aria-selected={idx === focusIndex}
                     onClick={() => onSelect(mode)}
                     tabIndex={idx === focusIndex ? 0 : -1}
                     type="button"
                 >
-                    <span className={styles.modeName}>{synthesisStrings.modes[mode]}</span>
-                    <span className={styles.modeDesc}>
+                    <span className="font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'var(--font-size-sm)' }}>{synthesisStrings.modes[mode]}</span>
+                    <span className="text-[var(--color-text-secondary)]" style={{ fontSize: 'var(--font-size-xs)' }}>
                         {synthesisStrings.modeDescriptions[mode]}
                     </span>
                 </button>

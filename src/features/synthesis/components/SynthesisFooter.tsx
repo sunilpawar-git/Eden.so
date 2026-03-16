@@ -2,7 +2,6 @@
 import React, { useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { synthesisStrings } from '../strings/synthesisStrings';
-import styles from './SynthesisFooter.module.css';
 
 interface SynthesisFooterProps {
     readonly sourceCount: number;
@@ -10,6 +9,7 @@ interface SynthesisFooterProps {
     readonly onReSynthesize: () => void;
 }
 
+/** Footer bar on synthesis nodes showing source count, highlight-sources action, and re-synthesize button. */
 export const SynthesisFooter = React.memo(function SynthesisFooter({
     sourceCount,
     sourceNodeIds,
@@ -22,12 +22,13 @@ export const SynthesisFooter = React.memo(function SynthesisFooter({
     }, [sourceNodeIds]);
 
     return (
-        <div className={styles.footer}>
-            <button className={styles.sourceLink} onClick={handleHighlightSources} type="button" aria-label={synthesisStrings.labels.highlightSources}>
+        <div className="flex items-center justify-between border-t border-[var(--color-border)] text-[var(--color-text-secondary)]" style={{ fontSize: 'var(--font-size-xs)', padding: '4px 8px' }}>
+            <button className="border-none text-[var(--node-status-synthesis)] cursor-pointer underline underline-offset-[var(--space-xxs)] hover:opacity-[var(--opacity-hover-subtle)]" style={{ background: 'transparent', fontSize: 'var(--font-size-xs)', padding: 0 }} onClick={handleHighlightSources} type="button" aria-label={synthesisStrings.labels.highlightSources}>
                 {synthesisStrings.labels.viewSources(sourceCount)}
             </button>
             <button
-                className={styles.reSynthBtn}
+                className="rounded-sm text-[var(--color-text-secondary)] cursor-pointer leading-none hover:bg-[var(--color-hover)] hover:text-[var(--node-status-synthesis)]"
+                style={{ background: 'transparent', border: '1px solid var(--color-border)', fontSize: 'var(--font-size-sm)', padding: '2px 4px' }}
                 onClick={onReSynthesize}
                 type="button"
                 aria-label={synthesisStrings.labels.reSynthesize}

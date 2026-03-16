@@ -19,21 +19,9 @@ vi.mock('../../stores/toastStore', () => ({
             getState: () => ({ toasts: mockToasts, removeToast: mockRemoveToastFn }),
         }
     ),
+    ToastType: {},
 }));
 
-// Mock CSS module
-vi.mock('../Toast.module.css', () => ({
-    default: {
-        container: 'container',
-        toast: 'toast',
-        success: 'success',
-        error: 'error',
-        info: 'info',
-        message: 'message',
-        close: 'close',
-        action: 'action',
-    },
-}));
 
 describe('ToastContainer', () => {
     beforeEach(() => {
@@ -75,8 +63,8 @@ describe('ToastContainer', () => {
 
         render(<ToastContainer />);
 
-        const toast = screen.getByText('Success!').closest('.toast');
-        expect(toast).toHaveClass('success');
+        const toastEl = screen.getByText('Success!').closest('div[class*="color-success"]');
+        expect(toastEl).toBeInTheDocument();
     });
 
     it('should render multiple toasts with unique keys', () => {
@@ -124,13 +112,13 @@ describe('ToastContainer', () => {
             expect(mockRemoveToastFn).toHaveBeenCalledWith('toast-1');
         });
 
-        it('applies action CSS class to the action button', () => {
+        it('applies underline style to the action button', () => {
             mockToasts = [{ id: 'toast-1', message: 'Test', type: 'info', action: { label: 'Undo', onClick: vi.fn() } }];
 
             render(<ToastContainer />);
 
             const actionBtn = screen.getByRole('button', { name: 'Undo' });
-            expect(actionBtn).toHaveClass('action');
+            expect(actionBtn.className).toMatch(/underline/);
         });
 
         it('close button still works when action is present', () => {

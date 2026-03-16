@@ -1,0 +1,21 @@
+/**
+ * Layout elastic sidebar ↔ mainArea relationship.
+ * Parent data-attribute selectors drive child transitions —
+ * Tailwind utilities cannot express this pattern.
+ */
+
+/* Unpinned: sidebar zone collapses, mainArea slides in */
+.layout-root[data-sidebar-pinned="false"] .layout-sidebar-zone {
+    width: 0;
+    overflow: visible;
+}
+
+.layout-root[data-sidebar-pinned="false"] .layout-main-area {
+    margin-left: var(--sidebar-hover-trigger-width);
+    transition: margin-left var(--sidebar-transition);
+}
+
+/* Unpinned + hover open: mainArea shifts right for overlay sidebar */
+.layout-root[data-sidebar-pinned="false"][data-sidebar-open="true"] .layout-main-area {
+    margin-left: var(--sidebar-width);
+}

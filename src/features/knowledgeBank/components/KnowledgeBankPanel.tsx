@@ -6,6 +6,7 @@ import { useCallback, useMemo } from 'react';
 import { useKnowledgeBankStore, filterEntries } from '../stores/knowledgeBankStore';
 import { useKnowledgeBankPanelHandlers } from '../hooks/useKnowledgeBankPanelHandlers';
 import { useDocumentGroupHandlers } from '../hooks/useDocumentGroupHandlers';
+import { useSidebarStore } from '@/shared/stores/sidebarStore';
 import { KBSearchBar } from './KBSearchBar';
 import { KBEntryList } from './KBEntryList';
 import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
@@ -13,6 +14,7 @@ import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import { strings } from '@/shared/localization/strings';
 import styles from './KnowledgeBankPanel.module.css';
 
+/** Slide-out panel for browsing, searching, and managing Knowledge Bank entries. */
 export function KnowledgeBankPanel() {
     const isPanelOpen = useKnowledgeBankStore((s) => s.isPanelOpen);
     const entries = useKnowledgeBankStore((s) => s.entries);
@@ -20,6 +22,8 @@ export function KnowledgeBankPanel() {
     const typeFilter = useKnowledgeBankStore((s) => s.typeFilter);
     const selectedTag = useKnowledgeBankStore((s) => s.selectedTag);
     const summarizingEntryIds = useKnowledgeBankStore((s) => s.summarizingEntryIds);
+    const isPinned = useSidebarStore((s) => s.isPinned);
+    const isHoverOpen = useSidebarStore((s) => s.isHoverOpen);
     const { handleToggle, handlePin, handleUpdate, handleDelete } = useKnowledgeBankPanelHandlers();
     const { handleToggleGroup, handleDeleteGroup } = useDocumentGroupHandlers();
 
@@ -39,8 +43,15 @@ export function KnowledgeBankPanel() {
     const showEmpty = entries.length === 0;
     const showNoResults = !showEmpty && isFiltering && filteredEntries.length === 0;
 
+    // When sidebar is unpinned and not hovered open, shift the panel left so it
+    // sits against the narrow hover-trigger strip instead of the full sidebar width.
+    const leftOffset =
+        !isPinned && !isHoverOpen
+            ? 'var(--sidebar-hover-trigger-width)'
+            : 'var(--sidebar-width)';
+
     return (
-        <div className={styles.panel}>
+        <div className={styles.panel} style={{ left: leftOffset, transition: `left var(--sidebar-transition)` }}>
             <PanelHeader onClose={() => useKnowledgeBankStore.getState().setPanelOpen(false)} />
             {entries.length > 0 && <KBSearchBar />}
             <KBEntryList
@@ -59,6 +70,7 @@ export function KnowledgeBankPanel() {
     );
 }
 
+/** Header row with title and close button for the Knowledge Bank panel. */
 function PanelHeader({ onClose }: { onClose: () => void }) {
     return (
         <div className={styles.panelHeader}>

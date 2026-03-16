@@ -9,13 +9,13 @@
 import React, { useState, useCallback } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { ShortcutsPanel } from './ShortcutsPanel';
-import styles from './HelpButton.module.css';
 
 export interface HelpButtonProps {
     readonly isOnboardingActive: boolean; // true while WelcomeScreen OR coach marks are showing
     readonly onReplay:           () => void;
 }
 
+/** Persistent "?" floating button that opens the ShortcutsPanel; hidden during active onboarding. */
 export const HelpButton = React.memo(function HelpButton({
     isOnboardingActive,
     onReplay,
@@ -36,7 +36,8 @@ export const HelpButton = React.memo(function HelpButton({
     return (
         <>
             <button
-                className={styles.helpButton}
+                className="fixed bottom-6 right-6 z-[var(--z-sticky)] w-9 h-9 rounded-full text-[var(--color-text-secondary)] font-semibold cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex items-center justify-center transition-colors duration-150 ease-in-out"
+                style={{ background: 'var(--color-surface-elevated)', border: '1px solid var(--color-border)', fontSize: 'var(--font-size-sm)' }}
                 onClick={toggle}
                 aria-label={strings.onboarding.helpButtonLabel}
                 aria-expanded={isOpen}

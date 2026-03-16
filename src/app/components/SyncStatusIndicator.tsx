@@ -11,6 +11,7 @@ import { strings } from '@/shared/localization/strings';
 
 type DotVariant = 'green' | 'spinner' | 'yellow' | 'gray' | 'red' | 'blue';
 
+/** Derives the status dot variant and label from current save/network/sync state. */
 function getIndicatorState(
     status: string,
     isOnline: boolean,
@@ -52,6 +53,7 @@ const DOT_CLASSES: Record<DotVariant, string> = {
     blue:    'bg-[var(--color-primary)] animate-[sync-pulse_1.2s_ease-in-out_infinite]',
 };
 
+/** Displays a coloured status dot and label reflecting current save/sync/network state. */
 export function SyncStatusIndicator() {
     const status = useSaveStatusStore((s) => s.status);
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
@@ -64,8 +66,8 @@ export function SyncStatusIndicator() {
 
     return (
         <div
-            className="flex items-center py-1 px-2 text-xs text-[var(--color-text-secondary)] select-none min-w-[145px]"
-            style={{ gap: 'var(--sync-indicator-gap, 6px)' }}
+            className="flex items-center text-xs text-[var(--color-text-secondary)] select-none min-w-[145px]"
+            style={{ gap: 'var(--sync-indicator-gap, 6px)', padding: '4px 8px' }}
         >
             <span
                 data-testid="sync-dot"

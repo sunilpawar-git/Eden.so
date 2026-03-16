@@ -6,7 +6,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTagStore } from '../stores/tagStore';
 import { strings } from '@/shared/localization/strings';
 import { tagNameSchema } from '@/shared/validation/schemas';
-import styles from './TagInput.module.css';
 
 interface TagInputProps {
     selectedTagIds: string[];
@@ -14,6 +13,7 @@ interface TagInputProps {
     compact?: boolean;
 }
 
+/** Add/remove tags on a canvas node with inline autocomplete and on-the-fly tag creation. */
 // eslint-disable-next-line max-lines-per-function -- tag input with autocomplete + CRUD
 export function TagInput({ selectedTagIds, onChange, compact = false }: TagInputProps) {
     const [isInputVisible, setIsInputVisible] = useState(false);
@@ -68,17 +68,23 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
     );
 
     return (
-        <div className={`${styles.container} ${compact ? styles.compact : ''}`}>
+        <div className="flex flex-wrap items-center" style={{ gap: compact ? 2 : 4, padding: '4px 0' }}>
             {selectedTags.map((tag) => (
                 tag && (
                     <span
                         key={tag.id}
-                        className={styles.tag}
-                        style={{ backgroundColor: tag.color }}
+                        className="inline-flex items-center rounded-sm text-white"
+                        style={{
+                            fontSize: compact ? '10px' : 'var(--font-size-xs)',
+                            backgroundColor: tag.color,
+                            gap: 2,
+                            padding: compact ? '1px 4px' : '2px 6px',
+                        }}
                     >
-                        <span className={styles.tagName}>{tag.name}</span>
+                        <span className="max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">{tag.name}</span>
                         <button
-                            className={styles.removeButton}
+                            className="flex items-center justify-center w-3.5 h-3.5 border-none bg-transparent text-inherit opacity-70 cursor-pointer text-xs leading-none hover:opacity-100"
+                            style={{ padding: 0 }}
                             onClick={() => handleRemoveTag(tag.id)}
                             aria-label={`${strings.tags.removeTag} ${tag.name}`}
                         >
@@ -92,7 +98,8 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
                 <input
                     ref={inputRef}
                     type="text"
-                    className={styles.input}
+                    className="w-20 border border-[var(--color-primary)] rounded-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] focus:outline-none"
+                    style={{ fontSize: 'var(--font-size-xs)', padding: '2px 6px' }}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleInputKeyDown}
@@ -104,7 +111,8 @@ export function TagInput({ selectedTagIds, onChange, compact = false }: TagInput
                 />
             ) : (
                 <button
-                    className={styles.addButton}
+                    className="flex items-center justify-center w-5 h-5 border border-dashed border-[var(--color-border)] rounded-sm bg-transparent text-[var(--color-text-muted)] cursor-pointer text-xs transition-all duration-150 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    style={{ padding: 0 }}
                     onClick={handleAddClick}
                     aria-label={strings.tags.addTag}
                 >

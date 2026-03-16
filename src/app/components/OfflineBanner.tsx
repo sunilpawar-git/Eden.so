@@ -8,6 +8,7 @@ import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { useOfflineQueueStore } from '@/features/workspace/stores/offlineQueueStore';
 import { strings } from '@/shared/localization/strings';
 
+/** Dismissible banner shown at the top of the canvas when the network is offline. */
 export function OfflineBanner() {
     const isOnline = useNetworkStatusStore((s) => s.isOnline);
     const pendingCount = useOfflineQueueStore((s) => s.pendingCount);
@@ -27,8 +28,9 @@ export function OfflineBanner() {
 
     return (
         <div
-            className="flex items-center justify-between py-1 px-4 border-b text-sm animate-[slideDown_150ms_ease]"
+            className="flex items-center justify-between border-b text-sm animate-[slideDown_150ms_ease]"
             style={{
+                padding: '4px 16px',
                 background: 'var(--offline-banner-bg, hsl(38, 90%, 95%))',
                 color: 'var(--offline-banner-text, hsl(38, 80%, 20%))',
                 borderBottomColor: 'var(--offline-banner-border, hsl(38, 70%, 80%))',
@@ -43,8 +45,8 @@ export function OfflineBanner() {
                 )}
             </span>
             <button
-                className="text-xs underline p-1 opacity-70 transition-opacity duration-150 ease-in-out hover:opacity-100"
-                style={{ color: 'var(--offline-banner-text, hsl(38, 80%, 20%))' }}
+                className="text-xs underline opacity-70 transition-opacity duration-150 ease-in-out hover:opacity-100"
+                style={{ padding: 4, color: 'var(--offline-banner-text, hsl(38, 80%, 20%))' }}
                 onClick={() => setIsDismissed(true)}
             >
                 {strings.offline.dismiss}
