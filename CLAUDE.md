@@ -645,6 +645,57 @@ async function load() {
 
 ---
 
+## 🛡️ ADVANCED SECURITY HARDENING — Mar 17 2026
+
+Six new Cloud Function utilities implement WAF-level defence. All are **non-negotiable** — do not remove or bypass them.
+
+### Security layer order in `geminiProxy` (and any future AI endpoint)
+
+```
+Request → Bot Detection → IP Rate Limit → Auth → User Rate Limit
+        → Body Size Cap → Prompt Filter → Token Cap → Output Scan → Response
+```
+
+### New utilities (all in `functions/src/utils/`)
+
+| File | Purpose |
+|---|---|
+| `securityLogger.ts` | Structured JSON events to Cloud Logging — WARNING / ERROR / CRITICAL severity routing |
+| `botDetector.ts` | Scanner UA (sqlmap/nikto/curl/masscan/nuclei/Burp/ZAP), headless browsers (Playwright/Puppeteer/HeadlessChrome), heuristic header checks |
+| `ipRateLimiter.ts` | Per-IP sliding window — 30 req/min on Gemini. Firestore-backed in production, in-memory for tests |
+| `promptFilter.ts` | Input: 14 injection patterns (DAN/jailbreak/`[SYSTEM]`/`<\|im_start\|>`/ignore-all-instructions) + 5 exfiltration patterns. Output: scans response for GCP API keys, Bearer tokens, private key fragments |
+| `fileUploadValidator.ts` | Magic-byte MIME detection, polyglot/archive/ELF/PE detection, dangerous extension block (.exe/.sh/.php…), per-type size limits |
+| `threatMonitor.ts` | Per-type spike counters (50×429/min, 20×500/min, 30×auth-fail/min, 10×bot/min) — fires CRITICAL log alert on threshold breach |
+
+### Security rules for new Cloud Functions
+
+1. **Bot check before auth** — bots must be rejected before any Firestore or auth SDK call (cheap rejection)
+2. **IP rate limit before user rate limit** — per-IP check catches multi-account distributed abuse
+3. **All security events logged** — every 401/403/429 must call `logSecurityEvent()` with correct `SecurityEventType`
+4. **Threat counters on every 4xx/5xx** — call `recordThreatEvent()` for `429_spike`, `500_spike`, `auth_failure_spike`, `bot_spike`
+5. **Upload endpoints must call `validateUpload()`** — never accept raw bytes without magic-byte + extension + size checks
+6. **AI endpoints must call `filterPromptInput()` before forwarding** and `filterPromptOutput()` before returning
+
+### Cloud Logging alert setup (manual — one-time)
+
+In Google Cloud Console → Monitoring → Alerting, create a log-based alert on:
+```
+resource.type="cloud_run_revision"
+jsonPayload.labels.eden_security="true"
+severity>="ERROR"
+```
+This fires for bot detections, prompt injection, IP blocks, and threat spikes.
+
+### What still requires external services (not in code)
+
+| Gap | Action |
+|---|---|
+| **WAF** | Enable Cloud Armor in GCP Console → attach to Cloud Run service |
+| **Cloudflare Turnstile / reCAPTCHA** | Add `TURNSTILE_SECRET` to Secret Manager; validate token server-side before login/upload |
+| **Immutable backups** | GCS object lock policy on `actionstation-244f0-backups` bucket |
+
+---
+
 ## �🚫 TECH DEBT PREVENTION
 
 Before ANY commit:

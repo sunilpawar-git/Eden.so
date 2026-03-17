@@ -388,6 +388,54 @@ npm audit
 npm run check
 ```
 
+---
+
+## Advanced Security Hardening Checklist (Sprint — Mar 17 2026)
+
+All items below are permanently complete. Do not remove or bypass.
+
+```
+✅ securityLogger.ts:      structured JSON → Cloud Logging, WARNING/ERROR/CRITICAL routing
+                           labels.eden_security=true on all entries
+✅ botDetector.ts:         24 scanner UAs (sqlmap/nikto/masscan/nuclei/Burp/ZAP/curl/wget…)
+                           6 headless browser patterns (HeadlessChrome/Playwright/Puppeteer…)
+                           heuristic: wildcard Accept + no Accept-Language
+✅ ipRateLimiter.ts:       per-IP sliding window, 30 req/min Gemini
+                           Firestore-backed (production), in-memory (tests)
+                           stops multi-account distributed abuse
+✅ promptFilter.ts:        14 injection patterns (DAN/jailbreak/[SYSTEM]/<|im_start|>/ignore…)
+                           5 exfiltration patterns (print API key / reveal system prompt…)
+                           50k/100k char limits per-part and total
+                           output scan: GCP API keys, Bearer tokens, private key fragments
+✅ fileUploadValidator.ts: magic-byte detection (PNG/JPEG/GIF/WEBP/PDF/ZIP/GZ/RAR/7Z/ELF/PE)
+                           archive hard-block (zip bomb vector)
+                           polyglot detection (archive/executable disguised as image)
+                           MIME mismatch block
+                           30 dangerous extensions blocked (.exe/.sh/.php/.py/.ps1…)
+                           per-type size limits (text 1 MB, image 10 MB, PDF 20 MB)
+✅ threatMonitor.ts:       429 spike (50/min), 500 spike (20/min),
+                           auth failure (30/min), bot (10/min) → CRITICAL log alert
+✅ geminiProxy.ts:         all 6 layers wired: bot→IP→auth→user-rate→body→prompt→token→output
+✅ securityConstants.ts:   IP_RATE_LIMIT=120, IP_RATE_LIMIT_GEMINI=30, UPLOAD_MAX_BODY_BYTES
+✅ Tests:                  225/225 passing, tsc clean
+```
+
+### Cloud Monitoring alert setup (manual — one-time in GCP Console)
+
+```
+Log filter: jsonPayload.labels.eden_security="true" AND severity>="ERROR"
+Notification channel: email / PagerDuty / Slack webhook
+Threshold: any single occurrence
+```
+
+### Remaining gaps (require external services)
+
+| Gap | Next step |
+|---|---|
+| WAF | Cloud Armor → enable in GCP Console → attach to Cloud Run service |
+| Turnstile / reCAPTCHA | Add `TURNSTILE_SECRET` to Secret Manager; validate server-side before login/upload |
+| Immutable backups | GCS object lock policy on `actionstation-244f0-backups` bucket |
+
 **Last Updated**: 2026-03-17
-**Skills Version**: 1.1
+**Skills Version**: 1.2
 **Supported**: Claude Code CLI with custom skills support

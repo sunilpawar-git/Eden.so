@@ -283,6 +283,67 @@ async function renderLayout() {
 
 ---
 
+---
+
+## Advanced Security Hardening Sprint — Mar 17 2026
+
+### Context
+Following the Production Hardening Sprint, a second targeted sprint addressed advanced security gaps: WAF-layer bot detection, distributed abuse protection, AI prompt safety, file upload security, and threat monitoring.
+
+---
+
+## Decision 22 — Six-Layer Security Stack for Cloud Functions
+
+**Problem:** Per-user rate limiting alone cannot stop distributed multi-account attacks (100 IPs × 10k req/hr). No visibility into security events. AI endpoints lacked prompt injection protection. No file upload validation.
+
+**Decision:** Six new utilities implement defence-in-depth at the Cloud Function edge, applied in strict order:
+
+```
+Bot Detection → IP Rate Limit → Auth → User Rate Limit
+→ Body Size → Prompt Filter → Token Cap → Output Scan
+```
+
+**Files created:**
+- `functions/src/utils/securityLogger.ts` — structured JSON events to Cloud Logging. Severity: WARNING (auth fail, rate limit), ERROR (bot, injection, IP block), CRITICAL (spike alerts). All entries carry `labels.eden_security: "true"` for Cloud Monitoring log-based alert policy.
+- `functions/src/utils/botDetector.ts` — 24 scanner/automation UA patterns (sqlmap, nikto, masscan, nuclei, Burp, ZAP, curl, python-requests, Go-http-client…) + 6 headless browser patterns (HeadlessChrome, Playwright, Puppeteer, Selenium…) + heuristic header checks. Rejects before auth → zero Firestore cost for bots.
+- `functions/src/utils/ipRateLimiter.ts` — per-IP sliding window (30 req/min Gemini). Firestore-backed in production (survives cold starts, consistent across instances). Same pattern as `firestoreRateLimiter.ts`. Stops the "100 IPs × 10k req/hr" scenario that bypasses per-user limits.
+- `functions/src/utils/promptFilter.ts` — **Input layer:** 14 injection regexes (DAN mode, jailbreak, `[SYSTEM]`, `<|im_start|>`, ignore-previous-instructions, forget-everything, act-as-evil…) + 5 exfiltration patterns (repeat system prompt, print API key, reveal credentials…) + 50k/100k char limits. **Output layer:** scans Gemini responses for GCP API keys (`AIza…`), Bearer tokens, private key headers before forwarding to client.
+- `functions/src/utils/fileUploadValidator.ts` — magic-byte detection for 12 types (PNG/JPEG/GIF/WEBP/PDF/ZIP/GZ/RAR/7Z/ELF/PE/MZ), archive hard-block (zip bomb vector), polyglot detection (ZIP/EXE inside image claim), MIME mismatch blocking, 30 dangerous extension blocks (.exe/.sh/.php/.py…), per-type size limits (1 MB text, 10 MB image, 20 MB PDF).
+- `functions/src/utils/threatMonitor.ts` — in-process spike counters with per-minute thresholds: 429 spike (50/min), 500 spike (20/min), auth failure (30/min), bot (10/min). Writes CRITICAL log on threshold → Cloud Monitoring alert fires.
+
+**New constants in `securityConstants.ts`:**
+- `IP_RATE_LIMIT = 120` — general per-IP ceiling
+- `IP_RATE_LIMIT_GEMINI = 30` — Gemini-specific (inference is expensive)
+- `UPLOAD_MAX_BODY_BYTES = 52_428_800` — 50 MB hard ceiling before per-type checks
+
+**Tests:** 225 passing (all new files have full test coverage). TypeScript clean (`tsc` 0 errors).
+
+---
+
+## Decision 23 — Bot Rejection Before Auth
+
+**Problem:** Bots reaching `verifyAuthToken()` trigger Firebase Admin SDK calls (and Firestore rate limit reads). Under scanner load, this wastes Cloud Function compute.
+
+**Decision:** `detectBot(req)` runs as the first check in every HTTP handler, before any auth or Firestore call. Only `confidence: 'high'` and `confidence: 'medium'` detections are hard-blocked (403). `confidence: 'low'` is logged but allowed through (avoids false-positive blocking legitimate automation).
+
+---
+
+## Decision 24 — IP Rate Limiting is Separate from User Rate Limiting
+
+**Problem:** User rate limits are keyed on Firebase UID. An attacker with 100 accounts, each under the per-user limit, bypasses user rate limiting entirely.
+
+**Decision:** `ipRateLimiter.ts` is a second independent layer keyed on client IP (from `X-Forwarded-For`). Both layers must pass for a request to proceed. The IP limit is intentionally looser than the user limit (30 vs 60 for Gemini) to avoid blocking legitimate users behind NAT.
+
+---
+
+## Decision 25 — Prompt Output Scanning
+
+**Problem:** A misconfigured system prompt or adversarial input could theoretically cause Gemini to echo back secrets (API keys, private keys) that were injected into the function environment.
+
+**Decision:** `filterPromptOutput()` scans the serialised Gemini response JSON for GCP API key patterns (`AIza[0-9A-Za-z_-]{35}`), Bearer tokens, and `-----BEGIN PRIVATE KEY-----` fragments before the response is forwarded to the client. On match: 502 + RULE_DENIAL security log.
+
+---
+
 ## Standing Rules Added to CLAUDE.md
 
 These rules were codified as a result of the sprint:
