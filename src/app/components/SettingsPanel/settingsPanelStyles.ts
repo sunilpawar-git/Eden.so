@@ -14,7 +14,7 @@ export const SP_BACKDROP_STYLE: CSSProperties = {
 };
 
 export const SP_PANEL =
-    'relative w-[90%] max-w-[600px] max-h-[80vh] flex flex-col overflow-hidden rounded-[var(--radius-xl)]';
+    'relative w-[90%] max-w-[600px] min-h-[520px] max-h-[80vh] flex flex-col overflow-hidden rounded-[var(--radius-xl)]';
 export const SP_PANEL_STYLE: CSSProperties = {
     background: 'var(--color-surface-elevated)',
     boxShadow: 'var(--shadow-xl)',
@@ -38,29 +38,28 @@ export const SP_CLOSE_BTN_STYLE: CSSProperties = {
 };
 
 /* ─── Content / Tabs ─── */
-export const SP_CONTENT = 'flex flex-1 overflow-hidden';
+export const SP_CONTENT = 'flex flex-col flex-1 overflow-hidden';
 
 export const SP_TABS =
-    'flex flex-col border-r border-[var(--color-border)] min-w-[160px]';
+    'flex flex-row items-center justify-evenly border-b border-[var(--color-border)] flex-shrink-0';
 export const SP_TABS_STYLE: CSSProperties = {
-    gap: 'var(--space-xs)',
-    padding: 'var(--space-md)',
-    background: 'var(--color-surface)',
+    padding: '0 var(--space-md)',
 };
 
 export const SP_TAB =
-    'text-left rounded-[var(--radius-md)] text-[length:var(--font-size-sm)] transition-all duration-[var(--transition-fast)] cursor-pointer border-none';
+    'text-center whitespace-nowrap rounded-[var(--radius-md)] text-[length:var(--font-size-sm)] transition-all duration-[var(--transition-fast)] cursor-pointer border-none hover:bg-[var(--color-surface-hover)]';
 export const SP_TAB_STYLE: CSSProperties = {
-    padding: 'var(--space-sm) var(--space-md)',
+    padding: 'var(--space-xs) var(--space-md)',
     color: 'var(--color-text-secondary)',
-    background: 'transparent',
 };
 
 export const SP_TAB_ACTIVE_STYLE: CSSProperties = {
-    padding: 'var(--space-sm) var(--space-md)',
+    padding: 'var(--space-xs) var(--space-md)',
     background: 'var(--color-primary-light)',
     color: 'var(--color-primary)',
     fontWeight: 'var(--font-weight-medium)',
+    borderBottom: '2px solid var(--color-primary)',
+    borderRadius: 0,
 };
 
 export const SP_SECTION_CONTENT = 'flex-1 overflow-y-auto';
