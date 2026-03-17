@@ -350,6 +350,44 @@ A: `/test` runs only tests. `/build` runs the complete CI pipeline (types → li
 
 ---
 
-**Last Updated**: 2026-03-06
-**Skills Version**: 1.0
+---
+
+## Production Hardening Checklist (Sprint — Mar 17 2026)
+
+All items below are permanently complete. Do not revert.
+
+```
+✅ npm audit: 0 vulnerabilities (was 12 HIGH/MODERATE)
+✅ CI audit gate: npm audit --audit-level=high blocks build on new vulns
+✅ Security headers: HSTS, X-Frame-Options, CSP, Referrer-Policy,
+                   Permissions-Policy, X-Content-Type-Options in firebase.json
+✅ CSP: HTTP header only (not meta tag). frame-ancestors 'none' enforced
+✅ VITE_GOOGLE_CLIENT_ID: in REQUIRED_VARS, deploy.yml, GitHub Secrets
+✅ VITE_CLOUD_FUNCTIONS_URL: in REQUIRED_VARS, deploy.yml, GitHub Secrets
+✅ VITE_GEMINI_API_KEY: absent from deploy.yml (prod-safe)
+✅ KnowledgeBankPanel: React.lazy chunk (~20 KB separated)
+✅ AI injection patterns: 12+ obfuscated variants (no Cyrillic false-positives)
+✅ /health endpoint: deployed to us-central1-actionstation-244f0.cloudfunctions.net
+✅ Firestore daily backup: scheduled export → actionstation-244f0-backups GCS bucket
+✅ Build artifacts: removed from git (dist-node/, *.tsbuildinfo, wave6-*.png)
+✅ Test suite: 5050/5050 green after all hardening changes
+```
+
+### Live verification commands
+```bash
+# Confirm headers are live
+curl -sI https://actionstation-244f0.web.app | grep -i "strict-transport\|x-frame\|content-security\|referrer\|permissions\|x-content"
+
+# Confirm health endpoint
+curl -s https://us-central1-actionstation-244f0.cloudfunctions.net/health
+
+# Confirm 0 vulns
+npm audit
+
+# Full test suite
+npm run check
+```
+
+**Last Updated**: 2026-03-17
+**Skills Version**: 1.1
 **Supported**: Claude Code CLI with custom skills support

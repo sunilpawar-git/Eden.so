@@ -610,7 +610,42 @@ async function load() {
 }
 ```
 
-## 🚫 TECH DEBT PREVENTION
+## � PRODUCTION HARDENING SPRINT — Mar 2026
+
+### What was done (all permanent, non-negotiable)
+
+| Area | Change |
+|---|---|
+| **Security headers** | Full HTTP header block in `firebase.json`: HSTS, X-Frame-Options, CSP, Referrer-Policy, Permissions-Policy, X-Content-Type-Options |
+| **CSP** | Moved from `<meta>` tag → Firebase Hosting HTTP header only. `frame-ancestors 'none'` enforced |
+| **Dependencies** | `npm audit fix` — resolved all 12 HIGH/MODERATE vulns (0 remain). No `--force` needed |
+| **CI audit gate** | `.github/workflows/ci.yml` now runs `npm audit --audit-level=high`; build job depends on it |
+| **Deploy env vars** | `VITE_CLOUD_FUNCTIONS_URL` + `VITE_GOOGLE_CLIENT_ID` added to `deploy.yml` and GitHub Secrets |
+| **Env validation** | `VITE_GOOGLE_CLIENT_ID` added to `REQUIRED_VARS` in `envValidation.ts`; made non-optional in `vite-env.d.ts` |
+| **Bundle** | `KnowledgeBankPanel` converted to `React.lazy` — own chunk ~20 KB; main bundle reduced |
+| **AI injection** | `INJECTION_PATTERNS` expanded with 12+ obfuscated variants. Cyrillic char-class patterns removed (false positives — NFKD normalization is the correct approach) |
+| **Health endpoint** | `functions/src/health.ts` deployed: `GET /health` → `{status,version,timestamp}` |
+| **Firestore backup** | Daily scheduled export: Firestore → Cloud Storage bucket `actionstation-244f0-backups` (30-day retention) |
+| **Repo hygiene** | Build artifacts (`dist-node/`, `*.tsbuildinfo`, `wave6-*.png`) removed from git |
+
+### Structural tests that guard these invariants
+
+- `cspCompleteness.structural.test.ts` — reads CSP from `firebase.json` headers block
+- `envValidation.structural.test.ts` — mirrors `REQUIRED_VARS` (currently 8 vars); update both together
+- `noHardcodedSecrets.structural.test.ts` — blocks `AIza…` / `sk-…` patterns in source
+- `geminiKeyIsolation.structural.test.ts` — only `geminiClient.ts` may reference `VITE_GEMINI_API_KEY`
+
+### Invariants for future sprints
+
+1. `VITE_GEMINI_API_KEY` must **never** appear in `deploy.yml` — Gemini calls go through Cloud Functions proxy only
+2. CSP lives **only** in `firebase.json` headers — never re-add a `<meta http-equiv>` CSP tag
+3. Any new required env var must be added to **both** `envValidation.ts` AND `envValidation.structural.test.ts` REQUIRED_VARS
+4. New Cloud Functions must export from `functions/src/index.ts`
+5. `npm audit` must stay at 0 — CI will block the build otherwise
+
+---
+
+## �🚫 TECH DEBT PREVENTION
 
 Before ANY commit:
 1. `npm run lint` → 0 errors

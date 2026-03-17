@@ -210,6 +210,79 @@ useEffect(() => { ... }, [userId, workspaceId]);
 
 ---
 
+---
+
+## Production Hardening Sprint — Mar 17 2026
+
+### Context
+A full production readiness audit was run (20 sections). All critical findings were fixed in a single sprint. All 5050 tests green. 0 npm vulnerabilities.
+
+---
+
+## Decision 16 — CSP via HTTP Header, Not Meta Tag
+
+**Problem:** CSP was delivered via `<meta http-equiv="Content-Security-Policy">`. Meta-tag CSP cannot enforce `frame-ancestors` (ignored by browsers).
+
+**Decision:** Move CSP to `firebase.json` hosting headers block. Remove meta tag from `index.html` entirely.
+
+**Enforcement:** `cspCompleteness.structural.test.ts` reads from `firebase.json` headers — not `index.html`. If the meta tag is re-added, the test must not be updated to read from it.
+
+---
+
+## Decision 17 — Gemini API Key Never Reaches Browser in Production
+
+**Problem:** `VITE_GEMINI_API_KEY` was potentially exposable via the Vite build.
+
+**Decision:** `VITE_GEMINI_API_KEY` is intentionally absent from `deploy.yml`. In production all Gemini calls route: Frontend → `VITE_CLOUD_FUNCTIONS_URL/geminiProxy` → Cloud Function → Gemini (key held in Google Secret Manager). Direct API key is dev-only fallback.
+
+**Enforcement:** `geminiKeyIsolation.structural.test.ts` — only `geminiClient.ts` may reference the env var. CI deploy workflow has no `VITE_GEMINI_API_KEY` entry.
+
+---
+
+## Decision 18 — envValidation REQUIRED_VARS has a Test Mirror
+
+**Problem:** `envValidation.ts` REQUIRED_VARS was updated (added `VITE_GOOGLE_CLIENT_ID`) but the structural test maintained a hardcoded copy — causing CI failure.
+
+**Rule:** Whenever a var is added to or removed from `REQUIRED_VARS` in `src/config/envValidation.ts`, the array in `src/__tests__/envValidation.structural.test.ts` **must be updated in the same commit**.
+
+Current list (8 vars): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_CLOUD_FUNCTIONS_URL`, `VITE_GOOGLE_CLIENT_ID`.
+
+---
+
+## Decision 19 — Cyrillic Homoglyph Patterns Require NFKD Normalization
+
+**Problem:** Character-class regex patterns like `/[\u0420P][\u0420R]/gi` (mixing Cyrillic + ASCII in same class) caused false positives — ASCII words like `prompt` were filtered by the PROMPT detection pattern.
+
+**Decision:** Removed all 3 Cyrillic character-class patterns from `INJECTION_PATTERNS`. Left comment in code explaining correct approach: `text.normalize('NFKD')` before pattern matching, then strip combining characters. Deferred to a dedicated security sprint.
+
+**File:** `src/features/documentAgent/services/documentAgentPrompts.ts`
+
+---
+
+## Decision 20 — React.lazy Requires async act() in Tests
+
+**Problem:** Converting `KnowledgeBankPanel` to `React.lazy` broke all 14 `Layout.integration.test.tsx` tests — Suspense resolution fires as async microtask after `render()` returns.
+
+**Decision:** All Layout integration tests use an `async renderLayout()` helper:
+```tsx
+async function renderLayout() {
+    let result!: ReturnType<typeof render>;
+    await act(async () => { result = render(<Layout><div /></Layout>); });
+    return result;
+}
+```
+**Rule:** Any test that renders a component tree containing a `React.lazy` boundary must wrap `render()` in `await act(async () => {})`.
+
+---
+
+## Decision 21 — /health Endpoint for Uptime Monitoring
+
+**Decision:** `functions/src/health.ts` exports a `health` Cloud Function (no auth, CORS-allowed) returning `{status, version, timestamp}`. Used for uptime monitoring services (BetterUptime, Checkly etc.).
+
+**URL:** `https://us-central1-actionstation-244f0.cloudfunctions.net/health`
+
+---
+
 ## Standing Rules Added to CLAUDE.md
 
 These rules were codified as a result of the sprint:
