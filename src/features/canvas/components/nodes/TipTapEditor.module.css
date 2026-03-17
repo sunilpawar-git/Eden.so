@@ -72,11 +72,29 @@
     margin: var(--space-xs) 0;
 }
 
-/* List styles */
-.tiptapEditor :global(.ProseMirror ul),
-.tiptapEditor :global(.ProseMirror ol) {
+/* List styles — list-style-type MUST be explicit here.
+ * Tailwind's preflight (`@import "tailwindcss"` in global.css) resets
+ * `ol, ul { list-style: none }`, stripping bullets/numbers from every node card.
+ * These rules restore the correct markers after that reset. */
+.tiptapEditor :global(.ProseMirror ul) {
+    list-style-type: disc;
     padding-left: var(--space-lg);
     margin: var(--space-xs) 0;
+}
+
+.tiptapEditor :global(.ProseMirror ol) {
+    list-style-type: decimal;
+    padding-left: var(--space-lg);
+    margin: var(--space-xs) 0;
+}
+
+/* Nested list marker variety */
+.tiptapEditor :global(.ProseMirror ul ul) {
+    list-style-type: circle;
+}
+
+.tiptapEditor :global(.ProseMirror ul ul ul) {
+    list-style-type: square;
 }
 
 /* Blockquote */
