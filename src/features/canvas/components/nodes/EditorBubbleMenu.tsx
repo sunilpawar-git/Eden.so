@@ -9,6 +9,7 @@ import type { Editor } from '@tiptap/react';
 import { strings } from '@/shared/localization/strings';
 import { LinkButtonItem } from './LinkButtonItem';
 import { HighlightSwatches } from './HighlightSwatches';
+import { HeadingButtons } from './HeadingButtons';
 
 interface EditorBubbleMenuProps {
     editor: Editor | null;
@@ -66,6 +67,8 @@ export const EditorBubbleMenu = React.memo(function EditorBubbleMenu({ editor }:
                         {display}
                     </button>
                 ))}
+                <HeadingButtons editor={editor} />
+                <div aria-hidden="true" style={{ width: 1, alignSelf: 'stretch', background: 'var(--color-border)', margin: '2px 0' }} />
                 <LinkButtonItem editor={editor} />
                 <HighlightSwatches editor={editor} />
             </div>
