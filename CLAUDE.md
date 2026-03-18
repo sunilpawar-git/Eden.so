@@ -1,6 +1,79 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # ActionStation - Project Rules
 
 > **CRITICAL**: ZERO TECH DEBT policy. All rules are NON-NEGOTIABLE.
+
+## Development Commands
+
+```bash
+# Dev server
+npm run dev                          # Start Vite dev server
+
+# Full check (typecheck + lint + test) — run before committing
+npm run check
+
+# Individual checks
+npm run typecheck                    # tsc --noEmit
+npm run lint                         # eslint, zero warnings allowed
+npm run lint:fix                     # Auto-fix lint issues
+npm run test                         # vitest run (all tests, single run)
+npm run test:watch                   # vitest in watch mode
+
+# Run a single test file
+npx vitest run src/path/to/file.test.ts
+
+# Run tests matching a name pattern
+npx vitest run -t "pattern"
+
+# Build
+npm run build                        # typecheck + lint + test + vite build
+npm run build:quick                   # tsc -b + vite build (skip lint/test)
+
+# Cloud Functions (separate package)
+cd functions && npm run check         # lint + test + build
+cd functions && npm test              # vitest run
+```
+
+**Dev server**: `npm run dev` starts Vite at `http://localhost:5173`.
+
+**Path alias**: `@/` maps to `src/` (configured in tsconfig.json and vite.config.ts).
+
+**Test framework**: Vitest + jsdom + React Testing Library. Setup in `src/test/setup.ts`. Tests co-located in `__tests__/` dirs or as `*.test.ts(x)` files.
+
+**Cloud Functions**: Separate Node 22 package in `functions/` with its own tsconfig, eslint, and vitest config. Exports from `functions/src/index.ts`.
+
+## Product Context — Building a Second Brain (BASB)
+
+ActionStation is a **Building a Second Brain** (BASB) application — an infinite canvas for capturing, connecting, and synthesising ideas. Every feature must serve this philosophy:
+
+- **Capture**: Nodes are atomic ideas (text, images, documents). Creation must be frictionless — one click or keyboard shortcut.
+- **Organise**: Spatial layout on an infinite canvas replaces folders. Clustering and tagging surface structure organically.
+- **Distil**: AI-powered synthesis (Gemini) condenses selected nodes into new insight. Knowledge Bank entries provide reusable context.
+- **Express**: Branch export, markdown output, and mind-map views transform private notes into shareable artefacts.
+
+When building features, ask: *"Does this reduce friction between thought and capture, or between capture and insight?"* If not, it doesn't belong.
+
+## Available Skills (Slash Commands)
+
+Use these skills proactively during development — invoke via `/skillname`.
+
+| Skill | When to use |
+|-------|-------------|
+| `/build` | Run full build pipeline (types + lint + test + build). Use `--quick` to skip tests. |
+| `/ci` | Simulate GitHub CI locally before pushing. Supports `--fast` and `--from <stage>`. |
+| `/test` | Run tests for specific files/patterns. e.g. `/test src/features/canvas/__tests__/` |
+| `/typecheck` | Run `tsc --noEmit` to check type errors without building. |
+| `/lint-fix` | Run ESLint with auto-fix across project or specific files. |
+| `/review` | Audit changed files for CLAUDE.md compliance, tech debt, file size limits, anti-patterns. |
+| `/css-migrate` | Migrate a component's `.module.css` to Tailwind. Follow the Tailwind migration rules below. |
+| `/migration-verify` | Verify a completed CSS-to-Tailwind migration wave (orphaned imports, forbidden patterns). |
+| `/phase <n>` | Load roadmap phase plan (1-10) from `mydocs/PHASE-*.md` for implementation guidance. |
+| `/simplify` | Review changed code for reuse, quality, and efficiency, then fix issues found. |
+
+**Workflow**: After implementing a feature, run `/review` then `/build`. Before pushing, run `/ci`.
 
 ## 🚨 STRICT LIMITS
 
@@ -58,9 +131,9 @@ Every node and edge document stores `userId` + `workspaceId`. Firestore rules va
 ### SOLID Principles Enforcement
 - **S**: One file = One responsibility
 - **O**: Extend via composition, not modification
-- **NO HARDCODED STRINGS**: Use `stringResource(R.string.key)` or `context.getString()`.
-- **NO HARDCODED COLORS**: Use `MaterialTheme.colorScheme.primary`.
-- **NO HARDCODED DIMENSIONS**: Use `dp` or `sp` resources/constants.
+- **NO HARDCODED STRINGS**: Use `strings` from `@/shared/localization/strings`
+- **NO HARDCODED COLORS**: Use CSS variables (`var(--color-*)`) from `src/styles/variables.css`
+- **NO HARDCODED DIMENSIONS**: Use CSS variables (`var(--space-*)`, `var(--radius-*)`) or design tokens
 - **SECURITY: NO SECRETS IN CODE**: NEVER hardcode API keys, passwords, or tokens. Use `.env.local` for local development. Use environment variables in CI/CD.
 - **L**: Interfaces define contracts
 - **I**: Small, focused interfaces
@@ -345,6 +418,21 @@ service cloud.firestore {
 4. COMMIT: Only when tests pass
 ```
 
+### 🔴 CRITICAL: Acceptance Criteria Before Tests
+
+**ALWAYS ask for acceptance criteria before designing tests.** Do not infer what to test — the user defines what "done" means. Tests must validate acceptance criteria, not what the LLM assumes is correct.
+
+```
+// Workflow:
+1. User requests a feature or fix
+2. ASK: "What are the acceptance criteria for this change?"
+3. User provides criteria (e.g., "clicking X does Y", "error shown when Z")
+4. Write tests that directly verify those criteria
+5. Implement code to pass those tests
+```
+
+Tests that do not trace back to an explicit acceptance criterion are waste. Do not write tests for implementation details, internal method signatures, or hypothetical edge cases the user hasn't specified.
+
 ### Test Coverage Requirements
 | Layer | Minimum Coverage |
 |-------|-----------------|
@@ -568,6 +656,33 @@ const migrations: Migration[] = [
 
 ### Bundle-first loading
 `loadUserWorkspaces` tries `loadWorkspaceBundle()` first (fast, cached). Bundle cache is invalidated automatically on workspace create/delete. Falls back to direct Firestore queries if bundle is unavailable.
+
+## 💰 COST MINIMISATION (Gemini & Firebase/Firestore)
+
+Every Firestore read/write and every Gemini API call costs money. Treat them as scarce resources.
+
+### Firestore cost rules
+- **Query caps**: ALL `getDocs` calls must use `limit()` from `FIRESTORE_QUERY_CAP` — enforced by structural test
+- **Spatial chunking**: Load only visible tiles, evict stale ones — reduces reads by 80-95%
+- **Bundle-first loading**: `loadWorkspaceBundle()` serves cached data before hitting Firestore
+- **Batch writes**: Use `chunkedBatchWrite()` (auto-chunks at 500) — never write documents in unbatched loops
+- **Debounce saves**: Canvas auto-save uses dirty-tile tracking — only changed tiles are written
+- **Avoid full-collection reads**: Always scope queries to user path (`users/{userId}/...`), never read entire collections
+- **Listener cleanup**: Every `onSnapshot` listener must be unsubscribed in cleanup functions
+
+### Gemini cost rules
+- **Token caps**: `geminiProxy` Cloud Function enforces max input/output token limits
+- **Prompt size**: Strip unnecessary context before sending — use `stripBase64Images()` to remove inline images
+- **No speculative calls**: Never call Gemini for background/predictive features without explicit user action
+- **Cache AI results**: Store generated content in Firestore — never regenerate the same synthesis twice
+- **KB context injection**: `getKBContext()` provides focused context rather than sending entire workspace content
+- **User rate limit**: Per-user rate limiting in Cloud Functions prevents runaway costs from any single account
+
+### Cost-awareness during development
+- When adding a new Firestore query, verify it uses `limit()` and is scoped to the narrowest collection path
+- When adding a new Gemini call, confirm it goes through the `geminiProxy` Cloud Function (never direct client-side)
+- Prefer client-side computation (TF-IDF in Web Worker) over API calls when possible
+- New `onSnapshot` listeners must justify real-time need — prefer one-time reads (`getDocs`) for data that changes infrequently
 
 ## 🧹 LOGGING & ERROR HANDLING
 
