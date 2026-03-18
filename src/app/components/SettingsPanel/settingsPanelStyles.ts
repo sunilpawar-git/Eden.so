@@ -14,7 +14,7 @@ export const SP_BACKDROP_STYLE: CSSProperties = {
 };
 
 export const SP_PANEL =
-    'relative w-[760px] h-[600px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden rounded-[var(--radius-xl)] settings-panel-responsive';
+    'relative w-[760px] h-[600px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-clip rounded-[var(--radius-xl)] settings-panel-responsive';
 export const SP_PANEL_STYLE: CSSProperties = {
     background: 'var(--color-surface-elevated)',
     boxShadow: 'var(--shadow-xl)',
