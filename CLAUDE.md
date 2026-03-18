@@ -257,6 +257,35 @@ In Tailwind v4, utilities live in `@layer utilities`. CSS rules declared **outsi
 4. **Theme-aware colors** must use `var(--color-*)` arbitrary syntax, never Tailwind's built-in palette (e.g. `bg-blue-500` → `bg-[var(--color-primary)]`)
 5. **Canvas components stay in CSS** — `IdeaCard`, `CanvasView`, node/edge files are last-resort migrations
 6. **Spacing via `style` props** — `margin`, `padding`, `gap` must use inline `style` props, not Tailwind spacing utilities (see "Global CSS Reset" section above)
+7. **Fixed-height containers must use `overflow-clip`** — never `overflow-hidden` on modals, panels, or dialogs (see section below)
+
+### 🔴 CRITICAL: overflow-hidden vs overflow-clip (Focus-Scroll Bug)
+
+**Root cause discovered during SettingsPanel ConnectorStylePicker migration (Wave 6).**
+
+CSS `overflow: hidden` clips visual overflow but **still allows the browser to programmatically scroll** the element. When a focusable child (e.g. `sr-only` radio input, hidden checkbox) receives focus, the browser walks up the DOM and scrolls every ancestor — including `overflow: hidden` containers — to bring the focused element into view.
+
+This silently sets `scrollTop` on the container, shifting all content upward and creating a blank gap at the bottom.
+
+```tsx
+// ❌ BROKEN — browser can still scroll this container on focus
+<div className="h-[600px] flex flex-col overflow-hidden rounded-xl">
+    ...
+    <input className="sr-only" type="radio" /> {/* focus causes scroll! */}
+</div>
+
+// ✅ CORRECT — overflow-clip prevents ALL scrolling (visual AND programmatic)
+<div className="h-[600px] flex flex-col overflow-clip rounded-xl">
+    ...
+    <input className="sr-only" type="radio" /> {/* no scroll on focus */}
+</div>
+```
+
+**Rule: Any fixed-height container that should NEVER scroll (modals, panels, dialogs, popovers) must use `overflow-clip`, not `overflow-hidden`.** Use `overflow-hidden` only for text truncation (`overflow-hidden text-ellipsis`) or containers where the height matches content exactly.
+
+**Note:** `overflow-clip` also clips to `border-radius`, just like `overflow-hidden`. No visual difference — only the scroll behavior changes.
+
+**Enforcement:** Structural test `overflowClip.structural.test.ts` scans for `overflow-hidden` on height-constrained containers and verifies known modal constants use `overflow-clip`.
 
 ---
 
