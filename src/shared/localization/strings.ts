@@ -13,6 +13,7 @@ import { contextMenuStrings } from './contextMenuStrings';
 import { slashCommandStrings } from './slashCommandStrings';
 import { searchStrings } from '@/features/search/strings/searchStrings';
 import { onboardingStrings } from '@/features/onboarding/strings/onboardingStrings';
+import { shortcutStrings } from './shortcutStrings';
 
 export const strings = {
     app: {
@@ -74,16 +75,7 @@ export const strings = {
         undo: 'Undo',
     },
     settings: settingsStrings,
-    shortcuts: {
-        openSettings: 'Open Settings',
-        addNode: 'Add Node',
-        quickCapture: 'Quick Capture',
-        deleteNode: 'Delete Node',
-        clearSelection: 'Clear Selection',
-        undo: 'Undo',
-        redo: 'Redo',
-        search: 'Open Search',
-    },
+    shortcuts: shortcutStrings,
     search: searchStrings,
     tags: {
         addTag: 'Add tag',
