@@ -57,6 +57,9 @@ export async function handleExchangeCalendarCode(
     }
 
     try {
+        // Diagnostic: log credential lengths to detect trailing-newline corruption
+        console.info('[calendarAuth] clientId length:', clientId.length, 'ends:', JSON.stringify(clientId.slice(-4)));
+        console.info('[calendarAuth] clientSecret length:', clientSecret.length, 'starts:', clientSecret.startsWith('GOCSPX-'));
         const oauth2 = new OAuth2Client(clientId, clientSecret, redirectUri);
         const { tokens } = await oauth2.getToken(code);
 

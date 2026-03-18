@@ -26,8 +26,18 @@ export function CalendarCallback() {
             const state = params.get('state');
             const error = params.get('error');
 
+            // Diagnostic: log all URL params so DevTools shows exactly what arrived
+            logger.warn('[CalendarCallback] params', undefined, {
+                hasCode: !!code,
+                codeLen: code?.length,
+                hasState: !!state,
+                hasError: !!error,
+                errorVal: error,
+                storedState: !!sessionStorage.getItem('oauth_state'),
+            });
+
             if (error || !code || !state) {
-                logger.warn('[CalendarCallback] OAuth error or missing params', undefined, { error });
+                logger.warn('[CalendarCallback] OAuth error or missing params', undefined, { error, hasCode: !!code, hasState: !!state });
                 setStatus('error');
                 setTimeout(() => {
                     const returnTo = sessionStorage.getItem('oauth_return_to') ?? '/';
@@ -37,7 +47,9 @@ export function CalendarCallback() {
                 return;
             }
 
+            logger.warn('[CalendarCallback] calling exchangeCalendarCode Cloud Function...');
             const ok = await handleCalendarCallback(code, state);
+            logger.warn('[CalendarCallback] result', undefined, { ok });
             setStatus(ok ? 'success' : 'error');
 
             setTimeout(() => {

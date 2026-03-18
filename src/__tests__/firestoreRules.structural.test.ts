@@ -81,7 +81,7 @@ describe('Firestore rules defense-in-depth', () => {
 
     it('no write rule uses bare resource.data.userId without null guard', () => {
         // Strip the correct pattern first, then check no bare (unguarded) usage remains.
-        const stripped = content.replaceAll(SAFE_USERID_GUARD, '__OK__');
+        const stripped = content.split(SAFE_USERID_GUARD).join('__OK__');
         // A bare !resource.data.userId without the preceding null guard is the bug pattern.
         expect(stripped).not.toMatch(/allow write:.*(?<!resource == null \|\| )!resource\.data\.userId/);
     });
