@@ -3,7 +3,6 @@
  * Extracted from KnowledgeBankAddButton to respect line limits
  */
 import { useCallback } from 'react';
-import { addKBEntry } from '../services/knowledgeBankService';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
@@ -21,6 +20,7 @@ export function usePasteTextHandler(onSuccess: () => void) {
             if (!userId || !workspaceId) return;
 
             try {
+                const { addKBEntry } = await import('../services/knowledgeBankService');
                 const entry = await addKBEntry(userId, workspaceId, {
                     type: 'text',
                     title,

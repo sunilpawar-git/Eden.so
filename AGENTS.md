@@ -22,10 +22,55 @@
 ## Before You Touch Anything
 
 ```bash
-npm run check        # types + lint + tests + build — must stay green
+npm run check        # types + lint + tests — must stay green
 ```
 
 CI runs the same pipeline on every push. A red CI blocks merge.
+
+---
+
+## Running Commands
+
+### Frontend (src/)
+
+```bash
+npm run dev                 # Start dev server
+npm run build               # Full check + production build
+npm run build:quick         # Skip lint/test, just build
+npm run typecheck           # TypeScript only
+npm run lint                # ESLint
+npm run lint:fix            # Auto-fix ESLint issues
+npm run test                # Run all tests once
+npm run test:watch          # Watch mode
+npm run test:coverage       # Coverage report
+npm run check               # typecheck + lint + test (full CI pipeline)
+```
+
+### Running a Single Test
+
+```bash
+# By file path
+npx vitest run src/shared/stores/__tests__/settingsStore.test.ts
+
+# By pattern (matching filename)
+npx vitest run settingsStore
+
+# By test name
+npx vitest run -t "test name here"
+
+# Watch mode for single file
+npx vitest src/shared/stores/__tests__/settingsStore.test.ts
+```
+
+### Cloud Functions (functions/)
+
+```bash
+cd functions
+npm run check              # lint + test + build
+npm run lint               # ESLint only
+npm run test               # Run tests
+npm run build              # Compile TypeScript
+```
 
 ---
 
@@ -39,6 +84,94 @@ CI runs the same pipeline on every push. A red CI blocks merge.
 | Hook | ≤ 75 lines |
 
 Split immediately — no exceptions, no "TODO: split later".
+
+---
+
+## Code Style Guidelines
+
+### Imports
+
+Use `@/` path aliases. Group imports in this order:
+
+1. React/framework imports
+2. External libraries
+3. Internal `@/` imports
+4. Relative imports (local files)
+
+```typescript
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSettingsStore } from '@/shared/stores/settingsStore';
+import { logger } from '@/shared/services/logger';
+import { MyComponent } from './MyComponent';
+```
+
+Use `type` imports for types only:
+```typescript
+import { type User, type Settings } from '@/shared/types';
+```
+
+### Types
+
+- Use `interface` for object shapes, not `type` (enforced by ESLint)
+- Use `readonly` for immutable arrays: `readonly T[]`
+- Avoid `any` — always type explicitly
+- Use `as const` for literal values that won't change
+- Prefer `null` over `undefined` for optional values
+
+### Naming
+
+- **Files**: kebab-case (`my-component.tsx`) or camelCase (`settingsStore.ts`)
+- **Components**: PascalCase (`MyComponent.tsx`)
+- **Hooks**: camelCase starting with `use` (`useDebounce.ts`)
+- **Constants**: SCREAMING_SNAKE_CASE for config constants
+- **Interfaces/Types**: PascalCase (`UserSettings`)
+- **Booleans**: Prefix with `is`, `has`, `should`, `can` (`isLoading`, `hasError`)
+
+### Error Handling
+
+- Use try/catch with specific error types
+- Always log errors via `logger.error()` with context
+- Return typed results, not throw for expected errors
+- Never swallow errors silently
+
+```typescript
+// ✅ Good - typed result with error handling
+async function fetchUser(id: string): Promise<{ user: User | null; error: Error | null }> {
+  try {
+    const user = await db.collection('users').doc(id).get();
+    return { user: user.data() ?? null, error: null };
+  } catch (err) {
+    logger.error('Failed to fetch user', err, { userId: id });
+    return { user: null, error: err instanceof Error ? err : new Error(String(err)) };
+  }
+}
+
+// ❌ Bad - bare console.error
+catch (err) { console.error(err); }
+```
+
+### React Patterns
+
+- Use functional components with hooks
+- Memoize expensive computations with `useMemo`
+- Memoize callbacks with `useCallback` when passed to children
+- Use primitive selectors for Zustand stores:
+
+```typescript
+// ✅ Good
+const userId = useAuthStore((s) => s.user?.id);
+
+// ❌ Bad - causes re-renders
+const { user } = useAuthStore();
+```
+
+### Formatting
+
+- Use 4-space indentation (TypeScript standard)
+- Trailing commas in multi-line objects/arrays
+- Single quotes for strings (except JSX attributes)
+- Prefer early returns over nested conditionals
 
 ---
 

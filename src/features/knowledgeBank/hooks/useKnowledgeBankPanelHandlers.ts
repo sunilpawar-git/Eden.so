@@ -1,7 +1,5 @@
 import { useCallback } from 'react';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
-import { updateKBEntry, deleteKBEntry } from '../services/knowledgeBankService';
-import { deleteKBFile } from '../services/storageService';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { toast } from '@/shared/stores/toastStore';
@@ -22,6 +20,7 @@ export function useKnowledgeBankPanelHandlers() {
 
         useKnowledgeBankStore.getState().toggleEntry(entryId);
         try {
+            const { updateKBEntry } = await import('../services/knowledgeBankService');
             await updateKBEntry(userId, workspaceId, entryId, { enabled: newEnabled });
         } catch (error) {
             logger.error('KB toggle persist failed', error);
@@ -45,6 +44,7 @@ export function useKnowledgeBankPanelHandlers() {
             useKnowledgeBankStore.getState().unpinEntry(entryId);
         }
         try {
+            const { updateKBEntry } = await import('../services/knowledgeBankService');
             await updateKBEntry(userId, workspaceId, entryId, { pinned: newPinned });
         } catch (error) {
             logger.error('KB pin persist failed', error);
@@ -64,6 +64,7 @@ export function useKnowledgeBankPanelHandlers() {
 
         useKnowledgeBankStore.getState().updateEntry(entryId, updates);
         try {
+            const { updateKBEntry } = await import('../services/knowledgeBankService');
             await updateKBEntry(userId, workspaceId, entryId, updates);
         } catch (error) {
             logger.error('KB update persist failed', error);
@@ -78,7 +79,9 @@ export function useKnowledgeBankPanelHandlers() {
 
         const entry = useKnowledgeBankStore.getState().entries.find((e) => e.id === entryId);
         try {
+            const { deleteKBEntry } = await import('../services/knowledgeBankService');
             if (entry?.originalFileName) {
+                const { deleteKBFile } = await import('../services/storageService');
                 await deleteKBFile(userId, workspaceId, entryId, entry.originalFileName);
             }
             await deleteKBEntry(userId, workspaceId, entryId);

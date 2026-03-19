@@ -30,7 +30,12 @@ export function initSentry(): void {
         replaysOnErrorSampleRate: 1.0,
         integrations: [
             Sentry.browserTracingIntegration(),
-            Sentry.replayIntegration(),
+            Sentry.replayIntegration({
+                // Mask all text and block media in session replays to prevent
+                // PII from KB entries, workspace names, and AI output being captured.
+                maskAllText: true,
+                blockAllMedia: true,
+            }),
         ],
         // Strip PII from breadcrumbs
         beforeBreadcrumb(breadcrumb) {

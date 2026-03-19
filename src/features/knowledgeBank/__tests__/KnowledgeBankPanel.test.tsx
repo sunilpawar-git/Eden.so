@@ -2,7 +2,7 @@
  * KnowledgeBankPanel Tests — Panel rendering, search, and state
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { KnowledgeBankPanel } from '../components/KnowledgeBankPanel';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
 import { _resetEscapeLayer } from '@/shared/hooks/useEscapeLayer.testUtils';
@@ -140,26 +140,26 @@ describe('KnowledgeBankPanel', () => {
     });
 
     // ── Pin integration tests ──────────────────────────
-    it('pins unpinned entry in store and persists to Firestore', () => {
+    it('pins unpinned entry in store and persists to Firestore', async () => {
         useKnowledgeBankStore.getState().setPanelOpen(true);
         useKnowledgeBankStore.getState().addEntry({ ...mockEntry, pinned: false });
         render(<KnowledgeBankPanel />);
 
         const pinButton = screen.getByLabelText('Pin to always include in AI context');
-        fireEvent.click(pinButton);
+        await act(async () => { fireEvent.click(pinButton); });
 
         const entry = useKnowledgeBankStore.getState().entries[0]!;
         expect(entry.pinned).toBe(true);
         expect(mockUpdateKBEntry).toHaveBeenCalledWith('user-1', 'ws-1', 'kb-1', { pinned: true });
     });
 
-    it('unpins pinned entry in store and persists to Firestore', () => {
+    it('unpins pinned entry in store and persists to Firestore', async () => {
         useKnowledgeBankStore.getState().setPanelOpen(true);
         useKnowledgeBankStore.getState().addEntry({ ...mockEntry, pinned: true });
         render(<KnowledgeBankPanel />);
 
         const unpinButton = screen.getByLabelText('Unpin entry');
-        fireEvent.click(unpinButton);
+        await act(async () => { fireEvent.click(unpinButton); });
 
         const entry = useKnowledgeBankStore.getState().entries[0]!;
         expect(entry.pinned).toBe(false);

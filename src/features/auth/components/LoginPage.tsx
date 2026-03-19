@@ -80,7 +80,7 @@ export function LoginPage() {
     };
 
     return (
-        <div
+        <main
             className="flex items-center justify-center"
             style={{ minHeight: '100vh', width: '100%', background: 'linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-background) 50%, hsl(260, 80%, 96%) 100%)' }}
         >
@@ -103,6 +103,6 @@ export function LoginPage() {
                     </p>
                 </div>
             </div>
-        </div>
+        </main>
     );
 }
