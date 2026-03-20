@@ -18,8 +18,8 @@ import {
 } from '../settingsPanelStyles';
 
 const SCROLL_MODE_OPTIONS = [
-    { value: 'zoom' as CanvasScrollMode, label: strings.settings.canvasScrollZoom },
     { value: 'navigate' as CanvasScrollMode, label: strings.settings.canvasScrollNavigate },
+    { value: 'zoom' as CanvasScrollMode, label: strings.settings.canvasScrollZoom },
 ] as const;
 
 function AutoSaveSlider({ interval }: { interval: number }) {

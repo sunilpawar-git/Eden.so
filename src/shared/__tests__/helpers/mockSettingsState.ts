@@ -56,7 +56,7 @@ export function createMockSettingsState(overrides: MockSettingsOverrides = {}) {
         autoSave: true,
         autoSaveInterval: 30,
         compactMode: false,
-        canvasScrollMode: 'zoom' as CanvasScrollMode,
+        canvasScrollMode: 'navigate' as CanvasScrollMode,
         connectorStyle: 'regular' as ConnectorStyle,
         isCanvasLocked: false,
         canvasFreeFlow: false,

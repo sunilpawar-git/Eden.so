@@ -2,7 +2,7 @@
  * CanvasSection Tests — Canvas settings: display toggles, scroll mode, connector style, auto-save slider
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { CanvasSection } from '../sections/CanvasSection';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { strings } from '@/shared/localization/strings';
@@ -39,6 +39,19 @@ describe('CanvasSection', () => {
         render(<CanvasSection />);
         const matches = screen.getAllByText(strings.settings.autoSave);
         expect(matches.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('shows Canvas Navigation first and selected by default', () => {
+        render(<CanvasSection />);
+
+        const scrollModeGroup = screen.getByRole('radiogroup', {
+            name: strings.settings.canvasScrollMode,
+        });
+        const radios = within(scrollModeGroup).getAllByRole('radio');
+
+        expect(radios.map((radio) => radio.getAttribute('value'))).toEqual(['navigate', 'zoom']);
+        expect(screen.getByRole('radio', { name: strings.settings.canvasScrollNavigate })).toBeChecked();
+        expect(screen.getByRole('radio', { name: strings.settings.canvasScrollZoom })).not.toBeChecked();
     });
 
     describe('auto-save interval slider', () => {

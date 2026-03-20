@@ -36,7 +36,7 @@ describe('SettingsStore', () => {
             expect(state.autoSave).toBe(true);
             expect(state.autoSaveInterval).toBe(30);
             expect(state.compactMode).toBe(false);
-            expect(state.canvasScrollMode).toBe('zoom');
+            expect(state.canvasScrollMode).toBe('navigate');
             expect(state.connectorStyle).toBe('regular');
             expect(state.lastSettingsTab).toBe('appearance');
         });
@@ -58,8 +58,8 @@ describe('SettingsStore', () => {
     });
 
     describe('canvas scroll mode', () => {
-        it('should default to zoom mode', () => {
-            expect(useSettingsStore.getState().canvasScrollMode).toBe('zoom');
+        it('should default to navigate mode', () => {
+            expect(useSettingsStore.getState().canvasScrollMode).toBe('navigate');
         });
 
         it('should set scroll mode to navigate', () => {

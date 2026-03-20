@@ -72,7 +72,7 @@ describe('SettingsStore — invalid localStorage values (defense-in-depth)', () 
             return null;
         });
         useSettingsStore.getState().loadFromStorage();
-        expect(useSettingsStore.getState().canvasScrollMode).toBe('zoom');
+        expect(useSettingsStore.getState().canvasScrollMode).toBe('navigate');
     });
 
     it('should fall back to default connector style for invalid stored value', () => {

@@ -128,7 +128,7 @@ function createInitialState() {
         autoSave: getStorageItem<boolean>(STORAGE_KEYS.autoSave, true),
         autoSaveInterval: getClampedStorageItem(STORAGE_KEYS.autoSaveInterval, AUTO_SAVE_DEFAULT, AUTO_SAVE_MIN, AUTO_SAVE_MAX),
         compactMode: getStorageItem<boolean>(STORAGE_KEYS.compactMode, false),
-        canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'zoom', VALID_SCROLL_MODES),
+        canvasScrollMode: getValidatedStorageItem(STORAGE_KEYS.canvasScrollMode, 'navigate', VALID_SCROLL_MODES),
         connectorStyle: getValidatedStorageItem(STORAGE_KEYS.connectorStyle, 'regular', VALID_CONNECTOR_STYLES),
         isCanvasLocked: getStorageItem<boolean>(STORAGE_KEYS.isCanvasLocked, false),
         canvasFreeFlow: getStorageItem<boolean>(STORAGE_KEYS.canvasFreeFlow, false),
