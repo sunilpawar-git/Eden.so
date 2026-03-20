@@ -1,8 +1,8 @@
-/** ToolbarSection — Dual-zone icon placement (UtilsBar + Context Menu). */
-import React from 'react';
+/** ToolbarSection — Dual-zone icon placement (Hover Menu + Right-click Menu). */
+import React, { useMemo } from 'react';
 import { strings } from '@/shared/localization/strings';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
-import { UTILS_BAR_MAX, CONTEXT_MENU_MAX, getUnplacedActions } from '@/shared/stores/iconRegistry';
+import { HOVER_MENU_MAX, RIGHT_CLICK_MENU_MAX, getUnplacedActions } from '@/shared/stores/iconRegistry';
 import { ToolbarZoneList } from './ToolbarZoneList';
 import { UnplacedIconsPool } from './UnplacedIconsPool';
 import { useToolbarDragDrop } from './useToolbarDragDrop';
@@ -30,9 +30,12 @@ function ZoneHeader({ label, count, max }: { label: string; count: number; max: 
 }
 
 export const ToolbarSection = React.memo(function ToolbarSection() {
-    const utilsBarIcons = useSettingsStore((s) => s.utilsBarIcons);
-    const contextMenuIcons = useSettingsStore((s) => s.contextMenuIcons);
-    const unplacedIcons = getUnplacedActions(utilsBarIcons, contextMenuIcons);
+    const hoverMenuIcons = useSettingsStore((s) => s.hoverMenuIcons);
+    const rightClickMenuIcons = useSettingsStore((s) => s.rightClickMenuIcons);
+    const unplacedIcons = useMemo(
+        () => getUnplacedActions(hoverMenuIcons, rightClickMenuIcons),
+        [hoverMenuIcons, rightClickMenuIcons],
+    );
 
     const {
         dragId, dropTarget, dragSourceRef,
@@ -41,8 +44,8 @@ export const ToolbarSection = React.memo(function ToolbarSection() {
         moveUp, moveDown, removeFromZone, addToZone, resetToDefault,
     } = useToolbarDragDrop();
 
-    const isUtilsBarFull = utilsBarIcons.length >= UTILS_BAR_MAX;
-    const isContextMenuFull = contextMenuIcons.length >= CONTEXT_MENU_MAX;
+    const isHoverMenuFull = hoverMenuIcons.length >= HOVER_MENU_MAX;
+    const isRightClickMenuFull = rightClickMenuIcons.length >= RIGHT_CLICK_MENU_MAX;
 
     return (
         <div className={SP_SECTION} style={SP_SECTION_STYLE}>
@@ -52,9 +55,9 @@ export const ToolbarSection = React.memo(function ToolbarSection() {
             >
                 <div className="grid grid-cols-2" style={{ gap: 'var(--space-md)' }}>
                     <div className="flex flex-col" style={{ gap: 'var(--space-sm)' }}>
-                        <ZoneHeader label={strings.settings.toolbarUtilsBarZone} count={utilsBarIcons.length} max={UTILS_BAR_MAX} />
-                        <p className={TB_ZONE_HINT} style={TB_ZONE_HINT_STYLE}>{strings.settings.toolbarUtilsBarHint}</p>
-                        <ToolbarZoneList zone="utilsBar" icons={utilsBarIcons} maxCapacity={UTILS_BAR_MAX}
+                        <ZoneHeader label={strings.settings.toolbarHoverMenuZone} count={hoverMenuIcons.length} max={HOVER_MENU_MAX} />
+                        <p className={TB_ZONE_HINT} style={TB_ZONE_HINT_STYLE}>{strings.settings.toolbarHoverMenuHint}</p>
+                        <ToolbarZoneList zone="hoverMenu" icons={hoverMenuIcons} maxCapacity={HOVER_MENU_MAX}
                             dragId={dragId} dropTarget={dropTarget}
                             onDragStart={handleDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
                             onDrop={handleDrop} onDragEnd={handleDragEnd} onZoneDragOver={handleZoneDragOver}
@@ -63,9 +66,9 @@ export const ToolbarSection = React.memo(function ToolbarSection() {
                     </div>
 
                     <div className="flex flex-col" style={{ gap: 'var(--space-sm)' }}>
-                        <ZoneHeader label={strings.settings.toolbarContextMenuZone} count={contextMenuIcons.length} max={CONTEXT_MENU_MAX} />
+                        <ZoneHeader label={strings.settings.toolbarContextMenuZone} count={rightClickMenuIcons.length} max={RIGHT_CLICK_MENU_MAX} />
                         <p className={TB_ZONE_HINT} style={TB_ZONE_HINT_STYLE}>{strings.settings.toolbarContextMenuHint}</p>
-                        <ToolbarZoneList zone="contextMenu" icons={contextMenuIcons} maxCapacity={CONTEXT_MENU_MAX}
+                        <ToolbarZoneList zone="rightClickMenu" icons={rightClickMenuIcons} maxCapacity={RIGHT_CLICK_MENU_MAX}
                             dragId={dragId} dropTarget={dropTarget}
                             onDragStart={handleDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
                             onDrop={handleDrop} onDragEnd={handleDragEnd} onZoneDragOver={handleZoneDragOver}
@@ -78,7 +81,7 @@ export const ToolbarSection = React.memo(function ToolbarSection() {
                 description={strings.settings.toolbarUnplacedHint}
             >
                 <UnplacedIconsPool icons={unplacedIcons} dragId={dragId} dragSourceRef={dragSourceRef}
-                    isUtilsBarFull={isUtilsBarFull} isContextMenuFull={isContextMenuFull}
+                    isHoverMenuFull={isHoverMenuFull} isRightClickMenuFull={isRightClickMenuFull}
                     onDragStart={handleDragStart} onDragEnd={handleDragEnd} onZoneDragOver={handleZoneDragOver}
                     onRemoveFromZone={removeFromZone} onAddToZone={addToZone} />
             </SettingsGroup>

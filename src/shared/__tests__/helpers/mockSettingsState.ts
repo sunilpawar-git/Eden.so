@@ -11,7 +11,7 @@ import type {
     GridColumnsPreference,
 } from '@/shared/stores/settingsStore';
 import type { ActionId } from '@/shared/stores/iconRegistry';
-import { DEFAULT_UTILS_BAR, DEFAULT_CONTEXT_MENU } from '@/shared/stores/iconRegistry';
+import { DEFAULT_HOVER_MENU, DEFAULT_RIGHT_CLICK_MENU } from '@/shared/stores/iconRegistry';
 
 /** Strongly-typed overrides — only valid SettingsState keys accepted */
 export interface MockSettingsOverrides {
@@ -41,10 +41,10 @@ export interface MockSettingsOverrides {
     loadFromStorage?: ReturnType<typeof vi.fn>;
     autoAnalyzeDocuments?: boolean;
     toggleAutoAnalyzeDocuments?: ReturnType<typeof vi.fn>;
-    utilsBarIcons?: ActionId[];
-    contextMenuIcons?: ActionId[];
-    setUtilsBarIcons?: ReturnType<typeof vi.fn>;
-    setContextMenuIcons?: ReturnType<typeof vi.fn>;
+    hoverMenuIcons?: ActionId[];
+    rightClickMenuIcons?: ActionId[];
+    setHoverMenuIcons?: ReturnType<typeof vi.fn>;
+    setRightClickMenuIcons?: ReturnType<typeof vi.fn>;
     resetIconPlacement?: ReturnType<typeof vi.fn>;
 }
 
@@ -77,10 +77,10 @@ export function createMockSettingsState(overrides: MockSettingsOverrides = {}) {
         loadFromStorage: vi.fn(),
         autoAnalyzeDocuments: true,
         toggleAutoAnalyzeDocuments: vi.fn(),
-        utilsBarIcons: [...DEFAULT_UTILS_BAR] as ActionId[],
-        contextMenuIcons: [...DEFAULT_CONTEXT_MENU] as ActionId[],
-        setUtilsBarIcons: vi.fn(),
-        setContextMenuIcons: vi.fn(),
+        hoverMenuIcons: [...DEFAULT_HOVER_MENU] as ActionId[],
+        rightClickMenuIcons: [...DEFAULT_RIGHT_CLICK_MENU] as ActionId[],
+        setHoverMenuIcons: vi.fn(),
+        setRightClickMenuIcons: vi.fn(),
         resetIconPlacement: vi.fn(),
         ...overrides,
     };

@@ -1,6 +1,6 @@
 /**
- * NodeContextMenu — Portal-rendered right-click / "More..." context menu.
- * Actions are now driven by user-configurable contextMenuIcons in settingsStore.
+ * NodeContextMenu — Portal-rendered right-click / "More..." Right-click Menu.
+ * Actions are now driven by user-configurable rightClickMenuIcons in settingsStore.
  * Color/Share render as expandable sub-panels.
  */
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
@@ -11,7 +11,7 @@ import { useEscapeLayer } from '@/shared/hooks/useEscapeLayer';
 import { ESCAPE_PRIORITY } from '@/shared/hooks/escapePriorities';
 import { useSettingsStore } from '@/shared/stores/settingsStore';
 import { type ActionId } from '@/shared/stores/iconRegistry';
-import { CONTEXT_MENU_GROUPS } from '../../types/utilsBarLayout';
+import { CONTEXT_MENU_GROUPS } from '../../types/hoverMenuLayout';
 import { type NodeColorKey } from '../../types/node';
 import { MenuSeparator, GroupLabel } from './ContextMenuItems';
 import { renderContextMenuItem, type ContextMenuItemContext } from './renderContextMenuItem';
@@ -65,7 +65,7 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
     const [clampedPos, setClampedPos] = useState(position);
 
     // Read configurable context menu icons (scalar selector)
-    const contextMenuIcons = useSettingsStore((s) => s.contextMenuIcons);
+    const rightClickMenuIcons = useSettingsStore((s) => s.rightClickMenuIcons);
 
     useEscapeLayer(ESCAPE_PRIORITY.CONTEXT_MENU, true, onClose);
     useContextMenuPosition(menuRef, position, expandedPanel, setClampedPos);
@@ -78,7 +78,7 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
 
     // Build grouped items from the configurable list
     const groupedItems = useMemo(() => {
-        const contextSet = new Set(contextMenuIcons);
+        const contextSet = new Set(rightClickMenuIcons);
         const groups: Array<{ key: string; items: ActionId[] }> = [];
 
         for (const groupKey of GROUP_ORDER) {
@@ -89,7 +89,7 @@ export const NodeContextMenu = React.memo(function NodeContextMenu(props: NodeCo
             }
         }
         return groups;
-    }, [contextMenuIcons]);
+    }, [rightClickMenuIcons]);
 
     /** Build context object for the external render helper */
     const itemCtx: ContextMenuItemContext = useMemo(() => ({

@@ -1,16 +1,16 @@
 /**
- * NodeUtilsBar Styles — Single flat bar cascade.
+ * NodeHoverMenu Styles — Single flat bar cascade.
  * barWrapper is anchored to the card edge and extends outward.
  * Visibility: data-bar-proximity / data-bar-focused (set by useProximityBar).
  */
 
 .barWrapper {
     position: absolute;
-    top: var(--node-utils-bar-top-offset);
+    top: var(--node-hover-menu-bar-top-offset);
     left: 100%;
     display: flex;
     flex-direction: row;
-    gap: var(--node-utils-deck-gap);
+    gap: var(--node-hover-menu-deck-gap);
     pointer-events: none;
     z-index: var(--z-dropdown);
 }
@@ -34,15 +34,15 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translateX(calc(-100% + var(--node-utils-bar-peek))) rotate(var(--node-utils-deck-rotation));
+    transform: translateX(calc(-100% + var(--node-hover-menu-bar-peek))) rotate(var(--node-hover-menu-deck-rotation));
     transition:
-        opacity var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
-        transform var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-out),
-        visibility 0s linear calc(var(--node-utils-transition-duration) + var(--node-utils-hover-delay-out));
+        opacity var(--node-hover-menu-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-hover-menu-hover-delay-out),
+        transform var(--node-hover-menu-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-hover-menu-hover-delay-out),
+        visibility 0s linear calc(var(--node-hover-menu-transition-duration) + var(--node-hover-menu-hover-delay-out));
 }
 
 :global([data-bar-placement="left"]) .deckBase {
-    transform: translateX(calc(100% - var(--node-utils-bar-peek))) rotate(calc(-1 * var(--node-utils-deck-rotation)));
+    transform: translateX(calc(100% - var(--node-hover-menu-bar-peek))) rotate(calc(-1 * var(--node-hover-menu-deck-rotation)));
 }
 
 /* Single bar — cascades out when proximity is near */
@@ -59,8 +59,8 @@
     transform: translateX(0) rotate(0deg);
     box-shadow: var(--card-shadow-hover);
     transition:
-        opacity var(--node-utils-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-utils-hover-delay-in),
-        transform var(--node-utils-spring-duration) cubic-bezier(0.34, 1.56, 0.64, 1) var(--node-utils-hover-delay-in),
+        opacity var(--node-hover-menu-transition-duration) cubic-bezier(0.4, 0, 0.2, 1) var(--node-hover-menu-hover-delay-in),
+        transform var(--node-hover-menu-spring-duration) cubic-bezier(0.34, 1.56, 0.64, 1) var(--node-hover-menu-hover-delay-in),
         visibility 0s linear 0s;
 }
 
@@ -74,8 +74,8 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: var(--node-utils-bar-peek);
-    height: var(--node-utils-peek-height);
+    width: var(--node-hover-menu-bar-peek);
+    height: var(--node-hover-menu-peek-height);
     background: var(--color-primary);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     opacity: var(--opacity-peek);

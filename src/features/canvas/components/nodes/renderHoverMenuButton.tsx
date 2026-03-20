@@ -1,18 +1,18 @@
 /**
- * renderUtilsBarButton — Data-driven render helper for a single UtilsBar action button.
+ * renderHoverMenuButton — Data-driven render helper for a single HoverMenu action button.
  * Uses a renderer map to keep each action case short and avoid complexity/max-lines warnings.
  */
 /* eslint-disable react-refresh/only-export-components -- render helper, not a component */
 import React from 'react';
 import { strings } from '@/shared/localization/strings';
 import { ACTION_REGISTRY, type ActionId } from '@/shared/stores/iconRegistry';
-import { NodeUtilsBarAIOrTransform } from './NodeUtilsBarAIOrTransform';
+import { NodeHoverMenuAIOrTransform } from './NodeHoverMenuAIOrTransform';
 import { TooltipButton } from './TooltipButton';
-import type { NodeUtilsBarProps } from './NodeUtilsBar.types';
+import type { NodeHoverMenuProps } from './NodeHoverMenu.types';
 import buttonStyles from './TooltipButton.module.css';
 
-export interface UtilsBarButtonContext {
-    readonly props: NodeUtilsBarProps;
+export interface HoverMenuButtonContext {
+    readonly props: NodeHoverMenuProps;
     readonly disabled: boolean;
     readonly handleCopyClick: () => void;
     readonly isTransformOpen: boolean;
@@ -20,12 +20,12 @@ export interface UtilsBarButtonContext {
     readonly closeSubmenu: () => void;
 }
 
-type Renderer = (ctx: UtilsBarButtonContext) => React.ReactNode;
+type Renderer = (ctx: HoverMenuButtonContext) => React.ReactNode;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function -- noop fallback
 const NOOP = () => {};
 
-function btn(id: string, ctx: UtilsBarButtonContext, overrides: {
+function btn(id: string, ctx: HoverMenuButtonContext, overrides: {
     label: string; icon: string; onClick?: () => void; shortcut?: string;
     className?: string; disabledOverride?: boolean;
 }): React.ReactNode {
@@ -41,7 +41,7 @@ function btn(id: string, ctx: UtilsBarButtonContext, overrides: {
 /** Each action's renderer — kept to a few lines so no single function exceeds limits. */
 const RENDERERS: Record<string, Renderer> = {
     ai: (ctx) => (
-        <NodeUtilsBarAIOrTransform key="ai"
+        <NodeHoverMenuAIOrTransform key="ai"
             onTransform={ctx.props.onTransform} isTransformOpen={ctx.isTransformOpen}
             onTransformToggle={ctx.handleTransformToggle} onCloseSubmenu={ctx.closeSubmenu}
             onRegenerate={ctx.props.onRegenerate} disabled={ctx.disabled}
@@ -114,6 +114,6 @@ const RENDERERS: Record<string, Renderer> = {
     },
 };
 
-export function renderUtilsBarButton(id: ActionId, ctx: UtilsBarButtonContext): React.ReactNode {
+export function renderHoverMenuButton(id: ActionId, ctx: HoverMenuButtonContext): React.ReactNode {
     return RENDERERS[id]?.(ctx) ?? null;
 }

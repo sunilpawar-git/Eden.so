@@ -7,10 +7,10 @@ import { getStorageItem, getValidatedStorageItem, setStorageItem, getStorageJson
 import { trackSettingsChanged } from '@/shared/services/analyticsService';
 import {
     type ActionId,
-    DEFAULT_UTILS_BAR,
-    DEFAULT_CONTEXT_MENU,
-    UTILS_BAR_MAX,
-    CONTEXT_MENU_MAX,
+    DEFAULT_HOVER_MENU,
+    DEFAULT_RIGHT_CLICK_MENU,
+    HOVER_MENU_MAX,
+    RIGHT_CLICK_MENU_MAX,
     validatePlacement,
     validateActionList,
 } from './iconRegistry';
@@ -49,9 +49,29 @@ const STORAGE_KEYS = {
     gridColumns: 'settings-gridColumns',
     autoAnalyzeDocuments: 'settings-autoAnalyzeDocuments',
     lastSettingsTab: 'settings-lastSettingsTab',
-    utilsBarIcons: 'settings-utilsBarIcons',
-    contextMenuIcons: 'settings-contextMenuIcons',
+    hoverMenuIcons: 'settings-hoverMenuIcons',
+    rightClickMenuIcons: 'settings-rightClickMenuIcons',
 } as const;
+
+/** One-time migration: move old localStorage keys to new names. */
+function migrateIconPlacementKeys(): void {
+    try {
+        const OLD_HOVER = 'settings-utilsBarIcons';
+        const OLD_RIGHT = 'settings-contextMenuIcons';
+        const hoverVal = localStorage.getItem(OLD_HOVER);
+        if (hoverVal !== null) {
+            localStorage.setItem('settings-hoverMenuIcons', hoverVal);
+            localStorage.removeItem(OLD_HOVER);
+        }
+        const rightVal = localStorage.getItem(OLD_RIGHT);
+        if (rightVal !== null) {
+            localStorage.setItem('settings-rightClickMenuIcons', rightVal);
+            localStorage.removeItem(OLD_RIGHT);
+        }
+    } catch {
+        // localStorage unavailable in SSR / test environments
+    }
+}
 
 // Constants
 const AUTO_SAVE_MIN = 10;
@@ -71,8 +91,8 @@ interface SettingsState {
     gridColumns: GridColumnsPreference;
     autoAnalyzeDocuments: boolean;
     lastSettingsTab: SettingsTabId;
-    utilsBarIcons: ActionId[];
-    contextMenuIcons: ActionId[];
+    hoverMenuIcons: ActionId[];
+    rightClickMenuIcons: ActionId[];
     setTheme: (theme: ThemeOption) => void;
     toggleCanvasGrid: () => void;
     setAutoSave: (enabled: boolean) => void;
@@ -85,8 +105,8 @@ interface SettingsState {
     setGridColumns: (columns: GridColumnsPreference) => void;
     toggleAutoAnalyzeDocuments: () => void;
     setLastSettingsTab: (tab: SettingsTabId) => void;
-    setUtilsBarIcons: (icons: ActionId[]) => void;
-    setContextMenuIcons: (icons: ActionId[]) => void;
+    setHoverMenuIcons: (icons: ActionId[]) => void;
+    setRightClickMenuIcons: (icons: ActionId[]) => void;
     resetIconPlacement: () => void;
     getResolvedTheme: () => ResolvedTheme;
     loadFromStorage: () => void;
@@ -118,9 +138,10 @@ function loadGridColumnsFromStorage(): GridColumnsPreference {
 
 /** Build initial state values from localStorage (pure helper, no actions). */
 function createInitialState() {
+    migrateIconPlacementKeys();
     const placement = validatePlacement(
-        getStorageJson<unknown>(STORAGE_KEYS.utilsBarIcons, null),
-        getStorageJson<unknown>(STORAGE_KEYS.contextMenuIcons, null),
+        getStorageJson<unknown>(STORAGE_KEYS.hoverMenuIcons, null),
+        getStorageJson<unknown>(STORAGE_KEYS.rightClickMenuIcons, null),
     );
     return {
         theme: getValidatedStorageItem(STORAGE_KEYS.theme, 'system', VALID_THEMES),
@@ -135,8 +156,8 @@ function createInitialState() {
         gridColumns: loadGridColumnsFromStorage(),
         autoAnalyzeDocuments: getStorageItem<boolean>(STORAGE_KEYS.autoAnalyzeDocuments, true),
         lastSettingsTab: getValidatedStorageItem(STORAGE_KEYS.lastSettingsTab, 'appearance', VALID_SETTINGS_TABS),
-        utilsBarIcons: placement.utilsBar,
-        contextMenuIcons: placement.contextMenu,
+        hoverMenuIcons: placement.hoverMenu,
+        rightClickMenuIcons: placement.rightClickMenu,
     };
 }
 
@@ -167,18 +188,18 @@ function createSettingsActions(
             set({ gridColumns: columns }); setStorageItem(STORAGE_KEYS.gridColumns, columns); trackSettingsChanged('gridColumns', columns);
         },
         toggleAutoAnalyzeDocuments: () => toggle('autoAnalyzeDocuments'),
-        setUtilsBarIcons: (icons) => {
-            const validated = validateActionList(icons, UTILS_BAR_MAX);
-            set({ utilsBarIcons: validated }); setStorageJson(STORAGE_KEYS.utilsBarIcons, validated); trackSettingsChanged('utilsBarIcons', validated);
+        setHoverMenuIcons: (icons) => {
+            const validated = validateActionList(icons, HOVER_MENU_MAX);
+            set({ hoverMenuIcons: validated }); setStorageJson(STORAGE_KEYS.hoverMenuIcons, validated); trackSettingsChanged('hoverMenuIcons', validated);
         },
-        setContextMenuIcons: (icons) => {
-            const validated = validateActionList(icons, CONTEXT_MENU_MAX);
-            set({ contextMenuIcons: validated }); setStorageJson(STORAGE_KEYS.contextMenuIcons, validated); trackSettingsChanged('contextMenuIcons', validated);
+        setRightClickMenuIcons: (icons) => {
+            const validated = validateActionList(icons, RIGHT_CLICK_MENU_MAX);
+            set({ rightClickMenuIcons: validated }); setStorageJson(STORAGE_KEYS.rightClickMenuIcons, validated); trackSettingsChanged('rightClickMenuIcons', validated);
         },
         resetIconPlacement: () => {
-            const utilsBar = [...DEFAULT_UTILS_BAR]; const contextMenu = [...DEFAULT_CONTEXT_MENU];
-            set({ utilsBarIcons: utilsBar, contextMenuIcons: contextMenu });
-            setStorageJson(STORAGE_KEYS.utilsBarIcons, utilsBar); setStorageJson(STORAGE_KEYS.contextMenuIcons, contextMenu);
+            const hoverMenu = [...DEFAULT_HOVER_MENU]; const rightClickMenu = [...DEFAULT_RIGHT_CLICK_MENU];
+            set({ hoverMenuIcons: hoverMenu, rightClickMenuIcons: rightClickMenu });
+            setStorageJson(STORAGE_KEYS.hoverMenuIcons, hoverMenu); setStorageJson(STORAGE_KEYS.rightClickMenuIcons, rightClickMenu);
             trackSettingsChanged('iconPlacementReset', true);
         },
         setLastSettingsTab: (tab) => { set({ lastSettingsTab: tab }); setStorageItem(STORAGE_KEYS.lastSettingsTab, tab); },

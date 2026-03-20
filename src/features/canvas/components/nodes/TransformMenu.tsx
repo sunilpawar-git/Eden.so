@@ -9,7 +9,7 @@ import { strings } from '@/shared/localization/strings';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
-import { NODE_UTILS_PORTAL_ATTR } from '../../hooks/useNodeUtilsController';
+import { NODE_HOVER_MENU_PORTAL_ATTR } from '../../hooks/useNodeHoverMenuController';
 import { useCssHover } from '../../hooks/useCssHover';
 import { getDropdownPosition } from './dropdownPositioning';
 import { TRANSFORM_OPTIONS } from './transformMenuConfig';
@@ -59,7 +59,7 @@ export const TransformMenu = React.memo(({
     const dropdownMenu = isOpen ? (
         <div className={styles.dropdownMenu} role="menu"
             data-testid="transform-menu-portal"
-            {...{ [NODE_UTILS_PORTAL_ATTR]: 'true' }}
+            {...{ [NODE_HOVER_MENU_PORTAL_ATTR]: 'true' }}
             style={{ top: menuPosition.top, left: menuPosition.left }}>
             {TRANSFORM_OPTIONS.map(({ type, labelKey }) => (
                 <button key={type} className={styles.menuItem}

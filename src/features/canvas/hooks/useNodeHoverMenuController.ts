@@ -1,20 +1,20 @@
 /**
- * useNodeUtilsController — React hook wiring for the NodeUtilsBar state machine.
+ * useNodeHoverMenuController — React hook wiring for the NodeHoverMenu state machine.
  * Simplified: no deck2 hover-intent, no pin-open state.
  */
 import { useCallback, useReducer, useRef } from 'react';
 import {
-    nodeUtilsControllerReducer,
-    initialNodeUtilsControllerState,
+    nodeHoverMenuControllerReducer,
+    initialNodeHoverMenuControllerState,
     isPortalBoundaryTarget,
-} from './nodeUtilsControllerReducer';
-import type { NodeUtilsSubmenu } from './nodeUtilsControllerReducer';
+} from './nodeHoverMenuControllerReducer';
+import type { NodeHoverMenuSubmenu } from './nodeHoverMenuControllerReducer';
 
-export { NODE_UTILS_PORTAL_ATTR, initialNodeUtilsControllerState, nodeUtilsControllerReducer } from './nodeUtilsControllerReducer';
-export type { NodeUtilsSubmenu, NodeUtilsMode, NodeUtilsControllerState, NodeUtilsControllerEvent } from './nodeUtilsControllerReducer';
+export { NODE_HOVER_MENU_PORTAL_ATTR, initialNodeHoverMenuControllerState, nodeHoverMenuControllerReducer } from './nodeHoverMenuControllerReducer';
+export type { NodeHoverMenuSubmenu, NodeHoverMenuMode, NodeHoverMenuControllerState, NodeHoverMenuControllerEvent } from './nodeHoverMenuControllerReducer';
 
-export function useNodeUtilsController() {
-    const [state, dispatch] = useReducer(nodeUtilsControllerReducer, initialNodeUtilsControllerState);
+export function useNodeHoverMenuController() {
+    const [state, dispatch] = useReducer(nodeHoverMenuControllerReducer, initialNodeHoverMenuControllerState);
     const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleHoverEnter = useCallback(() => {
@@ -28,7 +28,7 @@ export function useNodeUtilsController() {
         }, 300);
     }, []);
 
-    const openSubmenu = useCallback((submenu: Exclude<NodeUtilsSubmenu, 'none'>) => {
+    const openSubmenu = useCallback((submenu: Exclude<NodeHoverMenuSubmenu, 'none'>) => {
         dispatch({ type: 'OPEN_SUBMENU', submenu });
     }, []);
 

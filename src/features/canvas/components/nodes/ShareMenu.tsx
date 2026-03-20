@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import { strings } from '@/shared/localization/strings';
-import { NODE_UTILS_PORTAL_ATTR } from '../../hooks/useNodeUtilsController';
+import { NODE_HOVER_MENU_PORTAL_ATTR } from '../../hooks/useNodeHoverMenuController';
 import { useCssHover } from '../../hooks/useCssHover';
 import { getDropdownPosition } from './dropdownPositioning';
 import type { ShareMenuProps } from './shareMenuConfig';
@@ -51,7 +51,7 @@ export const ShareMenu = React.memo(function ShareMenu({
             role="menu" aria-busy={isSharing}
             aria-label={strings.nodeUtils.shareToWorkspace}
             data-testid="share-menu-portal"
-            {...{ [NODE_UTILS_PORTAL_ATTR]: 'true' }}
+            {...{ [NODE_HOVER_MENU_PORTAL_ATTR]: 'true' }}
             style={{ top: menuPosition.top, left: menuPosition.left }}>
             {otherWorkspaces.length === 0 ? (
                 <div className={styles.emptyMessage}>{strings.nodeUtils.noOtherWorkspaces}</div>

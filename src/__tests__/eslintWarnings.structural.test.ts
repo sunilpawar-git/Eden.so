@@ -41,10 +41,10 @@ describe('ESLint warning regression guards', () => {
         });
     });
 
-    describe('max-lines-per-function: NodeUtilsBar', () => {
+    describe('max-lines-per-function: NodeHoverMenu', () => {
         it('renderButton is extracted to a standalone helper file', () => {
-            const src = read('src/features/canvas/components/nodes/NodeUtilsBar.tsx');
-            expect(src).toContain('renderUtilsBarButton');
+            const src = read('src/features/canvas/components/nodes/NodeHoverMenu.tsx');
+            expect(src).toContain('renderHoverMenuButton');
         });
     });
 

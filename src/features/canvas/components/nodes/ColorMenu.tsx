@@ -4,7 +4,7 @@ import { strings } from '@/shared/localization/strings';
 import type { PortalTooltipProps } from '@/shared/components/PortalTooltip';
 import { PortalTooltip } from '@/shared/components/PortalTooltip';
 import type { NodeColorKey } from '../../types/node';
-import { NODE_UTILS_PORTAL_ATTR } from '../../hooks/useNodeUtilsController';
+import { NODE_HOVER_MENU_PORTAL_ATTR } from '../../hooks/useNodeHoverMenuController';
 import { useCssHover } from '../../hooks/useCssHover';
 import { getDropdownPosition } from './dropdownPositioning';
 import styles from './ColorMenu.module.css';
@@ -77,7 +77,7 @@ export const ColorMenu = React.memo(function ColorMenu({
                     className={styles.dropdownMenu}
                     role="menu"
                     data-testid="color-menu-portal"
-                    {...{ [NODE_UTILS_PORTAL_ATTR]: 'true' }}
+                    {...{ [NODE_HOVER_MENU_PORTAL_ATTR]: 'true' }}
                     style={{ top: menuPosition.top, left: menuPosition.left }}
                 >
                     {COLOR_OPTIONS.map((option) => (

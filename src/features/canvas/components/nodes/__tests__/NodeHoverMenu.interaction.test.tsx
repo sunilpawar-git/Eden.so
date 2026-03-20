@@ -1,13 +1,13 @@
 /**
- * NodeUtilsBar Interaction Tests — Flat bar stability, proximity, data-bar-active.
- * Split from NodeUtilsBar.test.tsx to meet 300-line file limit.
+ * NodeHoverMenu Interaction Tests — Flat bar stability, proximity, data-bar-active.
+ * Split from NodeHoverMenu.test.tsx to meet 300-line file limit.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { strings } from '@/shared/localization/strings';
-import { NodeUtilsBar } from '../NodeUtilsBar';
+import { NodeHoverMenu } from '../NodeHoverMenu';
 
-describe('NodeUtilsBar interaction', () => {
+describe('NodeHoverMenu interaction', () => {
     beforeEach(() => {
         vi.useFakeTimers();
     });
@@ -28,7 +28,7 @@ describe('NodeUtilsBar interaction', () => {
         it('handles rapid interactions without update-depth errors', () => {
             const onTransform = vi.fn();
             render(
-                <NodeUtilsBar
+                <NodeHoverMenu
                     {...defaultProps}
                     hasContent={true}
                     onTransform={onTransform}
@@ -49,7 +49,7 @@ describe('NodeUtilsBar interaction', () => {
         it('registerProximityLostFn provides a callback', () => {
             let proximityLostFn: (() => void) | null = null;
             render(
-                <NodeUtilsBar
+                <NodeHoverMenu
                     {...defaultProps}
                     registerProximityLostFn={(fn) => { proximityLostFn = fn; }}
                 />
@@ -61,7 +61,7 @@ describe('NodeUtilsBar interaction', () => {
         it('proximityLost closes open transform submenu', () => {
             let proximityLostFn: (() => void) | null = null;
             render(
-                <NodeUtilsBar
+                <NodeHoverMenu
                     {...defaultProps}
                     hasContent={true}
                     onTransform={vi.fn()}
@@ -81,7 +81,7 @@ describe('NodeUtilsBar interaction', () => {
     describe('CSS data-bar-active attribute', () => {
         it('sets data-bar-active when transform submenu is opened', () => {
             render(
-                <NodeUtilsBar {...defaultProps} hasContent onTransform={vi.fn()} />
+                <NodeHoverMenu {...defaultProps} hasContent onTransform={vi.fn()} />
             );
             const container = screen.getByRole('toolbar').parentElement;
             expect(container).not.toBeNull();
@@ -95,7 +95,7 @@ describe('NodeUtilsBar interaction', () => {
 
         it('removes data-bar-active when submenu is closed via outside click', () => {
             render(
-                <NodeUtilsBar {...defaultProps} hasContent onTransform={vi.fn()} />
+                <NodeHoverMenu {...defaultProps} hasContent onTransform={vi.fn()} />
             );
             const container = screen.getByRole('toolbar').parentElement!;
 

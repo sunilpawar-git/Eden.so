@@ -1,5 +1,5 @@
 /**
- * ToolbarZoneList — Renders a single icon zone (UtilsBar or ContextMenu) in the ToolbarSection.
+ * ToolbarZoneList — Renders a single icon zone (Hover Menu or Right-click Menu) in the ToolbarSection.
  * Extracted from ToolbarSection to stay under max-lines-per-function.
  */
 import React from 'react';
@@ -43,7 +43,7 @@ export const ToolbarZoneList = React.memo(function ToolbarZoneList({
             style={TB_BUTTON_LIST_STYLE}
             onDragOver={onZoneDragOver}
             onDrop={() => onDropOnZone(zone)}
-            data-testid={`toolbar-${zone === 'utilsBar' ? 'utilsbar' : 'contextmenu'}-list`}
+            data-testid={`toolbar-${zone === 'hoverMenu' ? 'hovermenu' : 'rightclickmenu'}-list`}
         >
             {icons.length === 0 && (
                 <span className={TB_EMPTY_HINT} style={TB_EMPTY_HINT_STYLE}>

@@ -1,14 +1,14 @@
 /**
- * useNodeUtilsBar — Logic for NodeUtilsBar: transform submenu toggle, outside-click.
- * Simplified: no deck2, no share/color submenus (moved to context menu).
+ * useNodeHoverMenu — Logic for NodeHoverMenu: transform submenu toggle, outside-click.
+ * Simplified: no deck2, no share/color submenus (moved to Right-click Menu).
  */
 import { useRef, useCallback, useEffect } from 'react';
-import { useNodeUtilsController } from './useNodeUtilsController';
-import { useNodeUtilsBarOutsideHandlers } from './useNodeUtilsBarOutsideHandlers';
+import { useNodeHoverMenuController } from './useNodeHoverMenuController';
+import { useNodeHoverMenuOutsideHandlers } from './useNodeHoverMenuOutsideHandlers';
 
-export function useNodeUtilsBar() {
+export function useNodeHoverMenu() {
     const containerRef = useRef<HTMLDivElement>(null);
-    const { state, actions: controllerActions } = useNodeUtilsController();
+    const { state, actions: controllerActions } = useNodeHoverMenuController();
     const {
         onOutsidePointer, onEscape,
         handleHoverEnter, handleHoverLeave: controllerHoverLeave,
@@ -24,7 +24,7 @@ export function useNodeUtilsBar() {
 
     const isTransformOpen = state.activeSubmenu === 'transform';
     const isActive = isTransformOpen;
-    useNodeUtilsBarOutsideHandlers(containerRef, isActive, onEscape, onOutsidePointer);
+    useNodeHoverMenuOutsideHandlers(containerRef, isActive, onEscape, onOutsidePointer);
 
     useEffect(() => {
         if (!containerRef.current) return;

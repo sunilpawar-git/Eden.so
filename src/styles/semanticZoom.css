@@ -4,7 +4,7 @@
 /* Heading-only mode: hide content, tags, and utils bar */
 .react-flow[data-zoom-level="heading"] [data-node-section="content"],
 .react-flow[data-zoom-level="heading"] [data-node-section="tags"],
-.react-flow[data-zoom-level="heading"] [data-node-section="utils"] {
+.react-flow[data-zoom-level="heading"] [data-node-section="hover-menu"] {
     display: none;
 }
 
@@ -26,6 +26,6 @@
 .react-flow[data-zoom-level="dot"] [data-node-section="heading"],
 .react-flow[data-zoom-level="dot"] [data-node-section="content"],
 .react-flow[data-zoom-level="dot"] [data-node-section="tags"],
-.react-flow[data-zoom-level="dot"] [data-node-section="utils"] {
+.react-flow[data-zoom-level="dot"] [data-node-section="hover-menu"] {
     display: none;
 }

@@ -72,10 +72,10 @@ vi.mock('@/features/ai/hooks/useNodeGeneration', () => ({
     useNodeGeneration: () => ({ generateFromPrompt: vi.fn(), branchFromNode: vi.fn() }),
 }));
 
-vi.mock('../NodeUtilsBar', async () => {
+vi.mock('../NodeHoverMenu', async () => {
     const React = await import('react');
     return {
-        NodeUtilsBar: React.memo(React.forwardRef<HTMLDivElement>(function MockBar(_p, ref) {
+        NodeHoverMenu: React.memo(React.forwardRef<HTMLDivElement>(function MockBar(_p, ref) {
             return <div ref={ref} data-testid="node-utils-bar" />;
         })),
     };

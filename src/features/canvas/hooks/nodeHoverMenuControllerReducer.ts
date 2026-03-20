@@ -1,59 +1,59 @@
 /**
- * nodeUtilsControllerReducer — Pure state machine for NodeUtilsBar interactions.
+ * nodeHoverMenuControllerReducer — Pure state machine for NodeHoverMenu interactions.
  * Handles submenu open/close and outside pointer dismissal.
- * Simplified: no deck-two state (secondary actions moved to context menu).
+ * Simplified: no deck-two state (secondary actions moved to Right-click Menu).
  */
 
-export const NODE_UTILS_PORTAL_ATTR = 'data-node-utils-zone';
+export const NODE_HOVER_MENU_PORTAL_ATTR = 'data-node-hover-menu-zone';
 
-export type NodeUtilsSubmenu = 'none' | 'transform';
-export type NodeUtilsMode = 'auto' | 'manual';
+export type NodeHoverMenuSubmenu = 'none' | 'transform';
+export type NodeHoverMenuMode = 'auto' | 'manual';
 
-export interface NodeUtilsControllerState {
-    mode: NodeUtilsMode;
-    activeSubmenu: NodeUtilsSubmenu;
+export interface NodeHoverMenuControllerState {
+    mode: NodeHoverMenuMode;
+    activeSubmenu: NodeHoverMenuSubmenu;
 }
 
-export type NodeUtilsControllerEvent =
+export type NodeHoverMenuControllerEvent =
     | { type: 'HOVER_LEAVE' }
-    | { type: 'OPEN_SUBMENU'; submenu: Exclude<NodeUtilsSubmenu, 'none'> }
+    | { type: 'OPEN_SUBMENU'; submenu: Exclude<NodeHoverMenuSubmenu, 'none'> }
     | { type: 'CLOSE_SUBMENU' }
     | { type: 'ESCAPE' }
     | { type: 'OUTSIDE_POINTER' }
     | { type: 'PROXIMITY_LOST' };
 
-export const initialNodeUtilsControllerState: NodeUtilsControllerState = {
+export const initialNodeHoverMenuControllerState: NodeHoverMenuControllerState = {
     mode: 'auto',
     activeSubmenu: 'none',
 };
 
-function handleHoverLeave(s: NodeUtilsControllerState): NodeUtilsControllerState {
+function handleHoverLeave(s: NodeHoverMenuControllerState): NodeHoverMenuControllerState {
     if (s.mode !== 'auto') return s;
     if (s.activeSubmenu === 'none') return s;
     return { ...s, activeSubmenu: 'none' };
 }
 
-function handleEscape(s: NodeUtilsControllerState): NodeUtilsControllerState {
+function handleEscape(s: NodeHoverMenuControllerState): NodeHoverMenuControllerState {
     if (s.activeSubmenu !== 'none') return { ...s, activeSubmenu: 'none' };
     if (s.mode === 'auto') return s;
     return { ...s, activeSubmenu: 'none', mode: 'auto' };
 }
 
-function handleProximityLost(s: NodeUtilsControllerState): NodeUtilsControllerState {
+function handleProximityLost(s: NodeHoverMenuControllerState): NodeHoverMenuControllerState {
     if (s.activeSubmenu !== 'none') return { ...s, activeSubmenu: 'none', mode: 'auto' };
     if (s.mode === 'auto') return s;
     return { ...s, mode: 'auto' };
 }
 
-function handleOutsidePointer(s: NodeUtilsControllerState): NodeUtilsControllerState {
+function handleOutsidePointer(s: NodeHoverMenuControllerState): NodeHoverMenuControllerState {
     if (s.activeSubmenu === 'none' && s.mode === 'auto') return s;
     return { ...s, activeSubmenu: 'none', mode: 'auto' };
 }
 
-export function nodeUtilsControllerReducer(
-    state: NodeUtilsControllerState,
-    event: NodeUtilsControllerEvent,
-): NodeUtilsControllerState {
+export function nodeHoverMenuControllerReducer(
+    state: NodeHoverMenuControllerState,
+    event: NodeHoverMenuControllerEvent,
+): NodeHoverMenuControllerState {
     switch (event.type) {
         case 'HOVER_LEAVE':
             return handleHoverLeave(state);
@@ -75,5 +75,5 @@ export function nodeUtilsControllerReducer(
 
 export function isPortalBoundaryTarget(target: EventTarget | null | undefined): boolean {
     const element = target instanceof HTMLElement ? target : null;
-    return Boolean(element?.closest(`[${NODE_UTILS_PORTAL_ATTR}="true"]`));
+    return Boolean(element?.closest(`[${NODE_HOVER_MENU_PORTAL_ATTR}="true"]`));
 }

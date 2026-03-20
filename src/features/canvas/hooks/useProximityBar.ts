@@ -1,4 +1,4 @@
-/** Ref-based proximity detection for NodeUtilsBar — sets data attributes (zero React re-renders). */
+/** Ref-based proximity detection for NodeHoverMenu — sets data attributes (zero React re-renders). */
 import { useEffect, useRef, type RefObject } from 'react';
 import { recalculatePlacement, checkProximity } from './proximityHelpers';
 

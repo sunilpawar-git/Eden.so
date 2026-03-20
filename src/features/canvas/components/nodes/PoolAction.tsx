@@ -1,5 +1,5 @@
 /**
- * PoolAction — AI Memory toggle button for NodeUtilsBar.
+ * PoolAction — AI Memory toggle button for NodeHoverMenu.
  * Renders MemoryChipIcon (filled when active) with portal tooltip.
  * Memoized per CLAUDE.md performance rules (500+ node canvases).
  */

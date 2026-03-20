@@ -1,6 +1,6 @@
 import type { TransformationType } from '@/features/ai/hooks/useNodeTransformation';
 
-export interface NodeUtilsBarProps {
+export interface NodeHoverMenuProps {
     onAIClick?: () => void;
     onConnectClick: () => void;
     onCopyClick?: () => void;
@@ -12,7 +12,7 @@ export interface NodeUtilsBarProps {
     isTransforming?: boolean;
     disabled?: boolean;
     registerProximityLostFn?: (fn: () => void) => void;
-    // Context-menu actions that may appear in the UtilsBar via icon placement
+    // Context-menu actions that may appear in the Hover Menu via icon placement
     onPinToggle?: () => void;
     onDuplicateClick?: () => void;
     onCollapseToggle?: () => void;

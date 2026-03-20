@@ -20,7 +20,7 @@
 .canvasContainer :global(.react-flow__node:has([data-bar-proximity="near"])),
 .canvasContainer :global(.react-flow__node:has([data-bar-focused="true"])),
 .canvasContainer :global(.react-flow__node:has([data-bar-active="true"])) {
-    z-index: var(--node-utils-active-z, 1001) !important;
+    z-index: var(--node-hover-menu-active-z, 1001) !important;
 }
 
 .canvasContainer :global(.react-flow__node):active {

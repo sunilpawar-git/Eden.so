@@ -1,5 +1,5 @@
 /**
- * NodeUtilsBarAIOrTransform — AI Actions or TransformMenu slot for NodeUtilsBar.
+ * NodeHoverMenuAIOrTransform — AI Actions or TransformMenu slot for NodeHoverMenu.
  * Extracted for max-lines-per-function lint rule.
  */
 import React from 'react';
@@ -23,7 +23,7 @@ interface Props {
     onAIClick?: () => void;
 }
 
-export const NodeUtilsBarAIOrTransform = React.memo(function NodeUtilsBarAIOrTransform(props: Props) {
+export const NodeHoverMenuAIOrTransform = React.memo(function NodeHoverMenuAIOrTransform(props: Props) {
     if (props.onTransform) {
         return (
             <TransformMenu

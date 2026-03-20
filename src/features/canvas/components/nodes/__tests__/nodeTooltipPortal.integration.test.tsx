@@ -1,11 +1,11 @@
 /**
  * Tooltip Portal Integration Tests — TDD
- * Validates that NodeUtilsBar uses PortalTooltip (not CSS ::after),
+ * Validates that NodeHoverMenu uses PortalTooltip (not CSS ::after),
  * and that data-tooltip attributes are removed after migration.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { NodeUtilsBar } from '../NodeUtilsBar';
+import { NodeHoverMenu } from '../NodeHoverMenu';
 
 // Mock PortalTooltip to verify it is used (renders in body)
 vi.mock('@/shared/components/PortalTooltip', () => ({
@@ -21,7 +21,7 @@ vi.mock('@/shared/components/PortalTooltip', () => ({
     ),
 }));
 
-vi.mock('../NodeUtilsBar.module.css', () => ({
+vi.mock('../NodeHoverMenu.module.css', () => ({
     default: {
         barWrapper: 'barWrapper',
         deckOne: 'deckOne',
@@ -47,14 +47,14 @@ describe('Tooltip Portal Integration', () => {
     };
 
     it('data-tooltip attributes no longer exist on buttons', () => {
-        const { container } = render(<NodeUtilsBar {...defaultProps} />);
+        const { container } = render(<NodeHoverMenu {...defaultProps} />);
         const buttonsWithTooltip = container.querySelectorAll('[data-tooltip]');
 
         expect(buttonsWithTooltip.length).toBe(0);
     });
 
     it('hovering Connect button shows portal tooltip with correct text', () => {
-        render(<NodeUtilsBar {...defaultProps} />);
+        render(<NodeHoverMenu {...defaultProps} />);
 
         fireEvent.mouseEnter(screen.getByLabelText('Connect'));
 
@@ -64,7 +64,7 @@ describe('Tooltip Portal Integration', () => {
     });
 
     it('hovering Delete button shows tooltip with shortcut hint', () => {
-        render(<NodeUtilsBar {...defaultProps} />);
+        render(<NodeHoverMenu {...defaultProps} />);
 
         fireEvent.mouseEnter(screen.getByLabelText('Delete'));
 
@@ -75,7 +75,7 @@ describe('Tooltip Portal Integration', () => {
     });
 
     it('tooltip disappears when mouse leaves button', () => {
-        render(<NodeUtilsBar {...defaultProps} />);
+        render(<NodeHoverMenu {...defaultProps} />);
 
         const connectBtn = screen.getByLabelText('Connect');
         fireEvent.mouseEnter(connectBtn);
@@ -86,7 +86,7 @@ describe('Tooltip Portal Integration', () => {
     });
 
     it('primary button callbacks work', () => {
-        render(<NodeUtilsBar {...defaultProps} />);
+        render(<NodeHoverMenu {...defaultProps} />);
 
         fireEvent.click(screen.getByLabelText('Connect'));
         expect(defaultProps.onConnectClick).toHaveBeenCalledTimes(1);
