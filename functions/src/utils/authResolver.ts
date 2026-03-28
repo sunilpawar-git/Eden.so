@@ -3,6 +3,7 @@
  * Supports Firebase ID tokens (header/query) and HMAC-signed URLs
  */
 import * as crypto from 'crypto';
+import { logger } from 'firebase-functions/v2';
 import { verifyAuthToken } from './authVerifier.js';
 import { verifySignedParams } from './urlSigner.js';
 
@@ -43,7 +44,7 @@ export async function resolveProxyAuth(
     }
 
     if (query.token) {
-        console.warn('[proxyImage] Token-in-URL is deprecated. Migrate to signed URLs.');
+        logger.warn('[proxyImage] Token-in-URL is deprecated. Migrate to signed URLs.');
         const uid = await verifyAuthToken(`Bearer ${query.token}`);
         return { uid, method: uid ? 'token' : 'none' };
     }

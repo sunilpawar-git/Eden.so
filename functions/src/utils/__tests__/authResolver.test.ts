@@ -15,6 +15,13 @@ vi.mock('../authVerifier.js', () => ({
     }),
 }));
 
+// vi.hoisted ensures mockLogger is available when the factory runs (vi.mock is hoisted)
+const { mockLogger } = vi.hoisted(() => {
+    const mockLogger = { warn: vi.fn(), info: vi.fn(), error: vi.fn() };
+    return { mockLogger };
+});
+vi.mock('firebase-functions/v2', () => ({ logger: mockLogger }));
+
 const SECRET = 'unit-test-hmac-key-not-a-real-secret';
 const IMAGE_URL = 'https://example.com/photo.jpg';
 
@@ -88,15 +95,13 @@ describe('resolveProxyAuth', () => {
     });
 
     it('authenticates via query token (deprecated, priority 3)', async () => {
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
         const result = await resolveProxyAuth(undefined, {
             token: 'valid-token',
         }, undefined);
 
         expect(result.uid).toBe('user-123');
         expect(result.method).toBe('token');
-        expect(warnSpy).toHaveBeenCalledWith(
+        expect(mockLogger.warn).toHaveBeenCalledWith(
             expect.stringContaining('deprecated'),
         );
     });

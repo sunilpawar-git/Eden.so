@@ -199,3 +199,64 @@ describe('CSP Completeness (firebase.json)', () => {
         });
     });
 });
+
+describe('HTTP Security Headers (firebase.json)', () => {
+    let allHeaders: FirebaseHeader[];
+
+    beforeAll(() => {
+        const raw = readFileSync(FIREBASE_JSON, 'utf-8');
+        const config = JSON.parse(raw) as FirebaseConfig;
+        const rules = config.hosting?.headers ?? [];
+        const catchAll = rules.find(r => r.source === '**');
+        allHeaders = catchAll?.headers ?? [];
+    });
+
+    /** Find a header by key (case-insensitive) */
+    function findHeader(key: string): FirebaseHeader | undefined {
+        return allHeaders.find(h => h.key.toLowerCase() === key.toLowerCase());
+    }
+
+    it('has Strict-Transport-Security with max-age', () => {
+        const hsts = findHeader('Strict-Transport-Security');
+        expect(hsts, 'Missing Strict-Transport-Security header — HSTS prevents downgrade attacks').toBeDefined();
+        expect(hsts!.value).toContain('max-age=');
+    });
+
+    it('has X-Frame-Options set to DENY', () => {
+        const xfo = findHeader('X-Frame-Options');
+        expect(xfo, 'Missing X-Frame-Options header — prevents clickjacking').toBeDefined();
+        expect(xfo!.value).toBe('DENY');
+    });
+
+    it('has Referrer-Policy set to strict-origin-when-cross-origin', () => {
+        const rp = findHeader('Referrer-Policy');
+        expect(rp, 'Missing Referrer-Policy header — prevents referrer leakage').toBeDefined();
+        expect(rp!.value).toContain('strict-origin');
+    });
+
+    it('has Permissions-Policy restricting camera, microphone, geolocation', () => {
+        const pp = findHeader('Permissions-Policy');
+        expect(pp, 'Missing Permissions-Policy header — restricts browser API access').toBeDefined();
+        expect(pp!.value).toContain('camera=()');
+        expect(pp!.value).toContain('microphone=()');
+        expect(pp!.value).toContain('geolocation=()');
+    });
+
+    it('has X-Content-Type-Options set to nosniff', () => {
+        const xcto = findHeader('X-Content-Type-Options');
+        expect(xcto, 'Missing X-Content-Type-Options header — prevents MIME sniffing').toBeDefined();
+        expect(xcto!.value).toBe('nosniff');
+    });
+
+    it('has Content-Security-Policy header', () => {
+        const cspHeader = findHeader('Content-Security-Policy');
+        expect(cspHeader, 'Missing Content-Security-Policy header').toBeDefined();
+        expect(cspHeader!.value).toContain('default-src');
+    });
+
+    it('has at least 6 security headers on the catch-all rule', () => {
+        // Use toBeGreaterThanOrEqual so adding a 7th header (e.g. Cross-Origin-Opener-Policy)
+        // does not break the build. The individual header tests above verify each is correct.
+        expect(allHeaders.length).toBeGreaterThanOrEqual(6);
+    });
+});

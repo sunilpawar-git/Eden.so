@@ -79,9 +79,15 @@ export function logSecurityEvent(event: SecurityEvent): void {
 
     const line = JSON.stringify(entry);
 
+    // console.error/warn is intentional here — Cloud Functions routes these to
+    // Cloud Logging at ERROR/WARNING severity respectively. The firebase-functions
+    // logger wraps JSON differently; raw console output gives us structured JSON
+    // ingestion with the correct severity level.
     if (severity === 'ERROR' || severity === 'CRITICAL') {
+        // eslint-disable-next-line no-console
         console.error(line);
     } else {
+        // eslint-disable-next-line no-console
         console.warn(line);
     }
 }

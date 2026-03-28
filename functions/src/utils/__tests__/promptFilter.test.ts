@@ -84,8 +84,7 @@ describe('filterPromptInput', () => {
     });
 
     it('rejects non-array contents', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = filterPromptInput('not an array' as any);
+        const result = filterPromptInput('not an array' as never);
         expect(result.allowed).toBe(false);
     });
 

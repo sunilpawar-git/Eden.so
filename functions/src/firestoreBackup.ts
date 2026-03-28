@@ -36,7 +36,8 @@ import { logger } from 'firebase-functions/v2';
 import { GoogleAuth } from 'google-auth-library';
 
 const PROJECT_ID = 'actionstation-244f0';
-const BACKUP_BUCKET = `gs://${PROJECT_ID}-firestore-backups`;
+const DEFAULT_IMMUTABLE_BUCKET = `${PROJECT_ID}-firestore-backups-immutable`;
+const BACKUP_BUCKET = `gs://${process.env.BACKUP_BUCKET_NAME ?? DEFAULT_IMMUTABLE_BUCKET}`;
 const FIRESTORE_EXPORT_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default):exportDocuments`;
 
 export const firestoreBackup = onSchedule(

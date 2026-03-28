@@ -4,6 +4,10 @@
  * Firebase Functions v2 handles CORS headers internally — we test the config, not the framework.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { PRODUCTION_DOMAINS, LOCALHOST_ORIGINS } from '../domainConfig.js';
+
+/** Expected base count: production domains + localhost origins (no env overrides) */
+const BASE_ORIGIN_COUNT = PRODUCTION_DOMAINS.length + LOCALHOST_ORIGINS.length;
 
 describe('corsConfig', () => {
     const originalEnv = { ...process.env };
@@ -16,25 +20,26 @@ describe('corsConfig', () => {
         process.env = { ...originalEnv };
     });
 
-    it('includes all production origins', async () => {
+    it('includes all production domains from domainConfig SSOT', async () => {
         delete process.env.FUNCTIONS_EMULATOR;
         delete process.env.CORS_ALLOWED_ORIGINS;
 
         const { ALLOWED_ORIGINS } = await import('../corsConfig.js');
 
-        expect(ALLOWED_ORIGINS).toContain('https://actionstation-244f0.web.app');
-        expect(ALLOWED_ORIGINS).toContain('https://actionstation-244f0.firebaseapp.com');
-        expect(ALLOWED_ORIGINS).toContain('https://www.actionstation.in');
+        for (const domain of PRODUCTION_DOMAINS) {
+            expect(ALLOWED_ORIGINS).toContain(domain);
+        }
     });
 
-    it('always includes localhost origins (safe for CORS — attackers cannot host on a visitor\'s localhost)', async () => {
+    it('includes all localhost origins from domainConfig SSOT', async () => {
         delete process.env.FUNCTIONS_EMULATOR;
         delete process.env.CORS_ALLOWED_ORIGINS;
 
         const { ALLOWED_ORIGINS } = await import('../corsConfig.js');
 
-        expect(ALLOWED_ORIGINS).toContain('http://localhost:5173');
-        expect(ALLOWED_ORIGINS).toContain('http://localhost:4173');
+        for (const origin of LOCALHOST_ORIGINS) {
+            expect(ALLOWED_ORIGINS).toContain(origin);
+        }
     });
 
     it('appends custom origins from CORS_ALLOWED_ORIGINS env var', async () => {
@@ -54,7 +59,7 @@ describe('corsConfig', () => {
         const { ALLOWED_ORIGINS } = await import('../corsConfig.js');
 
         expect(ALLOWED_ORIGINS).toContain('https://actionstation-244f0.web.app');
-        expect(ALLOWED_ORIGINS.length).toBe(5);
+        expect(ALLOWED_ORIGINS.length).toBe(BASE_ORIGIN_COUNT);
     });
 
     it('does not include wildcard origin', async () => {
