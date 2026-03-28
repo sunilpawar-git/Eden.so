@@ -30,6 +30,16 @@ export const SecurityEventType = {
     UPLOAD_REJECTED: 'upload_rejected',
     /** Cloudflare Turnstile or Google reCAPTCHA challenge failed */
     CAPTCHA_FAILED: 'captcha_failed',
+    /** Subscription tier changed (free→pro, pro→free, etc.) */
+    SUBSCRIPTION_CHANGE: 'subscription_change',
+    /** Invoice payment failed via Stripe webhook */
+    PAYMENT_FAILED: 'payment_failed',
+    /** Stripe webhook signature verification failed */
+    WEBHOOK_SIG_FAILURE: 'webhook_sig_failure',
+    /** Checkout session created successfully */
+    CHECKOUT_CREATED: 'checkout_created',
+    /** Webhook processing error (handler threw) */
+    WEBHOOK_PROCESSING_ERROR: 'webhook_processing_error',
 } as const;
 
 export type SecurityEventType = (typeof SecurityEventType)[keyof typeof SecurityEventType];
@@ -101,6 +111,8 @@ function getSeverity(
         case SecurityEventType.BOT_DETECTED:
         case SecurityEventType.PROMPT_INJECTION:
         case SecurityEventType.IP_BLOCKED:
+        case SecurityEventType.WEBHOOK_SIG_FAILURE:
+        case SecurityEventType.WEBHOOK_PROCESSING_ERROR:
             return 'ERROR';
         default:
             return 'WARNING';

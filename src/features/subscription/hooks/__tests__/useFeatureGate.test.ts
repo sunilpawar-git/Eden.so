@@ -10,14 +10,16 @@ import { GATED_FEATURES, SUBSCRIPTION_TIERS } from '../../types/subscription';
 // Mock subscription store
 let mockTier: string = SUBSCRIPTION_TIERS.free;
 let mockIsLoading = false;
+let mockIsActive = true;
 
 vi.mock('../../stores/subscriptionStore', () => ({
     useSubscriptionStore: (selector: (s: Record<string, unknown>) => unknown) =>
         selector({
             tier: mockTier,
             isLoading: mockIsLoading,
+            isActive: mockIsActive,
             hasAccess: () => {
-                return mockTier === 'pro';
+                return mockTier === 'pro' && mockIsActive;
             },
         }),
 }));
@@ -26,6 +28,7 @@ describe('useFeatureGate', () => {
     beforeEach(() => {
         mockTier = SUBSCRIPTION_TIERS.free;
         mockIsLoading = false;
+        mockIsActive = true;
     });
 
     it('returns hasAccess=false for pro feature on free tier', () => {
@@ -34,10 +37,18 @@ describe('useFeatureGate', () => {
         expect(result.current.hasAccess).toBe(false);
     });
 
-    it('returns hasAccess=true for pro feature on pro tier', () => {
+    it('returns hasAccess=true for pro feature on pro tier with isActive=true', () => {
         mockTier = SUBSCRIPTION_TIERS.pro;
+        mockIsActive = true;
         const { result } = renderHook(() => useFeatureGate(GATED_FEATURES.offlinePin));
         expect(result.current.hasAccess).toBe(true);
+    });
+
+    it('returns hasAccess=false for pro tier when isActive=false (payment failed)', () => {
+        mockTier = SUBSCRIPTION_TIERS.pro;
+        mockIsActive = false;
+        const { result } = renderHook(() => useFeatureGate(GATED_FEATURES.offlinePin));
+        expect(result.current.hasAccess).toBe(false);
     });
 
     it('returns isLoading from store', () => {
@@ -69,6 +80,7 @@ describe('useFeatureGate', () => {
 
     it('returns correct access for each gated feature on pro tier', () => {
         mockTier = SUBSCRIPTION_TIERS.pro;
+        mockIsActive = true;
         const pin = renderHook(() => useFeatureGate(GATED_FEATURES.offlinePin));
         const sync = renderHook(() => useFeatureGate(GATED_FEATURES.backgroundSync));
         expect(pin.result.current.hasAccess).toBe(true);

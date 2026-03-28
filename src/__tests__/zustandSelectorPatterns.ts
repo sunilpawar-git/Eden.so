@@ -18,6 +18,7 @@ export const BARE_DESTRUCTURING_PATTERNS: ScanPattern[] = [
     { name: 'Destructuring from useSettingsStore()', pattern: /const\s*\{[^}]+\}\s*=\s*useSettingsStore\(\)/ },
     { name: 'Destructuring from useFocusStore()', pattern: /const\s*\{[^}]+\}\s*=\s*useFocusStore\(\)/ },
     { name: 'Destructuring from useKnowledgeBankStore()', pattern: /const\s*\{[^}]+\}\s*=\s*useKnowledgeBankStore\(\)/ },
+    { name: 'Destructuring from useSubscriptionStore()', pattern: /const\s*\{[^}]+\}\s*=\s*useSubscriptionStore\(\)/ },
 ];
 
 export const CLOSURE_VARIABLE_PATTERNS: ScanPattern[] = [
@@ -38,7 +39,7 @@ export const CLOSURE_VARIABLE_PATTERNS: ScanPattern[] = [
 export const ACTION_SELECTOR_PATTERNS: ScanPattern[] = [
     {
         name: 'action selected via store selector',
-        pattern: /use(?:Settings|Auth|Canvas|Workspace|Toast|Confirm|Focus|KnowledgeBank)Store\(\s*\(\s*\w+\s*\)\s*=>\s*\w+\.(?:set\w+|toggle\w+|reset\w+|remove\w+|add\w+|clear\w+|load\w+|update\w+|start\w+|stop\w+|confirm|delete\w+|save\w+|create\w+)\b/,
+        pattern: /use(?:Settings|Auth|Canvas|Workspace|Toast|Confirm|Focus|KnowledgeBank|Subscription)Store\(\s*\(\s*\w+\s*\)\s*=>\s*\w+\.(?:set\w+|toggle\w+|reset\w+|remove\w+|add\w+|clear\w+|load\w+|update\w+|start\w+|stop\w+|confirm|delete\w+|save\w+|create\w+)\b/,
     },
 ];
 
@@ -53,6 +54,7 @@ export const ALLOWLIST: string[] = [
     'shared/stores/settingsStore.ts',
     'shared/stores/focusStore.ts',
     'features/knowledgeBank/stores/knowledgeBankStore.ts',
+    'features/subscription/stores/subscriptionStore.ts',
 ];
 
 export function getSourceFiles(dir: string, results: string[] = []): string[] {

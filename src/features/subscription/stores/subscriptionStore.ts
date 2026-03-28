@@ -45,7 +45,8 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
     },
 
     hasAccess: (feature: GatedFeature) => {
-        return hasFeatureAccess(get().tier, feature);
+        const { tier, isActive } = get();
+        return hasFeatureAccess(tier, feature, isActive);
     },
 
     reset: () => {

@@ -28,7 +28,6 @@ import { useWorkspaceLoader } from '@/features/workspace/hooks/useWorkspaceLoade
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { WorkspaceContext } from '@/app/contexts/WorkspaceContext';
 import { usePinnedWorkspaceStore } from '@/features/workspace/stores/pinnedWorkspaceStore';
-import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
 import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { strings } from '@/shared/localization/strings';
 import { OnboardingWalkthrough } from '@/features/onboarding';
@@ -64,7 +63,6 @@ function AuthenticatedApp() {
     useEffect(() => {
         if (userId) {
             void usePinnedWorkspaceStore.getState().loadPinnedIds();
-            void useSubscriptionStore.getState().loadSubscription(userId);
         }
     }, [userId]);
 

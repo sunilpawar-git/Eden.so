@@ -31,9 +31,10 @@ vi.mock('../stores/authStore', () => ({
 }));
 
 const mockReset = vi.fn();
+const mockLoadSubscription = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/features/subscription/stores/subscriptionStore', () => ({
     useSubscriptionStore: {
-        getState: () => ({ reset: mockReset }),
+        getState: () => ({ reset: mockReset, loadSubscription: mockLoadSubscription }),
     },
 }));
 

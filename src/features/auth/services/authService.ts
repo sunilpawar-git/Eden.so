@@ -96,10 +96,13 @@ export function subscribeToAuthState(): () => void {
             setSentryUser(user.id);
             identifyUser(user.id);
             checkCalendarConnection();
+            // Load subscription tier on sign-in (D15 — Phase 2)
+            void useSubscriptionStore.getState().loadSubscription(user.id);
         } else {
             useAuthStore.getState().clearUser();
             clearSentryUser();
             resetAnalyticsUser();
+            useSubscriptionStore.getState().reset();
         }
         useAuthStore.getState().setLoading(false);
     });

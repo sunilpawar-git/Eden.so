@@ -8,6 +8,8 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { signOut, deleteAccount } from '@/features/auth/services/authService';
 import { useConfirm } from '@/shared/stores/confirmStore';
 import { useDataExport } from '@/features/workspace/hooks/useDataExport';
+import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
+import { useBillingPortal } from '@/features/subscription/hooks/useBillingPortal';
 import { toast } from '@/shared/stores/toastStore';
 import { SettingsGroup } from './SettingsGroup';
 import {
@@ -63,6 +65,55 @@ function DangerZone() {
     );
 }
 
+function SubscriptionStatus() {
+    const tier = useSubscriptionStore((s) => s.tier);
+    const isActive = useSubscriptionStore((s) => s.isActive);
+    const { openBillingPortal, isLoading: portalLoading } = useBillingPortal();
+    const s = strings.subscription;
+    const isPro = tier === 'pro';
+
+    return (
+        <SettingsGroup title={s.subscriptionGroup}>
+            <div className="flex items-center" style={{ gap: 8, marginBottom: 8 }}>
+                <span className="font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'var(--font-size-sm)' }}>
+                    {s.currentPlan}:
+                </span>
+                <span
+                    className="font-semibold rounded-md"
+                    style={{
+                        fontSize: 'var(--font-size-sm)',
+                        color: isPro ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                        background: isPro ? 'var(--color-primary-faint)' : 'var(--color-surface)',
+                        padding: '2px 8px',
+                    }}
+                >
+                    {isPro ? s.pro : s.free}
+                </span>
+                <span
+                    className="text-xs"
+                    style={{ color: isActive ? 'var(--color-success)' : 'var(--color-danger)' }}
+                >
+                    {isActive ? s.active : s.inactive}
+                </span>
+            </div>
+            {isPro ? (
+                <button
+                    className={SP_BTN_SECONDARY}
+                    style={SP_BTN_SECONDARY_STYLE}
+                    onClick={openBillingPortal}
+                    disabled={portalLoading}
+                >
+                    {portalLoading ? strings.common.loading : s.manageBilling}
+                </button>
+            ) : (
+                <span className={SP_SETTING_DESC} style={SP_SETTING_DESC_STYLE}>
+                    {s.upgradeMessage}
+                </span>
+            )}
+        </SettingsGroup>
+    );
+}
+
 export const AccountSection = React.memo(function AccountSection() {
     const user = useAuthStore((s) => s.user);
     const { exportData } = useDataExport();
@@ -106,6 +157,8 @@ export const AccountSection = React.memo(function AccountSection() {
                     {strings.auth.signOut}
                 </button>
             </SettingsGroup>
+
+            <SubscriptionStatus />
 
             <SettingsGroup
                 title={strings.settings.dataGroup}

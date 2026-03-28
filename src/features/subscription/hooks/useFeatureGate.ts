@@ -15,8 +15,12 @@ interface FeatureGateResult {
 
 export function useFeatureGate(feature: GatedFeature): FeatureGateResult {
     const tier = useSubscriptionStore((s) => s.tier);
+    const isActive = useSubscriptionStore((s) => s.isActive);
     const isLoading = useSubscriptionStore((s) => s.isLoading);
-    const hasAccess = useMemo(() => hasFeatureAccess(tier, feature), [tier, feature]);
+    const hasAccess = useMemo(
+        () => hasFeatureAccess(tier, feature, isActive),
+        [tier, isActive, feature],
+    );
 
     return { hasAccess, isLoading, tier };
 }

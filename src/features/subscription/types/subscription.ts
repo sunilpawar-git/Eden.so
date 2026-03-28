@@ -26,10 +26,27 @@ export const FEATURE_TIER_MAP: Record<GatedFeature, SubscriptionTier> = {
     [GATED_FEATURES.documentIntelligence]: SUBSCRIPTION_TIERS.pro,
 };
 
+/** Core subscription info (read by client, written by webhook) */
 export interface SubscriptionInfo {
     tier: SubscriptionTier;
     expiresAt: number | null;
     isActive: boolean;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string | null;
+    stripePriceId?: string | null;
+    currentPeriodEnd?: number | null;
+    cancelAtPeriodEnd?: boolean;
+    currency?: string;
+}
+
+/** Pricing plan for display in PricingCard */
+export interface PricingPlan {
+    priceId: string;
+    name: string;
+    interval: 'month' | 'year';
+    amount: number;
+    currency: 'inr' | 'usd';
+    displayPrice: string;
 }
 
 /** Tier hierarchy: pro > free */
@@ -38,8 +55,16 @@ const TIER_RANK: Record<SubscriptionTier, number> = {
     [SUBSCRIPTION_TIERS.pro]: 1,
 };
 
-/** Check if a tier has access to a specific feature */
-export function hasFeatureAccess(tier: SubscriptionTier, feature: GatedFeature): boolean {
+/**
+ * Check if a tier has access to a specific feature.
+ * isActive defaults to true — pass store value to block delinquent subscriptions.
+ */
+export function hasFeatureAccess(
+    tier: SubscriptionTier,
+    feature: GatedFeature,
+    isActive = true,
+): boolean {
+    if (!isActive) return false;
     const requiredTier = FEATURE_TIER_MAP[feature];
     return TIER_RANK[tier] >= TIER_RANK[requiredTier];
 }

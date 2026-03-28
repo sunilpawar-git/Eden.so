@@ -10,6 +10,17 @@ service cloud.firestore {
     match /_rateLimits/{doc} {
       allow read, write: if false;
     }
+
+    // IP rate limit documents — server-side only, no client access
+    match /_ipRateLimits/{doc} {
+      allow read, write: if false;
+    }
+
+    // Webhook idempotency records — server-side only (Decision 32)
+    // Written by stripeWebhook Cloud Function to prevent duplicate processing
+    match /_webhookEvents/{eventId} {
+      allow read, write: if false;
+    }
     
     // User-scoped data
     match /users/{userId} {

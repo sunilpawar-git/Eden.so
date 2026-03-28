@@ -53,27 +53,32 @@ describe('subscriptionStore', () => {
     });
 
     it('hasAccess returns true for pro features on pro tier', async () => {
-        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.pro });
+        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.pro, isActive: true });
         expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.offlinePin)).toBe(true);
     });
 
     it('hasAccess returns false for pro features on free tier', () => {
-        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.free });
+        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.free, isActive: true });
+        expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.offlinePin)).toBe(false);
+    });
+
+    it('hasAccess returns false when isActive=false even on pro tier', () => {
+        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.pro, isActive: false });
         expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.offlinePin)).toBe(false);
     });
 
     it('hasAccess returns false for backgroundSync on free tier', () => {
-        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.free });
+        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.free, isActive: true });
         expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.backgroundSync)).toBe(false);
     });
 
     it('hasAccess returns true for documentIntelligence on pro tier', () => {
-        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.pro });
+        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.pro, isActive: true });
         expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.documentIntelligence)).toBe(true);
     });
 
     it('hasAccess returns false for documentIntelligence on free tier', () => {
-        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.free });
+        useSubscriptionStore.setState({ tier: SUBSCRIPTION_TIERS.free, isActive: true });
         expect(useSubscriptionStore.getState().hasAccess(GATED_FEATURES.documentIntelligence)).toBe(false);
     });
 
