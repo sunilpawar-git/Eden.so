@@ -258,9 +258,15 @@ describe('HTTP Security Headers (firebase.json)', () => {
         expect(cspHeader!.value).toContain('default-src');
     });
 
-    it('has at least 6 security headers on the catch-all rule', () => {
-        // Use toBeGreaterThanOrEqual so adding a 7th header (e.g. Cross-Origin-Opener-Policy)
-        // does not break the build. The individual header tests above verify each is correct.
-        expect(allHeaders.length).toBeGreaterThanOrEqual(6);
+    it('has Cross-Origin-Opener-Policy set to same-origin-allow-popups', () => {
+        // Required for signInWithPopup: allows Google OAuth popup to communicate back.
+        // Without this, Chrome blocks window.closed checks on the popup → auth fails.
+        const coop = findHeader('Cross-Origin-Opener-Policy');
+        expect(coop, 'Missing Cross-Origin-Opener-Policy header — required for Google sign-in popup').toBeDefined();
+        expect(coop!.value).toBe('same-origin-allow-popups');
+    });
+
+    it('has at least 7 security headers on the catch-all rule', () => {
+        expect(allHeaders.length).toBeGreaterThanOrEqual(7);
     });
 });
