@@ -105,7 +105,10 @@ export const createBillingPortalSession = onRequest(
         const subDoc = await db
             .doc(`users/${uid}/subscription/current`)
             .get();
-        const customerId = subDoc.data()?.stripeCustomerId as
+        // Read provider-agnostic field; fall back to legacy stripeCustomerId for
+        // documents written before the field rename.
+        const docData = subDoc.data() as Record<string, unknown> | undefined;
+        const customerId = (docData?.gatewayCustomerId ?? docData?.stripeCustomerId) as
             | string
             | undefined;
 

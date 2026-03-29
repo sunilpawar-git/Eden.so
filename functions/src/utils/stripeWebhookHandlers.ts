@@ -80,13 +80,14 @@ export async function handleCheckoutCompleted(
         tier: 'pro',
         isActive: true,
         expiresAt: null,
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subscriptionId,
-        stripePriceId: null,
+        gatewayCustomerId: customerId,
+        gatewaySubscriptionId: subscriptionId,
+        gatewayPlanId: null,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
         currency: session.currency ?? 'usd',
         lastEventId: event.id,
+        provider: 'stripe',
     });
 
     logSecurityEvent({
@@ -129,13 +130,14 @@ export async function handleSubscriptionUpdated(
         tier,
         isActive,
         expiresAt,
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: sub.id,
-        stripePriceId: priceId,
+        gatewayCustomerId: customerId,
+        gatewaySubscriptionId: sub.id,
+        gatewayPlanId: priceId,
         currentPeriodEnd: expiresAt,
         cancelAtPeriodEnd: sub.cancel_at_period_end,
         currency: sub.currency ?? 'usd',
         lastEventId: event.id,
+        provider: 'stripe',
     });
 
     logSecurityEvent({
@@ -203,13 +205,14 @@ export async function handleInvoicePaid(
         tier: 'pro',
         isActive: true,
         expiresAt: periodEnd ? periodEnd * 1000 : null,
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subscriptionId,
-        stripePriceId: priceId,
+        gatewayCustomerId: customerId,
+        gatewaySubscriptionId: subscriptionId,
+        gatewayPlanId: priceId,
         currentPeriodEnd: periodEnd ? periodEnd * 1000 : null,
         cancelAtPeriodEnd: false,
         currency: invoice.currency ?? 'usd',
         lastEventId: event.id,
+        provider: 'stripe',
     });
 
     return { userId };
@@ -235,13 +238,14 @@ export async function handleInvoicePaymentFailed(
         tier: 'pro',
         isActive: false,
         expiresAt: null,
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subscriptionId,
-        stripePriceId: null,
+        gatewayCustomerId: customerId,
+        gatewaySubscriptionId: subscriptionId,
+        gatewayPlanId: null,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
         currency: invoice.currency ?? 'usd',
         lastEventId: event.id,
+        provider: 'stripe',
     });
 
     logSecurityEvent({

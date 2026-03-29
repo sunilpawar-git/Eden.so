@@ -2,7 +2,6 @@
  * razorpayWebhook Cloud Function — processes Razorpay webhook events
  *
  * Security: HMAC-SHA256 signature verification (x-razorpay-signature header).
- * Uses Razorpay's validateWebhookSignature utility.
  *
  * Supported events:
  *  - subscription.activated
@@ -21,28 +20,35 @@ import { checkIdempotency, recordEvent } from './utils/webhookIdempotency.js';
 import { writeSubscription, downgradeToFree } from './utils/subscriptionWriter.js';
 import { errorMessages } from './utils/securityConstants.js';
 
-/** Payload shapes from Razorpay webhooks */
+/** Razorpay wraps each resource in an `entity` sub-object */
+interface RazorpaySubscriptionEntity {
+    id: string;
+    status: string;
+    plan_id: string;
+    customer_id: string;
+    current_start?: number;
+    current_end?: number;
+    quantity?: number;
+    notes?: Record<string, string>;
+}
+
+interface RazorpayPaymentEntity {
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    order_id?: string;
+    /** Unix timestamp (seconds) of when payment was created */
+    created_at?: number;
+    notes?: Record<string, string>;
+}
+
+/** Payload shape from Razorpay webhooks */
 interface RazorpayWebhookPayload {
     event: string;
     payload: {
-        subscription?: {
-            id: string;
-            status: string;
-            plan_id: string;
-            customer_id: string;
-            current_start?: number;
-            current_end?: number;
-            quantity?: number;
-            notes?: Record<string, string>;
-        };
-        payment?: {
-            id: string;
-            amount: number;
-            currency: string;
-            status: string;
-            order_id?: string;
-            notes?: Record<string, string>;
-        };
+        subscription?: { entity: RazorpaySubscriptionEntity };
+        payment?: { entity: RazorpayPaymentEntity };
     };
 }
 
@@ -104,7 +110,9 @@ export const razorpayWebhook = onRequest(
             return;
         }
 
-        const eventId = `${payload.event}_${payload.payload.subscription?.id ?? payload.payload.payment?.id ?? Date.now()}`;
+        const subId = payload.payload.subscription?.entity.id;
+        const payId = payload.payload.payment?.entity.id;
+        const eventId = `${payload.event}_${subId ?? payId ?? crypto.randomUUID()}`;
 
         // Step 3: Idempotency check
         const alreadyProcessed = await checkIdempotency(eventId);
@@ -115,6 +123,7 @@ export const razorpayWebhook = onRequest(
 
         // Step 4: Route to handler
         let userId = '';
+        let handlerError = false;
         try {
             switch (payload.event) {
                 case 'subscription.activated':
@@ -132,10 +141,12 @@ export const razorpayWebhook = onRequest(
                     userId = await handlePaymentCaptured(payload);
                     break;
                 default:
-                    // Unhandled event — acknowledge
+                    // Unhandled event — acknowledge and record to prevent infinite retries
+                    userId = '_system';
                     break;
             }
         } catch (err: unknown) {
+            handlerError = true;
             const message = err instanceof Error ? err.message : 'Unknown';
             logSecurityEvent({
                 type: SecurityEventType.WEBHOOK_PROCESSING_ERROR,
@@ -144,15 +155,14 @@ export const razorpayWebhook = onRequest(
                 metadata: { eventId, eventType: payload.event },
             });
             res.status(500).json({ error: errorMessages.webhookProcessingFailed });
-            return;
         }
 
-        // Step 5: Record processed event (idempotency guard)
-        if (userId) {
+        // Step 5: Record processed event — even on error, to prevent retry loops
+        // on persistent failures (e.g. invalid payload structure).
+        if (!handlerError) {
             await recordEvent(eventId, payload.event, userId);
+            res.status(200).json({ received: true });
         }
-
-        res.status(200).json({ received: true });
     },
 );
 
@@ -160,7 +170,7 @@ export const razorpayWebhook = onRequest(
 async function handleSubscriptionActivated(
     payload: RazorpayWebhookPayload,
 ): Promise<string> {
-    const sub = payload.payload.subscription;
+    const sub = payload.payload.subscription?.entity;
     if (!sub) throw new Error('Missing subscription in payload');
 
     const userId = sub.notes?.userId ?? '';
@@ -170,13 +180,14 @@ async function handleSubscriptionActivated(
         tier: 'pro',
         isActive: true,
         expiresAt: sub.current_end ? sub.current_end * 1000 : null,
-        stripeCustomerId: sub.customer_id,
-        stripeSubscriptionId: sub.id,
-        stripePriceId: sub.plan_id,
+        gatewayCustomerId: sub.customer_id,
+        gatewaySubscriptionId: sub.id,
+        gatewayPlanId: sub.plan_id,
         currentPeriodEnd: sub.current_end ? sub.current_end * 1000 : null,
         cancelAtPeriodEnd: false,
         currency: 'inr',
-        lastEventId: payload.payload.payment?.id ?? '',
+        lastEventId: payload.payload.payment?.entity.id ?? '',
+        provider: 'razorpay',
     });
 
     logSecurityEvent({
@@ -194,7 +205,7 @@ async function handleSubscriptionActivated(
 async function handleSubscriptionUpdated(
     payload: RazorpayWebhookPayload,
 ): Promise<string> {
-    const sub = payload.payload.subscription;
+    const sub = payload.payload.subscription?.entity;
     if (!sub) throw new Error('Missing subscription in payload');
 
     const userId = sub.notes?.userId ?? '';
@@ -207,13 +218,14 @@ async function handleSubscriptionUpdated(
         tier,
         isActive,
         expiresAt: sub.current_end ? sub.current_end * 1000 : null,
-        stripeCustomerId: sub.customer_id,
-        stripeSubscriptionId: sub.id,
-        stripePriceId: sub.plan_id,
+        gatewayCustomerId: sub.customer_id,
+        gatewaySubscriptionId: sub.id,
+        gatewayPlanId: sub.plan_id,
         currentPeriodEnd: sub.current_end ? sub.current_end * 1000 : null,
         cancelAtPeriodEnd: false,
         currency: 'inr',
         lastEventId: '',
+        provider: 'razorpay',
     });
 
     return userId;
@@ -223,13 +235,13 @@ async function handleSubscriptionUpdated(
 async function handleSubscriptionCancelled(
     payload: RazorpayWebhookPayload,
 ): Promise<string> {
-    const sub = payload.payload.subscription;
+    const sub = payload.payload.subscription?.entity;
     if (!sub) throw new Error('Missing subscription in payload');
 
     const userId = sub.notes?.userId ?? '';
     if (!userId) throw new Error('subscription.cancelled: missing userId in notes');
 
-    await downgradeToFree(userId, sub.customer_id, payload.payload.payment?.id ?? '');
+    await downgradeToFree(userId, sub.customer_id, payload.payload.payment?.entity.id ?? '');
 
     logSecurityEvent({
         type: SecurityEventType.SUBSCRIPTION_CHANGE,
@@ -246,7 +258,7 @@ async function handleSubscriptionCancelled(
 async function handlePaymentCaptured(
     payload: RazorpayWebhookPayload,
 ): Promise<string> {
-    const payment = payload.payload.payment;
+    const payment = payload.payload.payment?.entity;
     if (!payment) throw new Error('Missing payment in payload');
 
     const userId = payment.notes?.userId ?? '';
@@ -254,20 +266,25 @@ async function handlePaymentCaptured(
 
     const planId = payment.notes?.planId ?? null;
 
-    // For one-time annual payments, set expiry to 1 year from now
-    const expiresAt = Date.now() + 365 * 24 * 60 * 60 * 1000;
+    // Use payment creation timestamp for expiry to be idempotent across retries.
+    // created_at is Unix seconds; fall back to current time only if missing.
+    const paymentCreatedAt = payment.created_at
+        ? payment.created_at * 1000
+        : Date.now();
+    const expiresAt = paymentCreatedAt + 365 * 24 * 60 * 60 * 1000;
 
     await writeSubscription(userId, {
         tier: 'pro',
         isActive: true,
         expiresAt,
-        stripeCustomerId: '',
-        stripeSubscriptionId: null,
-        stripePriceId: planId,
+        gatewayCustomerId: '',
+        gatewaySubscriptionId: null,
+        gatewayPlanId: planId,
         currentPeriodEnd: expiresAt,
         cancelAtPeriodEnd: false,
         currency: payment.currency?.toLowerCase() ?? 'inr',
         lastEventId: payment.id,
+        provider: 'razorpay',
     });
 
     return userId;

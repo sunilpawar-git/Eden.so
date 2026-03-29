@@ -17,13 +17,14 @@ const BASE_UPDATE: SubscriptionUpdate = {
     tier: 'pro',
     isActive: true,
     expiresAt: null,
-    stripeCustomerId: 'cus_abc',
-    stripeSubscriptionId: 'sub_abc',
-    stripePriceId: 'price_abc',
+    gatewayCustomerId: 'cus_abc',
+    gatewaySubscriptionId: 'sub_abc',
+    gatewayPlanId: 'price_abc',
     currentPeriodEnd: null,
     cancelAtPeriodEnd: false,
     currency: 'usd',
     lastEventId: 'evt_abc',
+    provider: 'stripe',
 };
 
 describe('subscriptionWriter', () => {
@@ -48,25 +49,25 @@ describe('subscriptionWriter', () => {
         );
     });
 
-    it('downgradeToFree writes free tier with isActive=true', async () => {
+    it('downgradeToFree writes free tier with isActive=false', async () => {
         const { downgradeToFree } = await import('../subscriptionWriter.js');
         await downgradeToFree('user-2', 'cus_xyz', 'evt_del');
         expect(mockSet).toHaveBeenCalledWith(
             expect.objectContaining({
                 tier: 'free',
-                isActive: true,
-                stripeCustomerId: 'cus_xyz',
+                isActive: false,
+                gatewayCustomerId: 'cus_xyz',
                 lastEventId: 'evt_del',
             }),
             { merge: true },
         );
     });
 
-    it('downgradeToFree clears subscription and price IDs', async () => {
+    it('downgradeToFree clears subscription and plan IDs', async () => {
         const { downgradeToFree } = await import('../subscriptionWriter.js');
         await downgradeToFree('user-3', 'cus_999', 'evt_999');
         const written = mockSet.mock.calls[0]?.[0] as SubscriptionUpdate;
-        expect(written.stripeSubscriptionId).toBeNull();
-        expect(written.stripePriceId).toBeNull();
+        expect(written.gatewaySubscriptionId).toBeNull();
+        expect(written.gatewayPlanId).toBeNull();
     });
 });

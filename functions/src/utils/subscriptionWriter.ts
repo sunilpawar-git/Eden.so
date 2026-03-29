@@ -13,13 +13,18 @@ export interface SubscriptionUpdate {
     tier: 'free' | 'pro';
     isActive: boolean;
     expiresAt: number | null;
-    stripeCustomerId: string;
-    stripeSubscriptionId: string | null;
-    stripePriceId: string | null;
+    /** Provider-agnostic gateway customer ID (Stripe customer ID or Razorpay customer ID) */
+    gatewayCustomerId: string;
+    /** Provider-agnostic subscription ID (Stripe subscription ID or Razorpay subscription ID) */
+    gatewaySubscriptionId: string | null;
+    /** Provider-agnostic plan/price ID (Stripe price ID or Razorpay plan ID) */
+    gatewayPlanId: string | null;
     currentPeriodEnd: number | null;
     cancelAtPeriodEnd: boolean;
     currency: string;
     lastEventId: string;
+    /** Payment provider that issued this subscription */
+    provider: 'stripe' | 'razorpay';
 }
 
 /**
@@ -41,23 +46,26 @@ export async function writeSubscription(
 
 /**
  * Downgrade a user to free tier.
- * Called on subscription.deleted and payment_failed events.
+ * Called on subscription.cancelled / halted / deleted events.
+ * isActive is false — subscription is no longer active.
  */
 export async function downgradeToFree(
     userId: string,
-    stripeCustomerId: string,
+    gatewayCustomerId: string,
     lastEventId: string,
+    provider: 'stripe' | 'razorpay' = 'stripe',
 ): Promise<void> {
     await writeSubscription(userId, {
         tier: 'free',
-        isActive: true,
+        isActive: false,
         expiresAt: null,
-        stripeCustomerId,
-        stripeSubscriptionId: null,
-        stripePriceId: null,
+        gatewayCustomerId,
+        gatewaySubscriptionId: null,
+        gatewayPlanId: null,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
         currency: '',
         lastEventId,
+        provider,
     });
 }

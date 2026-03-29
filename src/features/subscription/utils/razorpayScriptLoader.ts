@@ -11,7 +11,8 @@ export interface RazorpayOptions {
     name: string;
     description?: string;
     order_id: string;
-    handler: (response: RazorpaySuccessResponse) => void;
+    /** Called with payment response on success. Typed as unknown — use Razorpay docs to narrow. */
+    handler: (response: unknown) => void;
     prefill?: { name?: string; email?: string };
     theme?: { color?: string };
     modal?: { ondismiss?: () => void };
@@ -51,7 +52,12 @@ export function loadRazorpayScript(): Promise<void> {
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.async = true;
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load Razorpay script'));
+        script.onerror = () => {
+            // Reset so the next call can retry rather than returning the same
+            // rejected promise indefinitely.
+            scriptPromise = null;
+            reject(new Error('Failed to load Razorpay script'));
+        };
         document.head.appendChild(script);
     });
 

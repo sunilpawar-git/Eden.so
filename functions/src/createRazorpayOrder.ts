@@ -127,7 +127,7 @@ export const createRazorpayOrder = onRequest(
             const order = await razorpay.orders.create({
                 amount,
                 currency: body.currency ?? 'INR',
-                receipt: body.receipt ?? `order_${uid}_${Date.now()}`,
+                receipt: body.receipt ?? `order_${uid}_${crypto.randomUUID()}`,
                 notes: {
                     userId: uid,
                     planId,

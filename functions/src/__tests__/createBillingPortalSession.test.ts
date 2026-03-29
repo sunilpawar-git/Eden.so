@@ -85,7 +85,7 @@ describe('createBillingPortalSession', () => {
         mockDetectBot.mockReturnValue({ isBot: false, confidence: 'none' });
         mockCheckIpRateLimit.mockResolvedValue(true);
         mockCheckRateLimit.mockResolvedValue(true);
-        mockSubGet.mockResolvedValue({ data: () => ({ stripeCustomerId: 'cus_abc' }) });
+        mockSubGet.mockResolvedValue({ data: () => ({ gatewayCustomerId: 'cus_abc' }) });
         mockPortalCreate.mockResolvedValue({ url: 'https://billing.stripe.com/session/test' });
         mockRecordThreatEvent.mockReset();
         await import('../createBillingPortalSession.js');
