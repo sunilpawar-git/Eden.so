@@ -30,7 +30,7 @@ export const stripeWebhook = onRequest(
         secrets: [stripeWebhookSecret],
         timeoutSeconds: 30,
         maxInstances: 10,
-        minInstances: 1, // Avoid cold-start delays for webhooks
+        // minInstances: 1 — re-enable once live payment traffic exists to avoid cold-start delays
     },
     async (req, res) => {
         if (req.method !== 'POST') {

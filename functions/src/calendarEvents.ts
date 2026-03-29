@@ -98,7 +98,7 @@ async function gcalFetch<T>(token: string, path: string, init: RequestInit = {})
 }
 
 /** Create a Google Calendar event. */
-export const calendarCreateEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED_ORIGINS }, async (request) => {
+export const calendarCreateEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED_ORIGINS, enforceAppCheck: true }, async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Authentication required');
 
@@ -117,7 +117,7 @@ export const calendarCreateEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED
 });
 
 /** Update an existing Google Calendar event. */
-export const calendarUpdateEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED_ORIGINS }, async (request) => {
+export const calendarUpdateEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED_ORIGINS, enforceAppCheck: true }, async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Authentication required');
 
@@ -137,7 +137,7 @@ export const calendarUpdateEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED
 });
 
 /** Delete a Google Calendar event. */
-export const calendarDeleteEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED_ORIGINS }, async (request) => {
+export const calendarDeleteEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED_ORIGINS, enforceAppCheck: true }, async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Authentication required');
 
@@ -153,7 +153,7 @@ export const calendarDeleteEvent = onCall({ secrets: [...SECRETS], cors: ALLOWED
 interface GCalListItem { id?: string; summary?: string; start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string } }
 
 /** List Google Calendar events within a time range. */
-export const calendarListEvents = onCall({ secrets: [...SECRETS], cors: ALLOWED_ORIGINS }, async (request) => {
+export const calendarListEvents = onCall({ secrets: [...SECRETS], cors: ALLOWED_ORIGINS, enforceAppCheck: true }, async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Authentication required');
 

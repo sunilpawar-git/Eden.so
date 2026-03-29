@@ -19,6 +19,9 @@ vi.mock('../utils/corsConfig.js', () => ({ ALLOWED_ORIGINS: ['http://localhost']
 const mockVerifyAuthToken = vi.fn();
 vi.mock('../utils/authVerifier.js', () => ({ verifyAuthToken: mockVerifyAuthToken }));
 
+const mockVerifyAppCheckToken = vi.fn().mockResolvedValue(true);
+vi.mock('../utils/appCheckVerifier.js', () => ({ verifyAppCheckToken: mockVerifyAppCheckToken }));
+
 const mockDetectBot = vi.fn();
 vi.mock('../utils/botDetector.js', () => ({
     detectBot: mockDetectBot,
@@ -80,6 +83,7 @@ describe('createCheckoutSession', () => {
         capturedHandler = null;
         vi.resetModules();
         mockVerifyAuthToken.mockResolvedValue('user-1');
+        mockVerifyAppCheckToken.mockResolvedValue(true);
         mockDetectBot.mockReturnValue({ isBot: false, confidence: 'none' });
         mockCheckIpRateLimit.mockResolvedValue(true);
         mockCheckRateLimit.mockResolvedValue(true);

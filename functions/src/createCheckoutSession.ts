@@ -12,6 +12,7 @@
  *  6. Security logging    — every event to Cloud Logging
  */
 import { onRequest } from 'firebase-functions/v2/https';
+import { verifyAppCheckToken } from './utils/appCheckVerifier.js';
 import { verifyAuthToken } from './utils/authVerifier.js';
 import { checkRateLimit } from './utils/rateLimiter.js';
 import { checkIpRateLimit } from './utils/ipRateLimiter.js';
@@ -72,6 +73,18 @@ export const createCheckoutSession = onRequest(
             });
             recordThreatEvent('bot_spike', { ip, endpoint: 'createCheckoutSession' });
             res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        // Layer 1.5: App Check
+        if (!await verifyAppCheckToken(req)) {
+            logSecurityEvent({
+                type: SecurityEventType.APP_CHECK_FAILURE,
+                ip,
+                endpoint: 'createCheckoutSession',
+                message: 'Missing or invalid App Check token',
+            });
+            res.status(401).json({ error: errorMessages.authRequired });
             return;
         }
 

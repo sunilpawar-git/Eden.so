@@ -30,6 +30,8 @@ export const SecurityEventType = {
     UPLOAD_REJECTED: 'upload_rejected',
     /** Cloudflare Turnstile or Google reCAPTCHA challenge failed */
     CAPTCHA_FAILED: 'captcha_failed',
+    /** Firebase App Check token missing or invalid */
+    APP_CHECK_FAILURE: 'app_check_failure',
     /** Subscription tier changed (free→pro, pro→free, etc.) */
     SUBSCRIPTION_CHANGE: 'subscription_change',
     /** Invoice payment failed via Stripe webhook */
@@ -113,6 +115,7 @@ function getSeverity(
         case SecurityEventType.IP_BLOCKED:
         case SecurityEventType.WEBHOOK_SIG_FAILURE:
         case SecurityEventType.WEBHOOK_PROCESSING_ERROR:
+        case SecurityEventType.APP_CHECK_FAILURE:
             return 'ERROR';
         default:
             return 'WARNING';

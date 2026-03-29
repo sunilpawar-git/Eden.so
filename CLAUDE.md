@@ -757,6 +757,10 @@ Firestore cost controls are enforced via the rules in **Firestore Patterns** and
 - **All calls via proxy**: Every Gemini call must go through the `geminiProxy` Cloud Function (never direct client-side) — token caps and rate limits are enforced there
 - Prefer client-side computation (TF-IDF in Web Worker) over API calls when possible
 
+### Cloud Function cost rules
+- **`minInstances` is off until launch traffic**: `stripeWebhook` and `razorpayWebhook` had `minInstances: 1` (cost ~$11/mo). Removed pre-launch. **Re-add `minInstances: 1` to both functions once real payment volume starts** — cold starts on webhooks can cause Stripe/Razorpay to mark the endpoint as unreliable.
+- **Never set `minInstances` on non-critical functions** — only payment webhooks warrant it
+
 ## 🧹 LOGGING & ERROR HANDLING
 
 **Always use the structured logger — never `console.*` directly:**

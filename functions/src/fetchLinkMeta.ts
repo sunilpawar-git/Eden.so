@@ -4,6 +4,7 @@
  */
 import { onRequest } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
+import { verifyAppCheckToken } from './utils/appCheckVerifier.js';
 import { verifyAuthToken } from './utils/authVerifier.js';
 import { validateUrlWithDns } from './utils/urlValidator.js';
 import { parseMetaTags, extractDomain } from './utils/metaParser.js';
@@ -133,6 +134,12 @@ export const fetchLinkMeta = onRequest(
     async (req, res) => {
         if (req.method !== 'POST') {
             res.status(405).json({ error: errorMessages.methodNotAllowed });
+            return;
+        }
+
+        // App Check: verify request originates from our app
+        if (!await verifyAppCheckToken(req)) {
+            res.status(401).json({ error: errorMessages.authRequired });
             return;
         }
 

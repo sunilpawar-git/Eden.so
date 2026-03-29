@@ -16,6 +16,7 @@
  */
 import { onRequest } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
+import { verifyAppCheckToken } from './utils/appCheckVerifier.js';
 import { verifyAuthToken } from './utils/authVerifier.js';
 import { checkRateLimit } from './utils/rateLimiter.js';
 import { checkIpRateLimit } from './utils/ipRateLimiter.js';
@@ -197,6 +198,18 @@ export const geminiProxy = onRequest(
             });
             recordThreatEvent('bot_spike', { ip, endpoint: 'geminiProxy' });
             res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        // Layer 1.5: App Check
+        if (!await verifyAppCheckToken(req)) {
+            logSecurityEvent({
+                type: SecurityEventType.APP_CHECK_FAILURE,
+                ip,
+                endpoint: 'geminiProxy',
+                message: 'Missing or invalid App Check token',
+            });
+            res.status(401).json({ error: errorMessages.authRequired });
             return;
         }
 

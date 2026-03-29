@@ -57,7 +57,7 @@ export const razorpayWebhook = onRequest(
         secrets: [razorpayWebhookSecret],
         timeoutSeconds: 30,
         maxInstances: 10,
-        minInstances: 1,
+        // minInstances: 1 — re-enable once live payment traffic exists to avoid cold-start delays
     },
     async (req, res) => {
         if (req.method !== 'POST') {

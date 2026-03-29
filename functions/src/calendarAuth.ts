@@ -115,7 +115,7 @@ export async function handleDisconnectCalendar(uid: string): Promise<{ disconnec
  * Stores the refresh token in Firestore. Returns { connected: true }.
  */
 export const exchangeCalendarCode = onCall(
-    { secrets: [...CALENDAR_SECRETS], cors: ALLOWED_ORIGINS },
+    { secrets: [...CALENDAR_SECRETS], cors: ALLOWED_ORIGINS, enforceAppCheck: true },
     async (request) => {
         const uid = request.auth?.uid;
         if (!uid) throw new HttpsError('unauthenticated', 'Authentication required');
@@ -133,7 +133,7 @@ export const exchangeCalendarCode = onCall(
  * Remove the Google Calendar integration from Firestore.
  */
 export const disconnectCalendar = onCall(
-    { secrets: [...CALENDAR_SECRETS], cors: ALLOWED_ORIGINS },
+    { secrets: [...CALENDAR_SECRETS], cors: ALLOWED_ORIGINS, enforceAppCheck: true },
     async (request) => {
         const uid = request.auth?.uid;
         if (!uid) throw new HttpsError('unauthenticated', 'Authentication required');
