@@ -35,8 +35,11 @@ export const app = initializeApp(firebaseConfig);
 // and log it to the browser console as: "App Check debug token: <uuid>"
 // Add that token in Firebase Console → App Check → Apps → ⋮ → Manage debug tokens
 if (import.meta.env.DEV) {
+    // Use a fixed debug token from .env.local so all dev browsers share the same
+    // registered token. Falls back to auto-generate (true) if not set.
+    // Register the token in Firebase Console → App Check → Apps → Manage debug tokens.
     // @ts-expect-error — Firebase App Check debug flag (not in standard types)
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN ?? true;
 }
 initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(String(import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '')),
