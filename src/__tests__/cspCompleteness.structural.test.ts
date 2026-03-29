@@ -82,11 +82,15 @@ describe('CSP Completeness (firebase.json)', () => {
         it.each(requiredDomains)(
             'includes $domain ($reason)',
             ({ domain }) => {
+                // Accept exact domain OR wildcard *.googleapis.com coverage
+                const covered =
+                    connectSrc.includes(domain) ||
+                    (domain.endsWith('.googleapis.com') && connectSrc.includes('https://*.googleapis.com'));
                 expect(
-                    connectSrc,
-                    `connect-src is missing "${domain}". ` +
+                    covered,
+                    `connect-src is missing "${domain}" (and no *.googleapis.com wildcard). ` +
                     'Add it to the Content-Security-Policy header in firebase.json hosting.headers.'
-                ).toContain(domain);
+                ).toBe(true);
             }
         );
     });
