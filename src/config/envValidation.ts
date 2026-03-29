@@ -26,7 +26,7 @@ export function validateProductionEnv(): string[] {
     const errors: string[] = [];
 
     for (const name of REQUIRED_VARS) {
-        const value = import.meta.env[name];
+        const value = (import.meta.env as Record<string, string | undefined>)[name];
         if (!value || value.trim().length === 0) {
             const msg = strings.security.envMissing(name);
             errors.push(msg);
