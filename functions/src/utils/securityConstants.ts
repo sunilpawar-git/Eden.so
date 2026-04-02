@@ -68,6 +68,30 @@ export const CALENDAR_EVENTS_RATE_LIMIT = 30;
 /** Rate limit: max calendar requests per IP per window */
 export const IP_RATE_LIMIT_CALENDAR = 20;
 
+/** Rate limit: max checkout session creates per user per window */
+export const CHECKOUT_RATE_LIMIT = 5;
+
+/** Rate limit: max checkout session creates per IP per window */
+export const IP_RATE_LIMIT_CHECKOUT = 10;
+
+/** Rate limit: max billing portal creates per user per window */
+export const BILLING_PORTAL_RATE_LIMIT = 10;
+
+/** Rate limit: max billing portal creates per IP per window */
+export const IP_RATE_LIMIT_BILLING_PORTAL = 20;
+
+/**
+ * Razorpay plan IDs.
+ * pro_monthly_inr: test plan at ₹100/month (test mode) — replace with ₹499 plan for production.
+ * pro_annual_inr: not yet created — placeholder until production annual plan is set up.
+ */
+export const RAZORPAY_PLAN_IDS = {
+    pro_monthly_inr: process.env.RAZORPAY_PLAN_PRO_MONTHLY_INR ?? 'plan_SWtIj1spzXCZbR',
+    pro_annual_inr: process.env.RAZORPAY_PLAN_PRO_ANNUAL_INR ?? 'plan_pro_annual_inr',
+    pro_monthly_usd: process.env.RAZORPAY_PLAN_PRO_MONTHLY_USD ?? 'plan_pro_monthly_usd',
+    pro_annual_usd: process.env.RAZORPAY_PLAN_PRO_ANNUAL_USD ?? 'plan_pro_annual_usd',
+} as const;
+
 /** Maximum request body size for Gemini proxy (100 KB) */
 export const GEMINI_MAX_BODY_BYTES = 102_400;
 
@@ -104,4 +128,10 @@ export const errorMessages = {
     geminiInvalidBody: 'Invalid request body: contents array is required',
     geminiBodyTooLarge: 'Request body exceeds maximum size',
     geminiUpstreamError: 'Gemini API returned an error',
+    invalidPriceId: 'Invalid or missing price ID',
+    checkoutFailed: 'Failed to create checkout session',
+    missingSignature: 'Missing stripe-signature header',
+    invalidSignature: 'Invalid webhook signature',
+    webhookProcessingFailed: 'Webhook processing failed',
+    billingPortalFailed: 'Failed to create billing portal session',
 } as const;

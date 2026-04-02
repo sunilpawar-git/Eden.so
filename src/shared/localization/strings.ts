@@ -13,6 +13,7 @@ import { contextMenuStrings } from './contextMenuStrings';
 import { slashCommandStrings } from './slashCommandStrings';
 import { searchStrings } from '@/features/search/strings/searchStrings';
 import { onboardingStrings } from '@/features/onboarding/strings/onboardingStrings';
+import { subscriptionStrings } from '@/features/subscription/strings/subscriptionStrings';
 import { shortcutStrings } from './shortcutStrings';
 
 export const strings = {
@@ -214,17 +215,7 @@ export const strings = {
         unpinSuccess: 'Workspace unpinned',
         storageUsage: 'Storage used',
     },
-    subscription: {
-        free: 'Free',
-        pro: 'Pro',
-        upgradeTitle: 'Upgrade to Pro',
-        upgradeMessage: 'This feature requires a Pro subscription:',
-        upgradeCta: 'Upgrade now',
-        dismissUpgrade: 'Maybe later',
-        currentPlan: 'Current plan',
-        expiresAt: 'Expires',
-        featureLocked: 'This feature requires a Pro subscription',
-    },
+    subscription: subscriptionStrings,
     backgroundSync: {
         syncing: 'Syncing in background...',
         syncComplete: 'Background sync complete',

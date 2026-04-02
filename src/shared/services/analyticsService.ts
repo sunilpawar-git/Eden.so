@@ -119,7 +119,7 @@ type SettingKey =
     | 'isCanvasLocked' | 'canvasFreeFlow' | 'gridColumns' | 'autoAnalyzeDocuments' | 'data_export'
     | 'branch_export' | 'canvas_undo' | 'canvas_redo'
     | 'toolbarButtonOrder' | 'toolbarHiddenButtons' | 'toolbarReset'
-    | 'utilsBarIcons' | 'contextMenuIcons' | 'iconPlacementReset';
+    | 'hoverMenuIcons' | 'rightClickMenuIcons' | 'iconPlacementReset';
 
 export function trackSettingsChanged(setting: SettingKey, value: string | boolean | number | readonly string[]): void {
     track('settings_changed', { setting, value });

@@ -32,6 +32,8 @@ vi.mock('@/features/subscription/hooks/useFeatureGate', () => ({
 
 vi.mock('@/features/subscription/types/subscription', () => ({
     GATED_FEATURES: { offlinePin: 'offlinePin' },
+    SUBSCRIPTION_TIERS: { free: 'free', pro: 'pro' },
+    hasFeatureAccess: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock('@/shared/services/storageQuotaService', () => ({

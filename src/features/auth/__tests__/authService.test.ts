@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockSignInWithPopup = vi.fn();
+const mockSignInWithRedirect = vi.fn();
+const mockGetRedirectResult = vi.fn().mockResolvedValue(null);
 const mockSignOut = vi.fn();
 const mockOnAuthStateChanged = vi.fn();
 
 vi.mock('firebase/auth', () => ({
     signInWithPopup: (...args: unknown[]) => mockSignInWithPopup(...args),
+    signInWithRedirect: (...args: unknown[]) => mockSignInWithRedirect(...args),
+    getRedirectResult: (...args: unknown[]) => mockGetRedirectResult(...args),
     signOut: (...args: unknown[]) => mockSignOut(...args),
     onAuthStateChanged: (...args: unknown[]) => mockOnAuthStateChanged(...args),
 }));
@@ -31,9 +35,10 @@ vi.mock('../stores/authStore', () => ({
 }));
 
 const mockReset = vi.fn();
+const mockLoadSubscription = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/features/subscription/stores/subscriptionStore', () => ({
     useSubscriptionStore: {
-        getState: () => ({ reset: mockReset }),
+        getState: () => ({ reset: mockReset, loadSubscription: mockLoadSubscription }),
     },
 }));
 

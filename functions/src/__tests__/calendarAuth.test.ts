@@ -34,9 +34,11 @@ vi.mock('google-auth-library', () => ({
     OAuth2Client: vi.fn(() => ({ getToken: mockGetToken })),
 }));
 
-// eslint-disable-next-line import-x/first
+// vi.mock calls are hoisted by Vite/vitest at transform time, so these imports
+// intentionally appear after the mock declarations above — the runtime order
+// is correct after hoisting. The import-x/first rule does not apply here
+// (import-x is not configured for this package).
 import { handleExchangeCalendarCode, handleDisconnectCalendar } from '../calendarAuth.js';
-// eslint-disable-next-line import-x/first
 import { checkRateLimit } from '../utils/rateLimiter.js';
 
 const CLIENT_ID = 'mock-client-id';

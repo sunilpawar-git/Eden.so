@@ -33,6 +33,11 @@ describe('TipTapEditor CSS completeness', () => {
         'has explicit CSS rules for %s',
         (tag) => { expect(CSS).toMatch(new RegExp(`\\.ProseMirror\\s+${tag}\\b`)); },
     );
+
+    it('has horizontal rule (hr) styling with visible border', () => {
+        expect(CSS).toMatch(/\.ProseMirror\s+hr\b/);
+        expect(CSS).toContain('border-top');
+    });
 });
 
 describe('TipTap Link extension', () => {

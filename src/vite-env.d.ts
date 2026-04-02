@@ -17,6 +17,10 @@ interface ImportMetaEnv {
     readonly VITE_POSTHOG_HOST?: string;
     readonly VITE_GOOGLE_CLIENT_ID?: string;
     readonly VITE_DEV_BYPASS_SUBSCRIPTION?: string;
+    readonly VITE_STRIPE_PUBLISHABLE_KEY?: string;
+    readonly VITE_TURNSTILE_SITE_KEY?: string;
+    readonly VITE_RECAPTCHA_SITE_KEY: string;
+    readonly VITE_APPCHECK_DEBUG_TOKEN?: string;
 }
 
 interface ImportMeta {

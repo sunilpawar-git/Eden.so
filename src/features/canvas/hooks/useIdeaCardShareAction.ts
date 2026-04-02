@@ -4,7 +4,7 @@
  * Extracted per SRP alongside useIdeaCardDuplicateAction.
  *
  * Uses a ref for the in-flight guard so handleShare keeps a stable identity
- * (avoids breaking React.memo on NodeUtilsBar / ShareMenu on 500+ node canvases).
+ * (avoids breaking React.memo on NodeHoverMenu / ShareMenu on 500+ node canvases).
  */
 import { useState, useCallback, useRef } from 'react';
 import { useCanvasStore, getNodeMap } from '../stores/canvasStore';

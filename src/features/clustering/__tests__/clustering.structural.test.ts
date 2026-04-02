@@ -95,11 +95,11 @@ describe('clustering structural tests', () => {
         const headingFile = path.join(CANVAS_NODES_DIR, 'IdeaCardHeadingSection.tsx');
         const contentFile = path.join(CANVAS_NODES_DIR, 'IdeaCardContentSection.tsx');
         const tagsFile = path.join(CANVAS_NODES_DIR, 'IdeaCardTagsSection.tsx');
-        const utilsFile = path.join(CANVAS_NODES_DIR, 'NodeUtilsBar.tsx');
+        const utilsFile = path.join(CANVAS_NODES_DIR, 'NodeHoverMenu.tsx');
 
         expect(fs.readFileSync(headingFile, 'utf-8')).toContain('data-node-section="heading"');
         expect(fs.readFileSync(contentFile, 'utf-8')).toContain('data-node-section="content"');
         expect(fs.readFileSync(tagsFile, 'utf-8')).toContain('data-node-section="tags"');
-        expect(fs.readFileSync(utilsFile, 'utf-8')).toContain('data-node-section="utils"');
+        expect(fs.readFileSync(utilsFile, 'utf-8')).toContain('data-node-section="hover-menu"');
     });
 });

@@ -5,8 +5,8 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { describe, it, expect } from 'vitest';
-import { CONTEXT_MENU_GROUPS, PRIMARY_ACTIONS } from '../../../types/utilsBarLayout';
-import { ACTION_REGISTRY, DEFAULT_UTILS_BAR, DEFAULT_CONTEXT_MENU, UTILS_BAR_MAX, CONTEXT_MENU_MAX } from '@/shared/stores/iconRegistry';
+import { CONTEXT_MENU_GROUPS, PRIMARY_ACTIONS } from '../../../types/hoverMenuLayout';
+import { ACTION_REGISTRY, DEFAULT_HOVER_MENU, DEFAULT_RIGHT_CLICK_MENU, HOVER_MENU_MAX, RIGHT_CLICK_MENU_MAX } from '@/shared/stores/iconRegistry';
 
 const SRC_DIR = join(process.cwd(), 'src');
 
@@ -52,13 +52,13 @@ describe('Phase 3: Node simplification structural tests', () => {
 
         it.each(DELETED_MODULES)('no source file imports %s', (mod) => {
             const pattern = new RegExp(`from\\s+['"][^'"]*${mod}['"]`);
-            const nodeUtilsBar = readSrc('features/canvas/components/nodes/NodeUtilsBar.tsx');
+            const nodeHoverMenu = readSrc('features/canvas/components/nodes/NodeHoverMenu.tsx');
             const ideaCard = readSrc('features/canvas/components/nodes/IdeaCard.tsx');
-            const controller = readSrc('features/canvas/hooks/useNodeUtilsController.ts');
+            const controller = readSrc('features/canvas/hooks/useNodeHoverMenuController.ts');
             const settingsStore = readSrc('shared/stores/settingsStore.ts');
             const settingsPanel = readSrc('app/components/SettingsPanel/SettingsPanel.tsx');
 
-            expect(pattern.test(nodeUtilsBar)).toBe(false);
+            expect(pattern.test(nodeHoverMenu)).toBe(false);
             expect(pattern.test(ideaCard)).toBe(false);
             expect(pattern.test(controller)).toBe(false);
             expect(pattern.test(settingsStore)).toBe(false);
@@ -129,8 +129,8 @@ describe('Phase 3: Node simplification structural tests', () => {
     });
 
     describe('all labels from string resources', () => {
-        it('NodeUtilsBar does not contain hardcoded action labels', () => {
-            const content = readSrc('features/canvas/components/nodes/NodeUtilsBar.tsx');
+        it('NodeHoverMenu does not contain hardcoded action labels', () => {
+            const content = readSrc('features/canvas/components/nodes/NodeHoverMenu.tsx');
             expect(content).not.toMatch(/label=["'](?:Connect|Copy|Delete|More)["']/);
         });
 
@@ -175,26 +175,26 @@ describe('Phase 3: Node simplification structural tests', () => {
             expect(ACTION_REGISTRY.size).toBe(15);
         });
 
-        it('DEFAULT_UTILS_BAR has at most UTILS_BAR_MAX icons', () => {
-            expect(DEFAULT_UTILS_BAR.length).toBeLessThanOrEqual(UTILS_BAR_MAX);
+        it('DEFAULT_HOVER_MENU has at most HOVER_MENU_MAX icons', () => {
+            expect(DEFAULT_HOVER_MENU.length).toBeLessThanOrEqual(HOVER_MENU_MAX);
         });
 
-        it('DEFAULT_CONTEXT_MENU has at most CONTEXT_MENU_MAX icons', () => {
-            expect(DEFAULT_CONTEXT_MENU.length).toBeLessThanOrEqual(CONTEXT_MENU_MAX);
+        it('DEFAULT_RIGHT_CLICK_MENU has at most RIGHT_CLICK_MENU_MAX icons', () => {
+            expect(DEFAULT_RIGHT_CLICK_MENU.length).toBeLessThanOrEqual(RIGHT_CLICK_MENU_MAX);
         });
 
-        it('UTILS_BAR_MAX is 6', () => {
-            expect(UTILS_BAR_MAX).toBe(6);
+        it('HOVER_MENU_MAX is 6', () => {
+            expect(HOVER_MENU_MAX).toBe(6);
         });
 
-        it('CONTEXT_MENU_MAX is 11', () => {
-            expect(CONTEXT_MENU_MAX).toBe(11);
+        it('RIGHT_CLICK_MENU_MAX is 11', () => {
+            expect(RIGHT_CLICK_MENU_MAX).toBe(11);
         });
 
-        it('settingsStore has utilsBarIcons and contextMenuIcons', () => {
+        it('settingsStore has hoverMenuIcons and rightClickMenuIcons', () => {
             const content = readSrc('shared/stores/settingsStore.ts');
-            expect(content).toContain('utilsBarIcons');
-            expect(content).toContain('contextMenuIcons');
+            expect(content).toContain('hoverMenuIcons');
+            expect(content).toContain('rightClickMenuIcons');
         });
 
         it('settingsStore imports from iconRegistry not toolbarConfig', () => {
@@ -203,18 +203,18 @@ describe('Phase 3: Node simplification structural tests', () => {
             expect(content).not.toContain('toolbarConfig');
         });
 
-        it('NodeContextMenu reads contextMenuIcons from store', () => {
+        it('NodeContextMenu reads rightClickMenuIcons from store', () => {
             const content = readSrc('features/canvas/components/nodes/NodeContextMenu.tsx');
-            expect(content).toContain('contextMenuIcons');
+            expect(content).toContain('rightClickMenuIcons');
         });
 
-        it('NodeUtilsBar reads utilsBarIcons from store', () => {
-            const content = readSrc('features/canvas/components/nodes/NodeUtilsBar.tsx');
-            expect(content).toContain('utilsBarIcons');
+        it('NodeHoverMenu reads hoverMenuIcons from store', () => {
+            const content = readSrc('features/canvas/components/nodes/NodeHoverMenu.tsx');
+            expect(content).toContain('hoverMenuIcons');
         });
 
         it('no default/required actions are missing from defaults', () => {
-            const allPlaced = new Set([...DEFAULT_UTILS_BAR, ...DEFAULT_CONTEXT_MENU]);
+            const allPlaced = new Set([...DEFAULT_HOVER_MENU, ...DEFAULT_RIGHT_CLICK_MENU]);
             for (const [id, meta] of ACTION_REGISTRY) {
                 if (meta.required) {
                     expect(allPlaced.has(id)).toBe(true);

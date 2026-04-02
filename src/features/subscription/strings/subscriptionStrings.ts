@@ -1,0 +1,31 @@
+/**
+ * Subscription Strings — localized text for all subscription/billing UI
+ */
+export const subscriptionStrings = {
+    free: 'Free',
+    pro: 'Pro',
+    upgradeTitle: 'Upgrade to Pro',
+    upgradeMessage: 'This feature requires a Pro subscription:',
+    upgradeCta: 'Upgrade now',
+    dismissUpgrade: 'Maybe later',
+    currentPlan: 'Current plan',
+    expiresAt: 'Expires',
+    featureLocked: 'This feature requires a Pro subscription',
+    manageBilling: 'Manage billing',
+    cancelAtPeriodEnd: 'Cancels at period end',
+    active: 'Active',
+    inactive: 'Inactive',
+    pricingTitle: 'Choose your plan',
+    pricingSubtitle: 'Unlock the full power of ActionStation',
+    freeFeatures: 'Core canvas, AI assistant, workspace management',
+    proFeatures: 'Offline access, background sync, document intelligence, priority support',
+    proFeaturesAnnual: 'All monthly features + 2 months free, priority onboarding',
+    perMonth: '/mo',
+    perYear: '/yr',
+    mostPopular: 'Most popular',
+    currentPlanBadge: 'Current',
+    checkoutError: 'Failed to start checkout. Please try again.',
+    billingPortalError: 'Failed to open billing portal.',
+    subscriptionGroup: 'Subscription',
+    upgradeLoading: 'Opening checkout...',
+} as const;

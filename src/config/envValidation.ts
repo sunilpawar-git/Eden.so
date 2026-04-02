@@ -16,6 +16,7 @@ const REQUIRED_VARS = [
     'VITE_FIREBASE_APP_ID',
     'VITE_CLOUD_FUNCTIONS_URL',
     'VITE_GOOGLE_CLIENT_ID',
+    'VITE_RECAPTCHA_SITE_KEY',
 ] as const;
 
 export function validateProductionEnv(): string[] {
@@ -25,7 +26,7 @@ export function validateProductionEnv(): string[] {
     const errors: string[] = [];
 
     for (const name of REQUIRED_VARS) {
-        const value = import.meta.env[name];
+        const value = (import.meta.env as Record<string, string | undefined>)[name];
         if (!value || value.trim().length === 0) {
             const msg = strings.security.envMissing(name);
             errors.push(msg);

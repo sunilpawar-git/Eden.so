@@ -19,8 +19,8 @@ interface UnplacedIconsPoolProps {
     readonly icons: ActionId[];
     readonly dragId: ActionId | null;
     readonly dragSourceRef: React.RefObject<ZoneId | null>;
-    readonly isUtilsBarFull: boolean;
-    readonly isContextMenuFull: boolean;
+    readonly isHoverMenuFull: boolean;
+    readonly isRightClickMenuFull: boolean;
     readonly onDragStart: (id: ActionId, zone: ZoneId) => void;
     readonly onDragEnd: () => void;
     readonly onZoneDragOver: (e: React.DragEvent) => void;
@@ -29,7 +29,7 @@ interface UnplacedIconsPoolProps {
 }
 
 export const UnplacedIconsPool = React.memo(function UnplacedIconsPool({
-    icons, dragId, dragSourceRef, isUtilsBarFull, isContextMenuFull,
+    icons, dragId, dragSourceRef, isHoverMenuFull, isRightClickMenuFull,
     onDragStart, onDragEnd, onZoneDragOver, onRemoveFromZone, onAddToZone,
 }: UnplacedIconsPoolProps) {
     const zoneStyle = dragId
@@ -72,19 +72,19 @@ export const UnplacedIconsPool = React.memo(function UnplacedIconsPool({
                             <span className={TB_ADD_BUTTONS} style={TB_ADD_BUTTONS_STYLE}>
                                 <button
                                     className={TB_ADD_BTN}
-                                    style={isUtilsBarFull ? TB_ADD_BTN_DISABLED_STYLE : TB_ADD_BTN_STYLE}
-                                    onClick={() => onAddToZone('utilsBar', id)}
-                                    disabled={isUtilsBarFull}
-                                    title={`Add to ${strings.settings.toolbarUtilsBarZone}`}
+                                    style={isHoverMenuFull ? TB_ADD_BTN_DISABLED_STYLE : TB_ADD_BTN_STYLE}
+                                    onClick={() => onAddToZone('hoverMenu', id)}
+                                    disabled={isHoverMenuFull}
+                                    title={`Add to ${strings.settings.toolbarHoverMenuZone}`}
                                     type="button"
                                 >
                                     {strings.settings.toolbarAddToBar}
                                 </button>
                                 <button
                                     className={TB_ADD_BTN}
-                                    style={isContextMenuFull ? TB_ADD_BTN_DISABLED_STYLE : TB_ADD_BTN_STYLE}
-                                    onClick={() => onAddToZone('contextMenu', id)}
-                                    disabled={isContextMenuFull}
+                                    style={isRightClickMenuFull ? TB_ADD_BTN_DISABLED_STYLE : TB_ADD_BTN_STYLE}
+                                    onClick={() => onAddToZone('rightClickMenu', id)}
+                                    disabled={isRightClickMenuFull}
                                     title={`Add to ${strings.settings.toolbarContextMenuZone}`}
                                     type="button"
                                 >

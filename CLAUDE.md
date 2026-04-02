@@ -17,10 +17,12 @@ npm run check
 
 # Individual checks
 npm run typecheck                    # tsc --noEmit
-npm run lint                         # eslint, zero warnings allowed
+npm run lint                         # eslint (max 49 warnings)
+npm run lint:strict                  # eslint, zero warnings — enforced pre-merge
 npm run lint:fix                     # Auto-fix lint issues
 npm run test                         # vitest run (all tests, single run)
 npm run test:watch                   # vitest in watch mode
+npm run test:coverage                # vitest with coverage report
 
 # Run a single test file
 npx vitest run src/path/to/file.test.ts
@@ -35,6 +37,7 @@ npm run build:quick                   # tsc -b + vite build (skip lint/test)
 # Cloud Functions (separate package)
 cd functions && npm run check         # lint + test + build
 cd functions && npm test              # vitest run
+firebase emulators:start --only functions  # Local emulator on :5001
 ```
 
 **Dev server**: `npm run dev` starts Vite at `http://localhost:5173`.
@@ -43,7 +46,45 @@ cd functions && npm test              # vitest run
 
 **Test framework**: Vitest + jsdom + React Testing Library. Setup in `src/test/setup.ts`. Tests co-located in `__tests__/` dirs or as `*.test.ts(x)` files.
 
+**Test setup globals** (`src/test/setup.ts`):
+- `ResizeObserver` stubbed (jsdom doesn't implement it)
+- `fake-indexeddb/auto` auto-imported (IndexedDB for Firebase)
+- `VITE_GEMINI_API_KEY`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_CLOUD_FUNCTIONS_URL` stubbed via `vi.stubEnv`
+- React `act()` warnings converted to test failures
+- `virtual:pwa-register` → `src/test/mocks/virtualPwaRegister.ts` (alias in `vitest.config.ts`)
+
+**Structural tests** (`src/__tests__/`): 31 tests enforce build rules at CI. They scan source files for anti-patterns and fail the build if violations are found. Never update them to match code — fix the code. Key tests:
+
+| Test | Enforces |
+|---|---|
+| `zustandSelectors` | No bare store destructuring |
+| `firestoreQueryCap` | All `getDocs` must have `.limit()` |
+| `noConsoleLog` | Zero `console.*` — use `logger.*` |
+| `noBase64InFirestore` | `stripBase64Images()` before writes |
+| `cspCompleteness` | CSP in `firebase.json` only — no `<meta>` tags |
+| `envValidation` | `REQUIRED_VARS` in code matches test list |
+| `overflowClip` | Fixed-height containers use `overflow-clip` |
+| `noHardcodedSecrets` | No API keys in source |
+| `geminiKeyIsolation` | Only `geminiClient.ts` reads `VITE_GEMINI_API_KEY` |
+| `guardrails.security` / `guardrails.resilience` | WAF-level security + resilience patterns |
+| `calendarFunctionsSecurity` (in `functions/`) | `cors: ALLOWED_ORIGINS` on every `onCall` |
+
 **Cloud Functions**: Separate Node 22 package in `functions/` with its own tsconfig, eslint, and vitest config. Exports from `functions/src/index.ts`.
+
+| Function | Purpose |
+|---|---|
+| `geminiProxy` | Proxies all Gemini AI requests — API key never reaches client |
+| `workspaceBundle` | Firestore Bundles for fast workspace metadata load |
+| `onNodeDeleted` | Cleans up Storage files on node delete |
+| `scheduledStorageCleanup` | Daily purge of `tmp/` files older than 7 days |
+| `firestoreBackup` | Daily scheduled Firestore → GCS export |
+| `health` | `GET /health` health check endpoint |
+| `fetchLinkMeta` | Fetches Open Graph metadata for link preview nodes |
+| `proxyImage` | Image proxy (CORS workaround for external images) |
+| `verifyTurnstile` | Cloudflare Turnstile captcha verification |
+| `exchangeCalendarCode` | Google Calendar OAuth code → refresh token |
+| `disconnectCalendar` | Removes calendar integration |
+| `calendarCreateEvent` / `calendarUpdateEvent` / `calendarDeleteEvent` / `calendarListEvents` | Server-side Calendar API proxy |
 
 ## 🧠 Product Context — Building a Second Brain (BASB)
 
@@ -88,6 +129,7 @@ Use these skills proactively during development — invoke via `/skillname`.
 
 ```
 src/
+├── app/                   # App shell: Layout, routing context, global hooks
 ├── features/              # Feature modules (SSOT per domain)
 │   ├── auth/
 │   │   ├── types/         # Model: interfaces
@@ -102,14 +144,23 @@ src/
 │   ├── knowledgeBank/     # KB entries, TF-IDF scoring
 │   ├── clustering/        # Similarity + cluster suggestions
 │   ├── search/            # Full-text search (debounced)
-│   ├── calendar/          # Google Calendar sync
-│   └── documentAgent/     # Image analysis, auto-spawn
+│   ├── calendar/          # Google Calendar server-side OAuth + sync
+│   ├── documentAgent/     # Image analysis, auto-spawn
+│   ├── export/            # Branch/markdown/mind-map export
+│   ├── onboarding/        # First-run onboarding flows
+│   ├── settings/          # User settings UI
+│   ├── subscription/      # Feature gates (free/pro tiers)
+│   ├── synthesis/         # AI-powered node synthesis
+│   └── tags/              # Node tagging
 ├── shared/
-│   ├── components/        # Reusable UI (Button, Toast)
-│   ├── hooks/             # Generic hooks (useDebouncedCallback)
-│   ├── services/          # logger.ts, Sentry, analytics
+│   ├── components/        # Reusable UI (Button, Toast, ErrorBoundary)
+│   ├── contexts/          # React contexts (not Zustand)
+│   ├── hooks/             # Generic hooks (useDebouncedCallback, useEscapeLayer)
+│   ├── services/          # logger.ts, Sentry, PostHog, web-vitals
+│   ├── stores/            # Shared Zustand stores (toast, confirm, settings)
 │   ├── utils/             # Pure functions (firebaseUtils, contentSanitizer)
-│   └── localization/      # String resources
+│   ├── localization/      # String resources
+│   └── validation/        # Zod schemas for all Firestore-bound inputs
 ├── migrations/            # Firestore schema migrations (migrationRunner.ts)
 ├── workers/               # Web Workers (knowledgeWorker.ts — TF-IDF off-thread)
 ├── config/                # Environment, firestoreQueryConfig, constants
@@ -128,31 +179,13 @@ users/{userId}/
 
 Every node and edge document stores `userId` + `workspaceId`. Firestore rules validate both the path-level auth **and** `resource.data.userId == request.auth.uid`.
 
-### SOLID Principles Enforcement
-- **S**: One file = One responsibility
-- **O**: Extend via composition, not modification
-- **NO HARDCODED STRINGS**: Use `strings` from `@/shared/localization/strings`
-- **NO HARDCODED COLORS**: Use CSS variables (`var(--color-*)`) from `src/styles/variables.css`
-- **NO HARDCODED DIMENSIONS**: Use CSS variables (`var(--space-*)`, `var(--radius-*)`) or design tokens
-- **SECURITY: NO SECRETS IN CODE**: NEVER hardcode API keys, passwords, or tokens. Use `.env.local` for local development. Use environment variables in CI/CD.
-- **L**: Interfaces define contracts
-- **I**: Small, focused interfaces
-- **D**: Depend on abstractions (services via interfaces)
+### Hardcoding Rules (Zero Tolerance)
+- **Strings**: Use `strings` from `@/shared/localization/strings` — no inline text in components
+- **Colors**: Use `var(--color-*)` CSS variables — no hex/rgb values
+- **Dimensions**: Use `var(--space-*)`, `var(--radius-*)` design tokens
+- **Secrets**: Never in code — `.env.local` locally, env vars in CI/CD
 
-## 🗣️ NO HARDCODING (ZERO TOLERANCE)
-
-```typescript
-// ❌ FORBIDDEN
-<button>Submit</button>
-style={{ color: '#3b82f6' }}
-
-// ✅ REQUIRED
-import { strings } from '@/shared/localization/strings';
-<button>{strings.common.submit}</button>
-className={styles.primaryButton}  // Uses CSS variable
-```
-
-## � CSS → TAILWIND INCREMENTAL MIGRATION
+## 🎨 CSS → TAILWIND INCREMENTAL MIGRATION
 
 > **Strategy**: Migrate one component at a time — only when you already touch its `.tsx` file during normal production work. Never migrate speculatively.
 
@@ -212,40 +245,9 @@ className="text-[var(--color-text-primary)] bg-[var(--color-surface)] rounded-[v
 
 ### 🔴 CRITICAL: Global CSS Reset Kills Tailwind Spacing Utilities
 
-**Root cause discovered during LoginPage migration (Wave 4).**
+`src/styles/global.css` has a bare `* { margin: 0; padding: 0 }` reset outside any layer, which always wins over Tailwind's `@layer utilities`. Every Tailwind spacing class (`py-12`, `mb-4`, `gap-3`) produces **zero** output.
 
-`src/styles/global.css` contains a bare `*` reset declared **after** `@import "tailwindcss"`:
-
-```css
-@import "tailwindcss";   /* ← Tailwind utilities go into @layer utilities */
-
-*, *::before, *::after {
-    margin: 0;
-    padding: 0;   /* ← bare rule, outside any layer — wins the cascade */
-}
-```
-
-In Tailwind v4, utilities live in `@layer utilities`. CSS rules declared **outside any layer** always win over layered rules regardless of source order. This means **every Tailwind spacing utility is zeroed out** by the global reset:
-
-```tsx
-// ❌ These classes produce ZERO spacing — reset wins the cascade
-<div className="py-12 px-10 mb-8 mt-4 gap-3">
-
-// ✅ Use inline style props for ALL spacing — reset cannot override inline styles
-<div style={{ padding: '48px 40px', marginBottom: 32, gap: 12 }}>
-```
-
-**Rule: During any Tailwind migration, use `style` props for all `margin`, `padding`, and `gap` values. Use Tailwind `className` only for layout (`flex`, `items-center`), colors, borders, border-radius, shadows, and font weights — properties the reset does not touch.**
-
-```tsx
-// ✅ CORRECT pattern for this codebase
-<div
-    className="flex flex-col items-center rounded-[var(--radius-xl)]"
-    style={{ padding: '56px 48px', marginBottom: 32 }}
->
-```
-
-**Do NOT attempt to fix this by reordering `global.css`** — the `*` reset must stay to normalize browser defaults for the canvas.
+**Rule:** Use `style` props for all `margin`, `padding`, and `gap`. Use Tailwind only for layout (`flex`, `items-center`), colors, borders, radius, shadows — properties the reset doesn't touch. Do NOT reorder `global.css` — the reset is required for the canvas.
 
 ---
 
@@ -261,11 +263,7 @@ In Tailwind v4, utilities live in `@layer utilities`. CSS rules declared **outsi
 
 ### 🔴 CRITICAL: overflow-hidden vs overflow-clip (Focus-Scroll Bug)
 
-**Root cause discovered during SettingsPanel ConnectorStylePicker migration (Wave 6).**
-
-CSS `overflow: hidden` clips visual overflow but **still allows the browser to programmatically scroll** the element. When a focusable child (e.g. `sr-only` radio input, hidden checkbox) receives focus, the browser walks up the DOM and scrolls every ancestor — including `overflow: hidden` containers — to bring the focused element into view.
-
-This silently sets `scrollTop` on the container, shifting all content upward and creating a blank gap at the bottom.
+`overflow: hidden` still allows programmatic scroll — when a focusable `sr-only` child receives focus, the browser scrolls the container, creating a blank gap. `overflow-clip` prevents this.
 
 ```tsx
 // ❌ BROKEN — browser can still scroll this container on focus
@@ -283,9 +281,7 @@ This silently sets `scrollTop` on the container, shifting all content upward and
 
 **Rule: Any fixed-height container that should NEVER scroll (modals, panels, dialogs, popovers) must use `overflow-clip`, not `overflow-hidden`.** Use `overflow-hidden` only for text truncation (`overflow-hidden text-ellipsis`) or containers where the height matches content exactly.
 
-**Note:** `overflow-clip` also clips to `border-radius`, just like `overflow-hidden`. No visual difference — only the scroll behavior changes.
-
-**Enforcement:** Structural test `overflowClip.structural.test.ts` scans for `overflow-hidden` on height-constrained containers and verifies known modal constants use `overflow-clip`.
+**Enforcement:** `overflowClip.structural.test.ts` scans for `overflow-hidden` on height-constrained containers.
 
 ---
 
@@ -389,35 +385,7 @@ users/{userId}/workspaces/{workspaceId}/
 
 ## 🔒 SECURITY PROTOCOL
 
-### Firebase Rules Structure
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // DENY ALL by default
-    match /{document=**} {
-      allow read, write: if false;
-    }
-    
-    // User isolation
-    match /users/{userId} {
-      allow read, write: if request.auth != null 
-                        && request.auth.uid == userId;
-      
-      match /workspaces/{workspaceId} {
-        allow read, write: if request.auth.uid == userId;
-        
-        match /nodes/{nodeId} {
-          allow read, write: if request.auth.uid == userId;
-        }
-        match /edges/{edgeId} {
-          allow read, write: if request.auth.uid == userId;
-        }
-      }
-    }
-  }
-}
-```
+Firestore rules deny-all by default; every path requires `request.auth.uid == userId`. See `firestore.rules`. Always guard `resource.data` access with `resource == null` check (resource is null on creates).
 
 ### API Key Protection
 - `.env.local` for all secrets (NEVER commit)
@@ -522,50 +490,7 @@ const isLoading = useAuthStore((s) => s.isLoading);
 const handleSubmit = () => useAuthStore.getState().setUser(newUser);
 ```
 
-**Why This Matters:**
-- Bare destructuring subscribes to ENTIRE store object
-- ANY field change → component re-renders → useEffect fires → updates store → cascades
-- With 500+ nodes in ReactFlow, this causes "Maximum update depth exceeded" errors
-- Selectors ensure component only re-renders when SPECIFIC field changes
-
-**All Zustand Stores Require Selectors:**
-- `useAuthStore` → `const user = useAuthStore((s) => s.user)`
-- `useWorkspaceStore` → `const currentId = useWorkspaceStore((s) => s.currentWorkspaceId)`
-- `useCanvasStore` → `const nodes = useCanvasStore((s) => s.nodes)`
-- `useToastStore` → `const toasts = useToastStore((s) => s.toasts)`
-- `useConfirmStore` → `const isOpen = useConfirmStore((s) => s.isOpen)`
-- `useSettingsStore` → `const theme = useSettingsStore((s) => s.theme)`
-- `useFocusStore` → `const focusedId = useFocusStore((s) => s.focusedNodeId)`
-- `useKnowledgeBankStore` → `const entries = useKnowledgeBankStore((s) => s.entries)`
-
-**Enforcement:** Regression test `src/__tests__/zustandSelectors.structural.test.ts` scans for all 8 anti-patterns and fails the build if any are found.
-
-**Common Mistakes to Avoid:**
-
-```typescript
-// ❌ WRONG: Including selector in useEffect dependency
-useEffect(() => {
-  const currentId = useWorkspaceStore((s) => s.currentWorkspaceId);
-  // ... do something
-}, [useWorkspaceStore((s) => s.currentWorkspaceId)]); // DON'T DO THIS!
-
-// ✅ CORRECT: Call selector outside useEffect, use value in dependency
-const currentId = useWorkspaceStore((s) => s.currentWorkspaceId);
-useEffect(() => {
-  // ... do something with currentId
-}, [currentId]);
-
-// ❌ WRONG: Mixing selector and action in one hook call
-const { user, setUser } = useAuthStore((s) => ({ user: s.user, setUser: s.setUser }));
-
-// ✅ CORRECT: Selectors for state, getState() for actions
-const user = useAuthStore((s) => s.user);
-const handleUpdate = useCallback(() => {
-  useAuthStore.getState().setUser(newUser);
-}, []);
-```
-
-**Testing/Mocking:** See `src/shared/components/__tests__/Toast.test.tsx` for the canonical Zustand mock pattern (handles both selectors and `getState()`).
+**Enforcement:** `src/__tests__/zustandSelectors.structural.test.ts` scans for all 8 anti-patterns and fails the build. Selectors must be called outside `useEffect` (not in the deps array). Never mix state and actions in one selector call.
 
 ### 🔴 CRITICAL: Closure Variable Anti-Pattern (Causes Drag Lag)
 
@@ -585,13 +510,6 @@ const node = useMemo(
     [nodes, focusedNodeId]
 );
 ```
-
-**Why Closure Variables Cause Problems:**
-1. Selector function captures `focusedNodeId` in closure
-2. When component re-renders, NEW selector function is created
-3. Zustand sees different function reference → triggers re-subscription logic
-4. During drag (60 updates/sec), this compounds across all visible nodes
-5. Eventually causes "Maximum update depth exceeded"
 
 **Enforcement:** Structural test detects `getNodeMap` inside selectors.
 
@@ -637,6 +555,33 @@ useEffect(() => {
     ...
 }, [userId]);
 ```
+
+## 🎨 CODE STYLE CONVENTIONS
+
+### Imports — ordering
+1. React/framework (`react`, `react-dom`)
+2. External libraries (`@tanstack/react-query`, `reactflow`, etc.)
+3. Internal `@/` imports (stores, services, components)
+4. Relative imports (local files)
+
+Use `import type` for type-only imports:
+```typescript
+import type { User } from '@/features/auth/types';
+```
+
+### TypeScript
+- Use `interface` for object shapes (not `type alias`) — ESLint enforces this
+- `readonly T[]` for immutable arrays
+- Prefer `null` over `undefined` for optional values
+- `as const` for literal values that won't change
+- No `any` in production code
+
+### Naming
+- **Files**: kebab-case for components (`idea-card.tsx`), camelCase for non-components (`settingsStore.ts`)
+- **Components**: PascalCase
+- **Hooks**: camelCase prefixed with `use`
+- **Constants**: `SCREAMING_SNAKE_CASE` for config/limits
+- **Booleans**: prefix with `is`, `has`, `should`, `can`
 
 ## ✅ COMMIT CONVENTIONS
 
@@ -702,6 +647,10 @@ Firestore cost controls are enforced via the rules in **Firestore Patterns** and
 - **All calls via proxy**: Every Gemini call must go through the `geminiProxy` Cloud Function (never direct client-side) — token caps and rate limits are enforced there
 - Prefer client-side computation (TF-IDF in Web Worker) over API calls when possible
 
+### Cloud Function cost rules
+- **`minInstances` is off until launch traffic**: `stripeWebhook` and `razorpayWebhook` had `minInstances: 1` (cost ~$11/mo). Removed pre-launch. **Re-add `minInstances: 1` to both functions once real payment volume starts** — cold starts on webhooks can cause Stripe/Razorpay to mark the endpoint as unreliable.
+- **Never set `minInstances` on non-critical functions** — only payment webhooks warrant it
+
 ## 🧹 LOGGING & ERROR HANDLING
 
 **Always use the structured logger — never `console.*` directly:**
@@ -743,205 +692,60 @@ async function load() {
 }
 ```
 
-## � PRODUCTION HARDENING SPRINT — Mar 2026
-
-### What was done (all permanent, non-negotiable)
-
-| Area | Change |
-|---|---|
-| **Security headers** | Full HTTP header block in `firebase.json`: HSTS, X-Frame-Options, CSP, Referrer-Policy, Permissions-Policy, X-Content-Type-Options |
-| **CSP** | Moved from `<meta>` tag → Firebase Hosting HTTP header only. `frame-ancestors 'none'` enforced |
-| **Dependencies** | `npm audit fix` — resolved all 12 HIGH/MODERATE vulns (0 remain). No `--force` needed |
-| **CI audit gate** | `.github/workflows/ci.yml` now runs `npm audit --audit-level=high`; build job depends on it |
-| **Deploy env vars** | `VITE_CLOUD_FUNCTIONS_URL` + `VITE_GOOGLE_CLIENT_ID` added to `deploy.yml` and GitHub Secrets |
-| **Env validation** | `VITE_GOOGLE_CLIENT_ID` added to `REQUIRED_VARS` in `envValidation.ts`; made non-optional in `vite-env.d.ts` |
-| **Bundle** | `KnowledgeBankPanel` converted to `React.lazy` — own chunk ~20 KB; main bundle reduced |
-| **AI injection** | `INJECTION_PATTERNS` expanded with 12+ obfuscated variants. Cyrillic char-class patterns removed (false positives — NFKD normalization is the correct approach) |
-| **Health endpoint** | `functions/src/health.ts` deployed: `GET /health` → `{status,version,timestamp}` |
-| **Firestore backup** | Daily scheduled export: Firestore → Cloud Storage bucket `actionstation-244f0-backups` (30-day retention) |
-| **Repo hygiene** | Build artifacts (`dist-node/`, `*.tsbuildinfo`, `wave6-*.png`) removed from git |
-
-### Structural tests that guard these invariants
-
-- `cspCompleteness.structural.test.ts` — reads CSP from `firebase.json` headers block
-- `envValidation.structural.test.ts` — mirrors `REQUIRED_VARS` (currently 8 vars); update both together
-- `noHardcodedSecrets.structural.test.ts` — blocks `AIza…` / `sk-…` patterns in source
-- `geminiKeyIsolation.structural.test.ts` — only `geminiClient.ts` may reference `VITE_GEMINI_API_KEY`
-
-### Invariants for future sprints
+## 🛡️ SECURITY INVARIANTS (non-negotiable)
 
 1. `VITE_GEMINI_API_KEY` must **never** appear in `deploy.yml` — Gemini calls go through Cloud Functions proxy only
-2. CSP lives **only** in `firebase.json` headers — never re-add a `<meta http-equiv>` CSP tag
-3. Any new required env var must be added to **both** `envValidation.ts` AND `envValidation.structural.test.ts` REQUIRED_VARS
-4. New Cloud Functions must export from `functions/src/index.ts`
-5. `npm audit` must stay at 0 — CI will block the build otherwise
+2. CSP lives **only** in `firebase.json` headers — never add a `<meta http-equiv>` CSP tag
+3. Any new required env var must be added to **both** `envValidation.ts` AND `envValidation.structural.test.ts`. Current `REQUIRED_VARS` (9): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_CLOUD_FUNCTIONS_URL`, `VITE_GOOGLE_CLIENT_ID`, `VITE_RECAPTCHA_SITE_KEY`
+4. New Cloud Functions must export from `functions/src/index.ts` and include `cors: ALLOWED_ORIGINS`
+5. `npm audit` must stay at 0 — CI blocks the build otherwise
 
----
+## 🛡️ CLOUD FUNCTION SECURITY LAYER (WAF-level)
 
-## 🛡️ ADVANCED SECURITY HARDENING — Mar 17 2026
-
-Six new Cloud Function utilities implement WAF-level defence. All are **non-negotiable** — do not remove or bypass them.
-
-### Security layer order in `geminiProxy` (and any future AI endpoint)
-
-```
-Request → Bot Detection → IP Rate Limit → Auth → User Rate Limit
-        → Body Size Cap → Prompt Filter → Token Cap → Output Scan → Response
-```
-
-### New utilities (all in `functions/src/utils/`)
+Security utilities in `functions/src/utils/` — do not remove or bypass:
 
 | File | Purpose |
 |---|---|
-| `securityLogger.ts` | Structured JSON events to Cloud Logging — WARNING / ERROR / CRITICAL severity routing |
-| `botDetector.ts` | Scanner UA (sqlmap/nikto/curl/masscan/nuclei/Burp/ZAP), headless browsers (Playwright/Puppeteer/HeadlessChrome), heuristic header checks |
-| `ipRateLimiter.ts` | Per-IP sliding window — 30 req/min on Gemini. Firestore-backed in production, in-memory for tests |
-| `promptFilter.ts` | Input: 14 injection patterns (DAN/jailbreak/`[SYSTEM]`/`<\|im_start\|>`/ignore-all-instructions) + 5 exfiltration patterns. Output: scans response for GCP API keys, Bearer tokens, private key fragments |
-| `fileUploadValidator.ts` | Magic-byte MIME detection, polyglot/archive/ELF/PE detection, dangerous extension block (.exe/.sh/.php…), per-type size limits |
-| `threatMonitor.ts` | Per-type spike counters (50×429/min, 20×500/min, 30×auth-fail/min, 10×bot/min) — fires CRITICAL log alert on threshold breach |
+| `securityLogger.ts` | Structured JSON events → Cloud Logging (WARNING/ERROR/CRITICAL) |
+| `botDetector.ts` | Scanner UA + headless browser detection |
+| `ipRateLimiter.ts` | Per-IP sliding window — 30 req/min on Gemini |
+| `promptFilter.ts` | 14 injection + 5 exfiltration patterns; also scans output for leaked keys |
+| `fileUploadValidator.ts` | Magic-byte MIME detection, dangerous extension block, per-type size limits |
+| `threatMonitor.ts` | Spike counters — fires CRITICAL log on threshold breach |
 
-### Security rules for new Cloud Functions
+**Request pipeline for AI endpoints:** Bot Detection → IP Rate Limit → Auth → User Rate Limit → Body Size Cap → Prompt Filter → Token Cap → Output Scan
 
-1. **Bot check before auth** — bots must be rejected before any Firestore or auth SDK call (cheap rejection)
-2. **IP rate limit before user rate limit** — per-IP check catches multi-account distributed abuse
-3. **All security events logged** — every 401/403/429 must call `logSecurityEvent()` with correct `SecurityEventType`
-4. **Threat counters on every 4xx/5xx** — call `recordThreatEvent()` for `429_spike`, `500_spike`, `auth_failure_spike`, `bot_spike`
-5. **Upload endpoints must call `validateUpload()`** — never accept raw bytes without magic-byte + extension + size checks
-6. **AI endpoints must call `filterPromptInput()` before forwarding** and `filterPromptOutput()` before returning
-
-### Cloud Logging alert setup (manual — one-time)
-
-In Google Cloud Console → Monitoring → Alerting, create a log-based alert on:
-```
-resource.type="cloud_run_revision"
-jsonPayload.labels.eden_security="true"
-severity>="ERROR"
-```
-This fires for bot detections, prompt injection, IP blocks, and threat spikes.
-
-### What still requires external services (not in code)
-
-| Gap | Status |
-|---|---|
-| **WAF** | ✅ `scripts/setup-cloud-armor.sh` — run once; update DNS to LB IP |
-| **Cloudflare Turnstile / reCAPTCHA** | ✅ `functions/src/verifyTurnstile.ts` deployed; `captchaValidator.ts` shared utility |
-| **Immutable backups** | ✅ `scripts/setup-immutable-backups.sh` — run once; update `BACKUP_BUCKET` in `firestoreBackup.ts` |
+**Rules for new Cloud Functions:**
+1. Bot check before auth (cheap rejection before Firestore/auth SDK calls)
+2. Every 401/403/429 must call `logSecurityEvent()` with correct `SecurityEventType`
+3. Upload endpoints must call `validateUpload()` — never accept raw bytes
+4. AI endpoints must call `filterPromptInput()` before forwarding and `filterPromptOutput()` before returning
+5. IP rate limit captcha at 10 req/min; log `CAPTCHA_FAILED`; validate `action` string for reCAPTCHA v3 (prevents token replay)
 
 ---
 
-## 🛡️ WAF / CAPTCHA / IMMUTABLE BACKUPS SPRINT — Mar 17 2026
+## 📅 CALENDAR INTEGRATION — Gotchas
 
-### New Cloud Function: `verifyTurnstile`
+The Calendar feature uses server-side OAuth 2.0 (tokens never reach the client). Key files: `calendarTokenHelper.ts` (caches + refreshes tokens), `CalendarCallback.tsx` (OAuth redirect handler), `calendarAuthService.ts` (frontend OAuth initiator).
 
-`POST /verifyTurnstile` — Cloudflare Turnstile server-side verification. IP-rate-limited (10 req/min), logs `CAPTCHA_FAILED` events.
+**Critical rules learned the hard way:**
 
-**Call before login and upload on the client:**
-```typescript
-const token = await turnstile.getResponse(); // @cloudflare/turnstile-react
-const r = await fetch('/verifyTurnstile', {
-  method: 'POST', headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ token }),
-});
-if (!r.ok) throw new Error('Bot challenge failed');
-// proceed with Firebase auth / upload
-```
-
-**One-time secret setup:**
-```bash
-gcloud secrets create TURNSTILE_SECRET --replication-policy="automatic"
-echo -n "YOUR_SECRET" | gcloud secrets versions add TURNSTILE_SECRET --data-file=-
-gcloud secrets add-iam-policy-binding TURNSTILE_SECRET \
-  --member="serviceAccount:actionstation-244f0@appspot.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor"
-firebase deploy --only functions:verifyTurnstile
-```
-
-### reCAPTCHA v3 — same pattern
-
-`verifyRecaptchaToken()` in `functions/src/utils/captchaValidator.ts`:
-- Secret name: `RECAPTCHA_SECRET` (same setup steps as Turnstile)
-- Pass `action` string (`'login'`, `'upload'`) — mismatch = token replay → blocked
-- Score < `RECAPTCHA_MIN_SCORE` (0.5) → blocked (raise to 0.7 for high-risk actions)
-
-### Cloud Armor WAF
-
-Run `scripts/setup-cloud-armor.sh` once per environment:
-- 8 OWASP CRS rule sets: SQLi, XSS, LFI, RFI, RCE, method enforcement, scanner detection, protocol attack
-- IP rate-limit rule: 100 req/min per IP → 5-min ban on breach
-- Serverless NEGs + backend services + HTTPS LB (SSL cert auto-provisioned)
-- **Traffic must route through the LB IP for WAF to apply — update DNS A record**
-
-### Immutable backups
-
-Run `scripts/setup-immutable-backups.sh` once:
-- Creates `actionstation-244f0-firestore-backups-immutable` with 30-day GCS object retention
-- Object versioning enabled; non-current versions deleted after 90 days
-- Optionally locks the policy (irrevocable — run once you're confident in 30-day window)
-- After running: change `BACKUP_BUCKET` in `functions/src/firestoreBackup.ts` → redeploy
-
-### Security rules for captcha endpoints
-
-1. **IP rate limit before captcha check** — `IP_RATE_LIMIT_CAPTCHA = 10 req/min` per IP
-2. **Log `CAPTCHA_FAILED` event** — every failed challenge calls `logSecurityEvent()`
-3. **Pass client IP to `/siteverify`** — Cloudflare and Google use it for additional entropy
-4. **Validate `action` string for reCAPTCHA v3** — prevents cross-action token replay attacks
-5. **Never skip server-side verification** — client-side widget completion alone is not sufficient
-
----
-
-## 📅 CALENDAR SERVER-SIDE OAUTH SPRINT — Mar 18-19 2026
-
-### What was built
-Google Calendar OAuth 2.0 Authorization Code flow with server-side token storage.
-- `exchangeCalendarCode` — exchanges auth code for refresh token, stores in Firestore
-- `disconnectCalendar` — removes integration document
-- `calendarCreateEvent`, `calendarUpdateEvent`, `calendarDeleteEvent`, `calendarListEvents` — proxy all Calendar API calls server-side; access tokens never reach the client
-- `calendarTokenHelper.ts` — caches + refreshes access tokens in Firestore (5-min buffer before expiry)
-- `CalendarCallback.tsx` — handles the OAuth redirect with `hasRun` ref guard against React Strict Mode double-invocation
-- `calendarAuthService.ts` — frontend OAuth initiator; sends `redirectUri` to Cloud Function; uses `CONNECTED_KEY` in localStorage
-
-### Lessons learned — never repeat these mistakes
-
-#### 1. Firebase secret trailing newlines (`printf` not `echo`)
-**Bug:** `echo 'SECRET' | firebase functions:secrets:set KEY` appends `\n`. Google OAuth rejects `client_id\n` with `invalid_client: The OAuth client was not found.`
-**Rule:** **Always use `printf` to set secrets:**
+1. **Use `printf` not `echo` for Firebase secrets** — `echo` appends `\n`, causing `invalid_client` OAuth errors:
 ```bash
 printf 'YOUR_SECRET_VALUE' | firebase functions:secrets:set SECRET_NAME
-```
-**Detection:** `firebase functions:secrets:access KEY | xxd | tail -3` — two `0a` bytes at end means double newline (one from stored value, one from CLI output). One `0a` is just the CLI output newline and is fine.
-
-#### 2. Deploy order matters — secrets must exist BEFORE deploy
-**Bug:** Functions were redeployed before the corrected secret version was created, so they were pinned to the old (wrong) version.
-**Rule:** Always create/update the secret FIRST, then deploy. Firebase pins to the latest version at deploy time.
-```bash
-# Correct order:
-printf 'NEW_VALUE' | firebase functions:secrets:set MY_SECRET  # 1. secret first
-firebase deploy --only functions:myFunction                     # 2. deploy after
+# Verify: firebase functions:secrets:access KEY | xxd | tail -3 (one 0a = fine, two = bad)
 ```
 
-#### 3. All `onCall` handlers must declare `cors: ALLOWED_ORIGINS`
-**Bug:** `workspaceBundle`, `calendarCreateEvent`, and all calendar functions were missing `cors:` on their `onCall` config. Browser blocked preflight from `localhost:5173` and `www.actionstation.in`.
-**Rule:** Every `onCall` must include `cors: ALLOWED_ORIGINS` from `utils/corsConfig.ts`. The structural test `calendarFunctionsSecurity.structural.test.ts` now enforces this.
-```typescript
-export const myFunction = onCall({ cors: ALLOWED_ORIGINS, secrets: [...] }, async (req) => { ... });
-```
+2. **Secrets before deploy** — Firebase pins to the latest secret version at deploy time. Always create/update the secret first, then deploy.
 
-#### 4. `resource == null` guard required before `resource.data` in Firestore rules
-**Bug:** `resource.data.userId` crashes with a null reference on document creates (`resource` is `null` for new documents). This silently denied all node/edge creates → "Failed to save changes" toast.
-**Rule:** Always guard with `resource == null` first:
+3. **`resource == null` guard in Firestore rules** — `resource` is `null` on creates; `resource.data.userId` throws without the guard:
 ```javascript
-// ✅ Correct — covers creates (resource==null) and updates
-allow write: if request.auth != null && request.auth.uid == userId
+// ✅ Correct
+allow write: if request.auth.uid == userId
                 && (resource == null || !resource.data.userId || resource.data.userId == request.auth.uid);
-
-// ❌ Wrong — crashes on creates
-allow write: if request.auth != null && request.auth.uid == userId
-                && (!resource.data.userId || resource.data.userId == request.auth.uid);
 ```
 
-#### 5. React Strict Mode fires `useEffect` twice — use `useRef` guard for single-use operations
-**Bug:** `CalendarCallback.tsx` useEffect ran twice in dev (React Strict Mode), consuming the one-time auth code twice. Second invocation got `invalid_grant`.
-**Rule:** Any `useEffect` that performs a single-use operation (auth code exchange, analytics init, etc.) must use a `useRef` guard:
+4. **`useRef` guard for single-use `useEffect`** — React Strict Mode fires effects twice in dev. Use `hasRun` ref for auth code exchange, analytics init, or any one-time operation:
 ```typescript
 const hasRun = useRef(false);
 useEffect(() => {
@@ -951,20 +755,34 @@ useEffect(() => {
 }, []);
 ```
 
-#### 6. `logSecurityEvent` required on every 4xx/5xx — no silent errors
-**Bug:** `calendarEvents.ts` imported `logSecurityEvent` but never called it in `withToken()` on rate-limit or auth failures — security events were invisible in Cloud Logging.
-**Rule:** Every `HttpsError` throw must be preceded by `logSecurityEvent()`. The structural test `calendarFunctionsSecurity.structural.test.ts` enforces this.
+---
+## 💳 RAZORPAY INTEGRATION — Gotchas
 
-#### 7. Remove diagnostic code before merging
-**Debt incurred:** `console.info` credential-length logs and `logger.warn` diagnostic logs were added during debugging and left in code, causing Sentry noise and violating the no-console structural test.
-**Rule:** Any `console.*` or `logger.warn` added for debugging purposes must be removed before the PR is merged. Use git stash or a `// DEBUG:` marker to find them easily.
+**Critical rules learned the hard way:**
 
-#### 8. `useCallback` dep arrays must include all referenced callbacks
-**Bug:** `handleRetry` dep array was `[calendarEvent, syncCreate, syncUpdate]` but the body also called `syncDelete` (via `cleanupOnDelete`). Stale closure risk on re-render.
-**Rule:** Every function reference used inside a `useCallback` must appear in its dep array. ESLint `react-hooks/exhaustive-deps` catches this — ensure it's enabled.
+1. **Receipt string ≤ 40 chars** — Razorpay rejects orders with a receipt longer than 40 characters. The SDK throws a plain object (`{statusCode:400, error:{description:"..."}}`) — not an `Error` instance — so `error instanceof Error` is `false` and the message is lost. Use a short format:
+```typescript
+// ✅ Correct — 29 chars
+receipt: `r_${uid.slice(0, 10)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`
+
+// ❌ Wrong — 71 chars, Razorpay rejects with BAD_REQUEST
+receipt: `order_${uid}_${crypto.randomUUID()}`
+```
+
+2. **Razorpay SDK v2 throws plain objects, not Errors** — always handle both cases in catch blocks:
+```typescript
+const rzrErr = error as Record<string, unknown>;
+const inner = rzrErr['error'] as Record<string, unknown> | undefined;
+const message = inner?.['description']
+    ? `${String(inner['code'])}: ${String(inner['description'])}`
+    : JSON.stringify(error);
+```
+
+3. **Secrets are bound at deploy time** — updating a GCP secret version does NOT take effect until you redeploy the function. Always `firebase deploy --only functions:<name>` after adding a new secret version.
+
+4. **App Check header required on all onRequest functions** — include `'X-Firebase-AppCheck': token` in all Cloud Function calls from the client, or they return 401 silently. Use the shared `getAppCheckToken()` utility in `src/features/subscription/utils/appCheckToken.ts`.
 
 ---
-
 ## �🚫 TECH DEBT PREVENTION
 
 Before ANY commit:

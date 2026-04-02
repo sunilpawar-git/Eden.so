@@ -30,6 +30,18 @@ export const SecurityEventType = {
     UPLOAD_REJECTED: 'upload_rejected',
     /** Cloudflare Turnstile or Google reCAPTCHA challenge failed */
     CAPTCHA_FAILED: 'captcha_failed',
+    /** Firebase App Check token missing or invalid */
+    APP_CHECK_FAILURE: 'app_check_failure',
+    /** Subscription tier changed (free→pro, pro→free, etc.) */
+    SUBSCRIPTION_CHANGE: 'subscription_change',
+    /** Invoice payment failed via Stripe webhook */
+    PAYMENT_FAILED: 'payment_failed',
+    /** Stripe webhook signature verification failed */
+    WEBHOOK_SIG_FAILURE: 'webhook_sig_failure',
+    /** Checkout session created successfully */
+    CHECKOUT_CREATED: 'checkout_created',
+    /** Webhook processing error (handler threw) */
+    WEBHOOK_PROCESSING_ERROR: 'webhook_processing_error',
 } as const;
 
 export type SecurityEventType = (typeof SecurityEventType)[keyof typeof SecurityEventType];
@@ -79,9 +91,15 @@ export function logSecurityEvent(event: SecurityEvent): void {
 
     const line = JSON.stringify(entry);
 
+    // console.error/warn is intentional here — Cloud Functions routes these to
+    // Cloud Logging at ERROR/WARNING severity respectively. The firebase-functions
+    // logger wraps JSON differently; raw console output gives us structured JSON
+    // ingestion with the correct severity level.
     if (severity === 'ERROR' || severity === 'CRITICAL') {
+        // eslint-disable-next-line no-console
         console.error(line);
     } else {
+        // eslint-disable-next-line no-console
         console.warn(line);
     }
 }
@@ -95,6 +113,9 @@ function getSeverity(
         case SecurityEventType.BOT_DETECTED:
         case SecurityEventType.PROMPT_INJECTION:
         case SecurityEventType.IP_BLOCKED:
+        case SecurityEventType.WEBHOOK_SIG_FAILURE:
+        case SecurityEventType.WEBHOOK_PROCESSING_ERROR:
+        case SecurityEventType.APP_CHECK_FAILURE:
             return 'ERROR';
         default:
             return 'WARNING';

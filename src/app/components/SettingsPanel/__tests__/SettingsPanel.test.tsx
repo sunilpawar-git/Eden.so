@@ -47,6 +47,15 @@ describe('SettingsPanel', () => {
         expect(screen.getByText(strings.settings.about)).toBeInTheDocument();
     });
 
+    it('adds inset spacing around the settings tab row', () => {
+        render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
+
+        expect(screen.getByRole('tablist', { name: strings.settings.title })).toHaveStyle({
+            padding: '0 var(--space-sm)',
+            gap: 'var(--space-xxs)',
+        });
+    });
+
     it('updates store when tab is clicked', () => {
         render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
         fireEvent.click(screen.getByText(strings.settings.canvas));

@@ -43,8 +43,8 @@ export const SP_CONTENT = 'flex flex-col flex-1 overflow-hidden';
 export const SP_TABS =
     'flex flex-row items-center border-b border-[var(--color-border)] flex-shrink-0 settings-tabs-responsive';
 export const SP_TABS_STYLE: CSSProperties = {
-    padding: 0,
-    gap: 0,
+    padding: '0 var(--space-sm)',
+    gap: 'var(--space-xxs)',
 };
 
 export const SP_TAB =

@@ -9,7 +9,7 @@ export const ESCAPE_PRIORITY = {
     CLEAR_SELECTION: 10,
     /** Close hover sidebar — low-priority ambient UI */
     SIDEBAR_HOVER: 20,
-    /** Close NodeUtilsBar submenu/deck */
+    /** Close NodeHoverMenu submenu */
     BAR_OVERFLOW: 40,
     /** Dismiss node context menu */
     CONTEXT_MENU: 45,

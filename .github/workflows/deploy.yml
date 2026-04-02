@@ -29,6 +29,38 @@ jobs:
       - name: Full check (typecheck + lint + test)
         run: npm run check
 
+      - name: Validate required secrets
+        run: |
+          MISSING=""
+          for VAR in VITE_FIREBASE_API_KEY VITE_FIREBASE_AUTH_DOMAIN VITE_FIREBASE_PROJECT_ID \
+                     VITE_FIREBASE_STORAGE_BUCKET VITE_FIREBASE_MESSAGING_SENDER_ID VITE_FIREBASE_APP_ID \
+                     VITE_CLOUD_FUNCTIONS_URL VITE_GOOGLE_CLIENT_ID VITE_SENTRY_DSN VITE_POSTHOG_KEY \
+                     VITE_STRIPE_PUBLISHABLE_KEY VITE_TURNSTILE_SITE_KEY VITE_RECAPTCHA_SITE_KEY; do
+            VALUE="${!VAR}"
+            if [ -z "$VALUE" ]; then
+              MISSING="$MISSING $VAR"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "CRITICAL: Missing required secrets:$MISSING"
+            exit 1
+          fi
+          echo "All required secrets present."
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_CLOUD_FUNCTIONS_URL: ${{ secrets.VITE_CLOUD_FUNCTIONS_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_TURNSTILE_SITE_KEY: ${{ secrets.VITE_TURNSTILE_SITE_KEY }}
+          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY }}
+
       - name: Build
         run: npm run build:quick
         env:
@@ -42,7 +74,23 @@ jobs:
           VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
           VITE_CLOUD_FUNCTIONS_URL: ${{ secrets.VITE_CLOUD_FUNCTIONS_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_TURNSTILE_SITE_KEY: ${{ secrets.VITE_TURNSTILE_SITE_KEY }}
+          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY }}
           VITE_APP_ENV: production
+
+      - name: Install Cloud Functions dependencies
+        run: npm ci
+        working-directory: functions
+
+      - name: Build Cloud Functions
+        run: npm run build
+        working-directory: functions
+
+      - name: Deploy Cloud Functions
+        run: npx firebase-tools deploy --only functions --project ${{ secrets.VITE_FIREBASE_PROJECT_ID }} --token "${{ secrets.FIREBASE_CI_TOKEN }}" --force
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ""
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0

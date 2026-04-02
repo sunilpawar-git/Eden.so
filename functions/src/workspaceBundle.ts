@@ -11,7 +11,7 @@ import { ALLOWED_ORIGINS } from './utils/corsConfig.js';
 const WORKSPACE_LIST_QUERY = 'workspace-list';
 const BUNDLE_MAX_AGE_S = 300;
 
-export const workspaceBundle = onCall({ minInstances: 0, cors: ALLOWED_ORIGINS }, async (request) => {
+export const workspaceBundle = onCall({ minInstances: 0, cors: ALLOWED_ORIGINS, enforceAppCheck: true }, async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Authentication required');
 

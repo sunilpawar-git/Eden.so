@@ -82,7 +82,7 @@ export async function verifyTurnstileToken(
     let resp: Response;
     try {
         resp = await fetch(TURNSTILE_VERIFY_URL, { method: 'POST', body });
-    } catch (err) {
+    } catch {
         return { success: false, errorCodes: ['fetch-error'] };
     }
 
@@ -127,7 +127,7 @@ export async function verifyRecaptchaToken(
     let resp: Response;
     try {
         resp = await fetch(RECAPTCHA_VERIFY_URL, { method: 'POST', body });
-    } catch (err) {
+    } catch {
         return { success: false, errorCodes: ['fetch-error'] };
     }
 

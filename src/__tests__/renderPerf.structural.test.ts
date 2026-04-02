@@ -12,7 +12,7 @@ const CONTENT_SECTION = readFileSync(
     join(SRC, 'features/canvas/components/nodes/IdeaCardContentSection.tsx'), 'utf-8',
 );
 const UTILS_BAR = readFileSync(
-    join(SRC, 'features/canvas/components/nodes/NodeUtilsBar.tsx'), 'utf-8',
+    join(SRC, 'features/canvas/components/nodes/NodeHoverMenu.tsx'), 'utf-8',
 );
 
 describe('render performance — inline allocation prevention', () => {
@@ -25,7 +25,7 @@ describe('render performance — inline allocation prevention', () => {
         expect(CONTENT_SECTION).toMatch(/HIDDEN_STYLE|EDITOR_HIDDEN_STYLE/);
     });
 
-    it('NodeUtilsBar does NOT have inline arrow for onCopyClick', () => {
+    it('NodeHoverMenu does NOT have inline arrow for onCopyClick', () => {
         expect(UTILS_BAR).not.toMatch(/onClick=\{\(\)\s*=>\s*props\.onCopyClick/);
     });
 });

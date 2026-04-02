@@ -1,9 +1,9 @@
 /**
- * IdeaCardActionsSection — Renders the UtilsBar + ContextMenu overlay for IdeaCard.
+ * IdeaCardActionsSection — Renders the HoverMenu + ContextMenu overlay for IdeaCard.
  * Extracted to keep IdeaCard under max-lines-per-function and complexity thresholds.
  */
 import React from 'react';
-import { NodeUtilsBar } from './NodeUtilsBar';
+import { NodeHoverMenu } from './NodeHoverMenu';
 import { IdeaCardContextMenuSection } from './IdeaCardContextMenuSection';
 import { isContentModeMindmap, type ContentMode } from '../../types/contentMode';
 import type { NodeColorKey } from '../../types/node';
@@ -52,7 +52,7 @@ export function IdeaCardActionsSection(props: IdeaCardActionsSectionProps) {
 
     return (
         <>
-            <NodeUtilsBar ref={props.barContainerRef} registerProximityLostFn={props.registerProximityLostFn}
+            <NodeHoverMenu ref={props.barContainerRef} registerProximityLostFn={props.registerProximityLostFn}
                 onConnectClick={props.handleConnectClick} onCopyClick={props.handleCopy}
                 onDelete={props.handleDelete} onTransform={props.handleTransform} onRegenerate={props.handleRegenerate}
                 hasContent={props.hasContent} isTransforming={props.isTransforming} disabled={props.isGenerating}

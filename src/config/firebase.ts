@@ -4,6 +4,7 @@
  * Sensitive operations go through Cloud Functions
  */
 import { initializeApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -28,6 +29,23 @@ if (import.meta.env.DEV && !firebaseConfig.apiKey) {
 }
 
 export const app = initializeApp(firebaseConfig);
+
+// Firebase App Check — protects backend resources from abuse.
+// In dev: FIREBASE_APPCHECK_DEBUG_TOKEN=true makes the SDK generate a debug token
+// and log it to the browser console as: "App Check debug token: <uuid>"
+// Add that token in Firebase Console → App Check → Apps → ⋮ → Manage debug tokens
+if (import.meta.env.DEV) {
+    // Use a fixed debug token from .env.local so all dev browsers share the same
+    // registered token. Falls back to auto-generate (true) if not set.
+    // Register the token in Firebase Console → App Check → Apps → Manage debug tokens.
+    // @ts-expect-error — Firebase App Check debug flag (not in standard types)
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN ?? true;
+}
+export const appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+    isTokenAutoRefreshEnabled: true,
+});
+
 export const auth = getAuth(app);
 
 // Enable offline persistence for instant workspace switching

@@ -124,6 +124,8 @@ export function WorkspaceItem({ id, name, type, isActive, nodeCount, onSelect, o
                 isActive && WI_ACTIVE,
                 isDragging && WI_DRAGGING,
             )}
+            role="listitem"
+            aria-current={isActive ? 'true' : undefined}
             onClick={() => !isEditing && !isDivider && onSelect(id)}
             data-testid="workspace-item"
             data-dragging={isDragging || undefined}

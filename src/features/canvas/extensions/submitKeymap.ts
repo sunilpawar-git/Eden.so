@@ -29,7 +29,24 @@ export const SubmitKeymap = Extension.create<SubmitKeymapOptions>({
     addKeyboardShortcuts() {
         const ref = this.options.handlerRef;
         return {
-            Enter: () => ref.current?.onEnter() ?? false,
+            Enter: ({ editor }) => {
+                // Fallback: if the cursor is in a paragraph containing only '---',
+                // convert it to an HR regardless of the onEnter mode.  Handles the
+                // case where the character-level input rule misfired (macOS IME,
+                // composing events, fast-type race conditions).
+                const { from } = editor.state.selection;
+                const $pos = editor.state.doc.resolve(from);
+                if ($pos.parent.isTextblock && $pos.parent.textContent === '---') {
+                    const hrType = editor.schema.nodes.horizontalRule;
+                    if (hrType) {
+                        editor.view.dispatch(
+                            editor.state.tr.replaceWith($pos.before(), $pos.after(), hrType.create()),
+                        );
+                        return true;
+                    }
+                }
+                return ref.current?.onEnter() ?? false;
+            },
             Escape: () => ref.current?.onEscape() ?? false,
         };
     },

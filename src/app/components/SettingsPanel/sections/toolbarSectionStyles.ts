@@ -50,7 +50,7 @@ export const TB_MORE_NOTE_STYLE: CSSProperties = {
 
 /* ─── Button list (shared zone container) ─── */
 export const TB_BUTTON_LIST =
-    'flex flex-col rounded-[var(--radius-md)] border border-[var(--color-border)] min-h-[48px] transition-[border-color] duration-[var(--transition-fast)]';
+    'flex flex-col rounded-[var(--radius-md)] border border-[var(--color-border)] min-h-[160px] transition-[border-color] duration-[var(--transition-fast)]';
 export const TB_BUTTON_LIST_STYLE: CSSProperties = {
     gap: 'var(--space-xxs)',
     background: 'var(--color-surface)',

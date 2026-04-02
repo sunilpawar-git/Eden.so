@@ -49,3 +49,6 @@ screenshots/
 # Editor/IDE specific
 .claude/
 .playwright-mcp/
+
+# Lighthouse CI reports (CI artifacts — not source)
+.lighthouseci/

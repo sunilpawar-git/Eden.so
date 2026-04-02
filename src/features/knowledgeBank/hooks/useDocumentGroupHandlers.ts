@@ -4,8 +4,6 @@
  */
 import { useCallback } from 'react';
 import { useKnowledgeBankStore } from '../stores/knowledgeBankStore';
-import { updateKBEntryBatch, deleteKBEntryBatch } from '../services/knowledgeBankService';
-import { deleteKBFile } from '../services/storageService';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useConfirmStore } from '@/shared/stores/confirmStore';
@@ -27,6 +25,7 @@ export function useDocumentGroupHandlers() {
         );
 
         try {
+            const { updateKBEntryBatch } = await import('../services/knowledgeBankService');
             const updates = affected.map((e) => ({ entryId: e.id, enabled: e.enabled }));
             await updateKBEntryBatch(userId, workspaceId, updates);
         } catch (error) {
@@ -56,6 +55,8 @@ export function useDocumentGroupHandlers() {
         const entryIds = groupEntries.map((e) => e.id);
 
         try {
+            const { deleteKBEntryBatch } = await import('../services/knowledgeBankService');
+            const { deleteKBFile } = await import('../services/storageService');
             await deleteKBEntryBatch(userId, workspaceId, entryIds);
             useKnowledgeBankStore.getState().removeDocumentGroup(parentId);
 

@@ -4,12 +4,15 @@
  */
 import {
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut as firebaseSignOut,
     onAuthStateChanged,
     deleteUser,
     reauthenticateWithPopup,
     type User as FirebaseUser,
 } from 'firebase/auth';
+import type { FirebaseError } from 'firebase/app';
 import { auth, googleProvider } from '@/config/firebase';
 import { useAuthStore } from '../stores/authStore';
 import { useSubscriptionStore } from '@/features/subscription/stores/subscriptionStore';
@@ -43,9 +46,16 @@ export async function signInWithGoogle(): Promise<void> {
         identifyUser(user.id);
         trackSignIn();
     } catch (error) {
+        const code = (error as FirebaseError).code;
         // User closed the popup — not a real error, just reset loading state silently
-        if (error instanceof Error && error.message.includes('popup-closed-by-user')) {
+        if (code === 'auth/popup-closed-by-user') {
             useAuthStore.getState().setLoading(false);
+            return;
+        }
+        // Safari / strict popup blockers block window.open() after async work.
+        // Fall back to redirect flow — onAuthStateChanged handles the result on return.
+        if (code === 'auth/popup-blocked') {
+            await signInWithRedirect(auth, googleProvider);
             return;
         }
         const message = error instanceof Error ? error.message : strings.auth.signInFailed;
@@ -84,6 +94,11 @@ export async function signOut(): Promise<void> {
 export function subscribeToAuthState(): () => void {
     useAuthStore.getState().setLoading(true);
 
+    // Handle post-redirect sign-in result (Safari popup-blocked fallback)
+    getRedirectResult(auth).catch(() => {
+        // No redirect result — normal app load, safe to ignore
+    });
+
     return onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser) {
             const user = createUserFromAuth(
@@ -96,10 +111,13 @@ export function subscribeToAuthState(): () => void {
             setSentryUser(user.id);
             identifyUser(user.id);
             checkCalendarConnection();
+            // Load subscription tier on sign-in (D15 — Phase 2)
+            void useSubscriptionStore.getState().loadSubscription(user.id);
         } else {
             useAuthStore.getState().clearUser();
             clearSentryUser();
             resetAnalyticsUser();
+            useSubscriptionStore.getState().reset();
         }
         useAuthStore.getState().setLoading(false);
     });

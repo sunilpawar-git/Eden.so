@@ -129,7 +129,7 @@ describe('Escape Layer Integration', () => {
         });
     });
 
-    describe('NodeUtilsBar escape priority chain', () => {
+    describe('NodeHoverMenu escape priority chain', () => {
         it('Escape deselects node when bar is visible but no submenu/deck open', () => {
             const clearSelection = vi.fn();
             const barEscape = vi.fn();

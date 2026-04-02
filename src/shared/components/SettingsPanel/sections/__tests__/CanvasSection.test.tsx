@@ -93,13 +93,15 @@ describe('CanvasSection', () => {
         expect(screen.getByLabelText(strings.settings.canvasScrollNavigate)).toBeInTheDocument();
     });
 
-    it('should have zoom mode selected by default', () => {
+    it('should have navigate mode selected by default', () => {
         render(<CanvasSection />);
-        const zoomOption = screen.getByLabelText(strings.settings.canvasScrollZoom);
-        expect(zoomOption).toBeChecked();
+        const navigateOption = screen.getByLabelText(strings.settings.canvasScrollNavigate);
+        expect(navigateOption).toBeChecked();
     });
 
     it('should call setCanvasScrollMode when navigate is selected', () => {
+        applyOverrides({ canvasScrollMode: 'zoom' as const });
+
         render(<CanvasSection />);
         const navigateOption = screen.getByLabelText(strings.settings.canvasScrollNavigate);
         fireEvent.click(navigateOption);

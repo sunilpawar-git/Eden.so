@@ -13,7 +13,7 @@ import {
     TB_ACTION_BTN_DISABLED_STYLE,
 } from './toolbarSectionStyles';
 
-export type ZoneId = 'utilsBar' | 'contextMenu' | 'unplaced';
+export type ZoneId = 'hoverMenu' | 'rightClickMenu' | 'unplaced';
 
 export interface IconItemProps {
     id: ActionId;

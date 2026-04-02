@@ -14,6 +14,7 @@ describe('validateProductionEnv', () => {
         'VITE_FIREBASE_APP_ID',
         'VITE_CLOUD_FUNCTIONS_URL',
         'VITE_GOOGLE_CLIENT_ID',
+        'VITE_RECAPTCHA_SITE_KEY',
     ];
 
     let originalEnv: Record<string, string | undefined>;
