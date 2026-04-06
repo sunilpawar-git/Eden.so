@@ -34,6 +34,7 @@ vi.mock('@/shared/stores/toastStore', () => ({
         error: vi.fn(),
     },
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 describe('WorkspaceControls - Delete Workspace', () => {
     beforeEach(() => {

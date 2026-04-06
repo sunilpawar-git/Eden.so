@@ -91,6 +91,7 @@ vi.mock('@/features/tags', () => ({ TagInput: vi.fn(() => null) }));
 vi.mock('@/features/canvas/contexts/PanToNodeContext', () => ({
     usePanToNodeContext: () => ({ panToPosition: vi.fn() }),
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 describe('IdeaCard - Pin prevents drag via noDragClassName', () => {
     beforeEach(() => { vi.clearAllMocks(); });

@@ -20,6 +20,10 @@ vi.mock('@/features/canvas/contexts/PanToNodeContext', () => ({
     usePanToNodeContext: () => ({ panToPosition: mockPanToPosition }),
 }));
 
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({
+    useNodeCreationGuard: () => ({ guardNodeCreation: () => true }),
+}));
+
 const createTestIdeaNode = (id: string, prompt: string, output?: string) => ({
     id, workspaceId: 'ws-1', type: 'idea' as const,
     data: { prompt, output, isGenerating: false, isPromptCollapsed: false } as IdeaNodeData,

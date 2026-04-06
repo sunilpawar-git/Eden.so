@@ -31,6 +31,7 @@ vi.mock('@/shared/stores/toastStore', () => ({
     toast: { success: vi.fn(), error: vi.fn() },
     toastWithAction: vi.fn(),
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 const NODE_FIXTURE = {
     id: 'node-1',

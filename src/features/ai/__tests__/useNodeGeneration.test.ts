@@ -30,6 +30,10 @@ vi.mock('../hooks/useNodePoolContext', () => ({
     useNodePoolContext: () => ({ getPoolContext: mockGetPoolContext }),
 }));
 
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({
+    useNodeCreationGuard: () => ({ guardNodeCreation: () => true }),
+}));
+
 // Helper to create IdeaCard node
 const createTestIdeaNode = (id: string, prompt: string, output?: string, heading?: string) => ({
     id,

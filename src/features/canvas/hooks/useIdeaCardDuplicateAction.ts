@@ -8,11 +8,14 @@ import { useCanvasStore, getNodeMap } from '../stores/canvasStore';
 import { usePanToNodeContext } from '../contexts/PanToNodeContext';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
+import { useNodeCreationGuard } from '@/features/subscription/hooks/useNodeCreationGuard';
 
 export function useIdeaCardDuplicateAction(nodeId: string) {
     const { panToPosition } = usePanToNodeContext();
+    const { guardNodeCreation } = useNodeCreationGuard();
 
     const handleDuplicate = useCallback(() => {
+        if (!guardNodeCreation()) return;
         const newId = useCanvasStore.getState().duplicateNode(nodeId);
         if (newId) {
             toast.success(strings.nodeUtils.duplicateSuccess);
@@ -25,7 +28,7 @@ export function useIdeaCardDuplicateAction(nodeId: string) {
         } else {
             toast.error(strings.nodeUtils.duplicateError);
         }
-    }, [nodeId, panToPosition]);
+    }, [nodeId, panToPosition, guardNodeCreation]);
 
     return { handleDuplicate };
 }

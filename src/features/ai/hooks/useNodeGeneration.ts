@@ -17,6 +17,7 @@ import { toast } from '@/shared/stores/toastStore';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
 import { useNodePoolContext } from './useNodePoolContext';
 import { processCalendarIntent } from '@/features/calendar/services/calendarIntentHandler';
+import { useNodeCreationGuard } from '@/features/subscription/hooks/useNodeCreationGuard';
 
 /**
  * Hook for generating AI content from IdeaCard nodes
@@ -25,6 +26,7 @@ export function useNodeGeneration() {
     const { getKBContext } = useKnowledgeBankContext();
     const { getPoolContext } = useNodePoolContext();
     const { panToPosition } = usePanToNodeContext();
+    const { guardNodeCreation } = useNodeCreationGuard();
 
     /**
      * Generate AI output from an IdeaCard node
@@ -78,6 +80,8 @@ export function useNodeGeneration() {
      */
     const branchFromNode = useCallback(
         (sourceNodeId: string) => {
+            if (!guardNodeCreation()) return undefined;
+
             const freshNodes = useCanvasStore.getState().nodes;
             const sourceNode = getNodeMap(freshNodes).get(sourceNodeId);
             if (!sourceNode) return;
@@ -101,7 +105,7 @@ export function useNodeGeneration() {
 
             return newNode.id;
         },
-        [panToPosition]
+        [panToPosition, guardNodeCreation]
     );
 
     return {

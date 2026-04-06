@@ -73,6 +73,7 @@ vi.mock('../IdeaCard.module.css', () => ({
 vi.mock('../nodeColorStyles.module.css', () => ({
     default: { colorContainer: 'colorContainer' },
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 // Helper to wrap component with ReactFlow provider
 const renderWithProvider = (props: Partial<NodeProps>) => {

@@ -50,6 +50,7 @@ vi.mock('@/shared/stores/toastStore', () => ({
     },
     toastWithAction: mockToastWithAction,
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 describe('WorkspaceControls', () => {
     beforeEach(() => {

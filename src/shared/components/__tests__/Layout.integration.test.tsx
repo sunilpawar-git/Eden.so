@@ -85,6 +85,8 @@ vi.mock('@/features/knowledgeBank/components/KnowledgeBankAddButton', () => ({
 vi.mock('@/features/knowledgeBank/components/KnowledgeBankPanel', () => ({
     KnowledgeBankPanel: () => <div data-testid="kb-panel" />,
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
+vi.mock('@/features/subscription/hooks/useTierLimits', () => ({ useTierLimits: () => ({ check: () => ({ allowed: true, current: 0, max: Infinity, kind: 'workspace' }), state: { workspaceCount: 0, nodeCount: 0, aiDailyCount: 0, aiDailyDate: '', storageMb: 0, isLoaded: true }, dispatch: () => {}, tier: 'free' }) }));
 
 /** Renders Layout inside act() to flush the async Suspense resolution from React.lazy(KnowledgeBankPanel). */
 async function renderLayout() {

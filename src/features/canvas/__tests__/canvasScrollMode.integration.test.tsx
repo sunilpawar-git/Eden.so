@@ -33,6 +33,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
 vi.mock('../components/ViewportSync', () => ({
     ViewportSync: () => null,
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 describe('Canvas Scroll Mode Integration', () => {
     beforeEach(() => {

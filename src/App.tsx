@@ -32,6 +32,7 @@ import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { strings } from '@/shared/localization/strings';
 import { OnboardingWalkthrough } from '@/features/onboarding';
 import { CalendarCallback } from '@/features/auth/components/CalendarCallback';
+import { TierLimitsProvider } from '@/features/subscription/contexts/TierLimitsContext';
 import '@/styles/global.css';
 
 // Lazy load non-critical components for better initial load performance
@@ -79,26 +80,28 @@ function AuthenticatedApp() {
         );
     }
     return (
-        <WorkspaceContext.Provider value={wsCtx}>
-            <ReactFlowProvider>
-                <SearchInputRefProvider>
-                    <KeyboardShortcutsProvider onOpenSettings={openSettings} />
-                    <Layout onSettingsClick={openSettings}>
-                    <CanvasView />
-                    {initialLoading && (
-                        <div className="canvas-loading-overlay">
-                            <div className="loading-spinner" />
-                            <p>{strings.common.loading}</p>
-                        </div>
-                    )}
-                    </Layout>
-                </SearchInputRefProvider>
-                <Suspense fallback={null}>
-                    <SettingsPanel isOpen={isSettingsOpen} onClose={closeSettings} />
-                </Suspense>
-                <OnboardingWalkthrough />
-            </ReactFlowProvider>
-        </WorkspaceContext.Provider>
+        <TierLimitsProvider>
+            <WorkspaceContext.Provider value={wsCtx}>
+                <ReactFlowProvider>
+                    <SearchInputRefProvider>
+                        <KeyboardShortcutsProvider onOpenSettings={openSettings} />
+                        <Layout onSettingsClick={openSettings}>
+                        <CanvasView />
+                        {initialLoading && (
+                            <div className="canvas-loading-overlay">
+                                <div className="loading-spinner" />
+                                <p>{strings.common.loading}</p>
+                            </div>
+                        )}
+                        </Layout>
+                    </SearchInputRefProvider>
+                    <Suspense fallback={null}>
+                        <SettingsPanel isOpen={isSettingsOpen} onClose={closeSettings} />
+                    </Suspense>
+                    <OnboardingWalkthrough />
+                </ReactFlowProvider>
+            </WorkspaceContext.Provider>
+        </TierLimitsProvider>
     );
 }
 

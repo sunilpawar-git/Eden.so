@@ -26,6 +26,10 @@ vi.mock('../hooks/useNodePoolContext', () => ({
     useNodePoolContext: () => ({ getPoolContext: vi.fn(() => '') }),
 }));
 
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({
+    useNodeCreationGuard: () => ({ guardNodeCreation: () => true }),
+}));
+
 const createTestIdeaNode = (id: string, prompt: string, output?: string, heading?: string) => ({
     id,
     workspaceId: 'ws-1',

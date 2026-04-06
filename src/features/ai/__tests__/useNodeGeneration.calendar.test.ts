@@ -45,6 +45,10 @@ vi.mock('../hooks/useNodePoolContext', () => ({
     useNodePoolContext: () => ({ getPoolContext: vi.fn(() => '') }),
 }));
 
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({
+    useNodeCreationGuard: () => ({ guardNodeCreation: () => true }),
+}));
+
 // eslint-disable-next-line import-x/first
 import { useNodeGeneration } from '../hooks/useNodeGeneration';
 // eslint-disable-next-line import-x/first

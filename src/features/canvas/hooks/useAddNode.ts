@@ -14,6 +14,7 @@ import { resolveGridColumnsFromStore } from '../services/gridColumnsResolver';
 import { usePanToNode } from './usePanToNode';
 import { trackNodeCreated } from '@/shared/services/analyticsService';
 import { useUndoableActions } from './useUndoableActions';
+import { useNodeCreationGuard } from '@/features/subscription/hooks/useNodeCreationGuard';
 
 export interface AddNodeOptions {
     /** When provided, node is placed at this exact position (double-click-to-create). */
@@ -27,6 +28,7 @@ export function useAddNode() {
     const canvasFreeFlow = useSettingsStore((s) => s.canvasFreeFlow);
     const { panToPosition } = usePanToNode();
     const { addNodeWithUndo } = useUndoableActions();
+    const { guardNodeCreation } = useNodeCreationGuard();
 
     /**
      * Creates a new IdeaCard node.
@@ -37,6 +39,7 @@ export function useAddNode() {
      */
     const handleAddNode = useCallback((optionsOrPosition?: AddNodeOptions | NodePosition): string | undefined => {
         if (!currentWorkspaceId) return undefined;
+        if (!guardNodeCreation()) return undefined;
 
         // Normalize overloaded parameter: AddNodeOptions | NodePosition | React event | undefined
         let validPosition: NodePosition | undefined;
@@ -75,7 +78,7 @@ export function useAddNode() {
         panToPosition(position.x, position.y);
 
         return nodeId;
-    }, [currentWorkspaceId, canvasFreeFlow, panToPosition, addNodeWithUndo]);
+    }, [currentWorkspaceId, canvasFreeFlow, panToPosition, addNodeWithUndo, guardNodeCreation]);
 
     return handleAddNode;
 }

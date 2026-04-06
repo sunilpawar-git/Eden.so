@@ -88,6 +88,7 @@ describe('useDoubleClickToCreate', () => {
             x: x * 2,
             y: y * 2,
         }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
         const { result } = renderHook(() => useDoubleClickToCreate());
 
