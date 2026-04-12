@@ -383,6 +383,45 @@ users/{userId}/workspaces/{workspaceId}/
 - New string resources go in `workspaceStrings.ts` (prefixed with `tile`)
 - Tile state transitions go through `tileReducer` actions — never mutate directly
 
+## 💰 Free Tier Limits
+
+| Resource | Free | Pro |
+|----------|------|-----|
+| Workspaces per user | 5 | Unlimited |
+| Nodes per workspace | 12 | Unlimited |
+| AI generations/day | 60 | Unlimited |
+| Storage per user | 50 MB | Unlimited |
+| KB entries | No cap | No cap |
+
+### Architecture
+
+Limits use a **pure `useReducer` state machine** in a React Context (`TierLimitsProvider`), completely isolated from Zustand stores. Follows the same pattern as `tileReducer.ts`.
+
+- **Constants**: `FREE_TIER_LIMITS` / `PRO_TIER_LIMITS` in `src/features/subscription/types/tierLimits.ts` — SSOT
+- **Reducer**: `src/features/subscription/stores/tierLimitsReducer.ts`
+- **Context**: `src/features/subscription/contexts/TierLimitsContext.tsx` — wraps `AuthenticatedApp` in `App.tsx`
+- **Hook**: `src/features/subscription/hooks/useTierLimits.ts` — scalar Zustand selectors, syncs via `useEffect`
+
+### Guard entry points (user-initiated operations only)
+
+| Hook | Guard | Type |
+|------|-------|------|
+| `useWorkspaceOperations.ts` | `check('workspace')` | Modal (`UpgradeWall`) |
+| `useAddNode.ts` | `useNodeCreationGuard` | Toast |
+| `useNodeGeneration.ts` | `check('aiDaily')` | Toast |
+| `useIdeaCardDuplicateAction.ts` | `useNodeCreationGuard` | Toast |
+
+Internal operations (canvas load, undo/redo, onboarding seed) are **not guarded** — guards live in hook layer, not store layer.
+
+### Firestore paths
+
+- `users/{userId}/usage/aiDaily` — AI daily counter, **server-writes only** (admin SDK via `dailyAiLimiter.ts`). Client read allowed; write blocked by Firestore rules.
+- `users/{userId}/usage/storage` — cumulative bytes uploaded, **client read+write** (fire-and-forget tracking in upload services).
+
+### AI daily limit is server-authoritative
+
+`geminiProxy.ts` Cloud Function calls `checkAndIncrementDailyAi()` before forwarding to Gemini. Client check is optimistic UI only — free users cannot bypass the server check.
+
 ## 🔒 SECURITY PROTOCOL
 
 Firestore rules deny-all by default; every path requires `request.auth.uid == userId`. See `firestore.rules`. Always guard `resource.data` access with `resource == null` check (resource is null on creates).
