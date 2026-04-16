@@ -137,17 +137,6 @@ vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCr
         expect(useCanvasStore.getState().nodes).toHaveLength(0);
     });
 
-    it('does NOT create node when a node is being edited', () => {
-        useCanvasStore.setState({ editingNodeId: 'some-node' });
-
-        const { result } = renderHook(() => useDoubleClickToCreate());
-        act(() => {
-            result.current.onDoubleClick(makeDblClickEvent(100, 100));
-        });
-
-        expect(useCanvasStore.getState().nodes).toHaveLength(0);
-    });
-
     it('does NOT create node when click target is not the pane', () => {
         const { result } = renderHook(() => useDoubleClickToCreate());
         const nonPaneEvent = makeDblClickEvent(100, 100, 'react-flow__node');
@@ -198,6 +187,42 @@ vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCr
         expect(nodes).toHaveLength(1);
         // In masonry mode, x should snap to grid column (32 for col 0)
         expect(nodes[0]?.position.x).toBe(32);
+    });
+
+    describe('rAF race condition guard (stale editingNodeId)', () => {
+        it('creates node on pane double-click even when editingNodeId is stale', () => {
+            // Simulates the window between onHeadingBlur firing and the rAF callback
+            // running: editingNodeId is still set, but focus has moved to the pane.
+            // The pane class check is the correct spatial guard — editingNodeId must
+            // not veto the creation when the user has clearly navigated to the pane.
+            useCanvasStore.setState({
+                editingNodeId: 'node-being-left',
+                nodes: [], edges: [], selectedNodeIds: new Set(),
+            });
+
+            const { result } = renderHook(() => useDoubleClickToCreate());
+            act(() => {
+                result.current.onDoubleClick(makeDblClickEvent(200, 200));
+            });
+
+            expect(useCanvasStore.getState().nodes).toHaveLength(1);
+        });
+
+        it('clears stale editingNodeId synchronously on pane double-click', () => {
+            // createNodeAtScreen must call stopEditing() before creating so the
+            // rAF-deferred stopEditing in onHeadingBlur is pre-empted.
+            useCanvasStore.setState({
+                editingNodeId: 'node-being-left',
+                nodes: [], edges: [], selectedNodeIds: new Set(),
+            });
+
+            const { result } = renderHook(() => useDoubleClickToCreate());
+            act(() => {
+                result.current.onDoubleClick(makeDblClickEvent(200, 200));
+            });
+
+            expect(useCanvasStore.getState().editingNodeId).toBeNull();
+        });
     });
 
     it('cleans up focus timer on unmount', () => {

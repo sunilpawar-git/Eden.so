@@ -63,9 +63,13 @@ export function useDoubleClickToCreate(): PaneDoubleClickHandlers {
         const isLocked = useSettingsStore.getState().isCanvasLocked;
         if (isLocked) return;
 
-        // Guard: user is editing a node (typing in heading/content)
-        const editingNodeId = useCanvasStore.getState().editingNodeId;
-        if (editingNodeId) return;
+        // Synchronously clear any stale editing state before creating.
+        // The pane class check above is the correct spatial guard. We cannot rely on
+        // editingNodeId here because onHeadingBlur defers stopEditing() via
+        // requestAnimationFrame, creating a race window where editingNodeId reads stale
+        // (still set) even though focus has already moved to the pane. Calling
+        // stopEditing() directly pre-empts the rAF and keeps state consistent.
+        useCanvasStore.getState().stopEditing();
 
         // Guard: debounce rapid double-clicks
         const now = Date.now();

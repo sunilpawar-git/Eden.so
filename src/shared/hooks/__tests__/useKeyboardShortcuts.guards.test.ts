@@ -42,11 +42,23 @@ describe('useKeyboardShortcuts guards', () => {
     afterEach(() => { vi.restoreAllMocks(); });
 
     describe('Input Focus Handling', () => {
-        it('should not trigger shortcuts when editingNodeId is set', () => {
-            mockEditingState('node-42');
+        it('does not call onAddNode when event target is contentEditable (isEditableTarget guard)', () => {
+            // The correct real-time guard for N is isEditableTarget — not editingNodeId.
+            // When the user is actively typing in a TipTap editor the target IS contentEditable,
+            // so N must be blocked regardless of what editingNodeId happens to hold.
+            mockEditingState(null);
             renderHook(() => useKeyboardShortcuts({ onAddNode: mockOnAddNode }));
-            fireKeyDown('n');
+
+            const editorDiv = document.createElement('div');
+            editorDiv.contentEditable = 'true';
+            document.body.appendChild(editorDiv);
+
+            const event = new KeyboardEvent('keydown', { key: 'n', bubbles: true, cancelable: true });
+            Object.defineProperty(event, 'target', { value: editorDiv });
+            document.dispatchEvent(event);
+
             expect(mockOnAddNode).not.toHaveBeenCalled();
+            document.body.removeChild(editorDiv);
         });
 
         it('should not intercept Delete/Backspace when editingNodeId is set', () => {
