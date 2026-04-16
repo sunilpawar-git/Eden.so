@@ -1,38 +1,28 @@
 /**
- * useHeroAnimation — State machine for the landing page canvas demo animation.
- * Uses useReducer, completely isolated from Zustand and canvas store.
- * Respects prefers-reduced-motion media query.
+ * useHeroAnimation — Drives the landing page canvas demo animation.
+ * State machine running in useReducer; respects prefers-reduced-motion.
  */
 import { useReducer, useEffect } from 'react';
+import {
+    type AnimationState,
+    type AnimationAction,
+    animationReducer,
+    PHASE_SEQUENCE,
+} from '../data/heroAnimationData';
 
-export type AnimationPhase = 'idle' | 'nodesVisible' | 'edgesDrawn' | 'synthesized';
+export type { AnimationPhase } from '../data/heroAnimationData';
 
-interface AnimationState {
-    readonly phase: AnimationPhase;
-    readonly reducedMotion: boolean;
+/** Detects and tracks prefers-reduced-motion, dispatching state updates. */
+function useReducedMotion(dispatch: React.Dispatch<AnimationAction>): void {
+    useEffect(() => {
+        const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+        dispatch({ type: 'SET_REDUCED_MOTION', value: mql.matches });
+        const handler = (e: MediaQueryListEvent) =>
+            dispatch({ type: 'SET_REDUCED_MOTION', value: e.matches });
+        mql.addEventListener('change', handler);
+        return () => mql.removeEventListener('change', handler);
+    }, [dispatch]);
 }
-
-type AnimationAction =
-    | { type: 'ADVANCE'; phase: AnimationPhase }
-    | { type: 'SET_REDUCED_MOTION'; value: boolean };
-
-function animationReducer(state: AnimationState, action: AnimationAction): AnimationState {
-    switch (action.type) {
-        case 'ADVANCE':
-            return { ...state, phase: action.phase };
-        case 'SET_REDUCED_MOTION':
-            return { ...state, reducedMotion: action.value };
-        default:
-            return state;
-    }
-}
-
-const PHASE_SEQUENCE: ReadonlyArray<{ phase: AnimationPhase; delay: number }> = [
-    { phase: 'nodesVisible', delay: 500 },
-    { phase: 'edgesDrawn', delay: 1000 },
-    { phase: 'synthesized', delay: 1000 },
-    { phase: 'idle', delay: 2500 },
-] as const;
 
 /** Loops through animation phases with configurable timing. */
 export function useHeroAnimation(): AnimationState {
@@ -41,25 +31,13 @@ export function useHeroAnimation(): AnimationState {
         reducedMotion: false,
     });
 
-    // Detect prefers-reduced-motion
-    useEffect(() => {
-        const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
-        dispatch({ type: 'SET_REDUCED_MOTION', value: mql.matches });
-        const handler = (e: MediaQueryListEvent) => {
-            dispatch({ type: 'SET_REDUCED_MOTION', value: e.matches });
-        };
-        mql.addEventListener('change', handler);
-        return () => mql.removeEventListener('change', handler);
-    }, []);
+    useReducedMotion(dispatch);
 
-    // Phase loop — skip if reduced motion
     useEffect(() => {
         if (state.reducedMotion) return;
-
         let stepIndex = 0;
         let timer: ReturnType<typeof setTimeout>;
         let cancelled = false;
-
         const scheduleNext = () => {
             const step = PHASE_SEQUENCE[stepIndex % PHASE_SEQUENCE.length];
             if (!step || cancelled) return;
@@ -70,7 +48,6 @@ export function useHeroAnimation(): AnimationState {
                 scheduleNext();
             }, step.delay);
         };
-
         scheduleNext();
         return () => {
             cancelled = true;

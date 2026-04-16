@@ -15,7 +15,7 @@ export function LandingFooter() {
             style={{ padding: 'var(--space-2xl) var(--space-xl)' }}
         >
             <div
-                className="flex flex-col md:flex-row items-center justify-between max-w-5xl"
+                className="flex flex-col md:flex-row items-center justify-between max-w-6xl"
                 style={{ gap: 'var(--space-lg)', marginLeft: 'auto', marginRight: 'auto' }}
             >
                 {/* Tagline */}
@@ -41,6 +41,13 @@ export function LandingFooter() {
                         style={{ fontSize: 'var(--font-size-sm)' }}
                     >
                         {strings.landing.footer.privacy}
+                    </a>
+                    <a
+                        href="/contact"
+                        className="text-[var(--color-text-muted)] no-underline hover:text-[var(--color-text-primary)] transition-colors duration-150"
+                        style={{ fontSize: 'var(--font-size-sm)' }}
+                    >
+                        {strings.landing.footer.contact}
                     </a>
                 </div>
 

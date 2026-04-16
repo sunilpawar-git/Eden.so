@@ -32,10 +32,8 @@ export function HowItWorksSection() {
                         style={{ gap: 'var(--space-sm)' }}
                     >
                         <div
-                            className="flex items-center justify-center rounded-full font-bold text-[var(--color-text-on-primary)]"
+                            className="flex items-center justify-center rounded-full font-bold text-[var(--color-text-on-primary)] w-10 h-10"
                             style={{
-                                width: 40,
-                                height: 40,
                                 background: 'var(--color-primary)',
                                 fontSize: 'var(--font-size-base)',
                             }}

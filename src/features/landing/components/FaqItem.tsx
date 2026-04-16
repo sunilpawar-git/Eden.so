@@ -46,19 +46,20 @@ const FaqItemBase = function FaqItem({ question, answer, isOpen, onToggle }: Faq
                     +
                 </span>
             </button>
-            {isOpen && (
-                <p
-                    id={answerId}
-                    className="text-[var(--color-text-secondary)]"
-                    style={{
-                        fontSize: 'var(--font-size-sm)',
-                        lineHeight: 1.6,
-                        marginTop: 'var(--space-sm)',
-                    }}
-                >
-                    {answer}
-                </p>
-            )}
+            {/* Always rendered so aria-controls has a valid DOM target */}
+            <p
+                id={answerId}
+                role="region"
+                hidden={!isOpen}
+                className="text-[var(--color-text-secondary)]"
+                style={{
+                    fontSize: 'var(--font-size-sm)',
+                    lineHeight: 1.6,
+                    marginTop: 'var(--space-sm)',
+                }}
+            >
+                {answer}
+            </p>
         </div>
     );
 };

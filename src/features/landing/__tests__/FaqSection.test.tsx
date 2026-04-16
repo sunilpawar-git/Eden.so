@@ -45,7 +45,8 @@ describe('FaqSection', () => {
         expect(screen.getByText(firstAnswer)).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: secondQuestion }));
-        expect(screen.queryByText(firstAnswer)).not.toBeInTheDocument();
-        expect(screen.getByText(secondAnswer)).toBeInTheDocument();
+        // Element stays in DOM but is hidden (aria-controls requires a valid DOM target)
+        expect(screen.getByText(firstAnswer)).not.toBeVisible();
+        expect(screen.getByText(secondAnswer)).toBeVisible();
     });
 });

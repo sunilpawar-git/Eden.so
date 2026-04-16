@@ -10,6 +10,10 @@ export const landingStrings = {
         faq: 'FAQ',
         login: 'Sign In',
         getStarted: 'Get Started Free',
+        ariaLabel: 'Main navigation',
+        mobileAriaLabel: 'Mobile navigation',
+        openMenu: 'Open navigation menu',
+        closeMenu: 'Close navigation menu',
     },
     hero: {
         title: 'Your best ideas don\u2019t live in a list.',
@@ -19,6 +23,10 @@ export const landingStrings = {
         ctaSecondary: 'See how it works',
         /** Label for the synthesis output node in the hero animation. */
         synthNodeLabel: 'Insights',
+        /** Accessible label for the hero animation SVG. */
+        animationAriaLabel: 'Animated canvas demo',
+        /** Icon prefix for the synthesis output node. */
+        synthNodeIcon: '\u2726 ',
     },
     features: {
         sectionTitle: 'Everything you need to think clearly',
@@ -126,5 +134,6 @@ export const landingStrings = {
         copyright: (year: number) => `\u00A9 ${year} ActionStation. All rights reserved.`,
         terms: 'Terms of Service',
         privacy: 'Privacy Policy',
+        contact: 'Contact',
     },
 } as const;

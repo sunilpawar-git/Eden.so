@@ -1,6 +1,7 @@
 /**
- * heroAnimationData — Layout data and opacity helpers for the canvas demo SVG.
- * Extracted from HeroAnimation to keep component under 100 lines.
+ * heroAnimationData — Layout data, opacity helpers, and state machine primitives
+ * for the canvas demo SVG.
+ * Extracted from HeroAnimation and useHeroAnimation to keep each file under limits.
  *
  * SVG coordinate layout (viewBox 400×240):
  *   Node A (Capture):    x=60,  y=40   → top-left
@@ -9,8 +10,40 @@
  *   Synth node (output): x=120, y=110  → center
  *   Edges: A→B, A→C, B→C (triangle connecting all steps)
  */
-import type { AnimationPhase } from '../hooks/useHeroAnimation';
 import { strings } from '@/shared/localization/strings';
+
+// ─── Animation state machine types ───────────────────────────────────────────
+
+export type AnimationPhase = 'idle' | 'nodesVisible' | 'edgesDrawn' | 'synthesized';
+
+export interface AnimationState {
+    readonly phase: AnimationPhase;
+    readonly reducedMotion: boolean;
+}
+
+export type AnimationAction =
+    | { type: 'ADVANCE'; phase: AnimationPhase }
+    | { type: 'SET_REDUCED_MOTION'; value: boolean };
+
+export function animationReducer(state: AnimationState, action: AnimationAction): AnimationState {
+    switch (action.type) {
+        case 'ADVANCE':
+            return { ...state, phase: action.phase };
+        case 'SET_REDUCED_MOTION':
+            return { ...state, reducedMotion: action.value };
+        default:
+            return state;
+    }
+}
+
+export const PHASE_SEQUENCE: ReadonlyArray<{ phase: AnimationPhase; delay: number }> = [
+    { phase: 'nodesVisible', delay: 500 },
+    { phase: 'edgesDrawn', delay: 1000 },
+    { phase: 'synthesized', delay: 1000 },
+    { phase: 'idle', delay: 2500 },
+] as const;
+
+// ─── SVG layout data ──────────────────────────────────────────────────────────
 
 export const NODE_LABELS = [
     strings.landing.howItWorks.steps[0].title,
@@ -35,6 +68,8 @@ export const SYNTH_NODE = {
     y: 110,
     label: strings.landing.hero.synthNodeLabel,
 } as const;
+
+// ─── Opacity helpers ──────────────────────────────────────────────────────────
 
 export function getNodeOpacity(phase: AnimationPhase, reducedMotion: boolean): number {
     if (reducedMotion) return 1;

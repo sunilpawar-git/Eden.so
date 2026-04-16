@@ -33,7 +33,8 @@ describe('PricingCard', () => {
 
     it('renders CTA as a link', () => {
         render(<PricingCard {...defaultProps} />);
-        const cta = screen.getByRole('link', { name: 'Get Started' });
+        // aria-label is "${ctaLabel} — ${planName}" for screen reader clarity
+        const cta = screen.getByRole('link', { name: 'Get Started \u2014 Free' });
         expect(cta).toHaveAttribute('href', '/login');
     });
 

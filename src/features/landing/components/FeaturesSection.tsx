@@ -18,7 +18,7 @@ export function FeaturesSection() {
     return (
         <section
             id="features"
-            className="w-full max-w-5xl"
+            className="w-full max-w-6xl"
             style={{ padding: 'var(--space-2xl) var(--space-xl)', marginLeft: 'auto', marginRight: 'auto' }}
         >
             <h2
@@ -30,12 +30,12 @@ export function FeaturesSection() {
             >
                 {strings.landing.features.sectionTitle}
             </h2>
-            <div
+            <ul
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                style={{ gap: 'var(--space-lg)' }}
+                style={{ gap: 'var(--space-lg)', listStyle: 'none', padding: 0, margin: 0 }}
             >
                 {FEATURES.map((feature) => (
-                    <div
+                    <li
                         key={feature.title}
                         className="rounded-lg border border-[var(--color-border)]"
                         style={{
@@ -61,9 +61,9 @@ export function FeaturesSection() {
                         >
                             {feature.description}
                         </p>
-                    </div>
+                    </li>
                 ))}
-            </div>
+            </ul>
         </section>
     );
 }

@@ -26,7 +26,6 @@ export function PricingCard({
 }: PricingCardProps) {
     const badgeId = useId();
     const borderColor = highlighted ? 'var(--color-primary)' : 'var(--color-border)';
-
     return (
         <div
             className="relative flex flex-col rounded-xl border"
@@ -81,7 +80,7 @@ export function PricingCard({
                 ))}
             </ul>
             <a
-                href={ctaHref}
+                href={ctaHref} aria-label={`${ctaLabel} \u2014 ${planName}`}
                 className="inline-flex items-center justify-center w-full no-underline rounded-lg font-medium transition-colors duration-150"
                 style={{
                     padding: 'var(--space-md)',

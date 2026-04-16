@@ -17,7 +17,8 @@ describe('FaqItem', () => {
 
     it('hides the answer when closed', () => {
         render(<FaqItem question={question} answer={answer} isOpen={false} onToggle={() => {}} />);
-        expect(screen.queryByText(answer)).not.toBeInTheDocument();
+        // Element stays in DOM (so aria-controls has a valid target) but is hidden
+        expect(screen.getByText(answer)).not.toBeVisible();
     });
 
     it('shows the answer when open', () => {
