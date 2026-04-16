@@ -37,6 +37,7 @@ vi.mock('../FocusOverlay', () => ({
 vi.mock('../ViewportSync', () => ({
     ViewportSync: () => null,
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 describe('CanvasView', () => {
     beforeEach(() => {

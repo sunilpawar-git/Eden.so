@@ -79,6 +79,8 @@ vi.mock('@/shared/services/indexedDbService', () => ({
     indexedDbService: { put: vi.fn().mockResolvedValue(true), get: vi.fn().mockResolvedValue(null) },
     IDB_STORES: { workspaceData: 'workspace-data', pinnedWorkspaces: 'pinned-workspaces', metadata: 'metadata' },
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
+vi.mock('@/features/subscription/hooks/useTierLimits', () => ({ useTierLimits: () => ({ check: () => ({ allowed: true, current: 0, max: Infinity, kind: 'workspace' }), state: { workspaceCount: 0, nodeCount: 0, aiDailyCount: 0, aiDailyDate: '', storageMb: 0, isLoaded: true }, dispatch: () => {}, tier: 'free' }) }));
 
 describe('Sidebar pin toggle button', () => {
     beforeEach(() => {

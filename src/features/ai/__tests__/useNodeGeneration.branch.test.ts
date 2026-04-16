@@ -5,10 +5,13 @@
 /* eslint-disable @typescript-eslint/no-deprecated */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import React from 'react';
 import { useNodeGeneration } from '../hooks/useNodeGeneration';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import type { IdeaNodeData } from '@/features/canvas/types/node';
 import { GRID_PADDING } from '@/features/canvas/services/gridLayoutService';
+import { TierLimitsProvider } from '@/features/subscription/contexts/TierLimitsContext';
 
 vi.mock('../services/geminiService', () => ({
     generateContent: vi.fn(),
@@ -19,6 +22,15 @@ const mockPanToPosition = vi.fn();
 vi.mock('@/features/canvas/contexts/PanToNodeContext', () => ({
     usePanToNodeContext: () => ({ panToPosition: mockPanToPosition }),
 }));
+
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({
+    useNodeCreationGuard: () => ({ guardNodeCreation: () => true }),
+}));
+
+// Wrapper for TierLimitsProvider
+function wrapper({ children }: { children: ReactNode }) {
+    return React.createElement(TierLimitsProvider, null, children);
+}
 
 const createTestIdeaNode = (id: string, prompt: string, output?: string) => ({
     id, workspaceId: 'ws-1', type: 'idea' as const,
@@ -36,7 +48,7 @@ describe('useNodeGeneration - branchFromNode', () => {
     it('should create new IdeaCard connected to source', () => {
         useCanvasStore.getState().addNode(createTestIdeaNode('idea-source', 'Source prompt', 'Source output'));
 
-        const { result } = renderHook(() => useNodeGeneration());
+        const { result } = renderHook(() => useNodeGeneration(), { wrapper });
 
         act(() => { result.current.branchFromNode('idea-source'); });
 
@@ -53,7 +65,7 @@ describe('useNodeGeneration - branchFromNode', () => {
         sourceNode.position = { x: 100, y: 200 };
         useCanvasStore.getState().addNode(sourceNode);
 
-        const { result } = renderHook(() => useNodeGeneration());
+        const { result } = renderHook(() => useNodeGeneration(), { wrapper });
 
         act(() => { result.current.branchFromNode('idea-source'); });
 
@@ -67,7 +79,7 @@ describe('useNodeGeneration - branchFromNode', () => {
         sourceNode.position = { x: GRID_PADDING, y: GRID_PADDING };
         useCanvasStore.getState().addNode(sourceNode);
 
-        const { result } = renderHook(() => useNodeGeneration());
+        const { result } = renderHook(() => useNodeGeneration(), { wrapper });
 
         act(() => { result.current.branchFromNode('idea-source'); });
 
@@ -81,7 +93,7 @@ describe('useNodeGeneration - branchFromNode', () => {
     it('should create edge between source and branch', () => {
         useCanvasStore.getState().addNode(createTestIdeaNode('idea-source', 'Source'));
 
-        const { result } = renderHook(() => useNodeGeneration());
+        const { result } = renderHook(() => useNodeGeneration(), { wrapper });
 
         act(() => { result.current.branchFromNode('idea-source'); });
 
@@ -94,7 +106,7 @@ describe('useNodeGeneration - branchFromNode', () => {
     it('pans to the new branch node after creation', () => {
         useCanvasStore.getState().addNode(createTestIdeaNode('idea-source', 'Source'));
 
-        const { result } = renderHook(() => useNodeGeneration());
+        const { result } = renderHook(() => useNodeGeneration(), { wrapper });
 
         act(() => { result.current.branchFromNode('idea-source'); });
 
@@ -107,7 +119,7 @@ describe('useNodeGeneration - branchFromNode', () => {
     it('node and edge IDs are collision-safe UUIDs (not Date.now)', () => {
         useCanvasStore.getState().addNode(createTestIdeaNode('idea-source', 'Source'));
 
-        const { result } = renderHook(() => useNodeGeneration());
+        const { result } = renderHook(() => useNodeGeneration(), { wrapper });
 
         act(() => { result.current.branchFromNode('idea-source'); });
         act(() => { result.current.branchFromNode('idea-source'); });

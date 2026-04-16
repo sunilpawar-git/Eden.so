@@ -140,6 +140,37 @@ describe('useKeyboardShortcuts', () => {
             renderHook(() => useKeyboardShortcuts({}));
             expect(() => fireKeyDown('n')).not.toThrow();
         });
+
+        it('fires onAddNode when editingNodeId is stale but event target is not editable', () => {
+            // rAF race: editingNodeId set, but focus is already on the pane (non-editable).
+            // N must go through — isEditableTarget is the correct real-time guard, not editingNodeId.
+            // fireKeyDown dispatches on document — isEditableTarget returns false for document target.
+            mockCanvasStore._state.editingNodeId = 'stale-node';
+
+            renderHook(() => useKeyboardShortcuts({ onAddNode: mockOnAddNode }));
+            fireKeyDown('n');
+
+            expect(mockOnAddNode).toHaveBeenCalledTimes(1);
+        });
+
+        it('blocks N when target is contentEditable regardless of editingNodeId value', () => {
+            // The correct real-time guard is isEditableTarget, not editingNodeId.
+            // Works whether editingNodeId is set or null — focus state is the truth.
+            mockCanvasStore._state.editingNodeId = null;
+
+            renderHook(() => useKeyboardShortcuts({ onAddNode: mockOnAddNode }));
+
+            const editorDiv = document.createElement('div');
+            editorDiv.contentEditable = 'true';
+            document.body.appendChild(editorDiv);
+
+            const event = new KeyboardEvent('keydown', { key: 'n', bubbles: true, cancelable: true });
+            Object.defineProperty(event, 'target', { value: editorDiv });
+            document.dispatchEvent(event);
+
+            expect(mockOnAddNode).not.toHaveBeenCalled();
+            document.body.removeChild(editorDiv);
+        });
     });
 
     describe('Quick Capture (Cmd/Ctrl + N)', () => {

@@ -32,6 +32,7 @@ import { useNetworkStatusStore } from '@/shared/stores/networkStatusStore';
 import { strings } from '@/shared/localization/strings';
 import { OnboardingWalkthrough } from '@/features/onboarding';
 import { CalendarCallback } from '@/features/auth/components/CalendarCallback';
+import { TierLimitsProvider } from '@/features/subscription/contexts/TierLimitsContext';
 import '@/styles/global.css';
 
 // Lazy load non-critical components for better initial load performance
@@ -40,6 +41,15 @@ const LoginPage = lazy(() =>
 );
 const SettingsPanel = lazy(() =>
     import('@/app/components/SettingsPanel').then(m => ({ default: m.SettingsPanel }))
+);
+const TermsOfService = lazy(() =>
+    import('@/features/legal/components/TermsOfService').then(m => ({ default: m.TermsOfService }))
+);
+const PrivacyPolicy = lazy(() =>
+    import('@/features/legal/components/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy }))
+);
+const CookieConsentBanner = lazy(() =>
+    import('@/features/legal/components/CookieConsentBanner').then(m => ({ default: m.CookieConsentBanner }))
 );
 
 function AuthenticatedApp() {
@@ -79,32 +89,50 @@ function AuthenticatedApp() {
         );
     }
     return (
-        <WorkspaceContext.Provider value={wsCtx}>
-            <ReactFlowProvider>
-                <SearchInputRefProvider>
-                    <KeyboardShortcutsProvider onOpenSettings={openSettings} />
-                    <Layout onSettingsClick={openSettings}>
-                    <CanvasView />
-                    {initialLoading && (
-                        <div className="canvas-loading-overlay">
-                            <div className="loading-spinner" />
-                            <p>{strings.common.loading}</p>
-                        </div>
-                    )}
-                    </Layout>
-                </SearchInputRefProvider>
-                <Suspense fallback={null}>
-                    <SettingsPanel isOpen={isSettingsOpen} onClose={closeSettings} />
-                </Suspense>
-                <OnboardingWalkthrough />
-            </ReactFlowProvider>
-        </WorkspaceContext.Provider>
+        <TierLimitsProvider>
+            <WorkspaceContext.Provider value={wsCtx}>
+                <ReactFlowProvider>
+                    <SearchInputRefProvider>
+                        <KeyboardShortcutsProvider onOpenSettings={openSettings} />
+                        <Layout onSettingsClick={openSettings}>
+                        <CanvasView />
+                        {initialLoading && (
+                            <div className="canvas-loading-overlay">
+                                <div className="loading-spinner" />
+                                <p>{strings.common.loading}</p>
+                            </div>
+                        )}
+                        </Layout>
+                    </SearchInputRefProvider>
+                    <Suspense fallback={null}>
+                        <SettingsPanel isOpen={isSettingsOpen} onClose={closeSettings} />
+                    </Suspense>
+                    <OnboardingWalkthrough />
+                </ReactFlowProvider>
+            </WorkspaceContext.Provider>
+        </TierLimitsProvider>
     );
 }
 
 function AppContent() {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const authLoading = useAuthStore((s) => s.isLoading);
+
+    // Legal pages — public, require no auth, checked first
+    if (window.location.pathname === '/terms') {
+        return (
+            <Suspense fallback={<LoadingFallback fullScreen />}>
+                <TermsOfService />
+            </Suspense>
+        );
+    }
+    if (window.location.pathname === '/privacy') {
+        return (
+            <Suspense fallback={<LoadingFallback fullScreen />}>
+                <PrivacyPolicy />
+            </Suspense>
+        );
+    }
 
     // Google Calendar OAuth callback — handle before any auth/workspace checks
     if (window.location.pathname === '/auth/calendar/callback') {
@@ -149,6 +177,9 @@ export function App() {
                 <ToastContainer />
                 <ConfirmDialog />
                 <SwUpdatePrompt registration={swRegistration} />
+                <Suspense fallback={null}>
+                    <CookieConsentBanner />
+                </Suspense>
             </ErrorBoundary>
         </QueryClientProvider>
     );

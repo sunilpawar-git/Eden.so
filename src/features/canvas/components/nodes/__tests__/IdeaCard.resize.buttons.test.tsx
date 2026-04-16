@@ -84,6 +84,7 @@ vi.mock('../NodeDivider', () => ({ NodeDivider: () => <div data-testid="node-div
 vi.mock('@/features/canvas/contexts/PanToNodeContext', () => ({
     usePanToNodeContext: () => ({ panToPosition: vi.fn() }),
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 function hoverCard(): HTMLElement {
     render(<IdeaCard {...defaultProps} />);

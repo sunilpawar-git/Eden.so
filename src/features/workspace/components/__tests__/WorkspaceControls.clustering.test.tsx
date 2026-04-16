@@ -27,6 +27,7 @@ vi.mock('@/features/canvas/hooks/usePanToNode', () => ({
 vi.mock('@/shared/stores/toastStore', () => ({
     toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 const CLUSTER_FIXTURE = { id: 'c1', nodeIds: ['n1', 'n2'], label: 'Theme', colorIndex: 0 };
 

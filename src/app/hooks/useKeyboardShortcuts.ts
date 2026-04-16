@@ -63,8 +63,17 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
                 return;
             }
 
-            if (editingNodeId) return;
+            // isEditableTarget is the real-time focus guard — covers N when the user is
+            // actually typing in a TipTap editor (contentEditable). We do NOT apply the
+            // global editingNodeId guard here because it reads stale store state during
+            // the requestAnimationFrame window in onHeadingBlur, which blocks N/double-click
+            // after focus has already moved to the pane (the rAF race condition bug).
             if (isEditableTarget(e)) return;
+
+            // Keep editingNodeId guard only for destructive shortcuts. If focus is on a
+            // non-editable node UI element (resize handle, etc.) while editing is "active",
+            // we must not accidentally delete canvas nodes via Delete/Backspace.
+            if (editingNodeId && (e.key === 'Delete' || e.key === 'Backspace')) return;
 
             handlePlainShortcuts(e, onAddNode, onDeleteNodes, isNodeCreationLocked);
         },

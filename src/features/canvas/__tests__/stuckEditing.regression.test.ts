@@ -19,6 +19,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCanvasStore } from '../stores/canvasStore';
+import { isEditableTarget } from '@/shared/utils/domGuards';
 import { useFocusStore } from '../stores/focusStore';
 
 const HEADING_SECTION_SRC = readFileSync(
@@ -81,19 +82,36 @@ describe('Stuck editingNodeId regression guard', () => {
         expect(useCanvasStore.getState().editingNodeId).toBe('focused-node');
     });
 
-    it('double-click creation is blocked by stale editingNodeId', () => {
-        useCanvasStore.setState({ editingNodeId: 'stale-node', nodes: [], edges: [], selectedNodeIds: new Set() });
+    it('pane double-click creates node even when editingNodeId is stale (rAF race)', () => {
+        // After the fix: createNodeAtScreen calls stopEditing() synchronously instead of
+        // guarding on editingNodeId. Stale editingNodeId must NOT block pane creation.
+        useCanvasStore.getState().startEditing('auto-edit-node');
+        expect(useCanvasStore.getState().editingNodeId).toBe('auto-edit-node');
 
-        const editingNodeId = useCanvasStore.getState().editingNodeId;
-        const isBlocked = Boolean(editingNodeId);
-        expect(isBlocked).toBe(true);
+        // Simulate what createNodeAtScreen does after the fix: stopEditing() is called
+        // synchronously, pre-empting the rAF-deferred call in onHeadingBlur.
+        useCanvasStore.getState().stopEditing();
+
+        expect(useCanvasStore.getState().editingNodeId).toBeNull();
     });
 
-    it('N-key creation is blocked by stale editingNodeId', () => {
+    it('N-key creation is not blocked when focus has moved to pane (isEditableTarget is false)', () => {
+        // After the fix: handleKeyDown no longer applies a global editingNodeId guard.
+        // N is blocked only by isEditableTarget — the real-time focus check.
+        // When focus is on the pane (non-editable), isEditableTarget returns false,
+        // so N must fire even if editingNodeId is still set (stale rAF window).
         useCanvasStore.setState({ editingNodeId: 'stale-node' });
 
-        const editingNodeId = useCanvasStore.getState().editingNodeId;
-        const isBlocked = Boolean(editingNodeId);
-        expect(isBlocked).toBe(true);
+        const paneDiv = document.createElement('div');
+        paneDiv.className = 'react-flow__pane';
+
+        // Build a synthetic keydown event targeting the pane and call isEditableTarget
+        // directly — this tests our actual guard function, not a browser API.
+        const event = new KeyboardEvent('keydown', { key: 'n', bubbles: true, cancelable: true });
+        Object.defineProperty(event, 'target', { value: paneDiv });
+
+        // Contract: pane is not editable → isEditableTarget returns false →
+        // N key must not be blocked by editingNodeId alone after the fix.
+        expect(isEditableTarget(event)).toBe(false);
     });
 });

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCanvasStore } from '@/features/canvas/stores/canvasStore';
 import { useWorkspaceStore } from '@/features/workspace/stores/workspaceStore';
 import { useWorkspaceSwitcher } from '@/features/workspace/hooks/useWorkspaceSwitcher';
+import { useTierLimits } from '@/features/subscription/hooks/useTierLimits';
 import { toast } from '@/shared/stores/toastStore';
 import { strings } from '@/shared/localization/strings';
 import {
@@ -14,23 +15,33 @@ import {
 } from '@/features/workspace/services/workspaceService';
 import { useOfflineQueueStore } from '@/features/workspace/stores/offlineQueueStore';
 import { logger } from '@/shared/services/logger';
+import type { LimitCheckResult } from '@/features/subscription/types/tierLimits';
 
 export function useWorkspaceOperations() {
     const user = useAuthStore((s) => s.user);
     const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
     const workspaces = useWorkspaceStore((s) => s.workspaces);
     const { switchWorkspace } = useWorkspaceSwitcher();
+    const { check } = useTierLimits();
 
     const [isCreating, setIsCreating] = useState(false);
     const [isCreatingDivider, setIsCreatingDivider] = useState(false);
+    const [upgradeWall, setUpgradeWall] = useState<LimitCheckResult | null>(null);
     const userRef = useRef(user);
     const currentIdRef = useRef(currentWorkspaceId);
     userRef.current = user;
     currentIdRef.current = currentWorkspaceId;
 
+    const dismissWall = useCallback(() => setUpgradeWall(null), []);
+
     const handleNewWorkspace = useCallback(async () => {
         const currentUser = userRef.current;
         if (!currentUser || isCreating) return;
+
+        // Free tier workspace limit guard
+        const wsCheck = check('workspace');
+        if (!wsCheck.allowed) { setUpgradeWall(wsCheck); return; }
+
         setIsCreating(true);
         try {
             const curId = currentIdRef.current;
@@ -48,7 +59,7 @@ export function useWorkspaceOperations() {
             logger.error('[Sidebar] Failed to create workspace:', error);
             toast.error(strings.errors.generic);
         } finally { setIsCreating(false); }
-    }, [isCreating]); // stable — user/currentId read via refs
+    }, [isCreating, check]); // stable — user/currentId read via refs
 
     const handleNewDivider = useCallback(async () => {
         const currentUser = userRef.current;
@@ -62,7 +73,7 @@ export function useWorkspaceOperations() {
                 const updatedList = useWorkspaceStore.getState().workspaces;
                 const insertedIndex = updatedList.findIndex(ws => ws.id === newDivider.id);
                 if (insertedIndex === -1) {
-                    logger.warn('[useWorkspaceOperations] Divider not found in updated list after insert');
+                    logger.warn('[useWorkspaceOperations] Divider not found after insert');
                 }
                 const orderIndex = insertedIndex >= 0 ? insertedIndex : updatedList.length - 1;
                 const updates = updatedList.map((ws, i) => ({ id: ws.id, orderIndex: i }));
@@ -83,9 +94,10 @@ export function useWorkspaceOperations() {
         isCreatingDivider,
         handleNewWorkspace,
         handleNewDivider,
+        upgradeWall,
+        dismissWall,
         workspaces,
         currentWorkspaceId,
-        // Expose actions via getState() wrapper for consumers that need them
         updateWorkspace: useWorkspaceStore.getState().updateWorkspace,
         reorderWorkspaces: useWorkspaceStore.getState().reorderWorkspaces,
         removeWorkspace: useWorkspaceStore.getState().removeWorkspace,

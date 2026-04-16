@@ -23,6 +23,10 @@ vi.mock('@/shared/services/analyticsService', () => ({
     trackNodeCreated: (...args: unknown[]) => mockTrackNodeCreated(...args),
 }));
 
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({
+    useNodeCreationGuard: () => ({ guardNodeCreation: () => true }),
+}));
+
 describe('useAddNode', () => {
     beforeEach(() => {
         useCanvasStore.setState({ nodes: [], edges: [], selectedNodeIds: new Set() });

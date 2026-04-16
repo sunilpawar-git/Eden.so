@@ -125,6 +125,7 @@ vi.mock('@/features/tags', () => ({
 vi.mock('@/features/canvas/contexts/PanToNodeContext', () => ({
     usePanToNodeContext: () => ({ panToPosition: vi.fn() }),
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 describe('IdeaCard - Proximity Hover (data-attribute driven)', () => {
     const mockNodeProps = {

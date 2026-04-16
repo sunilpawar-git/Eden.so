@@ -75,6 +75,7 @@ describe('useDoubleClickToCreate edge cases', () => {
             x: x * 10,
             y: y * 10,
         }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
         const { result } = renderHook(() => useDoubleClickToCreate());
         act(() => {

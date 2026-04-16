@@ -13,10 +13,12 @@ import { calculateBranchPlacement } from '@/features/canvas/services/freeFlowPla
 import { usePanToNodeContext } from '@/features/canvas/contexts/PanToNodeContext';
 import { buildContextChain } from '../services/contextChainBuilder';
 import { strings } from '@/shared/localization/strings';
-import { toast } from '@/shared/stores/toastStore';
+import { toast, toastWithAction } from '@/shared/stores/toastStore';
 import { useKnowledgeBankContext } from '@/features/knowledgeBank/hooks/useKnowledgeBankContext';
 import { useNodePoolContext } from './useNodePoolContext';
 import { processCalendarIntent } from '@/features/calendar/services/calendarIntentHandler';
+import { useNodeCreationGuard } from '@/features/subscription/hooks/useNodeCreationGuard';
+import { useTierLimits } from '@/features/subscription/hooks/useTierLimits';
 
 /**
  * Hook for generating AI content from IdeaCard nodes
@@ -25,6 +27,8 @@ export function useNodeGeneration() {
     const { getKBContext } = useKnowledgeBankContext();
     const { getPoolContext } = useNodePoolContext();
     const { panToPosition } = usePanToNodeContext();
+    const { guardNodeCreation } = useNodeCreationGuard();
+    const { check, dispatch } = useTierLimits();
 
     /**
      * Generate AI output from an IdeaCard node
@@ -32,6 +36,17 @@ export function useNodeGeneration() {
      */
     const generateFromPrompt = useCallback(
         async (nodeId: string) => {
+            // Check daily AI generation limit
+            const aiCheck = check('aiDaily');
+            if (!aiCheck.allowed) {
+                toastWithAction(
+                    strings.subscription.limits.aiDailyLimit,
+                    'warning',
+                    { label: strings.subscription.upgradeCta, onClick: () => { /* upgrade handler handled by parent */ } },
+                );
+                return;
+            }
+
             const freshNodes = useCanvasStore.getState().nodes;
             const node = getNodeMap(freshNodes).get(nodeId);
             if (node?.type !== 'idea') return;
@@ -61,6 +76,7 @@ export function useNodeGeneration() {
                 const content = await generateContentWithContext(promptText, contextChain, poolContext, kbContext, ideaData.contentMode);
 
                 useCanvasStore.getState().updateNodeOutput(nodeId, content);
+                dispatch({ type: 'AI_GENERATED' });
                 useAIStore.getState().completeGeneration();
             } catch (error) {
                 const message = error instanceof Error ? error.message : strings.errors.aiError;
@@ -70,7 +86,7 @@ export function useNodeGeneration() {
                 useCanvasStore.getState().setNodeGenerating(nodeId, false);
             }
         },
-        [getKBContext, getPoolContext]
+        [getKBContext, getPoolContext, check, dispatch]
     );
 
     /**
@@ -78,6 +94,8 @@ export function useNodeGeneration() {
      */
     const branchFromNode = useCallback(
         (sourceNodeId: string) => {
+            if (!guardNodeCreation()) return undefined;
+
             const freshNodes = useCanvasStore.getState().nodes;
             const sourceNode = getNodeMap(freshNodes).get(sourceNodeId);
             if (!sourceNode) return;
@@ -101,7 +119,7 @@ export function useNodeGeneration() {
 
             return newNode.id;
         },
-        [panToPosition]
+        [panToPosition, guardNodeCreation]
     );
 
     return {

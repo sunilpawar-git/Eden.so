@@ -28,4 +28,16 @@ export const subscriptionStrings = {
     billingPortalError: 'Failed to open billing portal.',
     subscriptionGroup: 'Subscription',
     upgradeLoading: 'Opening checkout...',
+    limits: {
+        workspaceLimit: 'You\u2019ve reached the maximum of 5 workspaces on the Free plan.',
+        nodeLimit: 'This workspace has reached the 12-node limit on the Free plan.',
+        aiDailyLimit: 'You\u2019ve used all 60 AI generations for today.',
+        storageLimit: 'You\u2019ve reached the 50 MB storage limit on the Free plan.',
+        upgradeForMore: 'Upgrade to Pro for unlimited access.',
+        workspaceUsage: (current: number, max: number) => `${current}/${max} workspaces`,
+        nodeUsage: (current: number, max: number) => `${current}/${max} nodes`,
+        aiUsage: (current: number, max: number) => `${current}/${max} AI generations today`,
+        storageUsage: (currentMb: number, maxMb: number) =>
+            `${currentMb.toFixed(1)}/${maxMb} MB used`,
+    },
 } as const;

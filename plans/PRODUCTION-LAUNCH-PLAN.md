@@ -14,7 +14,7 @@
 | Auth | ✅ Working | Google OAuth, session management, account deletion |
 | Security | ⚠️ 80% done | WAF scripts ready but not deployed; Turnstile client integration pending |
 | Subscription | ⚠️ Skeleton only | Types + store exist; no payment provider, no billing UI, no enforcement |
-| Free Tier Limits | ❌ Missing | No workspace/node caps for free users; unlimited usage |
+| Free Tier Limits | ✅ Complete | 5 workspaces, 12 nodes, 60 AI/day, 50 MB storage enforced |
 | Payment System | ❌ Missing | No Stripe/Razorpay integration; no checkout, no webhooks |
 | Legal Pages | ❌ Missing | Terms of Service, Privacy Policy, Cookie Policy not created |
 | Landing Page | ❌ Missing | No public marketing page; login page is the only entry point |
@@ -138,46 +138,43 @@ flowchart TD
 
 > Without limits, every user gets unlimited Pro features for free. Without hooks, there is no reason to upgrade.
 
+**Status: ✅ COMPLETE** — Implemented on `feature/free-tier-limits`, merged to `main`.
+
 ### 3.1 Define and Enforce Free Tier Limits
 
-**Current state:** No limits exist anywhere. [`firestoreQueryConfig.ts`](../src/config/firestoreQueryConfig.ts) has query caps but these are safety limits, not tier limits.
+**Implemented limits** (SSOT: `FREE_TIER_LIMITS` in `src/features/subscription/types/tierLimits.ts`):
 
-**Action items:**
-- Define free tier limits in a new `FREE_TIER_LIMITS` constant:
-  - **Workspaces**: 3 per user
-  - **Nodes per workspace**: 50
-  - **AI generations per day**: 10
-  - **Storage per user**: 50 MB
-  - **Knowledge Bank entries per workspace**: 10
-- Create `usageLimitsService.ts` — reads current usage counts from Firestore
-- Create `useUsageLimits` hook — provides current usage vs limits
-- Enforce workspace creation limit in [`useWorkspaceOperations.ts`](../src/app/hooks/useWorkspaceOperations.ts)
-- Enforce node creation limit in canvas store `addNode` action
-- Enforce AI generation limit in [`geminiProxy.ts`](../functions/src/geminiProxy.ts) — server-side daily counter per user
-- Show usage meter in sidebar or settings
+| Resource | Free | Pro |
+|----------|------|-----|
+| Workspaces per user | **5** | Unlimited |
+| Nodes per workspace | **12** | Unlimited |
+| AI generations/day | **60** | Unlimited |
+| Storage per user | **50 MB** | Unlimited |
+| KB entries | **No cap** | No cap |
+
+- ✅ `FREE_TIER_LIMITS` constant in `tierLimits.ts` — SSOT for all values
+- ✅ `TierLimitsProvider` / `useReducer` state machine — isolated from Zustand stores
+- ✅ `useTierLimits` hook — scalar selectors, syncs workspace/node counts via `useEffect`
+- ✅ Workspace creation limit in `useWorkspaceOperations.ts` → `UpgradeWall` modal
+- ✅ Node creation limit in `useNodeCreationGuard.ts` → toast (used by `useAddNode`, `useIdeaCardDuplicateAction`, `branchFromNode`)
+- ✅ AI generation limit in `geminiProxy.ts` (server-authoritative) + `useNodeGeneration.ts` (optimistic UI)
+- ✅ Storage usage tracking in `storageUsageService.ts` (fire-and-forget per upload)
 
 ### 3.2 Upgrade Prompts and Paywalls
 
-**Action items:**
-- Create `UpgradeWall` component — shown when user hits a limit
-- Show contextual upgrade prompts:
-  - "You have used 48/50 nodes. Upgrade to Pro for unlimited nodes."
-  - "You have 2/10 AI generations left today. Upgrade for unlimited AI."
-  - "Create up to 3 workspaces on Free. Upgrade for unlimited."
-- Add upgrade CTA in sidebar footer — [`SidebarFooter.tsx`](../src/app/components/SidebarFooter.tsx)
-- Expand [`GATED_FEATURES`](../src/features/subscription/types/subscription.ts:14) to include all Pro-only features:
-  - `unlimitedWorkspaces`, `unlimitedNodes`, `unlimitedAI`
-  - `calendarIntegration`, `workspaceTemplates`, `branchExport`
-  - `offlinePin`, `backgroundSync`, `documentIntelligence`
+- ✅ `UpgradeWall` component — modal shown when workspace limit hit
+- ✅ `UsageMeter` component — progress bar for usage counts
+- ✅ Toast with upgrade CTA for node and AI limits (`toastWithAction`)
+- ✅ `UpgradePrompt` component — generic upgrade prompt (pre-existing)
+- ⬜ Add upgrade CTA in sidebar footer (deferred — limits trigger in-context prompts)
 
-### 3.3 Free Trial or Generous Free Tier Hook
+### 3.3 Strategy: Generous Free Tier
 
-**Action items:**
-- Decide strategy: generous free tier forever OR 14-day Pro trial
-- If trial: set `trialExpiresAt` on user creation, grant Pro features until expiry
-- If generous free: ensure limits are high enough to demonstrate value — 3 workspaces, 50 nodes, 10 AI/day
-- Show "X days left in trial" banner if using trial model
-- After trial: graceful downgrade — existing data preserved, creation blocked at limits
+**Decision: Generous free tier forever** (no time-limited trial).
+
+- Free tier limits are high enough to demonstrate full value before upgrade
+- Existing data is always preserved — creation is blocked at limit, not data access
+- ✅ Graceful enforcement: toast/modal on creation attempt, no data loss
 
 ---
 

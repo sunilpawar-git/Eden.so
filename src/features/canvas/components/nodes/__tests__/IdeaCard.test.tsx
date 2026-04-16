@@ -80,6 +80,7 @@ vi.mock('../../../hooks/useLinkPreviewFetch', () => ({
 vi.mock('@/features/canvas/contexts/PanToNodeContext', () => ({
     usePanToNodeContext: () => ({ panToPosition: vi.fn() }),
 }));
+vi.mock('@/features/subscription/hooks/useNodeCreationGuard', () => ({ useNodeCreationGuard: () => ({ guardNodeCreation: () => true }) }));
 
 describe('IdeaCard', () => {
     const defaultData: IdeaNodeData = {

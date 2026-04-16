@@ -187,7 +187,9 @@ describe('Keyboard Shortcuts Integration', () => {
         expect(ref.select).toHaveBeenCalled();
     });
 
-    it('shortcuts should be suppressed when editing a node', () => {
+    it('destructive shortcuts (Delete, Escape) are suppressed when editing a node', () => {
+        // editingNodeId guards Delete/Backspace and Escape, but NOT N.
+        // N is guarded only by isEditableTarget (real-time focus check).
         mockCanvasStore._state.editingNodeId = 'node-1';
 
         const mockOnDeleteNodes = vi.fn();
@@ -198,19 +200,26 @@ describe('Keyboard Shortcuts Integration', () => {
             onDeleteNodes: mockOnDeleteNodes,
         }));
 
-        // Non-modifier shortcuts should be suppressed
-        fireKeyDown('n');
-        expect(mockOnAddNode).not.toHaveBeenCalled();
         fireKeyDown('Delete');
         expect(mockOnDeleteNodes).not.toHaveBeenCalled();
         fireKeyDown('Escape');
         expect(mockClearSelection).not.toHaveBeenCalled();
 
-        // Modifier shortcuts should still work
+        // Modifier shortcuts should still work regardless of editingNodeId
         fireKeyDown(',', { metaKey: true });
         expect(mockOnOpenSettings).toHaveBeenCalledTimes(1);
         fireKeyDown('n', { metaKey: true });
         expect(mockOnQuickCapture).toHaveBeenCalledTimes(1);
+    });
+
+    it('N fires even when editingNodeId is set, if the event target is not editable', () => {
+        // After the fix: N is guarded by isEditableTarget (real-time focus), not editingNodeId.
+        // fireKeyDown dispatches on document — target is not contentEditable → N goes through.
+        mockCanvasStore._state.editingNodeId = 'node-1';
+
+        renderHook(() => useKeyboardShortcuts({ onAddNode: mockOnAddNode }));
+        fireKeyDown('n');
+        expect(mockOnAddNode).toHaveBeenCalledTimes(1);
     });
 });
 
