@@ -18,8 +18,8 @@ export function FeaturesSection() {
     return (
         <section
             id="features"
-            className="w-full max-w-5xl mx-auto"
-            style={{ padding: 'var(--space-2xl) var(--space-xl)' }}
+            className="w-full max-w-5xl"
+            style={{ padding: 'var(--space-2xl) var(--space-xl)', marginLeft: 'auto', marginRight: 'auto' }}
         >
             <h2
                 className="font-bold text-center text-[var(--color-text-primary)]"

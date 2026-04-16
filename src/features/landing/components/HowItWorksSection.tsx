@@ -9,8 +9,8 @@ export function HowItWorksSection() {
     return (
         <section
             id="how-it-works"
-            className="w-full max-w-4xl mx-auto"
-            style={{ padding: 'var(--space-2xl) var(--space-xl)' }}
+            className="w-full max-w-4xl"
+            style={{ padding: 'var(--space-2xl) var(--space-xl)', marginLeft: 'auto', marginRight: 'auto' }}
         >
             <h2
                 className="font-bold text-center text-[var(--color-text-primary)]"

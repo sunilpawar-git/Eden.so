@@ -12,8 +12,10 @@ export function HeroSection() {
 
     return (
         <section
-            className="flex flex-col md:flex-row items-center w-full max-w-6xl mx-auto"
+            className="flex flex-col md:flex-row items-center w-full max-w-6xl"
             style={{
+                marginLeft: 'auto',
+                marginRight: 'auto',
                 padding: 'var(--space-2xl) var(--space-xl)',
                 gap: 'var(--space-2xl)',
                 minHeight: '70vh',

@@ -15,8 +15,8 @@ export function LandingFooter() {
             style={{ padding: 'var(--space-2xl) var(--space-xl)' }}
         >
             <div
-                className="flex flex-col md:flex-row items-center justify-between max-w-5xl mx-auto"
-                style={{ gap: 'var(--space-lg)' }}
+                className="flex flex-col md:flex-row items-center justify-between max-w-5xl"
+                style={{ gap: 'var(--space-lg)', marginLeft: 'auto', marginRight: 'auto' }}
             >
                 {/* Tagline */}
                 <p

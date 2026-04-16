@@ -18,8 +18,8 @@ export function LandingNav() {
             style={{ backgroundColor: 'var(--color-background)' }}
         >
             <div
-                className="flex items-center justify-between max-w-6xl mx-auto"
-                style={{ padding: 'var(--space-md) var(--space-xl)' }}
+                className="flex items-center justify-between max-w-6xl"
+                style={{ padding: 'var(--space-md) var(--space-xl)', marginLeft: 'auto', marginRight: 'auto' }}
             >
             {/* Logo */}
             <a
